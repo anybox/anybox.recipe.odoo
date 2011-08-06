@@ -16,6 +16,7 @@ setup(
     include_package_data=True,
     namespace_packages=['anybox', 'anybox.recipe'],
     install_requires=['setuptools',
+                      'zc.recipe.egg',
                       'zc.buildout'],
     classifiers=[
       'Framework :: Buildout',

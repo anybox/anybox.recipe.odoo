@@ -1,5 +1,6 @@
 import os, sys, urllib2, tarfile, setuptools
 from zc.buildout.easy_install import install
+import zc.recipe.egg
 
 DOWNLOAD_URL = 'http://www.openerp.com/download/stable/source/'
 SERVER_FILENAME = 'openerp-server-%s.tar.gz'
@@ -39,12 +40,11 @@ class Server(object):
         _ = sys.path.pop(0)
         setuptools.setup = old_setup
 
-        # install requirements
-        install([i.replace('-','_') for i in requirements], self.buildout['buildout']['eggs-directory'])
+        # install requirements and scripts
+        eggs = zc.recipe.egg.Eggs(self.buildout, self.name, self.options)
+        eggs.working_set(extra=requirements)
+        zc.recipe.egg.Scripts(self.buildout, self.name, self.options).install()
 
-    def update(self):
-        pass
+    update = install
 
-    def uninstall(self):
-        print "toto"
 
