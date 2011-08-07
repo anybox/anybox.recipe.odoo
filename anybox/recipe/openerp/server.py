@@ -59,7 +59,7 @@ class Server(object):
             requirements.extend(kw['install_requires'])
         setuptools.setup = new_setup
         sys.path.insert(0, '.')
-        with open('setup.py', 'rb') as f:
+        with open(join(self.openerp_dir,'setup.py'), 'rb') as f:
             imp.load_module('setup', f, 'setup.py', ('.py', 'r', imp.PY_SOURCE))
         _ = sys.path.pop(0)
         setuptools.setup = old_setup
