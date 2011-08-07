@@ -1,6 +1,6 @@
 from os.path import join
 from zc.buildout.easy_install import install
-import os, sys, urllib, tarfile, setuptools, logging, stat
+import os, sys, urllib, tarfile, setuptools, logging, stat, imp
 import subprocess
 import ConfigParser
 import zc.recipe.egg
@@ -59,7 +59,8 @@ class Server(object):
             requirements.extend(kw['install_requires'])
         setuptools.setup = new_setup
         sys.path.insert(0, '.')
-        import setup
+        with open('setup.py', 'rb') as f:
+            imp.load_module('setup', f, 'setup.py', ('.py', 'r', imp.PY_SOURCE))
         _ = sys.path.pop(0)
         setuptools.setup = old_setup
 
