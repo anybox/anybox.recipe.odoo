@@ -5,8 +5,8 @@ anybox.recipe.openerp
 
 This is a buildout recipe to download, install and configure OpenERP.
 
-Recipe optionsBuildout:
-~~~~~~~~~~~~~~~
+Recipe options :
+~~~~~~~~~~~~~~~~
 
 zc.recipe.egg options
 ---------------------
