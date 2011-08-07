@@ -52,6 +52,7 @@ using only XMLRPCs and listening on 2 different ports::
     parts = openerp1 openerp2
     allow-picked-versions = false
     versions = versions
+    find-links = http://download.gna.org/pychart/
 
     [versions]
     MarkupSafe = 0.15
