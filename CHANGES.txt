@@ -6,3 +6,7 @@ Changes
 
  - Initial implementation for the OpenERP server only
 
+0.2 (08-08-2011)
+----------------
+
+ - Pass the trailing args to the startup script of the server
