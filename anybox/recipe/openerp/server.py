@@ -64,13 +64,13 @@ class Server(object):
         # create startup script
         paths = [ self.openerp ]
         paths.extend([egg.location for egg in ws])
-        script = ('#!%s\n'
-                  'import sys, imp\n'
-                  'sys.path[0:0] = %s\n'
-                  'imp.load_source("_", "%s")') % (
-                    self.buildout['buildout']['executable'],
-                    paths,
-                    join(self.openerp, 'openerp-server.py'))
+        script = ('#!/bin/sh\n'
+                  'export PYTHONPATH=%s\n'
+                  'cd "%s"\n'
+                  'exec %s openerp-server.py') % (
+                    ':'.join(paths),
+                    self.openerp,
+                    self.buildout['buildout']['executable'])
 
         bin_dir = self.buildout['buildout']['bin-directory']
         os.chdir(bin_dir)
