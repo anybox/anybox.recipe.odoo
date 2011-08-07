@@ -35,7 +35,7 @@ class Server(object):
             tar = tarfile.open(self.archive)
             tar.extractall()
             tar.close()
-            installed.extend([self.archive_path, self.openerp_dir])
+            installed.append(self.openerp_dir)
 
 
         # ugly method to retrieve requirements
