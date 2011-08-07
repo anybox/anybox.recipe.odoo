@@ -74,6 +74,7 @@ using only XMLRPCs and listening on 2 different ports::
     z3c.recipe.scripts = 1.0.1
     zc.buildout = 1.5.2
     zc.recipe.egg = 1.3.2
+    anybox.recipe.openerp = 0.1
 
     [openerp1]
     recipe = anybox.recipe.openerp
