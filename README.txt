@@ -54,27 +54,31 @@ using only XMLRPCs and listening on 2 different ports::
     versions = versions
 
     [versions]
-    mako = 0.4.1
     MarkupSafe = 0.15
+    PIL = 1.1.7
+    anybox.recipe.openerp = 0.1
     caldav = 0.1.10
     coverage = 3.5
     distribute = 0.6.19
     feedparser = 5.0.1
     gp.vcsdevelop = 2.2.1
     lxml = 2.1.5
+    mako = 0.4.1
     nose = 1.1.2
     openerp-server = 6.0.2
     psycopg2 = 2.4.2
+    pychart = 1.39
     pydot = 1.0.25
     pyparsing = 1.5.6
     python-dateutil = 2.0
     pytz = 2011h
     pywebdav = 0.9.4.1
     pyyaml = 3.10
+    reportlab = 2.5
+    vobject = 0.8.1c
     z3c.recipe.scripts = 1.0.1
     zc.buildout = 1.5.2
     zc.recipe.egg = 1.3.2
-    anybox.recipe.openerp = 0.1
 
     [openerp1]
     recipe = anybox.recipe.openerp
