@@ -28,9 +28,11 @@ class Server(object):
         os.chdir(self.parts)
 
         # download and extract
-        if not os.path.exists(self.archive):
+        if not os.path.exists(self.archive_path):
             logger.info("Downloading OpenERP...")
             urllib.urlretrieve(self.url, self.archive_path)
+
+        if not os.path.exists(self.openerp_dir):
             logger.info(u'Extracting OpenERP...')
             tar = tarfile.open(self.archive)
             tar.extractall()
