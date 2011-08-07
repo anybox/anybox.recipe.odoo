@@ -79,7 +79,7 @@ class Server(object):
         script = ('#!/bin/sh\n'
                   'export PYTHONPATH=%s\n'
                   'cd "%s"\n'
-                  'exec %s openerp-server.py -c %s') % (
+                  'exec %s openerp-server.py -c %s $@') % (
                     ':'.join(paths),
                     self.openerp,
                     self.buildout['buildout']['executable'],
