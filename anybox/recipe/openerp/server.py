@@ -84,6 +84,18 @@ class Server(object):
                     self.buildout['buildout']['executable'],
                     self.openerp_config)
 
+        os.chdir(self.bin_dir)
+        if 'script_name' in self.options:
+            script_name = self.options['script_name']
+        else:
+            script_name = 'start_%s' % self.name
+        script_path = join(self.bin_dir, script_name)
+        script_file = open(script_path, 'w')
+        script_file.write(script)
+        script_file.close()
+        os.chmod(script_path, stat.S_IRWXU)
+        installed.append(script_path)
+
         # create config file
         if not os.path.exists(self.openerp_config):
             logger.info('Creating config file')
@@ -100,19 +112,6 @@ class Server(object):
                 config.set('options', option, self.options[option])
         with open(self.openerp_config, 'wb') as configfile:
             config.write(configfile)
-
-
-        os.chdir(self.bin_dir)
-        if 'script_name' in self.options:
-            script_name = self.options['script_name']
-        else:
-            script_name = 'start_%s' % self.name
-        script_path = join(self.bin_dir, script_name)
-        script_file = open(script_path, 'w')
-        script_file.write(script)
-        script_file.close()
-        os.chmod(script_path, stat.S_IRWXU)
-        installed.append(script_path)
 
         return installed
 
