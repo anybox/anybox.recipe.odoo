@@ -46,7 +46,7 @@ The simplest possible buildout is::
     version = 6.0.2
 
 A more robust buildout with version specifications, and 2 OpenERP servers
-listening using only XMLRPCs on different ports::
+using only XMLRPCs and listening on 2 different ports::
 
     [buildout]
     parts = openerp1 openerp2
