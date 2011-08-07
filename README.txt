@@ -83,12 +83,14 @@ using only XMLRPCs and listening on 2 different ports::
 
     [openerp1]
     recipe = anybox.recipe.openerp
+    eggs = PIL
     version = 6.0.2
     xmlrpc = False
     netrpc = False
 
     [openerp2]
     recipe = anybox.recipe.openerp
+    eggs = PIL
     version = 6.0.2
     xmlrpc = False
     netrpc = False
