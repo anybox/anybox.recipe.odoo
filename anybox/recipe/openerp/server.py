@@ -1,7 +1,9 @@
-import os, sys, urllib, tarfile, setuptools, logging, stat
-from zc.buildout.easy_install import install
-import zc.recipe.egg
 from os.path import join
+from zc.buildout.easy_install import install
+import os, sys, urllib, tarfile, setuptools, logging, stat
+import subprocess
+import ConfigParser
+import zc.recipe.egg
 
 logger = logging.getLogger(__name__)
 
@@ -12,16 +14,25 @@ class Server(object):
 
     def __init__(self, buildout, name, options):
         self.buildout, self.name, self.options = buildout, name, options
+        self.buildout_dir = self.buildout['buildout']['directory']
         self.version = self.options['version']
         self.parts = self.buildout['buildout']['parts-directory']
         self.archive = SERVER_FILENAME % self.version
-        self.archive_path = join(self.parts, self.archive)
+        self.downloads = join(self.buildout_dir, 'downloads')
+        self.archive_path = join(self.downloads, self.archive)
         self.url = DOWNLOAD_URL + self.archive
-        self.openerp_dir = self.archive_path.replace('.tar.gz', '')
+        self.openerp_dir = join(self.parts, self.archive.replace('.tar.gz', ''))
         self.openerp = join(self.openerp_dir, 'bin')
+        self.etc = join(self.buildout_dir, 'etc')
+        self.bin_dir = self.buildout['buildout']['bin-directory']
+        self.openerp_config = join(self.etc, self.name + '.cfg')
         if 'url' in self.options:
             self.url = self.options['url']
             self.archive = self.url.split('/')[-1]
+        for d in self.downloads, self.etc:
+            if not os.path.exists(d):
+                logger.info('Created %s/ directory' % os.path.basename(d))
+                os.mkdir(d)
 
     def install(self):
         installed = []
@@ -34,7 +45,7 @@ class Server(object):
 
         if not os.path.exists(self.openerp_dir):
             logger.info(u'Extracting OpenERP...')
-            tar = tarfile.open(self.archive)
+            tar = tarfile.open(self.archive_path)
             tar.extractall()
             tar.close()
             installed.append(self.openerp_dir)
@@ -67,18 +78,36 @@ class Server(object):
         script = ('#!/bin/sh\n'
                   'export PYTHONPATH=%s\n'
                   'cd "%s"\n'
-                  'exec %s openerp-server.py') % (
+                  'exec %s openerp-server.py -c %s') % (
                     ':'.join(paths),
                     self.openerp,
-                    self.buildout['buildout']['executable'])
+                    self.buildout['buildout']['executable'],
+                    self.openerp_config)
 
-        bin_dir = self.buildout['buildout']['bin-directory']
-        os.chdir(bin_dir)
+        # create config file
+        if not os.path.exists(self.openerp_config):
+            logger.info('Creating config file')
+            subprocess.check_call([
+                self.buildout['buildout']['executable'],
+                join(self.openerp, 'openerp-server.py'),
+                '--stop-after-init', '-s', '-c', self.openerp_config])
+
+        # update config file
+        config = ConfigParser.SafeConfigParser()
+        config.read(self.openerp_config)
+        for option in self.options:
+            if option in config.options('options'):
+                config.set('options', option, self.options[option])
+        with open(self.openerp_config, 'wb') as configfile:
+            config.write(configfile)
+
+
+        os.chdir(self.bin_dir)
         if 'script_name' in self.options:
             script_name = self.options['script_name']
         else:
             script_name = 'start_%s' % self.name
-        script_path = join(bin_dir, script_name)
+        script_path = join(self.bin_dir, script_name)
         script_file = open(script_path, 'w')
         script_file.write(script)
         script_file.close()
