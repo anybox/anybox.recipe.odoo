@@ -77,7 +77,7 @@ using only XMLRPCs and listening on 2 different ports::
     pychart = 1.39
     pydot = 1.0.25
     pyparsing = 1.5.6
-    python-dateutil = 2.0
+    python-dateutil = 1.5
     pytz = 2011h
     pywebdav = 0.9.4.1
     pyyaml = 3.10
