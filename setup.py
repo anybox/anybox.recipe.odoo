@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = 0.3
+version = 0.4
 
 setup(
     name = "anybox.recipe.openerp",
@@ -24,7 +24,11 @@ setup(
       'Topic :: Software Development :: Build Tools',
       'Topic :: Software Development :: Libraries :: Python Modules',
       ],
-    entry_points = {'zc.buildout': ['default = anybox.recipe.openerp:Server']},
+    entry_points = {'zc.buildout': [
+        'server = anybox.recipe.openerp:Server',
+        'webclient = anybox.recipe.openerp:WebClient',
+        'gtkclient = anybox.recipe.openerp:GtkClient',
+        ]},
     )
 
 

@@ -1,6 +1,11 @@
 Changes
 ~~~~~~~
 
+0.4 (09-08-2011)
+----------------
+
+ - Added support for the web client and gtk client
+
 0.3 (08-08-2011)
 ----------------
 
