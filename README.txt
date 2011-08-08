@@ -64,7 +64,7 @@ using only XMLRPCs and listening on 2 different ports::
     [versions]
     MarkupSafe = 0.15
     PIL = 1.1.7
-    anybox.recipe.openerp = 0.2
+    anybox.recipe.openerp = 0.3
     caldav = 0.1.10
     coverage = 3.5
     distribute = 0.6.19
