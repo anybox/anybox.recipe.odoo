@@ -101,9 +101,8 @@ class Server(object):
         if not os.path.exists(self.openerp_config):
             logger.info('Creating config file')
             subprocess.check_call([
-                self.buildout['buildout']['executable'],
-                join(self.openerp, 'openerp-server.py'),
-                '--stop-after-init', '-s', '-c', self.openerp_config])
+                script_path, '--stop-after-init',
+                '-s', '-c', self.openerp_config])
 
         # update config file
         config = ConfigParser.SafeConfigParser()
