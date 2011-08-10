@@ -26,8 +26,9 @@ specific options
 It also adds a few specific options :
 
  * **version**: specify the version of OpenERP (server, web client or gtk client)
- * **url** : specify the download url for the server
- * **script_name**: specify the name of the startup script for the server
+ * **url** : specify the direct download url for the server or client archive.
+   This option overrides the version specification
+ * **script_name**: specify the name of the startup script to generate
 
 OpenERP options
 ---------------
@@ -69,15 +70,15 @@ Generated scripts :
 ~~~~~~~~~~~~~~~~~~~
 
 Startup scripts are created in the bin/ directory. By default the name is:
-start_<part_name>, so you can have several startup script for each part if you
-configure several OpenERP servers or clients. You can pass additional arguments
-to the server via the startup script, such as -i or -u options.
+start_<part_name>, so you can have several startup scripts for each part if you
+configure several OpenERP servers or clients. You can pass additional typical
+arguments to the server via the startup script, such as -i or -u options.
 
 
 Example buildouts:
 ~~~~~~~~~~~~~~~~~~
 
-The simplest possible buildout for the server + web client is::
+The simplest possible buildout for a server + web client is::
 
     [buildout]
     parts = openerp web
@@ -161,4 +162,7 @@ Contribute
 The primary branch is on the launchpad:
 
 - Code repository: https://code.launchpad.net/~anybox/+junk/anybox.recipe.openerp
+
+Please contact the author to report any bug or ask for a new feature.
+
 
