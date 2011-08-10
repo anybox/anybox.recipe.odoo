@@ -121,8 +121,8 @@ using only NETRPC and listening on 2 different ports, and 2 web clients ::
     [web2]
     recipe = anybox.recipe.openerp:webclient
     version = 6.0.2
-    openerp.server.port = '8170'
-    server.socket_port = 8180
+    global.openerp.server.port = '8170'
+    global.server.socket_port = 8180
     
     [versions]
     MarkupSafe = 0.15
