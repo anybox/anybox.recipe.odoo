@@ -1,5 +1,5 @@
 # coding: utf-8
-from os.path import join
+from os.path import join, basename
 from zc.buildout.easy_install import install
 import os, sys, urllib, tarfile, setuptools, logging, stat, imp, shutil
 import subprocess
@@ -32,7 +32,7 @@ class Base(object):
             self.archive = self.url.split('/')[-1]
         for d in self.downloads, self.etc:
             if not os.path.exists(d):
-                logger.info('Created %s/ directory' % os.path.basename(d))
+                logger.info('Created %s/ directory' % basename(d))
                 os.mkdir(d)
 
     def install(self):
@@ -50,7 +50,7 @@ class Base(object):
             tar.extractall()
             tar.close()
 
-        # ugly method to retrieve requirements
+        # ugly method to extract requirements
         os.chdir(self.openerp_dir)
         old_setup = setuptools.setup
         requirements = []
@@ -89,7 +89,19 @@ class Base(object):
         os.chmod(self.script_path, stat.S_IRWXU)
         installed.append(self.script_path)
 
+        # create the config file
         self._create_config()
+
+        # modify config file according to recipe options
+        config = ConfigParser.SafeConfigParser()
+        config.read(self.config_path)
+        for recipe_option in self.options:
+            if '.' not in recipe_option:
+                continue
+            section, option = recipe_option.split('.', 1)
+            config.set(section, option, self.options[recipe_option])
+        with open(self.config_path, 'wb') as configfile:
+            config.write(configfile)
 
         return installed
 
@@ -112,18 +124,9 @@ class Server(Base):
         """
         # create config file
         if not os.path.exists(self.config_path):
-            logger.info('Creating config file')
+            logger.info('Creating config file: ' + basename(self.config_path))
             subprocess.check_call([
                 self.script_path, '--stop-after-init', '-s'])
-
-        # modify config file
-        config = ConfigParser.SafeConfigParser()
-        config.read(self.config_path)
-        for option in self.options:
-            if option in config.options('options'):
-                config.set('options', option, self.options[option])
-        with open(self.config_path, 'wb') as configfile:
-            config.write(configfile)
 
     def _create_startup_script(self, ws):
         """Return startup_script content
@@ -148,18 +151,9 @@ class WebClient(Base):
 
     def _create_config(self):
         # create config file
+        logger.info('Creating config file: ' + basename(self.config_path))
         shutil.copyfile(join(self.openerp_dir, 'doc', 'openerp-web.cfg'),
                         self.config_path)
-        # modify config file
-        config = ConfigParser.SafeConfigParser()
-        config.read(self.config_path)
-        for option in self.options:
-            if option in config.options('global'):
-                config.set('global', option, self.options[option])
-            if option in config.options('openerp-web'):
-                config.set('openerp-web', option, self.options[option])
-        with open(self.config_path, 'wb') as configfile:
-            config.write(configfile)
 
     def _create_startup_script(self, ws):
         """Return startup_script content
@@ -185,19 +179,8 @@ class GtkClient(Base):
     def _create_config(self):
         # create config file
         if not os.path.exists(self.config_path):
-            logger.info('Creating config file')
+            logger.info('Creating config file: ' + basename(self.config_path))
             subprocess.check_call([self.script_path])
-        # modify config file
-        config = ConfigParser.SafeConfigParser()
-        config.read(self.config_path)
-        for fulloption in self.options:
-            if '.' not in fulloption:
-                continue
-            section, opt = fulloption.split('.')
-            if opt in config.options(section):
-                config.set(section, opt, self.options[fulloption])
-        with open(self.config_path, 'wb') as configfile:
-            config.write(configfile)
 
     def _create_startup_script(self, ws):
         """Return startup_script content

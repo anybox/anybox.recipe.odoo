@@ -1,5 +1,9 @@
 Changes
 ~~~~~~~
+0.5 (10-08-2011)
+----------------
+
+ - Use dotted notation to add openerp options in the generated configs
 
 0.4 (09-08-2011)
 ----------------
