@@ -1,0 +1,6 @@
+TODO
+====
+
+ - manage upgrade cases correctly
+ - development versions
+ - easy upgrade of dev versions
