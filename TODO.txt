@@ -1,6 +1,8 @@
 TODO
 ====
 
- - manage upgrade cases correctly
+ - manage upgrade cases without keeping old root_path
  - development versions
  - easy upgrade of dev versions
+ - fix the webclient conf rewrite each time
+ - rewrite the etc conf each time on install
