@@ -7,3 +7,4 @@ TODO
  - fix the webclient conf rewrite each time
  - rewrite the etc conf each time on install
  - missing deps for the gtk client (hippocanvas)
+ - missing _thread error on py2.7
