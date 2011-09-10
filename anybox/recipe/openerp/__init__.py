@@ -53,24 +53,26 @@ class Base(object):
         # ugly method to extract requirements
         os.chdir(self.openerp_dir)
         old_setup = setuptools.setup
-        requirements = []
         def new_setup(*args, **kw):
-            requirements.extend(kw['install_requires'])
+            self.requirements.extend(kw['install_requires'])
         setuptools.setup = new_setup
         sys.path.insert(0, '.')
         with open(join(self.openerp_dir,'setup.py'), 'rb') as f:
             try:
                 imp.load_module('setup', f, 'setup.py', ('.py', 'r', imp.PY_SOURCE))
             except SystemExit, e:
-                raise EnvironmentError('Problem while reading openerp setup.py: ' + e.message)
+                if 'dsextras' in e.message:
+                    logger.info('Please first install PyGObject and PyGTK !')
+                else:
+                    raise EnvironmentError('Problem while reading openerp setup.py: ' + e.message)
         _ = sys.path.pop(0)
         setuptools.setup = old_setup
 
         # install requirements and scripts
         if 'eggs' not in self.options:
-            self.options['eggs'] = '\n'.join(requirements)
+            self.options['eggs'] = '\n'.join(self.requirements)
         else:
-            self.options['eggs'] += '\n' + '\n'.join(requirements)
+            self.options['eggs'] += '\n' + '\n'.join(self.requirements)
         eggs = zc.recipe.egg.Scripts(self.buildout, '', self.options)
         ws = eggs.install()
         _, ws = eggs.working_set()
@@ -118,15 +120,16 @@ class Server(Base):
     """Recipe for server install and config
     """
     archive_filename = 'openerp-server-%s.tar.gz'
+    requirements = []
 
     def _create_config(self):
         """Create and modify the config file
         """
         # create config file
-        if not os.path.exists(self.config_path):
-            logger.info('Creating config file: ' + basename(self.config_path))
-            subprocess.check_call([
-                self.script_path, '--stop-after-init', '-s'])
+        os.remove(self.config_path)
+        logger.info('Creating config file: ' + basename(self.config_path))
+        subprocess.check_call([
+            self.script_path, '--stop-after-init', '-s'])
 
     def _create_startup_script(self, ws):
         """Return startup_script content
@@ -148,9 +151,11 @@ class WebClient(Base):
     """Recipe for web client install and config
     """
     archive_filename = 'openerp-web-%s.tar.gz'
+    requirements = []
 
     def _create_config(self):
         # create config file
+        os.remove(self.config_path)
         logger.info('Creating config file: ' + basename(self.config_path))
         shutil.copyfile(join(self.openerp_dir, 'doc', 'openerp-web.cfg'),
                         self.config_path)
@@ -175,12 +180,13 @@ class GtkClient(Base):
     """Recipe for gtk client and config
     """
     archive_filename = 'openerp-client-%s.tar.gz'
+    requirements = []
 
     def _create_config(self):
         # create config file
-        if not os.path.exists(self.config_path):
-            logger.info('Creating config file: ' + basename(self.config_path))
-            subprocess.check_call([self.script_path])
+        os.remove(self.config_path)
+        logger.info('Creating config file: ' + basename(self.config_path))
+        subprocess.check_call([self.script_path])
 
     def _create_startup_script(self, ws):
         """Return startup_script content
