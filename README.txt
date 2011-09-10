@@ -85,11 +85,11 @@ The simplest possible buildout for a server + web client is::
 
     [openerp]
     recipe = anybox.recipe.openerp:server
-    version = 6.0.2
+    version = 6.0.3
 
     [web]
     recipe = anybox.recipe.openerp:webclient
-    version = 6.0.2
+    version = 6.0.3
 
 A more complex and robust buildout with versions specification, 2 OpenERP servers
 using only NETRPC and listening on 2 different ports, and 2 web clients ::
@@ -103,25 +103,25 @@ using only NETRPC and listening on 2 different ports, and 2 web clients ::
     [openerp1]
     recipe = anybox.recipe.openerp:server
     eggs = PIL
-    version = 6.0.2
+    version = 6.0.3
     options.xmlrpc = False
     options.xmlrpcs = False
     
     [web1]
     recipe = anybox.recipe.openerp:webclient
-    version = 6.0.2
+    version = 6.0.3
     
     [openerp2]
     recipe = anybox.recipe.openerp:server
     eggs = PIL
-    version = 6.0.2
+    version = 6.0.3
     options.xmlrpc = False
     options.xmlrpcs = False
     options.netrpc_port = 8170
     
     [web2]
     recipe = anybox.recipe.openerp:webclient
-    version = 6.0.2
+    version = 6.0.3
     global.openerp.server.port = '8170'
     global.server.socket_port = 8180
     
@@ -151,7 +151,6 @@ using only NETRPC and listening on 2 different ports, and 2 web clients ::
     z3c.recipe.scripts = 1.0.1
     zc.buildout = 1.5.2
     zc.recipe.egg = 1.3.2
-    openerp-web = 6.0.2
     Babel = 0.9.6
     FormEncode = 1.2.4
     simplejson = 2.1.6
