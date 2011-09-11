@@ -75,23 +75,10 @@ configure several OpenERP servers or clients. You can pass additional typical
 arguments to the server via the startup script, such as -i or -u options.
 
 
-Example buildouts:
-~~~~~~~~~~~~~~~~~~
+Example buildout:
+~~~~~~~~~~~~~~~~~
 
-The simplest possible buildout for a server + web client is::
-
-    [buildout]
-    parts = openerp web
-
-    [openerp]
-    recipe = anybox.recipe.openerp:server
-    version = 6.0.3
-
-    [web]
-    recipe = anybox.recipe.openerp:webclient
-    version = 6.0.3
-
-A more complex and robust buildout with versions specification, 2 OpenERP servers
+Here is a sample buildout with versions specification, 2 OpenERP servers
 using only NETRPC and listening on 2 different ports, and 2 web clients ::
 
     [buildout]
