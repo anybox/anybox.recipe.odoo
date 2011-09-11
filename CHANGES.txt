@@ -6,7 +6,8 @@ Changes
 
  - Overwrite config files each time
  - Make the "dsextras" error more explicit (install PyGObject and PyGTK)
- - 
+ - fixed some deps
+ - improved the doc
 
 0.5 (10-08-2011)
 ----------------
