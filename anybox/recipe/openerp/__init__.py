@@ -92,6 +92,9 @@ class Base(object):
         installed.append(self.script_path)
 
         # create the config file
+        if os.path.exists(self.config_path):
+            os.remove(self.config_path)
+        logger.info('Creating config file: ' + join(basename(self.etc), basename(self.config_path)))
         self._create_config()
 
         # modify config file according to recipe options
@@ -125,10 +128,6 @@ class Server(Base):
     def _create_config(self):
         """Create and modify the config file
         """
-        # create config file
-        if os.path.exists(self.config_path):
-            os.remove(self.config_path)
-        logger.info('Creating config file: ' + basename(self.config_path))
         subprocess.check_call([
             self.script_path, '--stop-after-init', '-s'])
 
@@ -155,10 +154,6 @@ class WebClient(Base):
     requirements = ['setuptools']
 
     def _create_config(self):
-        # create config file
-        if os.path.exists(self.config_path):
-            os.remove(self.config_path)
-        logger.info('Creating config file: ' + basename(self.config_path))
         shutil.copyfile(join(self.openerp_dir, 'doc', 'openerp-web.cfg'),
                         self.config_path)
 
@@ -185,10 +180,6 @@ class GtkClient(Base):
     requirements = []
 
     def _create_config(self):
-        # create config file
-        if os.path.exists(self.config_path):
-            os.remove(self.config_path)
-        logger.info('Creating config file: ' + basename(self.config_path))
         subprocess.check_call([self.script_path])
 
     def _create_startup_script(self, ws):
