@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
-version = 0.6
+version = 0.7
 
 setup(
     name = "anybox.recipe.openerp",
     version = version,
     author="Christophe Combelles",
-    author_email="ccomb@free.fr",
+    author_email="ccomb@anybox.fr",
     description="A buildout recipe to install and configure OpenERP",
     license="ZPL",
     long_description=open('README.txt').read() + open('CHANGES.txt').read(),

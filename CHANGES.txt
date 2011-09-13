@@ -1,6 +1,11 @@
 Changes
 ~~~~~~~
 
+0.7 (14-09-2011)
+----------------
+
+- handle new sections in openerp config
+
 0.6 (11-09-2011)
 ----------------
 

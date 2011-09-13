@@ -97,13 +97,15 @@ class Base(object):
         logger.info('Creating config file: ' + join(basename(self.etc), basename(self.config_path)))
         self._create_config()
 
-        # modify config file according to recipe options
+        # modify the config file according to recipe options
         config = ConfigParser.SafeConfigParser()
         config.read(self.config_path)
         for recipe_option in self.options:
             if '.' not in recipe_option:
                 continue
             section, option = recipe_option.split('.', 1)
+            if not config.has_section(section):
+                config.add_section(section)
             config.set(section, option, self.options[recipe_option])
         with open(self.config_path, 'wb') as configfile:
             config.write(configfile)
