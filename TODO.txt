@@ -1,7 +1,7 @@
 TODO
 ====
 
- - development versions
+ - easy development versions or specific custom branch
  - easy upgrade of dev versions
  - missing deps for the gtk client (hippocanvas)
  - missing _thread error on py2.7
