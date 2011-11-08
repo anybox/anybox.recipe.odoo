@@ -120,7 +120,7 @@ using only NETRPC and listening on 2 different ports, and 2 web clients ::
     caldav = 0.1.10
     collective.recipe.cmd = 0.5
     coverage = 3.5
-    distribute = 0.6.21
+    distribute = 0.6.24
     feedparser = 5.0.1
     lxml = 2.1.5
     mako = 0.4.2

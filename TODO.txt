@@ -1,6 +1,7 @@
 TODO
 ====
 
+ - add base server addons (9 modules missing). Understand why they are missing.
  - easy development versions or specific custom branch
  - easy upgrade of dev versions
  - missing deps for the gtk client (hippocanvas)
