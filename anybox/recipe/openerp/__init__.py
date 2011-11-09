@@ -1,6 +1,5 @@
 # coding: utf-8
 from os.path import join, basename
-from zc.buildout.easy_install import install
 import os, sys, urllib, tarfile, setuptools, logging, stat, imp, shutil
 import subprocess
 import ConfigParser
