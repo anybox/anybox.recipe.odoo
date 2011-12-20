@@ -16,19 +16,34 @@ class Base(object):
     def __init__(self, buildout, name, options):
         self.buildout, self.name, self.options = buildout, name, options
         self.buildout_dir = self.buildout['buildout']['directory']
-        self.version = self.options['version']
-        self.parts = self.buildout['buildout']['parts-directory']
-        self.archive = self.archive_filename % self.version
         self.downloads = join(self.buildout_dir, 'downloads')
-        self.archive_path = join(self.downloads, self.archive)
-        self.url = DOWNLOAD_URL + self.archive
-        self.openerp_dir = join(self.parts, self.archive.replace('.tar.gz', ''))
+        self.version = None
+        self.parts = self.buildout['buildout']['parts-directory']
+
+        if 'version' in self.options:
+            self.version = self.options['version']
+            self.type = 'official'
+            self.archive = self.archive_filename % self.version
+            self.archive_path = join(self.downloads, self.archive)
+            self.url = DOWNLOAD_URL + self.archive
+        if 'url' in self.options:
+            self.type = 'personal'
+            self.url = self.options['url']
+            # handle bzr branches
+            if self.url.startswith('bzr+'):
+                self.type = 'bzr'
+                self.url = self.url[4:]
+            self.archive = self.name + '_' + self.url.split('/')[-1]
+        if 'url' not in self.options and 'version' not in self.options:
+            raise Exception('You must specify either the version or url')
+        
+        self.openerp_dir = join(self.parts, self.archive)
+        if self.type in ['official', 'personal']:
+            self.openerp_dir = self.openerp_dir.replace('.tar.gz', '')
+
         self.etc = join(self.buildout_dir, 'etc')
         self.bin_dir = self.buildout['buildout']['bin-directory']
         self.config_path = join(self.etc, self.name + '.cfg')
-        if 'url' in self.options:
-            self.url = self.options['url']
-            self.archive = self.url.split('/')[-1]
         for d in self.downloads, self.etc:
             if not os.path.exists(d):
                 logger.info('Created %s/ directory' % basename(d))
@@ -38,16 +53,35 @@ class Base(object):
         installed = []
         os.chdir(self.parts)
 
-        # download and extract
-        if not os.path.exists(self.archive_path):
-            logger.info("Downloading...")
-            urllib.urlretrieve(self.url, self.archive_path)
+        if self.type in ['official', 'personal']:
+            # download and extract
+            if not os.path.exists(self.archive_path):
+                logger.info("Downloading %s ..." % self.url)
+                urllib.urlretrieve(self.url, self.archive_path)
+    
+            if not os.path.exists(self.openerp_dir):
+                logger.info(u'Extracting to %s ...' % self.openerp_dir)
+                tar = tarfile.open(self.archive_path)
+                tar.extractall()
+                tar.close()
+        elif self.type == 'bzr':
+            revision = ''
+            if self.version is not None:
+                revision = "-r %s" % self.version
+            if not os.path.exists(self.openerp_dir):
+                cwd = os.getcwd()
+                os.chdir(self.parts)
+                logger.info("Branching %s ..." % self.url)
+                subprocess.call('bzr branch --stacked %s %s %s' % (revision, self.url, self.archive), shell=True)
+                os.chdir(cwd)
+            else:
+                cwd = os.getcwd()
+                os.chdir(self.openerp_dir)
+                logger.info("Updating branch ...")
+                subprocess.call('bzr pull %s' % revision, shell=True)
+                subprocess.call('bzr up %s' % revision, shell=True)
+                os.chdir(cwd)
 
-        if not os.path.exists(self.openerp_dir):
-            logger.info(u'Extracting...')
-            tar = tarfile.open(self.archive_path)
-            tar.extractall()
-            tar.close()
 
         # ugly method to extract requirements
         os.chdir(self.openerp_dir)

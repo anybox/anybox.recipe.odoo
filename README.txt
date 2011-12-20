@@ -25,8 +25,10 @@ specific options
 
 It also adds a few specific options :
 
- * **version**: specify the version of OpenERP (server, web client or gtk client)
- * **url** : specify the direct download url for the server or client archive.
+ * **version**: specify the version of OpenERP (server, web client or gtk client),
+   or the specific revision in case `url` points to a bzr branch
+ * **url** : specify the direct download url for the server or client archive,
+   or specify the url of a custom bzr branch.
    This option overrides the version specification
  * **script_name**: specify the name of the startup script to generate
 

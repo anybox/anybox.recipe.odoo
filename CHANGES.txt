@@ -1,6 +1,11 @@
 Changes
 ~~~~~~~
 
+0.8 (20-12-2011)
+----------------
+
+- handle deploying custom bzr branches
+
 0.7 (14-09-2011)
 ----------------
 
