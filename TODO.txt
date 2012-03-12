@@ -2,8 +2,9 @@ TODO
 ====
 
  - add base server addons (9 modules missing). Understand why they are missing.
- - easy development versions or specific custom branch
- - easy upgrade of dev versions
+ - easy development versions or specific custom branch (GR: done ?)
+ - easy upgrade of dev versions (GR: done ?)
  - missing deps for the gtk client (hippocanvas)
  - missing _thread error on py2.7
  - allow a different DOWNLOAD_URL
+ - honor offline option (-o) in new auto update capability for addons
