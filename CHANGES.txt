@@ -1,6 +1,15 @@
 Changes
 ~~~~~~~
 
+0.9 (unreleased)
+----------------
+
+- Support OpenERP 6.1 and 6.0
+- Added an 'addons' option allowing remote repositories and local directories
+- Improved error messages
+- Updated the documentation
+- Handle bad babel import in setup.py
+
 0.8 (20-12-2011)
 ----------------
 
