@@ -229,7 +229,7 @@ class Base(object):
         self._create_default_config()
 
         # modify the config file according to recipe options
-        config = ConfigParser.SafeConfigParser()
+        config = ConfigParser.RawConfigParser()
         config.read(self.config_path)
         for recipe_option in self.options:
             if '.' not in recipe_option:
