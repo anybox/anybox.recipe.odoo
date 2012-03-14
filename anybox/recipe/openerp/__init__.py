@@ -156,7 +156,7 @@ class Base(object):
             addons_paths = ','.join(addons_paths)
             if 'options.addons_path' not in self.options:
                 self.options['options.addons_path'] = ''
-            self.options['options.addons_path'] += join(self.openerp_dir, 'bin', 'addons')
+            self.options['options.addons_path'] += join(self.openerp_dir, 'bin', 'addons') + ','
             self.options['options.addons_path'] += addons_paths
 
         # ugly method to extract requirements from ugly setup.py of 6.0,
