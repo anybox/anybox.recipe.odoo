@@ -11,6 +11,24 @@ DOWNLOAD_URL = { '6.0': 'http://www.openerp.com/download/stable/source/',
                  '6.1': 'http://nightly.openerp.com/6.1/releases/'
                 }
 
+class WorkingDirectoryKeeper(object):
+    """A context manager to get back the working directory as it was before."""
+
+    active = False
+
+    def __enter__(self):
+        if self.active:
+            raise RuntimeError("Already in a working directory keeper !")
+        self.wd = os.getcwd()
+        self.active = True
+
+    def __exit__(self, *exc_args):
+        os.chdir(self.wd)
+        self.active = False
+
+working_directory_keeper = WorkingDirectoryKeeper()
+
+
 class Base(object):
     """Base class for other recipes
     """
@@ -71,6 +89,34 @@ class Base(object):
                 logger.info('Created %s/ directory' % basename(d))
                 os.mkdir(d)
 
+    def bzr_get_update(self, target_dir, url, revision):
+        """Ensure that target_dir is a branch of url at specified revision.
+
+        If target_dir already exists, does a simple pull.
+        Offline-mode: no branch nor pull, but update.
+        """
+        rev_str = revision and '-r ' + revision or ''
+
+        with working_directory_keeper:
+            if not os.path.exists(target_dir):
+                # TODO case of local url ?
+                if self.offline:
+                    raise IOError("bzr branch %s does not exist; cannot branch it from %s (offline mode)" % (target_dir, url))
+
+                os.chdir(os.path.split(target_dir)[0])
+                logger.info("Branching %s ...", url)
+                subprocess.call('bzr branch --stacked %s %s %s' % (
+                        rev_str, url, target_dir), shell=True)
+            else:
+                os.chdir(target_dir)
+                # TODO what if bzr source is actually local fs ?
+                if not self.offline:
+                    logger.info("Pull for branch %s ...", target_dir)
+                    subprocess.call('bzr pull', shell=True)
+                if revision:
+                    logger.info("Update to revision %s", revision)
+                    subprocess.call('bzr up %s' % rev_str, shell=True)
+
     def install(self):
         installed = []
         os.chdir(self.parts)
@@ -96,25 +142,7 @@ class Base(object):
                 tar.extractall()
                 tar.close()
         elif self.type == 'bzr':
-            revision = ''
-            if self.version_wanted is not None:
-                revision = "-r %s" % self.version_wanted
-            if not os.path.exists(self.openerp_dir):
-                if self.offline:
-                    raise IOError("bzr target %s not available, and running in offline mode")
-                cwd = os.getcwd()
-                os.chdir(self.parts)
-                logger.info("Branching %s ..." % self.url)
-                subprocess.call('bzr branch --stacked %s %s %s' % (revision, self.url, self.archive), shell=True)
-                os.chdir(cwd)
-            else:
-                cwd = os.getcwd()
-                os.chdir(self.openerp_dir)
-                logger.info("Updating branch ...")
-                if not self.offline:
-                    subprocess.call('bzr pull %s' % revision, shell=True)
-                subprocess.call('bzr up %s' % revision, shell=True)
-                os.chdir(cwd)
+            self.bzr_get_update(self.openerp_dir, self.url, self.version_wanted)
 
         # install addons
         # syntax: repo_type repo_url repo_dir revisionspec
