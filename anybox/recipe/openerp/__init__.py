@@ -154,12 +154,9 @@ class Base(object):
                 cwd = os.getcwd()
                 if repo_type == 'bzr':
                     repo_type, repo_url, repo_dir, revisionspec = line.split()
-                    repo_dir = join(self.buildout_dir, repo_dir)
-                    if not os.path.exists(repo_dir):
-                        subprocess.call('bzr branch --stacked -r %s %s %s' % (revisionspec, repo_url, repo_dir), shell=True)
-                    else:
-                        os.chdir(repo_dir)
-                        subprocess.call('bzr pull -r %s %s' % (revisionspec, repo_url), shell=True)
+                    self.bzr_get_update(join(self.buildout_dir, repo_dir),
+                                        repo_url, revisionspec)
+
                 elif repo_type == 'hg':
                     repo_type, repo_url, repo_dir, revisionspec = line.split()
                     repo_dir = join(self.buildout_dir, repo_dir)
