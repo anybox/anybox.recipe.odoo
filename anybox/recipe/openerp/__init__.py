@@ -54,7 +54,7 @@ class Base(object):
             self.archive = self.name + '_' + self.url.strip('/').split('/')[-1]
         if 'url' not in self.options and 'version' not in self.options:
             raise Exception('You must specify either the version or url')
-        
+
         self.openerp_dir = join(self.parts, self.archive)
         if self.type in ['official', 'personal']:
             self.openerp_dir = self.openerp_dir.replace('.tar.gz', '')
@@ -80,7 +80,7 @@ class Base(object):
                 if msg[1].type == 'text/html':
                     os.unlink(self.archive_path)
                     raise IOError('Wanted version was not found: %s' % self.url)
-    
+
             if not os.path.exists(self.openerp_dir):
                 logger.info(u'Extracting to %s ...' % self.openerp_dir)
                 try:
