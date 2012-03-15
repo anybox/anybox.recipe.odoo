@@ -17,7 +17,11 @@ class Base(object):
 
     def __init__(self, buildout, name, options):
         self.buildout, self.name, self.options = buildout, name, options
-        self.buildout_dir = self.buildout['buildout']['directory']
+        self.b_options = self.buildout['buildout']
+        self.buildout_dir = self.b_options['directory']
+        # GR: would prefer lower() but doing as in 'zc.recipe.egg'
+        self.offline = self.b_options['offline'] == 'true'
+
         self.downloads_dir = join(self.buildout_dir, 'downloads')
         self.version_wanted = None  # from the buildout
         self.version_detected = None  # from the openerp setup.py
@@ -75,6 +79,8 @@ class Base(object):
         if self.type in ['official', 'personal']:
             # download and extract
             if not os.path.exists(self.archive_path):
+                if self.offline:
+                    raise IOError("%s not found, and offline mode requested" % self.archive_path)
                 logger.info("Downloading %s ..." % self.url)
                 msg = urllib.urlretrieve(self.url, self.archive_path)
                 if msg[1].type == 'text/html':
@@ -94,6 +100,8 @@ class Base(object):
             if self.version_wanted is not None:
                 revision = "-r %s" % self.version_wanted
             if not os.path.exists(self.openerp_dir):
+                if self.offline:
+                    raise IOError("bzr target %s not available, and running in offline mode")
                 cwd = os.getcwd()
                 os.chdir(self.parts)
                 logger.info("Branching %s ..." % self.url)
@@ -103,7 +111,8 @@ class Base(object):
                 cwd = os.getcwd()
                 os.chdir(self.openerp_dir)
                 logger.info("Updating branch ...")
-                subprocess.call('bzr pull %s' % revision, shell=True)
+                if not self.offline:
+                    subprocess.call('bzr pull %s' % revision, shell=True)
                 subprocess.call('bzr up %s' % revision, shell=True)
                 os.chdir(cwd)
 
