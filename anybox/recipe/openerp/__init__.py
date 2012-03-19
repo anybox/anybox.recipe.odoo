@@ -204,9 +204,12 @@ class Base(object):
                         "Offline mode: keeping checkout %s in its current rev",
                         target_dir)
                 else:
-                    logger.info("Updating %s to revision %s...",
-                                target_dir, revision)
-                    subprocess.call('svn up %s %s' % (url, rev_str),
+                    logger.info("Updating %s to location %s, revision %s...",
+                                target_dir, url, revision)
+                    # switch is necessary in order to move in tags
+                    # TODO support also change of svn root url
+                    subprocess.call('svn switch %s' % url, shell=True)
+                    subprocess.call('svn up %s' % rev_str,
                                     shell=True)
 
     def install(self):
