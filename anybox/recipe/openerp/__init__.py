@@ -253,8 +253,8 @@ class Base(object):
 
                 if vcs_method is not None:
                     repo_url, repo_dir, revisionspec = line.split()[1:]
-                    vcs_method(join(self.buildout_dir, repo_dir),
-                               repo_url, revisionspec)
+                    repo_dir = join(self.buildout_dir, repo_dir)
+                    vcs_method(repo_dir, repo_url, revisionspec)
                 elif os.path.isabs(repo_type):
                     repo_dir = repo_type
                 else:
