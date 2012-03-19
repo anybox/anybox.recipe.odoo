@@ -117,6 +117,98 @@ class Base(object):
                     logger.info("Update to revision %s", revision)
                     subprocess.call('bzr up %s' % rev_str, shell=True)
 
+
+    def hg_get_update(self, target_dir, url, revision):
+        """Ensure that target_dir is a branch of url at specified revision.
+
+        If target_dir already exists, does a simple pull.
+        Offline-mode: no branch nor pull, but update.
+        """
+        rev_str = revision and '-r ' + revision or ''
+
+        with working_directory_keeper:
+            if not os.path.exists(target_dir):
+                # TODO case of local url ?
+                if self.offline:
+                    raise IOError("hg repository %s does not exist; cannot clone it from %s (offline mode)" % (target_dir, url))
+
+                os.chdir(os.path.split(target_dir)[0])
+                logger.info("CLoning %s ...", url)
+                subprocess.call('hg clone %s %s %s' % (
+                        rev_str, url, target_dir), shell=True)
+            else:
+                os.chdir(target_dir)
+                # TODO what if remote repo is actually local fs ?
+                if not self.offline:
+                    logger.info("Pull for hg repo %s ...", target_dir)
+                    subprocess.call('hg pull', shell=True)
+                if revision:
+                    logger.info("Updating %s to revision %s",
+                                target_dir, revision)
+                    subprocess.call('hg up %s' % rev_str, shell=True)
+
+    def git_get_update(self, target_dir, url, revision):
+        """Ensure that target_dir is a branch of url at specified revision.
+
+        If target_dir already exists, does a simple pull.
+        Offline-mode: no branch nor pull, but update.
+        """
+        rev_str = revision
+
+        with working_directory_keeper:
+            if not os.path.exists(target_dir):
+                # TODO case of local url ?
+                if self.offline:
+                    raise IOError("git repository %s does not exist; cannot clone it from %s (offline mode)" % (target_dir, url))
+
+                os.chdir(os.path.split(target_dir)[0])
+                logger.info("CLoning %s ...", url)
+                subprocess.call('git clone -b %s %s %s' % (
+                        rev_str, url, target_dir), shell=True)
+            else:
+                os.chdir(target_dir)
+                # TODO what if remote repo is actually local fs ?
+                if not self.offline:
+                    logger.info("Pull for git repo %s (rev %s)...",
+                                target_dir, rev_str)
+                    subprocess.call('git pull %s %s' % (url, rev_str),
+                                    shell=True)
+                elif revision:
+                    logger.info("Checkout %s to revision %s",
+                                target_dir,revision)
+                    subprocess.call('git checkout %s' % rev_str, shell=True)
+
+    def svn_get_update(self, target_dir, url, revision):
+        """Ensure that target_dir is a branch of url at specified revision.
+
+        If target_dir already exists, does a simple pull.
+        Offline-mode: no branch nor pull, but update.
+        """
+        rev_str = revision and '-r ' + revision or ''
+
+        with working_directory_keeper:
+            if not os.path.exists(target_dir):
+                # TODO case of local url ?
+                if self.offline:
+                    raise IOError("svn checkout %s does not exist; cannot checkout  from %s (offline mode)" % (target_dir, url))
+
+                os.chdir(os.path.split(target_dir)[0])
+                logger.info("Checkouting %s ...", url)
+                subprocess.call('svn checkout %s %s %s' % (
+                        rev_str, url, target_dir), shell=True)
+            else:
+                os.chdir(target_dir)
+                # TODO what if remote repo is actually local fs ?
+                if self.offline:
+                    logger.warning(
+                        "Offline mode: keeping checkout %s in its current rev",
+                        target_dir)
+                else:
+                    logger.info("Updating %s to revision %s...",
+                                target_dir, revision)
+                    subprocess.call('svn up %s %s' % (url, rev_str),
+                                    shell=True)
+
     def install(self):
         installed = []
         os.chdir(self.parts)
@@ -149,43 +241,25 @@ class Base(object):
         #         or an absolute or relative path
         if self.addons:
             addons_paths = []
+            vcs_methods = dict(
+                bzr=self.bzr_get_update,
+                svn=self.svn_get_update,
+                hg=self.hg_get_update,
+                git=self.git_get_update)
+
             for line in self.addons.split('\n'):
                 repo_type = line.split()[0]
-                cwd = os.getcwd()
-                if repo_type == 'bzr':
-                    repo_type, repo_url, repo_dir, revisionspec = line.split()
-                    self.bzr_get_update(join(self.buildout_dir, repo_dir),
-                                        repo_url, revisionspec)
+                vcs_method = vcs_methods.get(repo_type)
 
-                elif repo_type == 'hg':
-                    repo_type, repo_url, repo_dir, revisionspec = line.split()
-                    repo_dir = join(self.buildout_dir, repo_dir)
-                    if not os.path.exists(repo_dir):
-                        subprocess.call('hg clone -u %s %s %s' % (revisionspec, repo_url, repo_dir), shell=True)
-                    else:
-                        os.chdir(repo_dir)
-                        subprocess.call('hg pull -u -r %s %s' % (revisionspec, repo_url), shell=True)
-                elif repo_type == 'git':
-                    repo_type, repo_url, repo_dir, revisionspec = line.split()
-                    repo_dir = join(self.buildout_dir, repo_dir)
-                    if not os.path.exists(repo_dir):
-                        subprocess.call('git clone -b %s %s %s' % (revisionspec, repo_url, repo_dir), shell=True)
-                    else:
-                        os.chdir(repo_dir)
-                        subprocess.call('git pull %s %s' % (repo_url, revisionspec), shell=True)
-                elif repo_type == 'svn':
-                    repo_type, repo_url, repo_dir, revisionspec = line.split()
-                    repo_dir = join(self.buildout_dir, repo_dir)
-                    if not os.path.exists(repo_dir):
-                        subprocess.call('svn co -r %s %s %s' % (revisionspec, repo_url, repo_dir), shell=True)
-                    else:
-                        os.chdir(repo_dir)
-                        subprocess.call('svn up -r %s %s' % (revisionspec, repo_url), shell=True)
-                elif repo_type.startswith('/'):
+                if vcs_method is not None:
+                    repo_url, repo_dir, revisionspec = line.split()[1:]
+                    vcs_method(join(self.buildout_dir, repo_dir),
+                               repo_url, revisionspec)
+                elif os.path.isabs(repo_type):
                     repo_dir = repo_type
                 else:
                     repo_dir = join(self.buildout_dir, repo_type)
-                os.chdir(cwd)
+
                 addons_paths.append(repo_dir)
             addons_paths = ','.join(addons_paths)
             if 'options.addons_path' not in self.options:
