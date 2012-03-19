@@ -248,7 +248,7 @@ class Base(object):
                 git=self.git_get_update)
 
             for line in self.addons.split('\n'):
-                repo_type = line.split()[0]
+                repo_type = line.split()[0] # may also be a path
                 vcs_method = vcs_methods.get(repo_type)
 
                 if vcs_method is not None:
@@ -259,6 +259,9 @@ class Base(object):
                     repo_dir = repo_type
                 else:
                     repo_dir = join(self.buildout_dir, repo_type)
+
+                assert os.path.isdir(repo_dir), (
+                    "Not a directory: %r (aborting)" % repo_dir)
 
                 addons_paths.append(repo_dir)
             addons_paths = ','.join(addons_paths)
