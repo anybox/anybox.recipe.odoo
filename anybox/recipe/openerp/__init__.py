@@ -1,6 +1,6 @@
 # coding: utf-8
 from os.path import join, basename
-import os, sys, urllib, tarfile, setuptools, logging, stat, imp
+import os, sys, urllib, tarfile, setuptools, logging, stat, imp, shutil
 import subprocess
 import ConfigParser
 import zc.recipe.egg
@@ -29,7 +29,7 @@ class WorkingDirectoryKeeper(object):
 working_directory_keeper = WorkingDirectoryKeeper()
 
 
-class Base(object):
+class BaseRecipe(object):
     """Base class for other recipes
     """
 
@@ -46,40 +46,9 @@ class Base(object):
         self.parts = self.buildout['buildout']['parts-directory']
         self.addons = self.options.get('addons')
         self.openerp_dir = None
-
-        # set other variables depending on provided version or url
-        if 'version' in self.options:
-            self.version_wanted = self.options['version']
-
-            # correct an assumed 6.1 version
-            if self.version_wanted == '6.1':
-                logger.warn('Version 6.1 does not exist. Assuming 6.1-1')
-                self.version_wanted = '6.1-1'
-
-            # Unsupported versions
-            if self.version_wanted[:3] not in DOWNLOAD_URL.keys():
-                raise Exception('OpenERP version %s is not supported' % self.version_wanted)
-
-            self.type = 'official'
-            if 'url' not in self.options:
-                self.archive = self.archive_filename[self.version_wanted[:3]] % self.version_wanted
-                self.archive_path = join(self.downloads_dir, self.archive)
-                self.url = DOWNLOAD_URL[self.version_wanted[:3]] + self.archive
-
-        if 'url' in self.options:
-            self.type = 'personal'
-            self.url = self.options['url']
-            # handle bzr branches
-            if self.url.startswith('bzr+'):
-                self.type = 'bzr'
-                self.url = self.url[4:]
-            self.archive = self.name + '_' + self.url.strip('/').split('/')[-1]
-        if 'url' not in self.options and 'version' not in self.options:
-            raise Exception('You must specify either the version or url')
-
-        self.openerp_dir = join(self.parts, self.archive)
-        if self.type in ['official', 'personal']:
-            self.openerp_dir = self.openerp_dir.replace('.tar.gz', '')
+        self.url = None
+        self.archive_filename = None
+        self.archive_path = None # downloaded tar.gz
 
         self.etc = join(self.buildout_dir, 'etc')
         self.bin_dir = self.buildout['buildout']['bin-directory']
@@ -88,6 +57,38 @@ class Base(object):
             if not os.path.exists(d):
                 logger.info('Created %s/ directory' % basename(d))
                 os.mkdir(d)
+
+        if 'version' not in self.options:
+            raise Exception('You must specify the version')
+                
+        # set variables depending on provided version or url
+        self.version_wanted = self.options['version']
+
+        # correct an assumed 6.1 version
+        if self.version_wanted == '6.1':
+            logger.warn('Version 6.1 does not exist. Assuming 6.1-1')
+            self.version_wanted = '6.1-1'
+
+        # downloadable version, or local path
+        version_split = self.version_wanted.split()
+        if len(version_split) == 1:
+            if not os.path.exists(self.version_wanted):
+                # Unsupported versions
+                if self.version_wanted[:3] not in DOWNLOAD_URL.keys():
+                    raise Exception('OpenERP version %s is not supported' % self.version_wanted)
+                self.type = 'downloadable'
+                self.archive_filename = self.archive_filenames[self.version_wanted[:3]] % self.version_wanted
+                self.archive_path = join(self.downloads_dir, self.archive_filename)
+                self.url = DOWNLOAD_URL[self.version_wanted[:3]] + self.archive_filename
+            else:
+                self.type = 'local'
+                self.openerp_dir = self.version_wanted
+
+        # remote repository
+        if len(version_split) == 4:
+            self.type, self.url, repo_dir, self.version_wanted = version_split
+            self.openerp_dir = join(self.parts, repo_dir)
+
 
     def bzr_get_update(self, target_dir, url, revision):
         """Ensure that target_dir is a branch of url at specified revision.
@@ -216,10 +217,11 @@ class Base(object):
         installed = []
         os.chdir(self.parts)
 
-        # install server
-        if self.type in ['official', 'personal']:
+        # install server, webclient or gtkclient
+        logger.info('Selected install type: %s', self.type)
+        if self.type == 'downloadable':
             # download and extract
-            if not os.path.exists(self.archive_path):
+            if self.archive_path and not os.path.exists(self.archive_path):
                 if self.offline:
                     raise IOError("%s not found, and offline mode requested" % self.archive_path)
                 logger.info("Downloading %s ..." % self.url)
@@ -228,36 +230,36 @@ class Base(object):
                     os.unlink(self.archive_path)
                     raise IOError('Wanted version was not found: %s' % self.url)
 
-            if not os.path.exists(self.openerp_dir):
-                logger.info(u'Extracting to %s ...' % self.openerp_dir)
-                try:
-                    tar = tarfile.open(self.archive_path)
-                except:
-                    raise IOError('The downloaded archive does not seem valid: %s' % self.archive_path)
+            try:
+                logger.info(u'Inspecting %s ...' % self.archive_path)
+                tar = tarfile.open(self.archive_path)
+                extracted_name = set([name.split(os.path.sep)[0] for name in tar.getnames()]).pop()
+                self.openerp_dir = join(self.parts, extracted_name)
+            except:
+                raise IOError('The downloaded archive does not seem valid: %s' % self.archive_path)
+            if self.openerp_dir and not os.path.exists(self.openerp_dir):
+                logger.info(u'Extracting %s ...' % self.archive_path)
                 tar.extractall()
-                tar.close()
-        elif self.type == 'bzr':
-            self.bzr_get_update(self.openerp_dir, self.url, self.version_wanted)
+            tar.close()
+        elif self.type == 'local':
+            logger.info('Local directory chosen, nothing to do')
+        elif self.type in ('bzr', 'hg', 'git', 'svn'):
+            vcs_method = getattr(self, '%s_get_update' % self.type, None)
+            vcs_method(self.openerp_dir, self.url, self.version_wanted)
 
         # install addons
-        # syntax: repo_type repo_url repo_dir revisionspec
+        # syntax: repo_type repo_url repo_dir repo_rev
         #         or an absolute or relative path
         if self.addons:
             addons_paths = []
-            vcs_methods = dict(
-                bzr=self.bzr_get_update,
-                svn=self.svn_get_update,
-                hg=self.hg_get_update,
-                git=self.git_get_update)
 
             for line in self.addons.split('\n'):
                 repo_type = line.split()[0] # may also be a path
-                vcs_method = vcs_methods.get(repo_type)
-
+                vcs_method = getattr(self, '%s_get_update' % repo_type, None)
                 if vcs_method is not None:
-                    repo_url, repo_dir, revisionspec = line.split()[1:]
+                    repo_url, repo_dir, repo_rev = line.split()[1:]
                     repo_dir = join(self.buildout_dir, repo_dir)
-                    vcs_method(repo_dir, repo_url, revisionspec)
+                    vcs_method(repo_dir, repo_url, repo_rev)
                 elif os.path.isabs(repo_type):
                     repo_dir = repo_type
                 else:
@@ -268,10 +270,6 @@ class Base(object):
 
                 addons_paths.append(repo_dir)
             addons_paths = ','.join(addons_paths)
-            if 'options.addons_path' not in self.options:
-                self.options['options.addons_path'] = ''
-            self.options['options.addons_path'] += join(self.openerp_dir, 'bin', 'addons') + ','
-            self.options['options.addons_path'] += addons_paths
 
         # ugly method to extract requirements from ugly setup.py of 6.0,
         # but works with 6.1 as well
@@ -301,6 +299,17 @@ class Base(object):
                 raise EnvironmentError('Problem while reading OpenERP setup.py: ' + exception.message)
         _ = sys.path.pop(0)
         setuptools.setup = old_setup
+
+        # configure addons_path option
+        if self.addons:
+            if 'options.addons_path' not in self.options:
+                self.options['options.addons_path'] = ''
+            if self.version_detected[:3] == '6.0':
+                self.options['options.addons_path'] += join(self.openerp_dir, 'bin', 'addons') + ','
+            else:
+                self.options['options.addons_path'] += join(self.openerp_dir, 'openerp', 'addons') + ','
+
+            self.options['options.addons_path'] += addons_paths
 
         # add openerp paths into the extra-paths
         if 'extra-paths' not in self.options:
@@ -366,10 +375,10 @@ class Base(object):
     update = install
 
 
-class Server(Base):
+class ServerRecipe(BaseRecipe):
     """Recipe for server install and config
     """
-    archive_filename = { '6.0': 'openerp-server-%s.tar.gz',
+    archive_filenames = { '6.0': 'openerp-server-%s.tar.gz',
                          '6.1': 'openerp-%s.tar.gz'}
     requirements = []
     ws = None
@@ -408,14 +417,16 @@ class Server(Base):
         return script
 
 
-class WebClient(Base):
+class WebClientRecipe(BaseRecipe):
     """Recipe for web client install and config
     """
-    archive_filename = {'6.0': 'openerp-web-%s.tar.gz'}
+    archive_filenames = {'6.0': 'openerp-web-%s.tar.gz'}
     requirements = ['setuptools']
 
     def _create_default_config(self):
-        pass
+        if self.version_detected[:3] == '6.0':
+            shutil.copyfile(join(self.openerp_dir, 'doc', 'openerp-web.cfg'),
+                            self.config_path)
 
     def _create_startup_script(self):
         """Return startup_script content
@@ -424,28 +435,43 @@ class WebClient(Base):
         paths.extend([egg.location for egg in self.ws])
         if self.version_detected[:3] == '6.0':
             ext = '.py'
+            config = '-c %s' % self.config_path
         else:
             ext = ''
+            config = ''
         script = ('#!/bin/sh\n'
                   'export PYTHONPATH=%s\n'
                   'cd "%s"\n'
-                  'exec %s openerp-web%s $@') % (
+                  'exec %s openerp-web%s %s $@') % (
                     ':'.join(paths),
                     self.openerp_dir,
                     self.buildout['buildout']['executable'],
-                    ext)
+                    ext,
+                    config)
         return script
 
 
-class GtkClient(Base):
+class GtkClientRecipe(BaseRecipe):
     """Recipe for gtk client and config
     """
-    archive_filename = {'6.0': 'openerp-client-%s.tar.gz',
+    archive_filenames = {'6.0': 'openerp-client-%s.tar.gz',
                         '6.1': 'openerp-client-%s.tar.gz' }
     requirements = []
 
     def _create_default_config(self):
-        subprocess.check_call([self.script_path])
+        bin_dir = join(self.openerp_dir, 'bin')
+        with working_directory_keeper:
+            # import translate from openerp instead of python
+            sys.path.insert(0, bin_dir)
+            import gtk.glade
+            import release
+            __version__ = release.version
+            import __builtin__
+            __builtin__.__dict__['openerp_version'] = __version__
+            import translate
+            translate.setlang()
+            import options
+            options.configmanager(self.config_path).save()
 
     def _create_startup_script(self):
         """Return startup_script content

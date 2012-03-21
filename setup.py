@@ -5,8 +5,8 @@ version = 0.9
 setup(
     name = "anybox.recipe.openerp",
     version = version,
-    author="Christophe Combelles",
-    author_email="ccomb@anybox.fr",
+    author="Anybox",
+    author_email="contact@anybox.fr",
     description="A buildout recipe to install and configure OpenERP",
     license="ZPL",
     long_description=open('README.txt').read() + open('CHANGES.txt').read(),
@@ -25,9 +25,9 @@ setup(
       'Topic :: Software Development :: Libraries :: Python Modules',
       ],
     entry_points = {'zc.buildout': [
-        'server = anybox.recipe.openerp:Server',
-        'webclient = anybox.recipe.openerp:WebClient',
-        'gtkclient = anybox.recipe.openerp:GtkClient',
+        'server = anybox.recipe.openerp:ServerRecipe',
+        'webclient = anybox.recipe.openerp:WebClientRecipe',
+        'gtkclient = anybox.recipe.openerp:GtkClientRecipe',
         ]},
     )
 

@@ -4,7 +4,8 @@ anybox.recipe.openerp
 .. contents::
 
 This is a buildout recipe to download, install and configure OpenERP server,
-web client and gtk client. It currently only supports version 6.0.
+web client and gtk client. It currently supports versions 6.0 and 6.1 and
+custom branches. You get 3 recipes at once. The recipe to use is the following:
 
  - For the server: recipe = anybox.recipe.openerp:server
  - For the web client: recipe = anybox.recipe.openerp:webclient
@@ -25,12 +26,27 @@ specific options
 
 It also adds a few specific options :
 
- * **version**: specify the version of OpenERP (server, web client or gtk client),
-   or the specific revision in case `url` points to a bzr branch
- * **url** : specify the direct download url for the server or client archive,
-   or specify the url of a custom bzr branch.
-   This option overrides the version specification
+ * **version**: specify one of:
+   * the version number of an official OpenERP (server, web client or gtk client)
+   * a custom download: `url http://example.com/openerp.tar.gz`
+   * an absolute or a relative path: `path /my/path/to/a/custom/openerp`
+   * the url of a custom bzr/hg/git/svn branch or repository. See *addons* below.
+ * **addons**: specify additional addons, either a path or a repository.
  * **script_name**: specify the name of the startup script to generate
+
+For the *version* and *addons* option, if you use a remote repository the syntax is::
+
+  type url directory revision
+
+where:
+ * `type` can be bzr, hg, git or svn
+ * `url` is any URL supported by the versionning tool
+ * `directory` is the local directory that will be created
+ * `revision` is any version specification supported
+
+
+Official version
+----------------
 
 To use an official OpenERP version, just specify the version. For instance with the webclient::
 
@@ -38,15 +54,38 @@ To use an official OpenERP version, just specify the version. For instance with 
     recipe = anybox.recipe.openerp:webclient
     version = 6.0.3
 
-If you want to use your own custom branch and use a local clone at revision 4751::
+Note: with OpenERP 6.1 the web client is natively included in the server as a simple module. In that case you don't need to write a separate part for the web client, unless that's what you really want to do.
+
+Custom or development version
+-----------------------------
+
+If you want to use your own custom branch at revision 4751::
 
     [webclient]
     recipe = anybox.recipe.openerp:webclient
-    url = bzr+https://code.launchpad.net/~anybox/openobject-client-web/6.0-bug-906449
-    version = 4751
+    version = bzr https://code.launchpad.net/~anybox/openobject-client-web/6.0-bug-906449 webclient-debug 4751
 
 If you don't specify the version, it will use the latest revision of the branch.
 The branch will be updated at each buildout run.
+
+Custom addons
+-------------
+
+The `addons` option has a specific behaviour. You can use it to specify
+additional OpenERP addons, either a relative or absolute path or an URL of a
+subversion, bazaar, git or mercurial repository.
+
+Example::
+
+  addons = ../some/relative/path/for/custom_addons/
+           /some/other/absolute/path/for/custom_addons
+           bzr lp:openobject-addons/trunk/    addons0 last:1
+           hg  http://example.com/some_addons addons1 tip
+           git http://example.com/some_addons addons2 master
+           svn http://example.com/some_addons addons3 head
+
+Repositories are updated on each build. You have to be careful with your
+version specification. Buildout offline mode is supported.
 
 OpenERP options
 ---------------
@@ -84,50 +123,25 @@ It will modify the corresponding web client config::
   [openerp-web]
   company.url = 'http://anybox.fr'
 
-The `addons` option has a specific behaviour. You can use it to specify
-additional OpenERP addons, either a relative or absolute path or an URL of a
-subversion, bazaar, git or mercurial repository.
-If you use a repository the syntax is::
-
-  type url directory revision
-
-where:
- * `type` can be bzr, hg, git or svn
- * `url` is any URL supported by the versionning tool
- * `directory` is the local directory that will be created
- * `revision` is any version specification supported
-
-Example::
-
-  addons = ../some/relative/path/for/custom_addons/
-           /some/other/absolute/path/for/custom_addons
-           bzr lp:openobject-addons/trunk/    addons0 last:1
-           hg  http://example.com/some_addons addons1 tip
-           git http://example.com/some_addons addons2 master
-           svn http://example.com/some_addons addons3 head
-
-Repositories are updated on each build. You have to be careful with your
-version specification.
-
-
-Generated scripts
-~~~~~~~~~~~~~~~~~
+Generated startup scripts
+-------------------------
 
 Startup scripts are created in the `bin` directory. By default the name is:
 start_<part_name>, so you can have several startup scripts for each part if you
 configure several OpenERP servers or clients. You can pass additional typical
 arguments to the server via the startup script, such as -i or -u options.
+You can choose another name for the script by using the *script_name* option.
 
 
-Example buildout
-~~~~~~~~~~~~~~~~
+Example OpenERP 6.0 buildout
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Here is a sample buildout with versions specification, one OpenERP 6.1 server,
-one OpenERP trunk server, one OpenERP 6.0 server, both using only NETRPC and listening on two different
-ports, and one web client for the 6.0 server ::
+Here is a sample buildout with versions specification, 2 OpenERP servers (with
+one using the latest 6.0 branch on the launchpad) using only NETRPC and
+listening on 2 different ports, and 2 web clients::
 
     [buildout]
-    parts = openerp1 openerp2 openerp3 webclient
+    parts = openerp1 web1 openerp2 web2
     allow-picked-versions = false
     versions = versions
     find-links = http://download.gna.org/pychart/
@@ -135,43 +149,37 @@ ports, and one web client for the 6.0 server ::
     [openerp1]
     recipe = anybox.recipe.openerp:server
     eggs = PIL
-    version = 6.1
-    options.xmlrpc = False
-    options.xmlrpcs = False
-
-    [openerp2]
-    recipe = anybox.recipe.openerp:server
-    eggs = PIL
-    version = 6.1
+    version = 6.0.3
     options.xmlrpc = False
     options.xmlrpcs = False
     
-    [openerp3]
+    [web1]
+    recipe = anybox.recipe.openerp:webclient
+    version = 6.0.3
+    
+    [openerp2]
     recipe = anybox.recipe.openerp:server
     eggs = PIL
-    version = 6.0.3
+    version = bzr lp:openobject-server/6.0 openobject-server-6.x last:1
+
     options.xmlrpc = False
     options.xmlrpcs = False
     options.netrpc_port = 8170
     
-    [webclient]
+    [web2]
     recipe = anybox.recipe.openerp:webclient
     version = 6.0.3
     global.openerp.server.port = '8170'
     global.server.socket_port = 8180
     
     [versions]
-    Babel = 0.9.6
-    FormEncode = 1.2.4
-    Mako = 0.4.2
     MarkupSafe = 0.15
     PIL = 1.1.7
-    anybox.recipe.openerp = 0.8
-    babel = 0.9.6
+    anybox.recipe.openerp = 0.9
     caldav = 0.1.10
     collective.recipe.cmd = 0.5
     coverage = 3.5
-    distribute = 0.6.24
+    distribute = 0.6.25
     feedparser = 5.0.1
     lxml = 2.1.5
     mako = 0.4.2
@@ -181,24 +189,83 @@ ports, and one web client for the 6.0 server ::
     pydot = 1.0.25
     pyparsing = 1.5.6
     python-dateutil = 1.5
-    pytz = 2011h
+    pytz = 2012b
     pywebdav = 0.9.4.1
     pyyaml = 3.10
     reportlab = 2.5
-    simplejson = 2.1.6
     vobject = 0.8.1c
     z3c.recipe.scripts = 1.0.1
     zc.buildout = 1.5.2
     zc.recipe.egg = 1.3.2
+    Babel = 0.9.6
+    FormEncode = 1.2.4
+    simplejson = 2.1.6
 
+
+Example OpenERP 6.1 buildout
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Here is a simple example for a stock OpenERP 6.1, with a GTK client, and a
+local addon you are developping for a client project::
+
+    [buildout]
+    parts = openerp gtk
+    allow-picked-versions = false
+    versions = versions
+    find-links = http://download.gna.org/pychart/
+    
+    [openerp]
+    recipe = anybox.recipe.openerp:server
+    eggs = PIL
+    version = 6.1
+    addons = ../path/to/my/local/addons
+
+    options.xmlrpc = False
+    options.xmlrpcs = False
+
+    [gtk]
+    recipe = anybox.recipe.openerp:gtkclient
+    version = 6.1
+    
+    [versions]
+    babel = 0.9.6
+    PIL = 1.1.7
+    pywebdav = 0.9.4.1
+    PyXML = 0.8.4
+    pyyaml = 3.10
+    werkzeug = 0.8.3
+    zsi = 2.0-rc3
+    distribute = 0.6.25
+    feedparser = 5.1.1
+    gdata = 2.0.16
+    lxml = 2.3.3
+    psycopg2 = 2.4.4
+    pydot = 1.0.28
+    pyparsing = 1.5.6
+    python-dateutil = 1.5
+    python-ldap = 2.4.9
+    python-openid = 2.2.5
+    pytz = 2012b
+    reportlab = 2.5
+    vatnumber = 1.0
+    vobject = 0.8.1c
+    xlwt = 0.7.3
+    zc.buildout = 1.5.2
+    zc.recipe.egg = 1.3.2
 
 Contribute
 ~~~~~~~~~~
+Author and contributors:
+
+ * Christophe Combelles
+ * Georges Racinet
+
 The primary branch is on the launchpad:
 
-- Code repository: https://code.launchpad.net/~anybox/+junk/anybox.recipe.openerp
+ * Code repository and bug tracker: https://launchpad.net/anybox.recipe.openerp
+ * PyPI page: http://pypi.python.org/pypi/anybox.recipe.openerp
 
-Please branch on the launchpad or contact the author to report any bug or ask
+Please branch on the launchpad or contact the authors to report any bug or ask
 for a new feature.
 
 

@@ -4,11 +4,15 @@ Changes
 0.9 (unreleased)
 ----------------
 
+- Clean-up and refactoring
+- Removed `url` option (download url supported through `version`)
 - Support OpenERP 6.1 and 6.0
 - Added an 'addons' option allowing remote repositories and local directories
 - Improved error messages
 - Updated the documentation
-- Handle bad babel import in setup.py
+- Handle bad Babel import in setup.py
+- Support offline mode of buildout
+- Create gtk client config without starting it
 
 0.8 (20-12-2011)
 ----------------
