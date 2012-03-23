@@ -65,27 +65,47 @@ If you want to use your own custom branch at revision 4751::
     recipe = anybox.recipe.openerp:webclient
     version = bzr https://code.launchpad.net/~anybox/openobject-client-web/6.0-bug-906449 webclient-debug 4751
 
-If you don't specify the version, it will use the latest revision of the branch.
+If you don't specify the revision, it will use the latest revision of
+the branch.
 The branch will be updated at each buildout run.
+
 
 Custom addons
 -------------
 
 The `addons` option has a specific behaviour. You can use it to specify
-additional OpenERP addons, either a relative or absolute path or an URL of a
-subversion, bazaar, git or mercurial repository.
+additional OpenERP addons, either a relative or absolute path or
+a specification for a version control system (VCS).
+
+The first word of the value specifies the retrieval type (either
+``local`` or a VCS short name). In the ``local`` case, the remainings
+of the value is the path on the filesystem (relative to the buildout
+directory or absolute).
+
+In VCS cases, the syntax is uniformly::
+
+  VCS_TYPE SOURCE_URL DESTINATION REVISION
+
+Of these, URL and REVISION are interpreted by the prescribed VCS
+system, while DESTINATION is an absolute path on the
+filesystem, or relative to the buildout dir.
+
+The currently supported VCS types are bzr,hg,git and svn.
 
 Example::
 
-  addons = ../some/relative/path/for/custom_addons/
-           /some/other/absolute/path/for/custom_addons
+  addons = local ../some/relative/path/for/custom_addons/
+           local /some/other/absolute/path/for/custom_addons
            bzr lp:openobject-addons/trunk/    addons0 last:1
            hg  http://example.com/some_addons addons1 tip
            git http://example.com/some_addons addons2 master
            svn http://example.com/some_addons addons3 head
 
-Repositories are updated on each build. You have to be careful with your
-version specification. Buildout offline mode is supported.
+VCS sources are updated on each build according to the specified
+revision. You have to be careful with the revision specification.
+
+Buildout offline mode is supported. In that case, update to the
+prescibed revision is performed, if the VCS allows it (Subversion does not).
 
 OpenERP options
 ---------------

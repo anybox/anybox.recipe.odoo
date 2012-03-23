@@ -40,7 +40,7 @@ class BaseRecipe(object):
         # GR: would prefer lower() but doing as in 'zc.recipe.egg'
         self.offline = self.b_options['offline'] == 'true'
 
-        self.downloads_dir = join(self.buildout_dir, 'downloads')
+        self.downloads_dir = self.make_absolute('downloads')
         self.version_wanted = None  # from the buildout
         self.version_detected = None  # from the openerp setup.py
         self.parts = self.buildout['buildout']['parts-directory']
@@ -50,7 +50,7 @@ class BaseRecipe(object):
         self.archive_filename = None
         self.archive_path = None # downloaded tar.gz
 
-        self.etc = join(self.buildout_dir, 'etc')
+        self.etc = self.make_absolute('etc')
         self.bin_dir = self.buildout['buildout']['bin-directory']
         self.config_path = join(self.etc, self.name + '.cfg')
         for d in self.downloads_dir, self.etc:
@@ -213,6 +213,15 @@ class BaseRecipe(object):
                     subprocess.call('svn up %s' % rev_str,
                                     shell=True)
 
+    def make_absolute(self, path):
+        """Make a path absolute if needed.
+
+        If not already absolute, it is interpreted as relative to the
+        buildout directory."""
+        if os.path.isabs(path):
+            return path
+        return join(self.buildout_dir, path)
+
     def install(self):
         installed = []
         os.chdir(self.parts)
@@ -254,16 +263,19 @@ class BaseRecipe(object):
             addons_paths = []
 
             for line in self.addons.split('\n'):
-                repo_type = line.split()[0] # may also be a path
-                vcs_method = getattr(self, '%s_get_update' % repo_type, None)
-                if vcs_method is not None:
-                    repo_url, repo_dir, repo_rev = line.split()[1:]
-                    repo_dir = join(self.buildout_dir, repo_dir)
-                    vcs_method(repo_dir, repo_url, repo_rev)
-                elif os.path.isabs(repo_type):
-                    repo_dir = repo_type
+                split = line.split()
+                repo_type = split[0]
+
+                if repo_type == 'local':
+                    repo_dir = self.make_absolute(split[1])
                 else:
-                    repo_dir = join(self.buildout_dir, repo_type)
+                   vcs_method = getattr(self, '%s_get_update' % repo_type, None)
+                   if vcs_method is None:
+                       raise RuntimeError("Don't know how to handle "
+                                          "vcs type %s" % repo_type)
+                   repo_url, repo_dir, repo_rev = line.split()[1:]
+                   repo_dir = self.make_absolute(repo_dir)
+                   vcs_method(repo_dir, repo_url, repo_rev)
 
                 assert os.path.isdir(repo_dir), (
                     "Not a directory: %r (aborting)" % repo_dir)
