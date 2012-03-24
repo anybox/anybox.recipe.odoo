@@ -238,7 +238,7 @@ local addon you are developping for a client project::
     recipe = anybox.recipe.openerp:server
     eggs = PIL
     version = 6.1
-    addons = ../path/to/my/local/addons
+    addons = local ../path/to/my/local/addons
 
     options.xmlrpc = False
     options.xmlrpcs = False
