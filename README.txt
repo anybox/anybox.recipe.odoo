@@ -250,6 +250,7 @@ local addon you are developping for a client project::
     version = 6.1
     
     [versions]
+    MarkupSafe = 0.15
     PIL = 1.1.7
     PyXML = 0.8.4
     anybox.recipe.openerp = 0.9
@@ -258,6 +259,7 @@ local addon you are developping for a client project::
     feedparser = 5.1.1
     gdata = 2.0.16
     lxml = 2.3.3
+    mako = 0.6.2
     psycopg2 = 2.4.4
     pychart = 1.39
     pydot = 1.0.28
@@ -269,6 +271,7 @@ local addon you are developping for a client project::
     pywebdav = 0.9.4.1
     pyyaml = 3.10
     reportlab = 2.5
+    simplejson = 2.4.0
     vatnumber = 1.0
     vobject = 0.8.1c
     werkzeug = 0.8.3
