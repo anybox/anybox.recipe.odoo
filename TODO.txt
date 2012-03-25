@@ -6,3 +6,5 @@ TODO
  - missing _thread error on py2.7
  - allow a different DOWNLOAD_URL
  - stop on error behavior for external programs
+ - honor offline option (-o) in new auto update capability for addons
+ - insecure mode for hg??

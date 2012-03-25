@@ -169,6 +169,7 @@ listening on 2 different ports, and 2 web clients::
     [openerp1]
     recipe = anybox.recipe.openerp:server
     eggs = PIL
+           pychart
     version = 6.0.3
     options.xmlrpc = False
     options.xmlrpcs = False
@@ -237,6 +238,7 @@ local addon you are developping for a client project::
     [openerp]
     recipe = anybox.recipe.openerp:server
     eggs = PIL
+           pychart
     version = 6.1
     addons = local ../path/to/my/local/addons
 
@@ -248,30 +250,32 @@ local addon you are developping for a client project::
     version = 6.1
     
     [versions]
-    babel = 0.9.6
     PIL = 1.1.7
-    pywebdav = 0.9.4.1
     PyXML = 0.8.4
-    pyyaml = 3.10
-    werkzeug = 0.8.3
-    zsi = 2.0-rc3
+    anybox.recipe.openerp = 0.9
+    babel = 0.9.6
     distribute = 0.6.25
     feedparser = 5.1.1
     gdata = 2.0.16
     lxml = 2.3.3
     psycopg2 = 2.4.4
+    pychart = 1.39
     pydot = 1.0.28
     pyparsing = 1.5.6
     python-dateutil = 1.5
     python-ldap = 2.4.9
     python-openid = 2.2.5
     pytz = 2012b
+    pywebdav = 0.9.4.1
+    pyyaml = 3.10
     reportlab = 2.5
     vatnumber = 1.0
     vobject = 0.8.1c
+    werkzeug = 0.8.3
     xlwt = 0.7.3
     zc.buildout = 1.5.2
     zc.recipe.egg = 1.3.2
+    zsi = 2.0-rc3
 
 Contribute
 ~~~~~~~~~~
