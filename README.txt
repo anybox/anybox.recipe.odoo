@@ -162,7 +162,7 @@ listening on 2 different ports, and 2 web clients::
 
     [buildout]
     parts = openerp1 web1 openerp2 web2
-    allow-picked-versions = false
+    #allow-picked-versions = false
     versions = versions
     find-links = http://download.gna.org/pychart/
     
@@ -231,7 +231,7 @@ local addon you are developping for a client project::
 
     [buildout]
     parts = openerp gtk
-    allow-picked-versions = false
+    #allow-picked-versions = false
     versions = versions
     find-links = http://download.gna.org/pychart/
     
