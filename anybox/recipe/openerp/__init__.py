@@ -223,6 +223,27 @@ class BaseRecipe(object):
             return path
         return join(self.buildout_dir, path)
 
+    def sandboxed_tar_extract(self, sandbox, tarfile, first=None):
+        """Extract those members that are below the tarfile path 'sandbox'.
+
+        The tarfile module official doc warns against attacks with .. in tar.
+
+        The option to start with a first member is useful for this case, since
+        the recipe consumes a first member in the tar file to get the openerp
+        main directory in parts.
+        It is taken for granted that this first member has already been checked.
+        """
+
+        if first is not None:
+            tarfile.extract(first)
+
+        for tinfo in tarfile:
+            if tinfo.name.startswith(sandbox + '/'):
+                tarfile.extract(tinfo)
+            else:
+                logger.warn('Tarball member %r is outside of %r. Ignored.',
+                            tinfo, sandbox)
+
     def install(self):
         installed = []
         os.chdir(self.parts)
@@ -245,20 +266,22 @@ class BaseRecipe(object):
                 logger.info(u'Inspecting %s ...' % self.archive_path)
                 tar = tarfile.open(self.archive_path)
                 first = tar.next()
-                # this assumes everything in the tarball is inside a
-                # directory with expected name
+                # Everything that follows assumes all tarball members
+                # are inside a directory with an expected name such
+                # as openerp-6.1-1
                 assert(first.isdir())
                 extracted_name = first.name.split(os.path.sep)[0]
                 self.openerp_dir = join(self.parts, extracted_name)
+                # protection against malicious tarballs
+                assert(not os.path.isabs(extracted_name))
+                assert(self.openerp_dir.startswith(self.parts))
             except (tarfile.TarError, IOError):
                 raise IOError('The archive does not seem valid: ' +
                               repr(self.archive_path))
 
             if self.openerp_dir and not os.path.exists(self.openerp_dir):
                 logger.info(u'Extracting %s ...' % self.archive_path)
-                #TODO GR: tarfile doc warns against attacks with .. in tar
-                tar.extract(first)
-                tar.extractall()
+                self.sandboxed_tar_extract(extracted_name, tar, first=first)
             tar.close()
         elif self.type == 'local':
             logger.info('Local directory chosen, nothing to do')
