@@ -270,7 +270,7 @@ class BaseRecipe(object):
                 # are inside a directory with an expected name such
                 # as openerp-6.1-1
                 assert(first.isdir())
-                extracted_name = first.name.split(os.path.sep)[0]
+                extracted_name = first.name.split('/')[0]
                 self.openerp_dir = join(self.parts, extracted_name)
                 # protection against malicious tarballs
                 assert(not os.path.isabs(extracted_name))
