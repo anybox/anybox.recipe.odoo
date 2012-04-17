@@ -1,3 +1,4 @@
+
 # coding: utf-8
 from os.path import join, basename
 import os, sys, urllib, tarfile, setuptools, logging, stat, imp, shutil
@@ -228,6 +229,7 @@ class BaseRecipe(object):
 
         # install server, webclient or gtkclient
         logger.info('Selected install type: %s', self.type)
+
         if self.type == 'downloadable':
             # download and extract
             if self.archive_path and not os.path.exists(self.archive_path):
@@ -242,12 +244,20 @@ class BaseRecipe(object):
             try:
                 logger.info(u'Inspecting %s ...' % self.archive_path)
                 tar = tarfile.open(self.archive_path)
-                extracted_name = set([name.split(os.path.sep)[0] for name in tar.getnames()]).pop()
+                first = tar.next()
+                # this assumes everything in the tarball is inside a
+                # directory with expected name
+                assert(first.isdir())
+                extracted_name = first.name.split(os.path.sep)[0]
                 self.openerp_dir = join(self.parts, extracted_name)
-            except:
-                raise IOError('The downloaded archive does not seem valid: %s' % self.archive_path)
+            except (tarfile.TarError, IOError):
+                raise IOError('The archive does not seem valid: ' +
+                              repr(self.archive_path))
+
             if self.openerp_dir and not os.path.exists(self.openerp_dir):
                 logger.info(u'Extracting %s ...' % self.archive_path)
+                #TODO GR: tarfile doc warns against attacks with .. in tar
+                tar.extract(first)
                 tar.extractall()
             tar.close()
         elif self.type == 'local':
