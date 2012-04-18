@@ -4,7 +4,9 @@ Changes
 0.11 (unreleased)
 -----------------
 
-- 
+- Faster tarball inspection (see lp issue #984237)
+- Shared downloads and more generally configurable downloads
+- directory, see https://blueprints.launchpad.net/anybox.recipe.openerp/+spec/shared-downloads
 
 0.10 (02-04-2012)
 -----------------

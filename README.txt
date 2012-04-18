@@ -31,6 +31,13 @@ It also adds a few specific options :
    * a custom download: `url http://example.com/openerp.tar.gz`
    * an absolute or a relative path: `path /my/path/to/a/custom/openerp`
    * the url of a custom bzr/hg/git/svn branch or repository. See *addons* below.
+   The download area for official versions and custom downloads can be
+   specified in the **openerp-downloads-directory** of the
+   ``[buildout]`` section. Like all paths, if not absolute, it will be
+   interpretated relatively to the buildout directory. By setting it in your
+   ``default.cfg``, you may share the downloads among different
+   buildouts.
+
  * **addons**: specify additional addons, either a path or a repository.
  * **script_name**: specify the name of the startup script to generate
 

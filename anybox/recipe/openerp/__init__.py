@@ -41,7 +41,8 @@ class BaseRecipe(object):
         # GR: would prefer lower() but doing as in 'zc.recipe.egg'
         self.offline = self.b_options['offline'] == 'true'
 
-        self.downloads_dir = self.make_absolute('downloads')
+        self.downloads_dir = self.make_absolute(
+            self.b_options.get('openerp-downloads-directory', 'downloads'))
         self.version_wanted = None  # from the buildout
         self.version_detected = None  # from the openerp setup.py
         self.parts = self.buildout['buildout']['parts-directory']
