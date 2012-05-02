@@ -99,7 +99,6 @@ class TestServer(unittest.TestCase):
                 ('get_update', other_dir, 'http://other.example', '76')])
         self.assertEquals(paths, [addons_dir, other_dir])
 
-
     def test_retrieve_addons_subdir(self):
         self.make_recipe(version='6.1', addons='fakevcs lp:openerp-web web '
                          'last:1 subdir=addons')
@@ -113,3 +112,30 @@ class TestServer(unittest.TestCase):
         self.assertEquals(self.get_vcs_log(), [
                           ('get_update', web_dir, 'lp:openerp-web', 'last:1')])
         self.assertEquals(paths, [web_addons_dir])
+
+    def test_retrieve_addons_single(self):
+        """The VCS is a whole addon."""
+        self.make_recipe(version='6.1', addons='fakevcs custom addon last:1')
+        # manual creation of our single addon
+        addon_dir = os.path.join(self.buildout_dir, 'addon')
+        os.mkdir(addon_dir)
+        open(os.path.join(addon_dir, '__openerp__.py'), 'w').close()
+        paths = self.recipe.retrieve_addons()
+        self.assertEquals(paths, [addon_dir])
+        self.assertEquals(os.listdir(addon_dir), ['addon'])
+        self.assertEquals(os.listdir(os.path.join(addon_dir, 'addon')),
+                                     ['__openerp__.py'])
+
+    def test_retrieve_addons_single_collision(self):
+        """The VCS is a whole addon, and there's a collision in renaming"""
+        self.make_recipe(version='6.1', addons='fakevcs custom addon last:1')
+        # manual creation of our single addon
+        addon_dir = os.path.join(self.buildout_dir, 'addon')
+        os.mkdir(addon_dir)
+        os.mkdir(addon_dir + '_0')
+        open(os.path.join(addon_dir, '__openerp__.py'), 'w').close()
+        paths = self.recipe.retrieve_addons()
+        self.assertEquals(paths, [addon_dir])
+        self.assertEquals(os.listdir(addon_dir), ['addon'])
+        self.assertEquals(os.listdir(os.path.join(addon_dir, 'addon')),
+                                     ['__openerp__.py'])

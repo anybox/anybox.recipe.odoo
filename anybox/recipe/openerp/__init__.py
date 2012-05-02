@@ -288,6 +288,19 @@ class BaseRecipe(object):
             assert os.path.isdir(addons_dir), (
                 "Not a directory: %r (aborting)" % addons_dir)
 
+            manifest = os.path.join(addons_dir, '__openerp__.py')
+            if os.path.isfile(manifest):
+                # repo is a single addon, put it actually below
+                name = os.path.split(addons_dir)[1]
+                c = 0
+                tmp = addons_dir + '_%d' % c
+                while os.path.exists(tmp):
+                    c += 1
+                    tmp = addons_dir + '_%d' % c
+                os.rename(addons_dir, tmp)
+                os.mkdir(addons_dir)
+                os.rename(tmp, join(addons_dir, name))
+
             addons_paths.append(addons_dir)
         return addons_paths
 

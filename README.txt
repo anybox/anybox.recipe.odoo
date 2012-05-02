@@ -51,6 +51,10 @@ where:
  * `directory` is the local directory that will be created
  * `revision` is any version specification supported
 
+For the *addons* option, you can either specifiy a directory holding
+addons, or a single one. In that latter case, it will be actually
+placed one directory below
+
 
 Official version
 ----------------
