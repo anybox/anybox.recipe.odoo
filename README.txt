@@ -91,11 +91,15 @@ directory or absolute).
 
 In VCS cases, the syntax is uniformly::
 
-  VCS_TYPE SOURCE_URL DESTINATION REVISION
+  VCS_TYPE SOURCE_URL DESTINATION REVISION [OPTIONS]
 
 Of these, URL and REVISION are interpreted by the prescribed VCS
 system, while DESTINATION is an absolute path on the
 filesystem, or relative to the buildout dir.
+
+OPTIONS take the form ``name=value``. Currently, only the ``subdir``
+option is recognized. If used, the given subdirectory of the
+repository is registered as an addons directory.
 
 The currently supported VCS types are bzr,hg,git and svn.
 
@@ -107,6 +111,7 @@ Example::
            hg  http://example.com/some_addons addons1 tip
            git http://example.com/some_addons addons2 master
            svn http://example.com/some_addons addons3 head
+           bzr lp:openerp-web/trunk/ openerp-web last:1 subdir=addons
 
 VCS sources are updated on each build according to the specified
 revision. You have to be careful with the revision specification.

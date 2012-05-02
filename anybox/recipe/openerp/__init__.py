@@ -87,7 +87,13 @@ class BaseRecipe(object):
                 self.openerp_dir = self.version_wanted
 
         # remote repository
-        if len(version_split) == 4:
+        if getattr(self, 'type', None) is None:
+            if len(version_split) != 4:
+                raise ValueError("Unrecognized version specification: %r "
+                                 "(expecting type, url, target, revision for "
+                                 "remote repository or explicit download) " % (
+                        version_split))
+
             self.type, self.url, repo_dir, self.version_wanted = version_split
             self.openerp_dir = join(self.parts, repo_dir)
 
@@ -291,8 +297,9 @@ class BaseRecipe(object):
             vcs_method(self.openerp_dir, self.url, self.version_wanted)
 
         # install addons
-        # syntax: repo_type repo_url repo_dir repo_rev
+        # syntax: repo_type repo_url repo_dir repo_rev [options]
         #         or an absolute or relative path
+        # options are themselves in the key=value form
         if self.addons:
             addons_paths = []
 
@@ -307,14 +314,19 @@ class BaseRecipe(object):
                    if vcs_method is None:
                        raise RuntimeError("Don't know how to handle "
                                           "vcs type %s" % repo_type)
-                   repo_url, repo_dir, repo_rev = line.split()[1:]
+
+                   repo_url, repo_dir, repo_rev = split[1:4]
+                   addons_options = dict(opt.split('=') for opt in split[4:])
+
                    repo_dir = self.make_absolute(repo_dir)
+                   subdir = addons_options.get('subdir')
+                   addons_dir = subdir and join(repo_dir, subdir) or repo_dir
                    vcs_method(repo_dir, repo_url, repo_rev)
 
-                assert os.path.isdir(repo_dir), (
-                    "Not a directory: %r (aborting)" % repo_dir)
+                assert os.path.isdir(addons_dir), (
+                    "Not a directory: %r (aborting)" % addons_dir)
 
-                addons_paths.append(repo_dir)
+                addons_paths.append(addons_dir)
             addons_paths = ','.join(addons_paths)
 
         # ugly method to extract requirements from ugly setup.py of 6.0,
