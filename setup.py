@@ -2,6 +2,8 @@ from setuptools import setup, find_packages
 
 version = '0.12'
 
+requires = ['setuptools', 'zc.recipe.egg', 'zc.buildout']
+
 setup(
     name = "anybox.recipe.openerp",
     version = version,
@@ -15,9 +17,8 @@ setup(
     zip_safe=False,
     include_package_data=True,
     namespace_packages=['anybox', 'anybox.recipe'],
-    install_requires=['setuptools',
-                      'zc.recipe.egg',
-                      'zc.buildout'],
+    install_requires=requires,
+    tests_require=requires + ['nose'],
     classifiers=[
       'Framework :: Buildout',
       'Intended Audience :: Developers',
