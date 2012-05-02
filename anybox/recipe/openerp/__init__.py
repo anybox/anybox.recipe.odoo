@@ -266,12 +266,12 @@ class BaseRecipe(object):
         for line in self.addons.split('\n'):
             split = line.split()
             repo_type = split[0]
+            spec_len = repo_type == 'local' and 2 or 4
+
+            addons_options = dict(opt.split('=') for opt in split[spec_len:])
 
             if repo_type == 'local':
                 repo_dir = self.make_absolute(split[1])
-                addons_options = dict(opt.split('=') for opt in split[2:])
-                subdir = addons_options.get('subdir')
-                addons_dir = subdir and join(repo_dir, subdir) or repo_dir
             else:
                vcs_method = getattr(self, '%s_get_update' % repo_type, None)
                if vcs_method is None:
@@ -281,11 +281,10 @@ class BaseRecipe(object):
                repo_url, repo_dir, repo_rev = split[1:4]
 
                repo_dir = self.make_absolute(repo_dir)
-               addons_options = dict(opt.split('=') for opt in split[4:])
-               subdir = addons_options.get('subdir')
-               addons_dir = subdir and join(repo_dir, subdir) or repo_dir
                vcs_method(repo_dir, repo_url, repo_rev)
 
+            subdir = addons_options.get('subdir')
+            addons_dir = subdir and join(repo_dir, subdir) or repo_dir
             assert os.path.isdir(addons_dir), (
                 "Not a directory: %r (aborting)" % addons_dir)
 
