@@ -251,13 +251,53 @@ class BaseRecipe(object):
                 logger.warn('Tarball member %r is outside of %r. Ignored.',
                             tinfo, sandbox)
 
+    def retrieve_addons(self):
+        """Parse the addons option line, download and return a list of paths.
+
+        syntax: repo_type repo_url repo_dir repo_rev [options]
+              or an absolute or relative path
+        options are themselves in the key=value form
+        """
+        if not self.addons:
+            return []
+
+        addons_paths = []
+
+        for line in self.addons.split('\n'):
+            split = line.split()
+            repo_type = split[0]
+
+            if repo_type == 'local':
+                repo_dir = self.make_absolute(split[1])
+                addons_options = dict(opt.split('=') for opt in split[2:])
+                subdir = addons_options.get('subdir')
+                addons_dir = subdir and join(repo_dir, subdir) or repo_dir
+            else:
+               vcs_method = getattr(self, '%s_get_update' % repo_type, None)
+               if vcs_method is None:
+                   raise RuntimeError("Don't know how to handle "
+                                      "vcs type %s" % repo_type)
+
+               repo_url, repo_dir, repo_rev = split[1:4]
+
+               repo_dir = self.make_absolute(repo_dir)
+               addons_options = dict(opt.split('=') for opt in split[4:])
+               subdir = addons_options.get('subdir')
+               addons_dir = subdir and join(repo_dir, subdir) or repo_dir
+               vcs_method(repo_dir, repo_url, repo_rev)
+
+            assert os.path.isdir(addons_dir), (
+                "Not a directory: %r (aborting)" % addons_dir)
+
+            addons_paths.append(addons_dir)
+        return addons_paths
+
     def install(self):
         installed = []
         os.chdir(self.parts)
 
         # install server, webclient or gtkclient
         logger.info('Selected install type: %s', self.type)
-
         if self.type == 'downloadable':
             # download and extract
             if self.archive_path and not os.path.exists(self.archive_path):
@@ -296,38 +336,7 @@ class BaseRecipe(object):
             vcs_method = getattr(self, '%s_get_update' % self.type, None)
             vcs_method(self.openerp_dir, self.url, self.version_wanted)
 
-        # install addons
-        # syntax: repo_type repo_url repo_dir repo_rev [options]
-        #         or an absolute or relative path
-        # options are themselves in the key=value form
-        if self.addons:
-            addons_paths = []
-
-            for line in self.addons.split('\n'):
-                split = line.split()
-                repo_type = split[0]
-
-                if repo_type == 'local':
-                    repo_dir = self.make_absolute(split[1])
-                else:
-                   vcs_method = getattr(self, '%s_get_update' % repo_type, None)
-                   if vcs_method is None:
-                       raise RuntimeError("Don't know how to handle "
-                                          "vcs type %s" % repo_type)
-
-                   repo_url, repo_dir, repo_rev = split[1:4]
-                   addons_options = dict(opt.split('=') for opt in split[4:])
-
-                   repo_dir = self.make_absolute(repo_dir)
-                   subdir = addons_options.get('subdir')
-                   addons_dir = subdir and join(repo_dir, subdir) or repo_dir
-                   vcs_method(repo_dir, repo_url, repo_rev)
-
-                assert os.path.isdir(addons_dir), (
-                    "Not a directory: %r (aborting)" % addons_dir)
-
-                addons_paths.append(addons_dir)
-            addons_paths = ','.join(addons_paths)
+        addons_paths = self.retrieve_addons()
 
         # ugly method to extract requirements from ugly setup.py of 6.0,
         # but works with 6.1 as well
@@ -359,7 +368,7 @@ class BaseRecipe(object):
         setuptools.setup = old_setup
 
         # configure addons_path option
-        if self.addons:
+        if addons_paths:
             if 'options.addons_path' not in self.options:
                 self.options['options.addons_path'] = ''
             if self.version_detected[:3] == '6.0':
@@ -367,7 +376,7 @@ class BaseRecipe(object):
             else:
                 self.options['options.addons_path'] += join(self.openerp_dir, 'openerp', 'addons') + ','
 
-            self.options['options.addons_path'] += addons_paths
+            self.options['options.addons_path'] += ','.join(addons_paths)
 
         # add openerp paths into the extra-paths
         if 'extra-paths' not in self.options:
