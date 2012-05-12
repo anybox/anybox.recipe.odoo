@@ -22,7 +22,7 @@ def hg_get_update(target_dir, url, revision, offline=False, **kw):
         if offline:
             raise IOError("hg repository %r does not exist; cannot clone it from %r (offline mode)" % (target_dir, url))
 
-        logger.info("CLoning %s ...", url)
+        logger.info("Cloning %s ...", url)
         clone_cmd = ['hg', 'clone']
         if revision:
             clone_cmd.extend(['-r', revision])
@@ -90,7 +90,7 @@ def git_get_update(target_dir, url, revision, offline=False, **kw):
                 raise IOError("git repository %s does not exist; cannot clone it from %s (offline mode)" % (target_dir, url))
 
             os.chdir(os.path.split(target_dir)[0])
-            logger.info("CLoning %s ...", url)
+            logger.info("Cloning %s ...", url)
             subprocess.check_call('git clone -b %s %s %s' % (
                 rev_str, url, target_dir), shell=True)
         else:
