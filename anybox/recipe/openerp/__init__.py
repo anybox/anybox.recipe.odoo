@@ -1,7 +1,7 @@
 
 # coding: utf-8
 from os.path import join, basename
-import os, sys, urllib, tarfile, setuptools, logging, stat, imp, shutil
+import os, sys, urllib, tarfile, setuptools, logging, stat, imp, shutil, re
 import subprocess
 import ConfigParser
 import zc.recipe.egg
@@ -58,8 +58,11 @@ class BaseRecipe(object):
             logger.warn('Version 6.1 does not exist. Assuming 6.1-1')
             self.version_wanted = '6.1-1'
 
+        self.preinstall_version_check()
+
         # downloadable version, or local path
         version_split = self.version_wanted.split()
+
         if len(version_split) == 1:
             if not os.path.exists(self.version_wanted):
                 # Unsupported versions
@@ -83,6 +86,12 @@ class BaseRecipe(object):
 
             self.type, self.url, repo_dir, self.version_wanted = version_split
             self.openerp_dir = join(self.parts, repo_dir)
+
+    def preinstall_version_check(self):
+        """Perform version checks before any attempt to install.
+
+        To be subclassed.
+        """
 
 
     def make_absolute(self, path):
@@ -367,6 +376,25 @@ class WebClientRecipe(BaseRecipe):
     """
     archive_filenames = {'6.0': 'openerp-web-%s.tar.gz'}
     requirements = ['setuptools']
+
+    def preinstall_version_check(self):
+        split = self.version_wanted.split()
+        if len(split) != 1:
+            # not much to say before any attempt for custom or vcs versions
+            return
+        try:
+            version = re.match(r'(\d+)[.](\d+)', split[0])
+            version = int(version.group(1)), int(version.group(2))
+        except (ValueError, TypeError, AttributeError):
+            logger.info("Version not understood: %r. Skipped before install "
+                        "checks", self.version_wanted)
+            return
+        if version >= (6, 1):
+            logger.error("Aborting: don't use the openerp webclient recipe "
+                         "for versions >= 6.1, as "
+                         "there is no separate web client in these versions."
+                         "Simply use the web part of the OpenERP server.")
+            sys.exit(1)
 
     def _create_default_config(self):
         if self.version_detected[:3] == '6.0':
