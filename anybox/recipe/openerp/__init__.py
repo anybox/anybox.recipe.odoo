@@ -6,33 +6,14 @@ import subprocess
 import ConfigParser
 import zc.recipe.egg
 
+import vcs
+from utils import working_directory_keeper
+
 logger = logging.getLogger(__name__)
 
 DOWNLOAD_URL = { '6.0': 'http://www.openerp.com/download/stable/source/',
                  '6.1': 'http://nightly.openerp.com/6.1/releases/'
                 }
-
-SUBPROCESS_ENV = os.environ.copy()
-SUBPROCESS_ENV['PYTHONPATH'] = SUBPROCESS_ENV.pop(
-    'BUILDOUT_ORIGINAL_PYTHONPATH', '')
-
-class WorkingDirectoryKeeper(object):
-    """A context manager to get back the working directory as it was before."""
-
-    active = False
-
-    def __enter__(self):
-        if self.active:
-            raise RuntimeError("Already in a working directory keeper !")
-        self.wd = os.getcwd()
-        self.active = True
-
-    def __exit__(self, *exc_args):
-        os.chdir(self.wd)
-        self.active = False
-
-working_directory_keeper = WorkingDirectoryKeeper()
-
 
 class BaseRecipe(object):
     """Base class for other recipes
@@ -102,131 +83,6 @@ class BaseRecipe(object):
             self.openerp_dir = join(self.parts, repo_dir)
 
 
-    def bzr_get_update(self, target_dir, url, revision):
-        """Ensure that target_dir is a branch of url at specified revision.
-
-        If target_dir already exists, does a simple pull.
-        Offline-mode: no branch nor pull, but update.
-        """
-        rev_str = revision and '-r ' + revision or ''
-
-        with working_directory_keeper:
-            if not os.path.exists(target_dir):
-                # TODO case of local url ?
-                if self.offline:
-                    raise IOError("bzr branch %s does not exist; cannot branch it from %s (offline mode)" % (target_dir, url))
-
-                os.chdir(os.path.split(target_dir)[0])
-                logger.info("Branching %s ...", url)
-                subprocess.call('bzr branch --stacked %s %s %s' % (
-                        rev_str, url, target_dir), shell=True)
-            else:
-                os.chdir(target_dir)
-                # TODO what if bzr source is actually local fs ?
-                if not self.offline:
-                    logger.info("Pull for branch %s ...", target_dir)
-                    subprocess.call('bzr pull', shell=True)
-                if revision:
-                    logger.info("Update to revision %s", revision)
-                    subprocess.call('bzr up %s' % rev_str, shell=True)
-
-
-    def hg_get_update(self, target_dir, url, revision):
-        """Ensure that target_dir is a clone of url at specified revision.
-
-        If target_dir already exists, does a simple pull.
-        Offline-mode: no clone nor pull, but update.
-        """
-        if not os.path.exists(target_dir):
-            # TODO case of local url ?
-            if self.offline:
-                raise IOError("hg repository %r does not exist; cannot clone it from %r (offline mode)" % (target_dir, url))
-
-            logger.info("CLoning %s ...", url)
-            clone_cmd = ['hg', 'clone']
-            if revision:
-                clone_cmd.extend(['-r', revision])
-            clone_cmd.extend([url, target_dir])
-            subprocess.call(clone_cmd, env=SUBPROCESS_ENV)
-        else:
-            # TODO what if remote repo is actually local fs ?
-            if not self.offline:
-                logger.info("Pull for hg repo %r ...", target_dir)
-                subprocess.call(['hg', '--cwd', target_dir, 'pull'],
-                                env=SUBPROCESS_ENV)
-            if revision:
-                logger.info("Updating %s to revision %s",
-                            target_dir, revision)
-                up_cmd = ['hg', '--cwd', target_dir, 'up']
-                if revision:
-                    up_cmd.extend(['-r', revision])
-                subprocess.call(up_cmd, env=SUBPROCESS_ENV)
-
-    def git_get_update(self, target_dir, url, revision):
-        """Ensure that target_dir is a branch of url at specified revision.
-
-        If target_dir already exists, does a simple pull.
-        Offline-mode: no branch nor pull, but update.
-        """
-        rev_str = revision
-
-        with working_directory_keeper:
-            if not os.path.exists(target_dir):
-                # TODO case of local url ?
-                if self.offline:
-                    raise IOError("git repository %s does not exist; cannot clone it from %s (offline mode)" % (target_dir, url))
-
-                os.chdir(os.path.split(target_dir)[0])
-                logger.info("CLoning %s ...", url)
-                subprocess.call('git clone -b %s %s %s' % (
-                        rev_str, url, target_dir), shell=True)
-            else:
-                os.chdir(target_dir)
-                # TODO what if remote repo is actually local fs ?
-                if not self.offline:
-                    logger.info("Pull for git repo %s (rev %s)...",
-                                target_dir, rev_str)
-                    subprocess.call('git pull %s %s' % (url, rev_str),
-                                    shell=True)
-                elif revision:
-                    logger.info("Checkout %s to revision %s",
-                                target_dir,revision)
-                    subprocess.call('git checkout %s' % rev_str, shell=True)
-
-    def svn_get_update(self, target_dir, url, revision):
-        """Ensure that target_dir is a branch of url at specified revision.
-
-        If target_dir already exists, does a simple pull.
-        Offline-mode: no branch nor pull, but update.
-        """
-        rev_str = revision and '-r ' + revision or ''
-
-        with working_directory_keeper:
-            if not os.path.exists(target_dir):
-                # TODO case of local url ?
-                if self.offline:
-                    raise IOError("svn checkout %s does not exist; cannot checkout  from %s (offline mode)" % (target_dir, url))
-
-                os.chdir(os.path.split(target_dir)[0])
-                logger.info("Checkouting %s ...", url)
-                subprocess.call('svn checkout %s %s %s' % (
-                        rev_str, url, target_dir), shell=True)
-            else:
-                os.chdir(target_dir)
-                # TODO what if remote repo is actually local fs ?
-                if self.offline:
-                    logger.warning(
-                        "Offline mode: keeping checkout %s in its current rev",
-                        target_dir)
-                else:
-                    logger.info("Updating %s to location %s, revision %s...",
-                                target_dir, url, revision)
-                    # switch is necessary in order to move in tags
-                    # TODO support also change of svn root url
-                    subprocess.call('svn switch %s' % url, shell=True)
-                    subprocess.call('svn up %s' % rev_str,
-                                    shell=True)
-
     def make_absolute(self, path):
         """Make a path absolute if needed.
 
@@ -279,7 +135,7 @@ class BaseRecipe(object):
             if repo_type == 'local':
                 repo_dir = self.make_absolute(split[1])
             else:
-               vcs_method = getattr(self, '%s_get_update' % repo_type, None)
+               vcs_method = getattr(vcs, '%s_get_update' % repo_type, None)
                if vcs_method is None:
                    raise RuntimeError("Don't know how to handle "
                                       "vcs type %s" % repo_type)
@@ -287,7 +143,7 @@ class BaseRecipe(object):
                repo_url, repo_dir, repo_rev = split[1:4]
 
                repo_dir = self.make_absolute(repo_dir)
-               vcs_method(repo_dir, repo_url, repo_rev)
+               vcs_method(repo_dir, repo_url, repo_rev, offline=self.offline)
 
             subdir = addons_options.get('subdir')
             addons_dir = subdir and join(repo_dir, subdir) or repo_dir
@@ -350,9 +206,10 @@ class BaseRecipe(object):
             tar.close()
         elif self.type == 'local':
             logger.info('Local directory chosen, nothing to do')
-        elif self.type in ('bzr', 'hg', 'git', 'svn'):
-            vcs_method = getattr(self, '%s_get_update' % self.type, None)
-            vcs_method(self.openerp_dir, self.url, self.version_wanted)
+        elif self.type in vcs.SUPPORTED:
+            vcs_method = getattr(vcs, '%s_get_update' % self.type, None)
+            vcs_method(self.openerp_dir, self.url, self.version_wanted,
+                       offline=self.offline)
 
         addons_paths = self.retrieve_addons()
 
