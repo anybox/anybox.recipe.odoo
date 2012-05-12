@@ -28,10 +28,6 @@ class VcsTestCase(unittest.TestCase):
 
 class HgTestCase(VcsTestCase):
 
-    def setUp(self):
-        super(HgTestCase, self).setUp()
-        self.create_src()
-
     def create_src(self):
         os.chdir(self.src_dir)
         subprocess.call(['hg', 'init', 'src-repo'])
