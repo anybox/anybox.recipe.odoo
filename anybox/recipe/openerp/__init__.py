@@ -26,6 +26,8 @@ class BaseRecipe(object):
         # GR: would prefer lower() but doing as in 'zc.recipe.egg'
         self.offline = self.b_options['offline'] == 'true'
 
+        clear_locks = options.get('vcs-clear-locks', '').lower()
+        self.vcs_clear_locks = clear_locks == 'true'
         self.downloads_dir = self.make_absolute(
             self.b_options.get('openerp-downloads-directory', 'downloads'))
         self.version_wanted = None  # from the buildout
@@ -143,7 +145,8 @@ class BaseRecipe(object):
                repo_url, repo_dir, repo_rev = split[1:4]
 
                repo_dir = self.make_absolute(repo_dir)
-               vcs_method(repo_dir, repo_url, repo_rev, offline=self.offline)
+               vcs_method(repo_dir, repo_url, repo_rev, offline=self.offline,
+                          clear_locks=self.vcs_clear_locks)
 
             subdir = addons_options.get('subdir')
             addons_dir = subdir and join(repo_dir, subdir) or repo_dir

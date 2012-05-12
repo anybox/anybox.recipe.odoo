@@ -11,7 +11,7 @@ SUBPROCESS_ENV['PYTHONPATH'] = SUBPROCESS_ENV.pop(
 
 SUPPORTED = frozenset(('bzr', 'hg', 'git', 'svn'))
 
-def hg_get_update(target_dir, url, revision, offline=False):
+def hg_get_update(target_dir, url, revision, offline=False, **kw):
     """Ensure that target_dir is a clone of url at specified revision.
 
     If target_dir already exists, does a simple pull.
@@ -42,7 +42,8 @@ def hg_get_update(target_dir, url, revision, offline=False):
                 up_cmd.extend(['-r', revision])
             subprocess.check_call(up_cmd, env=SUBPROCESS_ENV)
 
-def bzr_get_update(target_dir, url, revision, offline=False):
+def bzr_get_update(target_dir, url, revision, offline=False, clear_locks=False,
+                   **kw):
     """Ensure that target_dir is a branch of url at specified revision.
 
     If target_dir already exists, does a simple pull.
@@ -61,6 +62,9 @@ def bzr_get_update(target_dir, url, revision, offline=False):
         subprocess.check_call(branch_cmd, env=SUBPROCESS_ENV)
     else:
         # TODO what if bzr source is actually local fs ?
+        if clear_locks:
+            logger.info("Break-lock for branch %s ...", target_dir)
+            subprocess.check_call(['bzr', 'break-lock', target_dir])
         if not offline:
             logger.info("Pull for branch %s ...", target_dir)
             subprocess.check_call(['bzr', 'pull', '-d', target_dir],
@@ -71,7 +75,7 @@ def bzr_get_update(target_dir, url, revision, offline=False):
                                   env=SUBPROCESS_ENV)
 
 
-def git_get_update(target_dir, url, revision, offline=False):
+def git_get_update(target_dir, url, revision, offline=False, **kw):
     """Ensure that target_dir is a branch of url at specified revision.
 
     If target_dir already exists, does a simple pull.
@@ -102,7 +106,7 @@ def git_get_update(target_dir, url, revision, offline=False):
                             target_dir,revision)
                 subprocess.check_call('git checkout %s' % rev_str, shell=True)
 
-def svn_get_update(self, target_dir, url, revision, offline=False):
+def svn_get_update(self, target_dir, url, revision, offline=False, **kw):
     """Ensure that target_dir is a branch of url at specified revision.
 
     If target_dir already exists, does a simple pull.

@@ -115,9 +115,26 @@ class BzrTestCase(VcsTestCase):
         self.assertEquals(lines[0].strip(), 'first')
 
     def test_update(self):
+        # Setting up a prior branch
         target_dir = os.path.join(self.dst_dir, "clone to update")
         vcs.bzr_get_update(target_dir, self.src_repo, 'last:1')
+
+        # Testing starts here
         vcs.bzr_get_update(target_dir, self.src_repo, '1')
+        self.assertTrue(os.path.isdir(target_dir))
+        f = open(os.path.join(target_dir, 'tracked'))
+        lines = f.readlines()
+        f.close()
+        self.assertEquals(lines[0].strip(), 'first')
+
+    def test_update_clear_locks(self):
+        """Testing update with clear locks option."""
+        # Setting up a prior branch
+        target_dir = os.path.join(self.dst_dir, "clone to update")
+        vcs.bzr_get_update(target_dir, self.src_repo, 'last:1')
+
+        # Testing starts here
+        vcs.bzr_get_update(target_dir, self.src_repo, '1', clear_locks=True)
         self.assertTrue(os.path.isdir(target_dir))
         f = open(os.path.join(target_dir, 'tracked'))
         lines = f.readlines()

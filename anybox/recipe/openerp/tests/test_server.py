@@ -80,7 +80,7 @@ class TestServer(unittest.TestCase):
         self.assertEquals(
             self.get_vcs_log(), [
                 ('get_update', addons_dir, 'http://trunk.example', 'rev',
-                 dict(offline=False)
+                 dict(offline=False, clear_locks=False)
                  )])
         self.assertEquals(paths, [addons_dir])
 
@@ -99,9 +99,9 @@ class TestServer(unittest.TestCase):
         self.assertEquals(
             self.get_vcs_log(), [
                 ('get_update', addons_dir, 'http://trunk.example', 'rev',
-                                 dict(offline=False)),
+                                 dict(offline=False, clear_locks=False)),
                 ('get_update', other_dir, 'http://other.example', '76',
-                                  dict(offline=False)),
+                                  dict(offline=False, clear_locks=False)),
                 ])
         self.assertEquals(paths, [addons_dir, other_dir])
 
@@ -117,7 +117,7 @@ class TestServer(unittest.TestCase):
         paths = self.recipe.retrieve_addons()
         self.assertEquals(self.get_vcs_log(), [
                           ('get_update', web_dir, 'lp:openerp-web', 'last:1',
-                           dict(offline=False))
+                           dict(offline=False, clear_locks=False))
                           ])
         self.assertEquals(paths, [web_addons_dir])
 
@@ -147,3 +147,17 @@ class TestServer(unittest.TestCase):
         self.assertEquals(os.listdir(addon_dir), ['addon'])
         self.assertEquals(os.listdir(os.path.join(addon_dir, 'addon')),
                                      ['__openerp__.py'])
+
+    def test_retrieve_addons_clear_locks(self):
+        """Retrieving addons with vcs-clear-locks option."""
+        addons_dir = os.path.join(self.buildout_dir, 'addons')
+        os.mkdir(addons_dir)
+        options = dict(version='6.1', addons='fakevcs lp:my-addons addons -1')
+        options['vcs-clear-locks'] = 'True'
+        self.make_recipe(**options)
+        paths = self.recipe.retrieve_addons()
+        self.assertEquals(self.get_vcs_log(), [
+                          ('get_update', addons_dir, 'lp:my-addons', '-1',
+                           dict(offline=False, clear_locks=True))
+                          ])
+
