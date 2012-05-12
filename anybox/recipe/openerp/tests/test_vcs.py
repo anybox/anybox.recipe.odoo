@@ -111,10 +111,10 @@ class BzrTestCase(VcsTestCase):
 
     def test_update(self):
         target_dir = os.path.join(self.dst_dir, "clone to update")
-        vcs.bzr_get_update(target_dir, self.src_repo, '1')
         vcs.bzr_get_update(target_dir, self.src_repo, 'last:1')
+        vcs.bzr_get_update(target_dir, self.src_repo, '1')
         self.assertTrue(os.path.isdir(target_dir))
         f = open(os.path.join(target_dir, 'tracked'))
         lines = f.readlines()
         f.close()
-        self.assertEquals(lines[0].strip(), 'last')
+        self.assertEquals(lines[0].strip(), 'first')

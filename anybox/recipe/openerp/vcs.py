@@ -67,7 +67,7 @@ def bzr_get_update(target_dir, url, revision, offline=False):
                             env=SUBPROCESS_ENV)
         if revision:
             logger.info("Update to revision %s", revision)
-            subprocess.call(['bzr', 'up', '-d', target_dir, '-r', revision],
+            subprocess.call(['bzr', 'up', '-r', revision, target_dir],
                             env=SUBPROCESS_ENV)
 
 
