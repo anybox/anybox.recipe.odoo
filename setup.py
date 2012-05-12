@@ -27,7 +27,8 @@ setup(
     install_requires=requires,
     tests_require=requires + ['nose'],
     classifiers=[
-      'Framework :: Buildout',
+      'Development Status :: 4 - Beta',
+      'Framework :: Buildout :: Recipe',
       'Intended Audience :: Developers',
       'Topic :: Software Development :: Build Tools',
       'Topic :: Software Development :: Libraries :: Python Modules',
