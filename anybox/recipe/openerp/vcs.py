@@ -48,9 +48,6 @@ def bzr_get_update(target_dir, url, revision, offline=False):
     If target_dir already exists, does a simple pull.
     Offline-mode: no branch nor pull, but update.
     """
-    import pdb; pdb.set_trace()
-    rev_str = revision and '-r ' + revision or ''
-
     with working_directory_keeper:
         if not os.path.exists(target_dir):
             # TODO case of local url ?
@@ -59,17 +56,20 @@ def bzr_get_update(target_dir, url, revision, offline=False):
 
             os.chdir(os.path.split(target_dir)[0])
             logger.info("Branching %s ...", url)
-            subprocess.call('bzr branch --stacked %s %s %s' % (
-                    rev_str, url, target_dir), shell=True)
+            branch_cmd = ['bzr', 'branch', '--stacked']
+            if revision:
+                branch_cmd.extend(['-r', revision])
+            branch_cmd.extend([url, target_dir])
+            subprocess.call(branch_cmd, env=SUBPROCESS_ENV)
         else:
             os.chdir(target_dir)
             # TODO what if bzr source is actually local fs ?
             if not offline:
                 logger.info("Pull for branch %s ...", target_dir)
-                subprocess.call('bzr pull', shell=True)
+                subprocess.call(['bzr', 'pull'], env=SUBPROCESS_ENV)
             if revision:
                 logger.info("Update to revision %s", revision)
-                subprocess.call('bzr up %s' % rev_str, shell=True)
+                subprocess.call(['bzr', 'up', '-r', revision])
 
 def git_get_update(target_dir, url, revision, offline=False):
     """Ensure that target_dir is a branch of url at specified revision.
