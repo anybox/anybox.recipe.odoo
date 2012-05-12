@@ -1,6 +1,16 @@
 Changes
 ~~~~~~~
 
+0.13
+----
+- launchpad #998404: more robust calls to hg and bzr (w/ unit tests),
+  and have exception raised if vcs call failed (break early, break often).
+
+0.12 (02-05-2012)
+-----------------
+- launchpad #993362: addons subdir option, and made repositories being
+  one addon usable by creating an intermediate directory.
+
 0.11 (18-04-2012)
 -----------------
 

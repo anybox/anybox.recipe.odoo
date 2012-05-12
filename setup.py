@@ -2,7 +2,7 @@ import os
 import sys
 from setuptools import setup, find_packages
 
-version = '0.12'
+version = '0.13'
 
 if sys.version_info < (2, 5):
     sys.stderr.write("This package requires Python 2.5 or newer. "
