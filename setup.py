@@ -1,6 +1,13 @@
+import os
+import sys
 from setuptools import setup, find_packages
 
 version = '0.12'
+
+if sys.version_info < (2, 5):
+    sys.stderr.write("This package requires Python 2.5 or newer. "
+                     "Yours is " + sys.version + os.linesep)
+    sys.exit(1)
 
 requires = ['setuptools', 'zc.recipe.egg', 'zc.buildout']
 

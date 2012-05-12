@@ -27,20 +27,20 @@ def hg_get_update(target_dir, url, revision, offline=False):
         if revision:
             clone_cmd.extend(['-r', revision])
         clone_cmd.extend([url, target_dir])
-        subprocess.call(clone_cmd, env=SUBPROCESS_ENV)
+        subprocess.check_call(clone_cmd, env=SUBPROCESS_ENV)
     else:
         # TODO what if remote repo is actually local fs ?
         if not offline:
             logger.info("Pull for hg repo %r ...", target_dir)
-            subprocess.call(['hg', '--cwd', target_dir, 'pull'],
-                            env=SUBPROCESS_ENV)
+            subprocess.check_call(['hg', '--cwd', target_dir, 'pull'],
+                                  env=SUBPROCESS_ENV)
         if revision:
             logger.info("Updating %s to revision %s",
                         target_dir, revision)
             up_cmd = ['hg', '--cwd', target_dir, 'up']
             if revision:
                 up_cmd.extend(['-r', revision])
-            subprocess.call(up_cmd, env=SUBPROCESS_ENV)
+            subprocess.check_call(up_cmd, env=SUBPROCESS_ENV)
 
 def bzr_get_update(target_dir, url, revision, offline=False):
     """Ensure that target_dir is a branch of url at specified revision.
@@ -58,17 +58,17 @@ def bzr_get_update(target_dir, url, revision, offline=False):
         if revision:
             branch_cmd.extend(['-r', revision])
         branch_cmd.extend([url, target_dir])
-        subprocess.call(branch_cmd, env=SUBPROCESS_ENV)
+        subprocess.check_call(branch_cmd, env=SUBPROCESS_ENV)
     else:
         # TODO what if bzr source is actually local fs ?
         if not offline:
             logger.info("Pull for branch %s ...", target_dir)
-            subprocess.call(['bzr', 'pull', '-d', target_dir],
-                            env=SUBPROCESS_ENV)
+            subprocess.check_call(['bzr', 'pull', '-d', target_dir],
+                                  env=SUBPROCESS_ENV)
         if revision:
             logger.info("Update to revision %s", revision)
-            subprocess.call(['bzr', 'up', '-r', revision, target_dir],
-                            env=SUBPROCESS_ENV)
+            subprocess.check_call(['bzr', 'up', '-r', revision, target_dir],
+                                  env=SUBPROCESS_ENV)
 
 
 def git_get_update(target_dir, url, revision, offline=False):
@@ -87,20 +87,20 @@ def git_get_update(target_dir, url, revision, offline=False):
 
             os.chdir(os.path.split(target_dir)[0])
             logger.info("CLoning %s ...", url)
-            subprocess.call('git clone -b %s %s %s' % (
-                    rev_str, url, target_dir), shell=True)
+            subprocess.check_call('git clone -b %s %s %s' % (
+                rev_str, url, target_dir), shell=True)
         else:
             os.chdir(target_dir)
             # TODO what if remote repo is actually local fs ?
             if not offline:
                 logger.info("Pull for git repo %s (rev %s)...",
                             target_dir, rev_str)
-                subprocess.call('git pull %s %s' % (url, rev_str),
-                                shell=True)
+                subprocess.check_call('git pull %s %s' % (url, rev_str),
+                                      shell=True)
             elif revision:
                 logger.info("Checkout %s to revision %s",
                             target_dir,revision)
-                subprocess.call('git checkout %s' % rev_str, shell=True)
+                subprocess.check_call('git checkout %s' % rev_str, shell=True)
 
 def svn_get_update(self, target_dir, url, revision, offline=False):
     """Ensure that target_dir is a branch of url at specified revision.
@@ -118,8 +118,8 @@ def svn_get_update(self, target_dir, url, revision, offline=False):
 
             os.chdir(os.path.split(target_dir)[0])
             logger.info("Checkouting %s ...", url)
-            subprocess.call('svn checkout %s %s %s' % (
-                    rev_str, url, target_dir), shell=True)
+            subprocess.check_call('svn checkout %s %s %s' % (
+                rev_str, url, target_dir), shell=True)
         else:
             os.chdir(target_dir)
             # TODO what if remote repo is actually local fs ?
@@ -132,8 +132,8 @@ def svn_get_update(self, target_dir, url, revision, offline=False):
                             target_dir, url, revision)
                 # switch is necessary in order to move in tags
                 # TODO support also change of svn root url
-                subprocess.call('svn switch %s' % url, shell=True)
-                subprocess.call('svn up %s' % rev_str,
-                                shell=True)
+                subprocess.check_call('svn switch %s' % url, shell=True)
+                subprocess.check_call('svn up %s' % rev_str,
+                                      shell=True)
 
 

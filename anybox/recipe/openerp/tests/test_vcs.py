@@ -73,6 +73,11 @@ class HgTestCase(VcsTestCase):
         f.close()
         self.assertEquals(lines[0].strip(), 'future')
 
+    def test_failed(self):
+        target_dir = os.path.join(self.dst_dir, "My clone")
+        self.assertRaises(subprocess.CalledProcessError, vcs.hg_get_update,
+                          target_dir, '/does-not-exist', 'default')
+
 class BzrTestCase(VcsTestCase):
 
     def create_src(self):
@@ -118,3 +123,9 @@ class BzrTestCase(VcsTestCase):
         lines = f.readlines()
         f.close()
         self.assertEquals(lines[0].strip(), 'first')
+
+    def test_failed(self):
+        target_dir = os.path.join(self.dst_dir, "My branch")
+        self.assertRaises(subprocess.CalledProcessError, vcs.bzr_get_update,
+                          target_dir, '/does-not-exist', 'default')
+
