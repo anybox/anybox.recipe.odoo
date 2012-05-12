@@ -9,11 +9,12 @@ import os
 import shutil
 from tempfile import mkdtemp
 from anybox.recipe.openerp import ServerRecipe
+from anybox.recipe.openerp import vcs
 
 def fakevcs_method(recipe, method_name):
     """Pure mockup to monkey-patch on recipe instances."""
-    def meth(*args):
-        return recipe._fake_vcs_log.append((method_name,) + args)
+    def meth(*args, **kwargs):
+        return recipe._fake_vcs_log.append((method_name,) + args + (kwargs,))
     return meth
 
 class TestServer(unittest.TestCase):
@@ -33,7 +34,7 @@ class TestServer(unittest.TestCase):
 
     def make_recipe(self, name='openerp', **options):
         recipe = self.recipe = ServerRecipe(self.buildout, name, options)
-        recipe.fakevcs_get_update = fakevcs_method(recipe, 'get_update')
+        vcs.fakevcs_get_update = fakevcs_method(recipe, 'get_update')
         self.clear_vcs_log()
 
     def get_vcs_log(self):
@@ -78,7 +79,9 @@ class TestServer(unittest.TestCase):
         paths = self.recipe.retrieve_addons()
         self.assertEquals(
             self.get_vcs_log(), [
-                ('get_update', addons_dir, 'http://trunk.example', 'rev')])
+                ('get_update', addons_dir, 'http://trunk.example', 'rev',
+                 dict(offline=False)
+                 )])
         self.assertEquals(paths, [addons_dir])
 
     def test_retrieve_addons_vcs_2(self):
@@ -95,8 +98,11 @@ class TestServer(unittest.TestCase):
         paths = self.recipe.retrieve_addons()
         self.assertEquals(
             self.get_vcs_log(), [
-                ('get_update', addons_dir, 'http://trunk.example', 'rev'),
-                ('get_update', other_dir, 'http://other.example', '76')])
+                ('get_update', addons_dir, 'http://trunk.example', 'rev',
+                                 dict(offline=False)),
+                ('get_update', other_dir, 'http://other.example', '76',
+                                  dict(offline=False)),
+                ])
         self.assertEquals(paths, [addons_dir, other_dir])
 
     def test_retrieve_addons_subdir(self):
@@ -110,7 +116,9 @@ class TestServer(unittest.TestCase):
         os.mkdir(web_addons_dir)
         paths = self.recipe.retrieve_addons()
         self.assertEquals(self.get_vcs_log(), [
-                          ('get_update', web_dir, 'lp:openerp-web', 'last:1')])
+                          ('get_update', web_dir, 'lp:openerp-web', 'last:1',
+                           dict(offline=False))
+                          ])
         self.assertEquals(paths, [web_addons_dir])
 
     def test_retrieve_addons_single(self):
