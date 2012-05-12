@@ -12,6 +12,10 @@ DOWNLOAD_URL = { '6.0': 'http://www.openerp.com/download/stable/source/',
                  '6.1': 'http://nightly.openerp.com/6.1/releases/'
                 }
 
+SUBPROCESS_ENV = os.environ.copy()
+SUBPROCESS_ENV['PYTHONPATH'] = SUBPROCESS_ENV.pop(
+    'BUILDOUT_ORIGINAL_PYTHONPATH', '')
+
 class WorkingDirectoryKeeper(object):
     """A context manager to get back the working directory as it was before."""
 
@@ -128,33 +132,35 @@ class BaseRecipe(object):
 
 
     def hg_get_update(self, target_dir, url, revision):
-        """Ensure that target_dir is a branch of url at specified revision.
+        """Ensure that target_dir is a clone of url at specified revision.
 
         If target_dir already exists, does a simple pull.
-        Offline-mode: no branch nor pull, but update.
+        Offline-mode: no clone nor pull, but update.
         """
-        rev_str = revision and '-r ' + revision or ''
+        if not os.path.exists(target_dir):
+            # TODO case of local url ?
+            if self.offline:
+                raise IOError("hg repository %r does not exist; cannot clone it from %r (offline mode)" % (target_dir, url))
 
-        with working_directory_keeper:
-            if not os.path.exists(target_dir):
-                # TODO case of local url ?
-                if self.offline:
-                    raise IOError("hg repository %s does not exist; cannot clone it from %s (offline mode)" % (target_dir, url))
-
-                os.chdir(os.path.split(target_dir)[0])
-                logger.info("CLoning %s ...", url)
-                subprocess.call('hg clone %s %s %s' % (
-                        rev_str, url, target_dir), shell=True)
-            else:
-                os.chdir(target_dir)
-                # TODO what if remote repo is actually local fs ?
-                if not self.offline:
-                    logger.info("Pull for hg repo %s ...", target_dir)
-                    subprocess.call('hg pull', shell=True)
+            logger.info("CLoning %s ...", url)
+            clone_cmd = ['hg', 'clone']
+            if revision:
+                clone_cmd.extend(['-r', revision])
+            clone_cmd.extend([url, target_dir])
+            subprocess.call(clone_cmd, env=SUBPROCESS_ENV)
+        else:
+            # TODO what if remote repo is actually local fs ?
+            if not self.offline:
+                logger.info("Pull for hg repo %r ...", target_dir)
+                subprocess.call(['hg', '--cwd', target_dir, 'pull'],
+                                env=SUBPROCESS_ENV)
+            if revision:
+                logger.info("Updating %s to revision %s",
+                            target_dir, revision)
+                up_cmd = ['hg', '--cwd', target_dir, 'up']
                 if revision:
-                    logger.info("Updating %s to revision %s",
-                                target_dir, revision)
-                    subprocess.call('hg up %s' % rev_str, shell=True)
+                    up_cmd.extend(['-r', revision])
+                subprocess.call(up_cmd, env=SUBPROCESS_ENV)
 
     def git_get_update(self, target_dir, url, revision):
         """Ensure that target_dir is a branch of url at specified revision.
