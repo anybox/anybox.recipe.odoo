@@ -85,6 +85,8 @@ class BzrTestCase(VcsTestCase):
         subprocess.call(['bzr', 'init', 'src-branch'])
         self.src_repo = os.path.join(self.src_dir, 'src-branch')
         os.chdir(self.src_repo)
+        subprocess.call(['bzr', '--branch', 'whoami',
+                         'Joe Test <joe@test.example>'])
         f = open('tracked', 'w')
         f.write("first" + os.linesep)
         f.close()
