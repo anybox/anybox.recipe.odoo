@@ -1,8 +1,8 @@
 Changes
 ~~~~~~~
 
-0.13
-----
+0.13 (14-05-2012)
+-----------------
 - launchpad #998404: more robust calls to hg and bzr (w/ unit tests),
   and have exception raised if vcs call failed (break early, break
   often).
