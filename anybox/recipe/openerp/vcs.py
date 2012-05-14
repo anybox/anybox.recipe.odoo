@@ -1,8 +1,9 @@
 import os
 import subprocess
 import logging
-from utils import working_directory_keeper
+from StringIO import StringIO
 
+from utils import working_directory_keeper
 logger = logging.getLogger(__name__)
 
 SUBPROCESS_ENV = os.environ.copy()
@@ -63,8 +64,19 @@ def bzr_get_update(target_dir, url, revision, offline=False, clear_locks=False,
     else:
         # TODO what if bzr source is actually local fs ?
         if clear_locks:
+            yes = StringIO()
+            yes.write('y')
+            yes.seek(0)
             logger.info("Break-lock for branch %s ...", target_dir)
-            subprocess.check_call(['bzr', 'break-lock', target_dir])
+            # GR newer versions of bzr have a --force option, but this call
+            # works for older ones as well (fortunately we don't need a pty)
+            p = subprocess.Popen(['bzr', 'break-lock', target_dir],
+                                 subprocess.PIPE)
+            out, err = p.communicate(input='y')
+            if p.returncode != 0:
+                raise subprocess.CalledProcessError(
+                    p.returncode, repr(['bzr', 'break-lock', target_dir]))
+
         if not offline:
             logger.info("Pull for branch %s ...", target_dir)
             subprocess.check_call(['bzr', 'pull', '-d', target_dir],

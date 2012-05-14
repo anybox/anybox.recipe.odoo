@@ -1,6 +1,11 @@
 Changes
 ~~~~~~~
 
+0.13.1 (14-05-2012)
+-------------------
+- launchpad #997107: fixed vcs-clear-locks option for bzr, that
+  requires a user confirmation that cannot be bypassed in older versions
+
 0.13 (14-05-2012)
 -----------------
 - launchpad #998404: more robust calls to hg and bzr (w/ unit tests),
