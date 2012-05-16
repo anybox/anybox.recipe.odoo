@@ -150,7 +150,7 @@ SUPPORTED['bzr'] = BzrBranch
 class GitRepo(BaseRepo):
     """Represent a Git clone tied to a reference branch."""
 
-    def get_update(revision):
+    def get_update(self, revision):
         """Ensure that target_dir is a branch of url at specified revision.
 
         If target_dir already exists, does a simple pull.
@@ -169,26 +169,27 @@ class GitRepo(BaseRepo):
 
                 os.chdir(os.path.split(target_dir)[0])
                 logger.info("Cloning %s ...", url)
-                subprocess.check_call('git clone -b %s %s %s' % (
-                    rev_str, url, target_dir), shell=True)
+                subprocess.check_call(['git', 'clone', '-b',
+                                       rev_str, url, target_dir])
             else:
                 os.chdir(target_dir)
                 # TODO what if remote repo is actually local fs ?
                 if not offline:
                     logger.info("Pull for git repo %s (rev %s)...",
                                 target_dir, rev_str)
-                    subprocess.check_call('git pull %s %s' % (url, rev_str),
-                                          shell=True)
+                    subprocess.check_call(['git', 'pull',
+                                          url, rev_str])
                 elif revision:
                     logger.info("Checkout %s to revision %s",
                                 target_dir,revision)
-                    subprocess.check_call('git checkout %s' % rev_str, shell=True)
+                    subprocess.check_call(['git', 'checkout', rev_str])
+
 
 SUPPORTED['git'] = GitRepo
 
 class SvnCheckout(BaseRepo):
 
-    def svn_get_update(revision):
+    def get_update(self, revision):
         """Ensure that target_dir is a branch of url at specified revision.
 
         If target_dir already exists, does a simple pull.

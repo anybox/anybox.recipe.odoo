@@ -10,7 +10,7 @@ import tempfile
 import subprocess
 
 from anybox.recipe.openerp import vcs
-from anybox.recipe.openerp.vcs import HgRepo, BzrBranch
+from anybox.recipe.openerp.vcs import HgRepo, BzrBranch, GitRepo, SvnCheckout
 
 class VcsTestCase(unittest.TestCase):
     """Common fixture"""
@@ -201,3 +201,66 @@ class BzrTestCase(VcsTestCase):
         self.assertRaises(subprocess.CalledProcessError, branch.get_update,
                           'default')
 
+
+class GitTestCase(VcsTestCase):
+
+    def create_src(self):
+        os.chdir(self.src_dir)
+        subprocess.call(['git', 'init', 'src-branch'])
+        self.src_repo = os.path.join(self.src_dir, 'src-branch')
+        os.chdir(self.src_repo)
+        f = open('tracked', 'w')
+        f.write("first" + os.linesep)
+        f.close()
+        subprocess.call(['git', 'add'])
+        subprocess.call(['git', 'commit', '-m', 'initial commit'])
+        f = open('tracked', 'w')
+        f.write("last" + os.linesep)
+        f.close()
+        subprocess.call(['git', 'add', 'tracked'])
+        subprocess.call(['git', 'commit', '-m', 'last version'])
+
+    def test_clone(self):
+        """Git clone."""
+        target_dir = os.path.join(self.dst_dir, "My clone")
+        GitRepo(target_dir, self.src_repo)('master')
+
+        self.assertTrue(os.path.isdir(target_dir))
+        f = open(os.path.join(target_dir, 'tracked'))
+        lines = f.readlines()
+        f.close()
+        self.assertEquals(lines[0].strip(), 'last')
+
+
+class SvnTestCase(VcsTestCase):
+
+    def create_src(self):
+        os.chdir(self.src_dir)
+        subprocess.check_call(['svnadmin', 'create', 'src-repo'])
+        self.src_repo = os.path.join(self.src_dir, 'src-repo')
+        self.src_repo = 'file://' + self.src_repo
+
+        tmp_checkout = os.path.join(self.src_dir, 'tmp_checkout')
+        subprocess.call(['svn', 'checkout', self.src_repo, tmp_checkout])
+
+        os.chdir(tmp_checkout)
+        f = open('tracked', 'w')
+        f.write("first" + os.linesep)
+        f.close()
+        subprocess.call(['svn', 'add', 'tracked'])
+        subprocess.call(['svn', 'commit', '-m', 'initial commit'])
+        f = open('tracked', 'w')
+        f.write("last" + os.linesep)
+        f.close()
+        subprocess.call(['svn', 'commit', '-m', 'last version'])
+
+    def test_checkout(self):
+        """Svn clone."""
+        target_dir = os.path.join(self.dst_dir, "Mycheckout")
+        SvnCheckout(target_dir, self.src_repo)('head')
+
+        self.assertTrue(os.path.isdir(target_dir))
+        f = open(os.path.join(target_dir, 'tracked'))
+        lines = f.readlines()
+        f.close()
+        self.assertEquals(lines[0].strip(), 'last')
