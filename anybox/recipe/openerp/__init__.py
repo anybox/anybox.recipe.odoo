@@ -28,7 +28,7 @@ class BaseRecipe(object):
 
         clear_locks = options.get('vcs-clear-locks', '').lower()
         self.vcs_clear_locks = clear_locks == 'true'
-        clear_retry = options.get('vcs-clear-locks', '').lower()
+        clear_retry = options.get('vcs-clear-retry', '').lower()
         self.clear_retry = clear_retry == 'true'
 
         self.downloads_dir = self.make_absolute(
