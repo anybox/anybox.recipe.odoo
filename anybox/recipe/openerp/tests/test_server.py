@@ -11,16 +11,29 @@ from tempfile import mkdtemp
 from anybox.recipe.openerp import ServerRecipe
 from anybox.recipe.openerp import vcs
 
-def fakevcs_method(recipe, method_name):
-    """Pure mockup to monkey-patch on recipe instances."""
-    def meth(*args, **kwargs):
-        return recipe._fake_vcs_log.append((method_name,) + args + (kwargs,))
-    return meth
+class FakeRepo(vcs.BaseRepo):
+
+    log = []
+
+    log_std_options = True
+
+    def get_update(self, revision):
+        if not os.path.isdir(self.target_dir):
+            os.mkdir(self.target_dir)
+
+        options = self.options.copy()
+        if self.log_std_options:
+            options['offline'] = self.offline
+            options['clear_locks'] = self.clear_locks
+        self.log.append((self.target_dir, self.url, revision, options),)
+
+vcs.SUPPORTED['fakevcs'] = FakeRepo
 
 class TestServer(unittest.TestCase):
 
     def setUp(self):
         b_dir = self.buildout_dir = mkdtemp('test_oerp_recipe')
+        self.clear_vcs_log()
         self.buildout = {}
         self.buildout['buildout'] = {
             'directory': b_dir,
@@ -34,14 +47,12 @@ class TestServer(unittest.TestCase):
 
     def make_recipe(self, name='openerp', **options):
         recipe = self.recipe = ServerRecipe(self.buildout, name, options)
-        vcs.fakevcs_get_update = fakevcs_method(recipe, 'get_update')
-        self.clear_vcs_log()
 
     def get_vcs_log(self):
-        return self.recipe._fake_vcs_log
+        return FakeRepo.log
 
     def clear_vcs_log(self):
-        self.recipe._fake_vcs_log = []
+        FakeRepo.log = []
 
     def test_correct_v_6_1(self):
         self.make_recipe(version='6.1')
@@ -50,7 +61,6 @@ class TestServer(unittest.TestCase):
     def test_retrieve_addons_local(self):
         """Setting up a local addons line."""
         addons_dir = os.path.join(self.buildout_dir, 'addons-custom')
-        os.mkdir(addons_dir)
         self.make_recipe(version='6.1', addons='local addons-custom')
         paths = self.recipe.retrieve_addons()
         self.assertEquals(self.get_vcs_log(), [])
@@ -61,8 +71,6 @@ class TestServer(unittest.TestCase):
         """
         custom_dir = os.path.join(self.buildout_dir, 'custom')
         addons_dir = os.path.join(custom_dir, 'addons')
-        os.mkdir(custom_dir)
-        os.mkdir(addons_dir)
         self.make_recipe(version='6.1', addons='local custom subdir=addons')
         paths = self.recipe.retrieve_addons()
         self.assertEquals(self.get_vcs_log(), [])
@@ -75,11 +83,10 @@ class TestServer(unittest.TestCase):
         # manual creation because fakevcs does nothing but retrieve_addons
         # has assertions on existence of target directories
         addons_dir = os.path.join(self.buildout_dir, 'addons-trunk')
-        os.mkdir(addons_dir)
         paths = self.recipe.retrieve_addons()
         self.assertEquals(
             self.get_vcs_log(), [
-                ('get_update', addons_dir, 'http://trunk.example', 'rev',
+                (addons_dir, 'http://trunk.example', 'rev',
                  dict(offline=False, clear_locks=False)
                  )])
         self.assertEquals(paths, [addons_dir])
@@ -93,15 +100,13 @@ class TestServer(unittest.TestCase):
         # has assertions on existence of target directories
         addons_dir = os.path.join(self.buildout_dir, 'addons-trunk')
         other_dir = os.path.join(self.buildout_dir, 'addons-other')
-        os.mkdir(addons_dir)
-        os.mkdir(other_dir)
         paths = self.recipe.retrieve_addons()
         self.assertEquals(
             self.get_vcs_log(), [
-                ('get_update', addons_dir, 'http://trunk.example', 'rev',
-                                 dict(offline=False, clear_locks=False)),
-                ('get_update', other_dir, 'http://other.example', '76',
-                                  dict(offline=False, clear_locks=False)),
+                (addons_dir, 'http://trunk.example', 'rev',
+                 dict(offline=False, clear_locks=False)),
+                (other_dir, 'http://other.example', '76',
+                 dict(offline=False, clear_locks=False)),
                 ])
         self.assertEquals(paths, [addons_dir, other_dir])
 
@@ -112,11 +117,9 @@ class TestServer(unittest.TestCase):
         # has assertions on existence of target directories
         web_dir = os.path.join(self.buildout_dir, 'web')
         web_addons_dir = os.path.join(web_dir, 'addons')
-        os.mkdir(web_dir)
-        os.mkdir(web_addons_dir)
         paths = self.recipe.retrieve_addons()
         self.assertEquals(self.get_vcs_log(), [
-                          ('get_update', web_dir, 'lp:openerp-web', 'last:1',
+                          (web_dir, 'lp:openerp-web', 'last:1',
                            dict(offline=False, clear_locks=False))
                           ])
         self.assertEquals(paths, [web_addons_dir])
@@ -137,10 +140,8 @@ class TestServer(unittest.TestCase):
     def test_retrieve_addons_single_collision(self):
         """The VCS is a whole addon, and there's a collision in renaming"""
         self.make_recipe(version='6.1', addons='fakevcs custom addon last:1')
-        # manual creation of our single addon
         addon_dir = os.path.join(self.buildout_dir, 'addon')
         os.mkdir(addon_dir)
-        os.mkdir(addon_dir + '_0')
         open(os.path.join(addon_dir, '__openerp__.py'), 'w').close()
         paths = self.recipe.retrieve_addons()
         self.assertEquals(paths, [addon_dir])
@@ -151,13 +152,12 @@ class TestServer(unittest.TestCase):
     def test_retrieve_addons_clear_locks(self):
         """Retrieving addons with vcs-clear-locks option."""
         addons_dir = os.path.join(self.buildout_dir, 'addons')
-        os.mkdir(addons_dir)
         options = dict(version='6.1', addons='fakevcs lp:my-addons addons -1')
         options['vcs-clear-locks'] = 'True'
         self.make_recipe(**options)
         paths = self.recipe.retrieve_addons()
         self.assertEquals(self.get_vcs_log(), [
-                          ('get_update', addons_dir, 'lp:my-addons', '-1',
+                          (addons_dir, 'lp:my-addons', '-1',
                            dict(offline=False, clear_locks=True))
                           ])
 

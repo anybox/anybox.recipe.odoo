@@ -28,6 +28,9 @@ class BaseRecipe(object):
 
         clear_locks = options.get('vcs-clear-locks', '').lower()
         self.vcs_clear_locks = clear_locks == 'true'
+        clear_retry = options.get('vcs-clear-locks', '').lower()
+        self.clear_retry = clear_retry == 'true'
+
         self.downloads_dir = self.make_absolute(
             self.b_options.get('openerp-downloads-directory', 'downloads'))
         self.version_wanted = None  # from the buildout
@@ -146,21 +149,16 @@ class BaseRecipe(object):
             if repo_type == 'local':
                 repo_dir = self.make_absolute(split[1])
             else:
-               vcs_method = getattr(vcs, '%s_get_update' % repo_type, None)
-               if vcs_method is None:
-                   raise RuntimeError("Don't know how to handle "
-                                      "vcs type %s" % repo_type)
-
-               repo_url, repo_dir, repo_rev = split[1:4]
-
-               repo_dir = self.make_absolute(repo_dir)
-               vcs_method(repo_dir, repo_url, repo_rev, offline=self.offline,
-                          clear_locks=self.vcs_clear_locks)
+                repo_url, repo_dir, repo_rev = split[1:4]
+                repo_dir = self.make_absolute(repo_dir)
+                options = dict(offline=self.offline,
+                               clear_locks=self.vcs_clear_locks)
+                vcs.get_update(repo_type, repo_dir, repo_url, repo_rev,
+                               clear_retry=self.clear_retry,
+                               **options)
 
             subdir = addons_options.get('subdir')
             addons_dir = subdir and join(repo_dir, subdir) or repo_dir
-            assert os.path.isdir(addons_dir), (
-                "Not a directory: %r (aborting)" % addons_dir)
 
             manifest = os.path.join(addons_dir, '__openerp__.py')
             if os.path.isfile(manifest):
@@ -218,12 +216,15 @@ class BaseRecipe(object):
             tar.close()
         elif self.type == 'local':
             logger.info('Local directory chosen, nothing to do')
-        elif self.type in vcs.SUPPORTED:
-            vcs_method = getattr(vcs, '%s_get_update' % self.type, None)
-            vcs_method(self.openerp_dir, self.url, self.version_wanted,
-                       offline=self.offline)
+        else:
+            vcs.get_update(self.type, self.openerp_dir, self.url,
+                           self.version_wanted, offline=self.offline,
+                           clear_retry=self.clear_retry)
 
         addons_paths = self.retrieve_addons()
+        for path in addons_paths:
+            assert os.path.isdir(path), (
+                "Not a directory: %r (aborting)" % path)
 
         # ugly method to extract requirements from ugly setup.py of 6.0,
         # but works with 6.1 as well

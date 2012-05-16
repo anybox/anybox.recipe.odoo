@@ -10,9 +10,10 @@ import tempfile
 import subprocess
 
 from anybox.recipe.openerp import vcs
+from anybox.recipe.openerp.vcs import HgRepo, BzrBranch
 
 class VcsTestCase(unittest.TestCase):
-    """Common fixture."""
+    """Common fixture"""
 
     def setUp(self):
         sandbox = self.sandbox = tempfile.mkdtemp('test_oerp_recipe_vcs')
@@ -26,9 +27,56 @@ class VcsTestCase(unittest.TestCase):
         print "TEARDOWN remove " + self.sandbox
         shutil.rmtree(self.sandbox)
 
+class CommonTestCase(VcsTestCase):
+
+    def create_src(self):
+        """We use HgRepo to test the common features."""
+
+        os.chdir(self.src_dir)
+        subprocess.call(['hg', 'init', 'src-repo'])
+        self.src_repo = os.path.join(self.src_dir, 'src-repo')
+        os.chdir('src-repo')
+        f = open('tracked', 'w')
+        f.write("default" + os.linesep)
+        f.close()
+        subprocess.call(['hg', 'add'])
+        subprocess.call(['hg', 'commit', '-m', 'initial commit'])
+
+    def test_unknown(self):
+        self.assertRaises(ValueError,
+                          vcs.get_update, 'unknown', '', '', 'default')
+
+    def test_retry(self):
+        """With a repo class that fails updates, retry works."""
+
+        class HgRepoFailsUpdates(HgRepo):
+            def get_update(self, revision):
+                if os.path.exists(self.target_dir):
+                    raise vcs.UpdateError(1, ['error'])
+                HgRepo.get_update(self, revision)
+
+        vcs.SUPPORTED['hg_fails_updates'] = HgRepoFailsUpdates
+        repo_path = os.path.join(self.dst_dir, "clone")
+
+        vcs.get_update('hg_fails_updates', repo_path, self.src_repo, 'default')
+        self.assertTrue(os.path.isdir(repo_path))
+
+        # without the retry option
+        self.assertRaises(vcs.UpdateError, vcs.get_update, 'hg_fails_updates',
+                          repo_path, self.src_repo, 'default')
+
+        # now the retry
+        vcs.get_update('hg_fails_updates', repo_path, self.src_repo, 'default',
+                       clear_retry=True)
+
+        # no such wild retry in offline mode
+        self.assertRaises(vcs.UpdateError, vcs.get_update, 'hg_fails_updates',
+                          repo_path, self.src_repo, 'default', offline=True)
+
 class HgTestCase(VcsTestCase):
 
     def create_src(self):
+
         os.chdir(self.src_dir)
         subprocess.call(['hg', 'init', 'src-repo'])
         self.src_repo = os.path.join(self.src_dir, 'src-repo')
@@ -46,7 +94,8 @@ class HgTestCase(VcsTestCase):
 
     def test_clone(self):
         target_dir = os.path.join(self.dst_dir, "My clone")
-        vcs.hg_get_update(target_dir, self.src_repo, 'default')
+        HgRepo(target_dir, self.src_repo)('default')
+
         self.assertTrue(os.path.isdir(target_dir))
         f = open(os.path.join(target_dir, 'tracked'))
         lines = f.readlines()
@@ -56,7 +105,8 @@ class HgTestCase(VcsTestCase):
     def test_clone_to_rev(self):
         """Directly clone and update to given revision."""
         target_dir = os.path.join(self.dst_dir, "My clone")
-        vcs.hg_get_update(target_dir, self.src_repo, 'future')
+        HgRepo(target_dir, self.src_repo)('future')
+
         self.assertTrue(os.path.isdir(target_dir))
         f = open(os.path.join(target_dir, 'tracked'))
         lines = f.readlines()
@@ -65,8 +115,8 @@ class HgTestCase(VcsTestCase):
 
     def test_update(self):
         target_dir = os.path.join(self.dst_dir, "clone to update")
-        vcs.hg_get_update(target_dir, self.src_repo, 'default')
-        vcs.hg_get_update(target_dir, self.src_repo, 'future')
+        HgRepo(target_dir, self.src_repo)('default')
+        HgRepo(target_dir, self.src_repo)('future')
         self.assertTrue(os.path.isdir(target_dir))
         f = open(os.path.join(target_dir, 'tracked'))
         lines = f.readlines()
@@ -75,8 +125,9 @@ class HgTestCase(VcsTestCase):
 
     def test_failed(self):
         target_dir = os.path.join(self.dst_dir, "My clone")
-        self.assertRaises(subprocess.CalledProcessError, vcs.hg_get_update,
-                          target_dir, '/does-not-exist', 'default')
+        repo = HgRepo(target_dir, '/does-not-exit')
+        self.assertRaises(subprocess.CalledProcessError,
+                          repo.get_update, 'default')
 
 class BzrTestCase(VcsTestCase):
 
@@ -99,7 +150,8 @@ class BzrTestCase(VcsTestCase):
 
     def test_branch(self):
         target_dir = os.path.join(self.dst_dir, "My branch")
-        vcs.bzr_get_update(target_dir, self.src_repo, 'last:1')
+        BzrBranch(target_dir, self.src_repo)('last:1')
+
         self.assertTrue(os.path.isdir(target_dir))
         f = open(os.path.join(target_dir, 'tracked'))
         lines = f.readlines()
@@ -109,7 +161,7 @@ class BzrTestCase(VcsTestCase):
     def test_branch_to_rev(self):
         """Directly clone and update to given revision."""
         target_dir = os.path.join(self.dst_dir, "My branch")
-        vcs.bzr_get_update(target_dir, self.src_repo, '1')
+        BzrBranch(target_dir, self.src_repo)('1')
         self.assertTrue(os.path.isdir(target_dir))
         f = open(os.path.join(target_dir, 'tracked'))
         lines = f.readlines()
@@ -119,10 +171,10 @@ class BzrTestCase(VcsTestCase):
     def test_update(self):
         # Setting up a prior branch
         target_dir = os.path.join(self.dst_dir, "clone to update")
-        vcs.bzr_get_update(target_dir, self.src_repo, 'last:1')
+        BzrBranch(target_dir, self.src_repo)('last:1')
 
         # Testing starts here
-        vcs.bzr_get_update(target_dir, self.src_repo, '1')
+        BzrBranch(target_dir, self.src_repo)('1')
         self.assertTrue(os.path.isdir(target_dir))
         f = open(os.path.join(target_dir, 'tracked'))
         lines = f.readlines()
@@ -133,10 +185,10 @@ class BzrTestCase(VcsTestCase):
         """Testing update with clear locks option."""
         # Setting up a prior branch
         target_dir = os.path.join(self.dst_dir, "clone to update")
-        vcs.bzr_get_update(target_dir, self.src_repo, 'last:1')
+        BzrBranch(target_dir, self.src_repo)('last:1')
 
         # Testing starts here
-        vcs.bzr_get_update(target_dir, self.src_repo, '1', clear_locks=True)
+        BzrBranch(target_dir, self.src_repo, clear_locks=True)('1')
         self.assertTrue(os.path.isdir(target_dir))
         f = open(os.path.join(target_dir, 'tracked'))
         lines = f.readlines()
@@ -145,6 +197,7 @@ class BzrTestCase(VcsTestCase):
 
     def test_failed(self):
         target_dir = os.path.join(self.dst_dir, "My branch")
-        self.assertRaises(subprocess.CalledProcessError, vcs.bzr_get_update,
-                          target_dir, '/does-not-exist', 'default')
+        branch = BzrBranch(target_dir, '/does-not-exist')
+        self.assertRaises(subprocess.CalledProcessError, branch.get_update,
+                          'default')
 
