@@ -1,8 +1,13 @@
 Changes
 ~~~~~~~
 
-0.14
-----
+0.14 (17-05-2012)
+-----------------
+- launchpad #1000352: option vcs-clear-retry to retrieve from scratch in case
+  of diverged Bzr branches. Raising UpdateError in right place would trigger
+  the same for other VCSes.
+- Basic tests for Git and Svn
+- Refactor with classes of VCS package 
 
 0.13.1 (14-05-2012)
 -------------------
