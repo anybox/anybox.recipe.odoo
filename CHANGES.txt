@@ -1,6 +1,10 @@
 Changes
 ~~~~~~~
 
+0.14.1 (17-05-2012)
+-------------------
+- launchpad #1000352: fixed a concrete problem in Bzr reraising
+
 0.14 (17-05-2012)
 -----------------
 - launchpad #1000352: option vcs-clear-retry to retrieve from scratch in case

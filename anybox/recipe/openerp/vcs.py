@@ -138,7 +138,7 @@ class BzrBranch(BaseRepo):
                                            '-d', target_dir],
                                           env=SUBPROCESS_ENV)
                 except subprocess.CalledProcessError, e:
-                    raise UpdateError()
+                    raise UpdateError(e.returncode, e.cmd)
 
             if revision:
                 logger.info("Update to revision %s", revision)
