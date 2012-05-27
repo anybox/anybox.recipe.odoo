@@ -12,6 +12,10 @@ import subprocess
 from anybox.recipe.openerp import vcs
 from anybox.recipe.openerp.vcs import HgRepo, BzrBranch, GitRepo, SvnCheckout
 
+COMMIT_USER_NAME = 'Test'
+COMMIT_USER_EMAIL = 'test@example.org'
+COMMIT_USER_FULL = '%s %s' % (COMMIT_USER_NAME, COMMIT_USER_EMAIL)
+
 class VcsTestCase(unittest.TestCase):
     """Common fixture"""
 
@@ -40,7 +44,8 @@ class CommonTestCase(VcsTestCase):
         f.write("default" + os.linesep)
         f.close()
         subprocess.call(['hg', 'add'])
-        subprocess.call(['hg', 'commit', '-m', 'initial commit'])
+        subprocess.call(['hg', 'commit', '-m', 'initial commit',
+                         '-u', COMMIT_USER_FULL])
 
     def test_unknown(self):
         self.assertRaises(ValueError,
@@ -85,12 +90,14 @@ class HgTestCase(VcsTestCase):
         f.write("default" + os.linesep)
         f.close()
         subprocess.call(['hg', 'add'])
-        subprocess.call(['hg', 'commit', '-m', 'initial commit'])
+        subprocess.call(['hg', 'commit', '-m', 'initial commit',
+                         '-u', COMMIT_USER_FULL])
         subprocess.call(['hg', 'branch', 'future'])
         f = open('tracked', 'w')
         f.write("future" + os.linesep)
         f.close()
-        subprocess.call(['hg', 'commit', '-m', 'in branch'])
+        subprocess.call(['hg', 'commit', '-m', 'in branch',
+                         '-u', COMMIT_USER_FULL])
 
     def test_clone(self):
         target_dir = os.path.join(self.dst_dir, "My clone")
@@ -136,8 +143,7 @@ class BzrTestCase(VcsTestCase):
         subprocess.call(['bzr', 'init', 'src-branch'])
         self.src_repo = os.path.join(self.src_dir, 'src-branch')
         os.chdir(self.src_repo)
-        subprocess.call(['bzr', 'whoami', '--branch',
-                         'Joe Test <joe@test.example>'])
+        subprocess.call(['bzr', 'whoami', '--branch', COMMIT_USER_FULL])
         f = open('tracked', 'w')
         f.write("first" + os.linesep)
         f.close()
@@ -209,16 +215,20 @@ class GitTestCase(VcsTestCase):
         subprocess.call(['git', 'init', 'src-branch'])
         self.src_repo = os.path.join(self.src_dir, 'src-branch')
         os.chdir(self.src_repo)
+	# repo configuration is local by default
+	subprocess.call(['git', 'config', 'user.email', COMMIT_USER_EMAIL])
+	subprocess.call(['git', 'config', 'user.name', COMMIT_USER_NAME])
         f = open('tracked', 'w')
         f.write("first" + os.linesep)
         f.close()
-        subprocess.call(['git', 'add'])
+        subprocess.call(['git', 'add', 'tracked'])
         subprocess.call(['git', 'commit', '-m', 'initial commit'])
         f = open('tracked', 'w')
         f.write("last" + os.linesep)
         f.close()
         subprocess.call(['git', 'add', 'tracked'])
         subprocess.call(['git', 'commit', '-m', 'last version'])
+
 
     def test_clone(self):
         """Git clone."""
