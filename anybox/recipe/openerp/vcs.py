@@ -80,6 +80,12 @@ class HgRepo(BaseRepo):
         parser.write(f)
         f.close()
 
+    def uncommitted_changes(self):
+        """True if we have uncommitted changes."""
+        p = subprocess.Popen(['hg', '--cwd', self.target_dir, 'status'],
+                             stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
+        return bool(p.communicate()[0])
+
     def get_update(self, revision):
         """Ensure that target_dir is a clone of url at specified revision.
 

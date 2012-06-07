@@ -167,11 +167,27 @@ class HgTestCase(VcsTestCase):
         HgRepo(target_dir, new_src)('future')
         self.assertFutureBranch(target_dir)
 
+    def test_uncommitted_changes(self):
+        """HgRepo can detect uncommitted changes."""
+        # initial cloning
+        target_dir = os.path.join(self.dst_dir, "clone to update")
+        repo = HgRepo(target_dir, self.src_repo)
+        repo('default')
+
+        self.assertFalse(repo.uncommitted_changes())
+
+        f = open(os.path.join(target_dir, 'tracked'), 'w')
+        f.write('mod')
+        f.close()
+
+        self.assertTrue(repo.uncommitted_changes())
+
     def test_failed(self):
         target_dir = os.path.join(self.dst_dir, "My clone")
         repo = HgRepo(target_dir, '/does-not-exit')
         self.assertRaises(subprocess.CalledProcessError,
                           repo.get_update, 'default')
+
 
 class BzrTestCase(VcsTestCase):
 
