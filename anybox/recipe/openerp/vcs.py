@@ -3,6 +3,7 @@ import subprocess
 import logging
 import shutil
 from StringIO import StringIO
+from ConfigParser import ConfigParser, NoOptionError
 
 from utils import working_directory_keeper
 logger = logging.getLogger(__name__)
@@ -53,6 +54,32 @@ def get_update(vcs_type, target_dir, url, revision, **options):
 
 class HgRepo(BaseRepo):
 
+    def update_hgrc_paths(self):
+        """Update hgrc paths section if needed.
+
+        Old paths are kept in renamed form: buildout_save_%d."""
+        parser = ConfigParser()
+        hgrc_path = os.path.join(self.target_dir, '.hg', 'hgrc')
+        parser.read(hgrc_path)
+        default = parser.get('paths', 'default')
+        if default == self.url:
+            return
+
+        count = 1
+        while True:
+            save = 'buildout_save_%d' % count
+            try:
+                parser.get('paths', save)
+            except NoOptionError:
+                break
+            count += 1
+
+        parser.set('paths', save, default)
+        parser.set('paths', 'default', self.url)
+        f = open(hgrc_path, 'w')
+        parser.write(f)
+        f.close()
+
     def get_update(self, revision):
         """Ensure that target_dir is a clone of url at specified revision.
 
@@ -75,6 +102,7 @@ class HgRepo(BaseRepo):
             clone_cmd.extend([url, target_dir])
             subprocess.check_call(clone_cmd, env=SUBPROCESS_ENV)
         else:
+            self.update_hgrc_paths()
             # TODO what if remote repo is actually local fs ?
             if not offline:
                 logger.info("Pull for hg repo %r ...", target_dir)

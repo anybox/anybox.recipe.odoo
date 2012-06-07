@@ -1,6 +1,12 @@
 Changes
 ~~~~~~~
 
+0.15
+----
+- launchpad #1008931: Mercurial pull don't take URL changes into
+  account. Now the recipe manages the repo-local hgrc [paths]
+  section, updates the default paths while storing earlier values
+
 0.14.1 (17-05-2012)
 -------------------
 - launchpad #1000352: fixed a concrete problem in Bzr reraising

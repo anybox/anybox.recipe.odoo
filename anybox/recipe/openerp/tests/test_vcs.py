@@ -8,6 +8,7 @@ import os
 import shutil
 import tempfile
 import subprocess
+from ConfigParser import ConfigParser
 
 from anybox.recipe.openerp import vcs
 from anybox.recipe.openerp.vcs import HgRepo, BzrBranch, GitRepo, SvnCheckout
@@ -109,26 +110,62 @@ class HgTestCase(VcsTestCase):
         f.close()
         self.assertEquals(lines[0].strip(), 'default')
 
-    def test_clone_to_rev(self):
-        """Directly clone and update to given revision."""
-        target_dir = os.path.join(self.dst_dir, "My clone")
-        HgRepo(target_dir, self.src_repo)('future')
-
+    def assertFutureBranch(self, target_dir):
+        """Check that we are on the 'future' branch in target_dir repo."""
         self.assertTrue(os.path.isdir(target_dir))
         f = open(os.path.join(target_dir, 'tracked'))
         lines = f.readlines()
         f.close()
         self.assertEquals(lines[0].strip(), 'future')
+
+    def test_clone_to_rev(self):
+        """Directly clone and update to given revision."""
+        target_dir = os.path.join(self.dst_dir, "My clone")
+        HgRepo(target_dir, self.src_repo)('future')
+        self.assertFutureBranch(target_dir)
 
     def test_update(self):
         target_dir = os.path.join(self.dst_dir, "clone to update")
         HgRepo(target_dir, self.src_repo)('default')
         HgRepo(target_dir, self.src_repo)('future')
-        self.assertTrue(os.path.isdir(target_dir))
-        f = open(os.path.join(target_dir, 'tracked'))
-        lines = f.readlines()
-        f.close()
-        self.assertEquals(lines[0].strip(), 'future')
+        self.assertFutureBranch(target_dir)
+
+    def test_hgrc_paths_update(self):
+        """Method to update hgrc paths updates them and stores old values"""
+        target_dir = os.path.join(self.dst_dir, "clone to update")
+        repo = HgRepo(target_dir, self.src_repo)
+        # initial cloning
+        repo('default')
+
+        # first rename
+        new_src = os.path.join(self.src_dir, 'new-src-repo')
+        HgRepo(target_dir, new_src).update_hgrc_paths()
+        parser = ConfigParser()
+        parser.read(os.path.join(target_dir, '.hg', 'hgrc'))
+        self.assertEquals(parser.get('paths', 'default'), new_src)
+        self.assertEquals(parser.get('paths', 'buildout_save_1'), self.src_repo)
+
+        # second rename
+        new_src_2 = os.path.join(self.src_dir, 'renew-src-repo')
+        HgRepo(target_dir, new_src_2).update_hgrc_paths()
+        parser = ConfigParser()
+        parser.read(os.path.join(target_dir, '.hg', 'hgrc'))
+        self.assertEquals(parser.get('paths', 'default'), new_src_2)
+        self.assertEquals(parser.get('paths', 'buildout_save_1'), self.src_repo)
+        self.assertEquals(parser.get('paths', 'buildout_save_2'), new_src)
+
+    def test_url_change(self):
+        """HgRepo adapts itself to changes in source URL."""
+        target_dir = os.path.join(self.dst_dir, "clone to update")
+        repo = HgRepo(target_dir, self.src_repo)
+        # initial cloning
+        repo('default')
+
+        # rename and update
+        new_src = os.path.join(self.src_dir, 'new-src-repo')
+        os.rename(self.src_repo, new_src)
+        HgRepo(target_dir, new_src)('future')
+        self.assertFutureBranch(target_dir)
 
     def test_failed(self):
         target_dir = os.path.join(self.dst_dir, "My clone")
