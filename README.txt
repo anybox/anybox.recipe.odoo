@@ -112,7 +112,7 @@ Example::
   addons = local ../some/relative/path/for/custom_addons/
            local /some/other/absolute/path/for/custom_addons
            bzr lp:openobject-addons/trunk/    addons0 last:1
-           hg  http://example.com/some_addons addons1 tip
+           hg  http://example.com/some_addons addons1 default
            git http://example.com/some_addons addons2 master
            svn http://example.com/some_addons addons3 head
            bzr lp:openerp-web/trunk/ openerp-web last:1 subdir=addons
