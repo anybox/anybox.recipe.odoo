@@ -17,9 +17,14 @@ class FakeRepo(vcs.BaseRepo):
 
     log_std_options = True
 
+    vcs_control_dir = '.fake'
+
     def get_update(self, revision):
         if not os.path.isdir(self.target_dir):
             os.mkdir(self.target_dir)
+        control = os.path.join(self.target_dir, self.vcs_control_dir)
+        if not os.path.isdir(control):
+            os.mkdir(control)
 
         options = self.options.copy()
         if self.log_std_options:
@@ -134,8 +139,13 @@ class TestServer(unittest.TestCase):
         paths = self.recipe.retrieve_addons()
         self.assertEquals(paths, [addon_dir])
         self.assertEquals(os.listdir(addon_dir), ['addon'])
-        self.assertEquals(os.listdir(os.path.join(addon_dir, 'addon')),
-                                     ['__openerp__.py'])
+        moved_addon = os.path.join(addon_dir, 'addon')
+        self.assertTrue('__openerp__.py' in os.listdir(moved_addon))
+
+        # update works
+        self.recipe.retrieve_addons()
+        self.assertEquals(self.get_vcs_log()[-1][0], moved_addon)
+
 
     def test_retrieve_addons_single_collision(self):
         """The VCS is a whole addon, and there's a collision in renaming"""
@@ -146,8 +156,8 @@ class TestServer(unittest.TestCase):
         paths = self.recipe.retrieve_addons()
         self.assertEquals(paths, [addon_dir])
         self.assertEquals(os.listdir(addon_dir), ['addon'])
-        self.assertEquals(os.listdir(os.path.join(addon_dir, 'addon')),
-                                     ['__openerp__.py'])
+        self.assertTrue(
+            '__openerp__.py' in os.listdir(os.path.join(addon_dir, 'addon')))
 
     def test_retrieve_addons_clear_locks(self):
         """Retrieving addons with vcs-clear-locks option."""

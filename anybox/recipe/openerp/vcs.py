@@ -44,15 +44,33 @@ class BaseRepo(object):
             self.clear_target()
             self.get_update(revision)
 
+    @classmethod
+    def is_versioned(cls, path):
+        """True if path exists and is versioned under this vcs.
+
+        Common implementation based on vcs_control_dir class attribute.
+        """
+        return os.path.exists(os.path.join(path, cls.vcs_control_dir))
+
 def get_update(vcs_type, target_dir, url, revision, **options):
     """General entry point."""
     cls = SUPPORTED.get(vcs_type)
     if cls is None:
         raise ValueError("Unsupported VCS type: %r" % vcs_type)
 
+    # case of standalon addon (see launchpad #1012899)
+    if os.path.exists(target_dir) and not cls.is_versioned(target_dir):
+        name = os.path.split(target_dir)[-1]
+        new_target = os.path.join(target_dir, name)
+        manifest = os.path.join(new_target, '__openerp__.py')
+        if cls.is_versioned(new_target) and os.path.exists(manifest):
+            target_dir = new_target
+
     cls(target_dir, url, **options)(revision)
 
 class HgRepo(BaseRepo):
+
+    vcs_control_dir = '.hg'
 
     def update_hgrc_paths(self):
         """Update hgrc paths section if needed.
@@ -127,6 +145,8 @@ SUPPORTED['hg'] = HgRepo
 class BzrBranch(BaseRepo):
     """Represent a Bazaar branch tied to a reference branch."""
 
+    vcs_control_dir = '.bzr'
+
     def get_update(self, revision):
         """Ensure that target_dir is a branch of url at specified revision.
 
@@ -184,6 +204,8 @@ SUPPORTED['bzr'] = BzrBranch
 class GitRepo(BaseRepo):
     """Represent a Git clone tied to a reference branch."""
 
+    vcs_control_dir = '.git'
+
     def get_update(self, revision):
         """Ensure that target_dir is a branch of url at specified revision.
 
@@ -222,6 +244,8 @@ class GitRepo(BaseRepo):
 SUPPORTED['git'] = GitRepo
 
 class SvnCheckout(BaseRepo):
+
+    vcs_control_dir = '.svn'
 
     def get_update(self, revision):
         """Ensure that target_dir is a branch of url at specified revision.
