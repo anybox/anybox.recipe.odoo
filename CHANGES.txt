@@ -6,6 +6,7 @@ Changes
 - launchpad #1008931: Mercurial pull don't take URL changes into
   account. Now the recipe manages the repo-local hgrc [paths]
   section, updates the default paths while storing earlier values
+- launchpad #1012899: Update problems with standalone vcs addons
 
 0.14.1 (17-05-2012)
 -------------------
