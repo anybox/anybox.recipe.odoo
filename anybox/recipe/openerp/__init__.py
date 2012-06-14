@@ -153,6 +153,10 @@ class BaseRecipe(object):
                 repo_dir = self.make_absolute(repo_dir)
                 options = dict(offline=self.offline,
                                clear_locks=self.vcs_clear_locks)
+                for k, v in self.options.items():
+                    if k.startswith(repo_type + '-'):
+                        options[k] = v
+
                 vcs.get_update(repo_type, repo_dir, repo_url, repo_rev,
                                clear_retry=self.clear_retry,
                                **options)

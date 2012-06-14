@@ -164,7 +164,11 @@ class BzrBranch(BaseRepo):
                 raise IOError("bzr branch %s does not exist; cannot branch it from %s (offline mode)" % (target_dir, url))
 
             logger.info("Branching %s ...", url)
-            branch_cmd = ['bzr', 'branch', '--stacked']
+            branch_cmd = ['bzr', 'branch']
+            if self.options.get('bzr-stacked-branches',
+                                'false').strip().lower() == 'true':
+                branch_cmd.append('--stacked')
+
             if revision:
                 branch_cmd.extend(['-r', revision])
             branch_cmd.extend([url, target_dir])

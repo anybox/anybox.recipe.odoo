@@ -7,6 +7,8 @@ Changes
   account. Now the recipe manages the repo-local hgrc [paths]
   section, updates the default paths while storing earlier values
 - launchpad #1012899: Update problems with standalone vcs addons
+- launchpad #1005509: Now bzr branches are stacked only if
+   ``bzr-stacked-branches`` option is set to ``True``.
 
 0.14.1 (17-05-2012)
 -------------------

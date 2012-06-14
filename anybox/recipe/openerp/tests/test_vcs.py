@@ -217,6 +217,17 @@ class BzrTestCase(VcsTestCase):
         f.close()
         self.assertEquals(lines[0].strip(), 'last')
 
+    def test_branch_stacked(self):
+        target_dir = os.path.join(self.dst_dir, "My branch")
+        BzrBranch(target_dir, self.src_repo,
+                  **{'bzr-stacked-branches': 'True'})('last:1')
+
+        self.assertTrue(os.path.isdir(target_dir))
+        f = open(os.path.join(target_dir, 'tracked'))
+        lines = f.readlines()
+        f.close()
+        self.assertEquals(lines[0].strip(), 'last')
+
     def test_branch_to_rev(self):
         """Directly clone and update to given revision."""
         target_dir = os.path.join(self.dst_dir, "My branch")
