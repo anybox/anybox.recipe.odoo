@@ -16,6 +16,9 @@ class BaseRecipe(object):
     """Base class for other recipes
     """
 
+    recipe_requirements = () # distribution required for the recipe itself
+    requirements = () # requirements for what the recipe installs to run
+
     def __init__(self, buildout, name, options):
         self.buildout, self.name, self.options = buildout, name, options
         self.b_options = self.buildout['buildout']
@@ -93,6 +96,56 @@ class BaseRecipe(object):
         To be subclassed.
         """
 
+    def install_recipe_requirements(self):
+        """Install requirements for the recipe to run."""
+        to_install = self.recipe_requirements
+        eggs_option = os.linesep.join(to_install)
+        eggs = zc.recipe.egg.Scripts(self.buildout, '', dict(eggs=eggs_option))
+        ws = eggs.install()
+        _, ws = eggs.working_set()
+        sys.path.extend(ws.by_key[dist].location for dist in to_install)
+
+    def install_requirements(self):
+        """Install egg requirements and scripts"""
+        if 'eggs' not in self.options:
+            self.options['eggs'] = '\n'.join(self.requirements)
+        else:
+            self.options['eggs'] += '\n' + '\n'.join(self.requirements)
+        eggs = zc.recipe.egg.Scripts(self.buildout, '', self.options)
+        ws = eggs.install()
+        _, ws = eggs.working_set()
+        self.ws = ws
+
+    def read_openerp_setup(self):
+        """Ugly method to extract requirements & version from ugly setup.py.
+
+        Primarily designed for 6.0, but works with 6.1 as well.
+        """
+        old_setup = setuptools.setup
+        def new_setup(*args, **kw):
+            self.requirements.extend(kw['install_requires'])
+            self.version_detected = kw['version']
+        setuptools.setup = new_setup
+        sys.path.insert(0, '.')
+        with open(join(self.openerp_dir,'setup.py'), 'rb') as f:
+            try:
+                imp.load_module('setup', f, 'setup.py', ('.py', 'r', imp.PY_SOURCE))
+            except SystemExit, exception:
+                if 'dsextras' in exception.message:
+                    raise EnvironmentError('Please first install PyGObject and PyGTK !')
+                else:
+                    raise EnvironmentError('Problem while reading OpenERP setup.py: ' + exception.message)
+            except ImportError, exception:
+                if 'babel' in exception.message:
+                    raise EnvironmentError('OpenERP setup.py has an unwanted import Babel.\n'
+                                           '=> First install Babel on your system or virtualenv :(\n'
+                                           '(sudo aptitude install python-babel, or pip install babel)')
+                else:
+                    raise exception
+            except Exception, exception:
+                raise EnvironmentError('Problem while reading OpenERP setup.py: ' + exception.message)
+        _ = sys.path.pop(0)
+        setuptools.setup = old_setup
 
     def make_absolute(self, path):
         """Make a path absolute if needed.
@@ -227,34 +280,9 @@ class BaseRecipe(object):
             assert os.path.isdir(path), (
                 "Not a directory: %r (aborting)" % path)
 
-        # ugly method to extract requirements from ugly setup.py of 6.0,
-        # but works with 6.1 as well
-        os.chdir(self.openerp_dir)
-        old_setup = setuptools.setup
-        def new_setup(*args, **kw):
-            self.requirements.extend(kw['install_requires'])
-            self.version_detected = kw['version']
-        setuptools.setup = new_setup
-        sys.path.insert(0, '.')
-        with open(join(self.openerp_dir,'setup.py'), 'rb') as f:
-            try:
-                imp.load_module('setup', f, 'setup.py', ('.py', 'r', imp.PY_SOURCE))
-            except SystemExit, exception:
-                if 'dsextras' in exception.message:
-                    raise EnvironmentError('Please first install PyGObject and PyGTK !')
-                else:
-                    raise EnvironmentError('Problem while reading OpenERP setup.py: ' + exception.message)
-            except ImportError, exception:
-                if 'babel' in exception.message:
-                    raise EnvironmentError('OpenERP setup.py has an unwanted import Babel.\n'
-                                           '=> First install Babel on your system or virtualenv :(\n'
-                                           '(sudo aptitude install python-babel, or pip install babel)')
-                else:
-                    raise exception
-            except Exception, exception:
-                raise EnvironmentError('Problem while reading OpenERP setup.py: ' + exception.message)
-        _ = sys.path.pop(0)
-        setuptools.setup = old_setup
+        self.install_recipe_requirements()
+        os.chdir(self.openerp_dir) # GR probably not needed any more
+        self.read_openerp_setup()
 
         # configure addons_path option
         if addons_paths:
@@ -276,17 +304,9 @@ class BaseRecipe(object):
                          )
                 + '\n' + self.options['extra-paths'])
 
-        # install requirements and scripts
-        if 'eggs' not in self.options:
-            self.options['eggs'] = '\n'.join(self.requirements)
-        else:
-            self.options['eggs'] += '\n' + '\n'.join(self.requirements)
-        eggs = zc.recipe.egg.Scripts(self.buildout, '', self.options)
-        ws = eggs.install()
-        _, ws = eggs.working_set()
-        self.ws = ws
         if self.version_detected is None:
             raise EnvironmentError('Version of OpenERP could not be detected')
+        self.install_requirements()
         script = self._create_startup_script()
 
         os.chdir(self.bin_dir)
