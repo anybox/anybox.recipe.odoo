@@ -106,12 +106,15 @@ class BaseRecipe(object):
         _, ws = eggs.working_set()
         sys.path.extend(ws.by_key[dist].location for dist in to_install)
 
-    def install_requirements(self):
-        """Install egg requirements and scripts"""
+    def merge_requirements(self):
+        """Merge eggs option with self.requirements."""
         if 'eggs' not in self.options:
             self.options['eggs'] = '\n'.join(self.requirements)
         else:
             self.options['eggs'] += '\n' + '\n'.join(self.requirements)
+
+    def install_requirements(self):
+        """Install egg requirements and scripts"""
         eggs = zc.recipe.egg.Scripts(self.buildout, '', self.options)
         ws = eggs.install()
         _, ws = eggs.working_set()
@@ -307,6 +310,7 @@ class BaseRecipe(object):
 
         if self.version_detected is None:
             raise EnvironmentError('Version of OpenERP could not be detected')
+        self.merge_requirements()
         self.install_requirements()
         script = self._create_startup_script()
 

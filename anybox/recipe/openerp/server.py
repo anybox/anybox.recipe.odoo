@@ -15,6 +15,19 @@ class ServerRecipe(BaseRecipe):
     requirements = ('pychart',)
     ws = None
 
+    def merge_requirements(self):
+        """Add Pillow iff PIL not present in eggs option.
+
+        Extracted requirements are not taken into account. This way, if someday
+        OpenERP introduce a hard dependency on PIL, we'll still install Pillow.
+        The only case where PIL will have precedence over Pillow will thus be
+        the case of a legacy buildout.
+        See https://bugs.launchpad.net/anybox.recipe.openerp/+bug/1017252
+        """
+        if not 'PIL' in self.options.get('eggs', '').split():
+            self.requirements.append('Pillow')
+        BaseRecipe.merge_requirements(self)
+
     def _create_default_config(self):
         """Create a default config file
         """

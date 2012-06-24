@@ -21,6 +21,10 @@ This recipe reuses the *zc.recipe.egg* recipe, so the options are the same
 (*eggs*, *interpreter*, etc.)
 Consult the documentation here http://pypi.python.org/pypi/zc.recipe.egg/1.3.2
 
+New in version 0.16: the recipe takes care of all needed eggs for
+OpenERP itself. The intended way to use the *eggs* option is to
+provide extra dependencies that the additional addons may need.
+
 specific options
 ----------------
 
@@ -184,8 +188,6 @@ listening on 2 different ports, and 2 web clients::
     
     [openerp1]
     recipe = anybox.recipe.openerp:server
-    eggs = PIL
-           pychart
     version = 6.0.3
     options.xmlrpc = False
     options.xmlrpcs = False
@@ -196,7 +198,6 @@ listening on 2 different ports, and 2 web clients::
     
     [openerp2]
     recipe = anybox.recipe.openerp:server
-    eggs = PIL
     version = bzr lp:openobject-server/6.0 openobject-server-6.x last:1
 
     options.xmlrpc = False
@@ -253,8 +254,6 @@ local addon you are developping for a client project::
     
     [openerp]
     recipe = anybox.recipe.openerp:server
-    eggs = PIL
-           pychart
     version = 6.1
     addons = local ../path/to/my/local/addons
 
