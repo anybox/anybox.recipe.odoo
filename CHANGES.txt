@@ -3,6 +3,8 @@ Changes
 
 0.16  (unreleased)
 -----------------
+- launchapd #1017252: relying on Pillow to provide PIL unless PIL is
+  explicitely wanted.
 - launchpad #1014066: lifted the prerequirement for Babel. Now the recipe
   installs it if needed before inspection of OpenERP's setup.py
 
