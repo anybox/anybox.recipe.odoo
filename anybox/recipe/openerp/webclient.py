@@ -9,7 +9,7 @@ class WebClientRecipe(BaseRecipe):
     """Recipe for web client install and config
     """
     archive_filenames = {'6.0': 'openerp-web-%s.tar.gz'}
-    requirements = ['setuptools']
+    requirements = ('setuptools',)
 
     def preinstall_version_check(self):
         split = self.version_wanted.split()

@@ -12,7 +12,7 @@ class ServerRecipe(BaseRecipe):
     archive_filenames = { '6.0': 'openerp-server-%s.tar.gz',
                          '6.1': 'openerp-%s.tar.gz'}
     recipe_requirements = ('babel',)
-    requirements = []
+    requirements = ()
     ws = None
 
     def _create_default_config(self):

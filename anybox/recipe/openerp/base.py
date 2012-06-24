@@ -20,6 +20,7 @@ class BaseRecipe(object):
     requirements = () # requirements for what the recipe installs to run
 
     def __init__(self, buildout, name, options):
+        self.requirements = list(self.requirements)
         self.buildout, self.name, self.options = buildout, name, options
         self.b_options = self.buildout['buildout']
         self.buildout_dir = self.b_options['directory']
