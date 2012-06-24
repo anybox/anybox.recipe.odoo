@@ -258,7 +258,6 @@ local addon you are developping for a client project::
     version = 6.1
     addons = local ../path/to/my/local/addons
 
-    options.xmlrpc = False
     options.xmlrpcs = False
 
     [gtk]
@@ -269,9 +268,7 @@ local addon you are developping for a client project::
     MarkupSafe = 0.15
     PIL = 1.1.7
     PyXML = 0.8.4
-    anybox.recipe.openerp = 0.9
     babel = 0.9.6
-    distribute = 0.6.25
     feedparser = 5.1.1
     gdata = 2.0.16
     lxml = 2.3.3
