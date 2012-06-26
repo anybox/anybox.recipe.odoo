@@ -61,7 +61,7 @@ class TestServer(unittest.TestCase):
 
     def test_correct_v_6_1(self):
         self.make_recipe(version='6.1')
-        self.assertEquals(self.recipe.version_wanted, '6.1-1')
+        self.assertEquals(self.recipe.version_wanted, '6.1-latest')
 
     def test_retrieve_addons_local(self):
         """Setting up a local addons line."""
