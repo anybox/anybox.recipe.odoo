@@ -242,7 +242,8 @@ class BaseRecipe(object):
         logger.info('Selected install type: %s', self.type)
         if self.type == 'downloadable':
             # download and extract
-            if self.archive_path and not os.path.exists(self.archive_path):
+            if self.archive_path and (not os.path.exists(self.archive_path)
+                                      or 'latest' in self.version_wanted):
                 if self.offline:
                     raise IOError("%s not found, and offline mode requested" % self.archive_path)
                 logger.info("Downloading %s ..." % self.url)
