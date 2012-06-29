@@ -7,7 +7,6 @@ Changes
   explicitely wanted.
 - launchpad #1014066: lifted the prerequirement for Babel. Now the recipe
   installs it if needed before inspection of OpenERP's setup.py
-- use 'latest' nightly version is only 6.1 is specified
 
 0.15 (14-06-2012)
 -----------------

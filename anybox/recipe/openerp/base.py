@@ -9,7 +9,7 @@ import vcs
 logger = logging.getLogger(__name__)
 
 DOWNLOAD_URL = { '6.0': 'http://www.openerp.com/download/stable/source/',
-                 '6.1': 'http://nightly.openerp.com/6.1/nightly/src/'
+                 '6.1': 'http://nightly.openerp.com/6.1/releases/'
                 }
 
 class BaseRecipe(object):
@@ -59,8 +59,8 @@ class BaseRecipe(object):
 
         # correct an assumed 6.1 version
         if self.version_wanted == '6.1':
-            logger.warn('Version "6.1" alone does not exist. Assuming 6.1-latest')
-            self.version_wanted = '6.1-latest'
+            logger.warn('Version 6.1 does not exist. Assuming 6.1-1')
+            self.version_wanted = '6.1-1'
 
         self.preinstall_version_check()
 
@@ -242,8 +242,7 @@ class BaseRecipe(object):
         logger.info('Selected install type: %s', self.type)
         if self.type == 'downloadable':
             # download and extract
-            if self.archive_path and (not os.path.exists(self.archive_path)
-                                      or 'latest' in self.version_wanted):
+            if self.archive_path and not os.path.exists(self.archive_path):
                 if self.offline:
                     raise IOError("%s not found, and offline mode requested" % self.archive_path)
                 logger.info("Downloading %s ..." % self.url)
