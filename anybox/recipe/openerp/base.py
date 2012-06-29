@@ -53,13 +53,16 @@ class BaseRecipe(object):
 
         if 'version' not in self.options:
             raise Exception('You must specify the version')
-                
+
         # set variables depending on provided version or url
         self.version_wanted = self.options['version']
 
         # correct an assumed 6.1 version
         if self.version_wanted == '6.1':
-            logger.warn('Version 6.1 does not exist. Assuming 6.1-1')
+            logger.warn('Specifying "6.1" as OpenERP version is deprecated and'
+                        'will not be allowed in future versions of the recipe.'
+                        'Still correcting to "6.1-1". '
+                        'Please update your buildout')
             self.version_wanted = '6.1-1'
 
         self.preinstall_version_check()
