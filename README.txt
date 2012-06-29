@@ -254,14 +254,14 @@ local addon you are developping for a client project::
     
     [openerp]
     recipe = anybox.recipe.openerp:server
-    version = 6.1
+    version = 6.1-1
     addons = local ../path/to/my/local/addons
 
     options.xmlrpcs = False
 
     [gtk]
     recipe = anybox.recipe.openerp:gtkclient
-    version = 6.1
+    version = 6.1-1
     
     [versions]
     MarkupSafe = 0.15
