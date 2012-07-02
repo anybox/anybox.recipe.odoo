@@ -1,6 +1,7 @@
 # coding: utf-8
 import os
 from os.path import join
+import stat
 import sys, logging
 import subprocess
 import zc.buildout
@@ -17,11 +18,17 @@ class ServerRecipe(BaseRecipe):
     requirements = ('pychart',)
     ws = None
 
+    def __init__(self, *a, **kw):
+        super(ServerRecipe, self).__init__(*a, **kw)
+        self.gunicorn_entry = dict(direct='core', proxied='proxied').get(
+            self.options.get('gunicorn', '').strip().lower())
+
     def merge_requirements(self):
         """Prepare for installation by zc.recipe.egg
 
          - add Pillow iff PIL not present in eggs option.
          - (OpenERP >= 6.1) develop the openerp distribution and require it
+         - gunicorn's dependencies if needed
 
         For PIL, extracted requirements are not taken into account. This way,
         if at some point, 
@@ -39,6 +46,9 @@ class ServerRecipe(BaseRecipe):
             develop_dir = self.b_options['develop-eggs-directory']
             zc.buildout.easy_install.develop(self.openerp_dir, develop_dir)
             self.requirements.append('openerp')
+
+        if self.gunicorn_entry:
+            self.requirements.extend(('gunicorn', 'psutil'))
 
         BaseRecipe.merge_requirements(self)
 
@@ -70,7 +80,10 @@ bind = %(bind)r
 pidfile = %(qualified_name)r + '.pid'
 workers = %(workers)d
 on_starting = openerp.wsgi.core.on_starting
-when_ready = openerp.wsgi.core.when_ready
+try:
+  when_ready = openerp.wsgi.core.when_ready
+except AttributeError: # not in current head of 6.1
+  pass
 pre_request = openerp.wsgi.core.pre_request
 post_request = openerp.wsgi.core.post_request
 timeout = %(timeout)d
@@ -80,6 +93,8 @@ openerp.conf.server_wide_modules = ['web']
 conf = openerp.tools.config
 """ % dict(bind=bind, qualified_name=qualified_name,
            workers=4, timeout=240, max_requests=2000)
+
+        # forwarding specified options
         prefix = 'options.'
         for opt, val in self.options.items():
             if not opt.startswith(prefix):
@@ -94,6 +109,25 @@ conf = openerp.tools.config
         f.write(conf)
         f.close()
 
+    def _dump_gunicorn_start(self):
+        """Dump a gunicorn foreground start script.
+
+        Suitable for external management, such as provided by supervisor.
+        TODO XXX GR: relies on bin/gunicorn, which is the latest installed
+        version (big mess if several of them)
+        """
+        qualified_name = 'gunicorn_%s' % self.name
+        path = join(self.bin_dir, qualified_name)
+        f = open(path, 'w')
+        f.write(os.linesep.join((
+                    "#!/bin/sh",
+                    "%s/gunicorn openerp:wsgi.%s.application -c %s.conf.py" % (
+                        self.bin_dir, self.gunicorn_entry,
+                        join(self.etc, qualified_name)),
+                    )))
+        f.close()
+        os.chmod(path, stat.S_IRWXU)
+
     def _create_startup_script(self):
         """Return startup_script content
         """
@@ -105,7 +139,11 @@ conf = openerp.tools.config
         else:
             ext = ''
             bindir = self.openerp_dir
-            self._create_gunicorn_conf()
+            # GR TODO: inconsistency, script and conf directly written
+            # and not listed in install() return value.
+            if self.gunicorn_entry:
+                self._create_gunicorn_conf()
+                self._dump_gunicorn_start()
 
         script = ('#!/bin/sh\n'
                   'export PYTHONPATH=%s\n'
