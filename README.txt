@@ -170,8 +170,17 @@ Startup scripts are created in the `bin` directory. By default the name is:
 start_<part_name>, so you can have several startup scripts for each part if you
 configure several OpenERP servers or clients. You can pass additional typical
 arguments to the server via the startup script, such as -i or -u options.
-You can choose another name for the script by using the *script_name* option.
+You can choose another name for the script by using the *script_name*
+option.
 
+Gunicorn integration (OpenERP >= 6.1 only)
+------------------------------------------
+If you add a ``gunicorn`` option with value ``direct`` or ``proxied``,
+you'll also get for OpenERP >= 6.1 a script named
+``gunicorn_<part_name>`` to serve your OpeneERP part right away with
+the Gunicorn WSGI server.
+
+Use ``proxied`` if you plan to run Gunicorn behind a reverse proxy.
 
 Example OpenERP 6.0 buildout
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -258,6 +267,8 @@ local addon you are developping for a client project::
     addons = local ../path/to/my/local/addons
 
     options.xmlrpcs = False
+
+    gunicorn = direct
 
     [gtk]
     recipe = anybox.recipe.openerp:gtkclient
