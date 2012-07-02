@@ -28,7 +28,7 @@ class ServerRecipe(BaseRecipe):
 
          - add Pillow iff PIL not present in eggs option.
          - (OpenERP >= 6.1) develop the openerp distribution and require it
-         - gunicorn's dependencies if needed
+         - gunicorn's related dependencies if needed
 
         For PIL, extracted requirements are not taken into account. This way,
         if at some point, 
@@ -48,7 +48,7 @@ class ServerRecipe(BaseRecipe):
             self.requirements.append('openerp')
 
         if self.gunicorn_entry:
-            self.requirements.extend(('gunicorn', 'psutil'))
+            self.requirements.extend(('psutil','gunicorn'))
 
         BaseRecipe.merge_requirements(self)
 
@@ -117,16 +117,17 @@ conf = openerp.tools.config
         version (big mess if several of them)
         """
         qualified_name = 'gunicorn_%s' % self.name
-        path = join(self.bin_dir, qualified_name)
-        f = open(path, 'w')
-        f.write(os.linesep.join((
-                    "#!/bin/sh",
-                    "%s/gunicorn openerp:wsgi.%s.application -c %s.conf.py" % (
-                        self.bin_dir, self.gunicorn_entry,
-                        join(self.etc, qualified_name)),
-                    )))
-        f.close()
-        os.chmod(path, stat.S_IRWXU)
+        options = self.options.copy()
+        options['scripts'] = 'gunicorn=' + qualified_name
+        # gunicorn's main() does not take arguments, that's why we have
+        # to resort on hacking sys.argv
+        options['initialization'] = (
+            "from sys import argv; "
+            "argv[1:] = ['openerp:wsgi.%s.application', "
+            "            '-c', '%s.conf.py']") % (
+            self.gunicorn_entry, join(self.etc, qualified_name))
+
+        zc.recipe.egg.Scripts(self.buildout, '', options).install()
 
     def _create_startup_script(self):
         """Return startup_script content
