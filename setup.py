@@ -19,7 +19,7 @@ setup(
     description="A buildout recipe to install and configure OpenERP",
     license="ZPL",
     long_description=open('README.txt').read() + open('CHANGES.txt').read(),
-    url="https://code.launchpad.net/~anybox/+junk/anybox.recipe.openerp",
+    url="https://launchpad.net/anybox.recipe.openerp",
     packages=find_packages(),
     zip_safe=False,
     include_package_data=True,
