@@ -35,6 +35,10 @@ class WebClientRecipe(BaseRecipe):
             shutil.copyfile(join(self.openerp_dir, 'doc', 'openerp-web.cfg'),
                             self.config_path)
 
+    def _install_startup_scripts(self):
+        script_name = self.options.get('script_name', 'start_' + self.name)
+        self._install_script(script_name, self._create_startup_script())
+
     def _create_startup_script(self):
         """Return startup_script content
         """

@@ -238,7 +238,7 @@ class BaseRecipe(object):
         return addons_paths
 
     def install(self):
-        installed = []
+        self.openerp_installed = []
         os.chdir(self.parts)
 
         # install server, webclient or gtkclient
@@ -315,19 +315,7 @@ class BaseRecipe(object):
             raise EnvironmentError('Version of OpenERP could not be detected')
         self.merge_requirements()
         self.install_requirements()
-        script = self._create_startup_script()
-
-        os.chdir(self.bin_dir)
-        if 'script_name' in self.options:
-            script_name = self.options['script_name']
-        else:
-            script_name = 'start_%s' % self.name
-        self.script_path = join(self.bin_dir, script_name)
-        script_file = open(self.script_path, 'w')
-        script_file.write(script)
-        script_file.close()
-        os.chmod(self.script_path, stat.S_IRWXU)
-        installed.append(self.script_path)
+        self._install_startup_scripts()
 
         # create the config file
         if os.path.exists(self.config_path):
@@ -348,9 +336,22 @@ class BaseRecipe(object):
         with open(self.config_path, 'wb') as configfile:
             config.write(configfile)
 
-        return installed
+        return self.openerp_installed
 
-    def _create_startup_script(self):
+    def _install_script(self, name, content):
+        """Install and register a script with prescribed name and content.
+
+        Return the script path
+        """
+        path = join(self.bin_dir, name)
+        f = open(path, 'w')
+        f.write(content)
+        f.close()
+        os.chmod(path, stat.S_IRWXU)
+        self.openerp_installed.append(path)
+        return path
+
+    def _install_startup_scripts(self):
         raise NotImplementedError
 
     def _create_default_config(self):
