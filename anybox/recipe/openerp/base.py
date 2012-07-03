@@ -21,6 +21,7 @@ class BaseRecipe(object):
 
     def __init__(self, buildout, name, options):
         self.requirements = list(self.requirements)
+        self.recipe_requirements_path = []
         self.buildout, self.name, self.options = buildout, name, options
         self.b_options = self.buildout['buildout']
         self.buildout_dir = self.b_options['directory']
@@ -107,7 +108,9 @@ class BaseRecipe(object):
         eggs = zc.recipe.egg.Scripts(self.buildout, '', dict(eggs=eggs_option))
         ws = eggs.install()
         _, ws = eggs.working_set()
-        sys.path.extend(ws.by_key[dist].location for dist in to_install)
+        self.recipe_requirements_paths = [ws.by_key[dist].location
+                                          for dist in to_install]
+        sys.path.extend(self.recipe_requirements_paths)
 
     def merge_requirements(self):
         """Merge eggs option with self.requirements."""
@@ -183,6 +186,22 @@ class BaseRecipe(object):
             else:
                 logger.warn('Tarball member %r is outside of %r. Ignored.',
                             tinfo, sandbox)
+
+    def develop(self, src_directory):
+        """Develop the specified source distribution.
+
+        Any call to zc.recipe.eggs will use that developped version.
+        develop() launches a subprocess, to which we need to forward
+        the paths to requirements via PYTHONPATH
+        """
+        develop_dir = self.b_options['develop-eggs-directory']
+        pythonpath_bak = os.getenv('PYTHONPATH')
+        os.putenv('PYTHONPATH', ':'.join(self.recipe_requirements_paths))
+        zc.buildout.easy_install.develop(self.openerp_dir, develop_dir)
+        if pythonpath_bak is None:
+            os.unsetenv('PYTHONPATH')
+        else:
+            os.putenv('PYTHONPATH', pythonpath_bak)
 
     def retrieve_addons(self):
         """Parse the addons option line, download and return a list of paths.

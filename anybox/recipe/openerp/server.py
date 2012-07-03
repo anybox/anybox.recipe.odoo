@@ -43,8 +43,7 @@ class ServerRecipe(BaseRecipe):
         if not 'PIL' in self.options.get('eggs', '').split():
             self.requirements.append('Pillow')
         if self.version_detected[:3] == '6.1':
-            develop_dir = self.b_options['develop-eggs-directory']
-            zc.buildout.easy_install.develop(self.openerp_dir, develop_dir)
+            self.develop(self.openerp_dir)
             self.requirements.append('openerp')
 
         if self.gunicorn_entry:
