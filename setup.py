@@ -34,9 +34,9 @@ setup(
       'Topic :: Software Development :: Libraries :: Python Modules',
       ],
     entry_points = {'zc.buildout': [
-        'server = anybox.recipe.openerp:ServerRecipe',
-        'webclient = anybox.recipe.openerp:WebClientRecipe',
-        'gtkclient = anybox.recipe.openerp:GtkClientRecipe',
+        'server = anybox.recipe.openerp.server:ServerRecipe',
+        'webclient = anybox.recipe.openerp.webclient:WebClientRecipe',
+        'gtkclient = anybox.recipe.openerp.gtkclient:GtkClientRecipe',
         ]},
     )
 

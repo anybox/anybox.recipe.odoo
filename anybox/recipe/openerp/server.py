@@ -52,10 +52,13 @@ class ServerRecipe(BaseRecipe):
         BaseRecipe.merge_requirements(self)
 
     def _create_default_config(self):
-        """Create a default config file
+        """Have OpenERP generate its default config file.
         """
         if self.version_detected.startswith('6.0'):
-            subprocess.check_call([self.script_path, '--stop-after-init', '-s'])
+            # root-path not available as command-line option
+            os.chdir(join(self.openerp_dir, 'bin'))
+            subprocess.check_call([self.script_path, '--stop-after-init', '-s',
+                                   ])
         else:
             sys.path.extend([self.openerp_dir])
             sys.path.extend([egg.location for egg in self.ws])
@@ -111,7 +114,10 @@ conf = openerp.tools.config
     def _install_gunicorn_startup_script(self):
         """Install a gunicorn foreground start script.
 
-        Suitable for external management, such as provided by supervisor.
+        The produced script is suitable for external process management, such
+        as provided by supervisor.
+        The script installation works by a tweaked call to a dedicated
+        instance of zc.recipe.eggs:scripts.
         """
         qualified_name = 'gunicorn_%s' % self.name
         options = self.options.copy()
@@ -130,38 +136,30 @@ conf = openerp.tools.config
 
     def _install_startup_scripts(self):
         """install startup and control scripts.
+
+        Uses a derivation to a console script provided by the recipe and
+        a tweaked call to a dedicated instance of zc.recipe.eggs:scripts.
         """
         script_name = self.options.get('script_name', 'start_' + self.name)
 
-        if self.version_detected.startswith('6.0'):
-            self.script_path = self._install_script(
-                script_name, self._create_startup_script_6_0())
-            return
         options = self.options.copy()
-        options['entry-points'] = 'openerp_starter=anybox.recipe.openerp.start_openerp:main'
+        options['entry-points'] = ('openerp_starter=anybox.recipe.'
+                                   'openerp.start_openerp:main')
         options['scripts'] = 'openerp_starter=' + script_name
+
+        if self.version_detected.startswith('6.0'):
+            server_cmd = join('bin', 'openerp-server.py')
+        else:
+            server_cmd = 'openerp-server'
+
         options['arguments'] = '%r, %r' % (
-            join(self.openerp_dir, 'openerp-server'), self.config_path)
+            join(self.openerp_dir, server_cmd), self.config_path)
         options['dependent-scripts'] = 'false'
         zc.recipe.egg.Scripts(self.buildout, '', options).install()
 
-        self.openerp_installed.append(join(self.bin_dir, script_name))
+        self.script_path = join(self.bin_dir, script_name)
+        self.openerp_installed.append(self.script_path)
 
         if self.gunicorn_entry:
             self._create_gunicorn_conf()
             self._install_gunicorn_startup_script()
-
-    def _create_startup_script_6_0(self):
-        paths = [egg.location for egg in self.ws]
-        paths.append(join(self.openerp_dir, 'openerp'))
-        return ('#!/bin/sh\n'
-                'export PYTHONPATH=%s\n'
-                'cd "%s"\n'
-                'exec %s openerp-server.py -c %s $@') % (
-            ':'.join(paths),
-            join(self.openerp_dir, 'bin'),
-            self.buildout['buildout']['executable'],
-            self.config_path)
-
-
-
