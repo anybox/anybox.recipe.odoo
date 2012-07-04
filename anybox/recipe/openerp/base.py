@@ -44,6 +44,9 @@ class BaseRecipe(object):
         self.archive_filename = None
         self.archive_path = None # downloaded tar.gz
 
+        if options.get('scripts') is None:
+            options['scripts'] = ''
+
         self.etc = self.make_absolute('etc')
         self.bin_dir = self.buildout['buildout']['bin-directory']
         self.config_path = join(self.etc, self.name + '.cfg')
@@ -105,7 +108,7 @@ class BaseRecipe(object):
         """Install requirements for the recipe to run."""
         to_install = self.recipe_requirements
         eggs_option = os.linesep.join(to_install)
-        eggs = zc.recipe.egg.Scripts(self.buildout, '', dict(eggs=eggs_option))
+        eggs = zc.recipe.egg.Eggs(self.buildout, '', dict(eggs=eggs_option))
         ws = eggs.install()
         _, ws = eggs.working_set()
         self.recipe_requirements_paths = [ws.by_key[dist].location

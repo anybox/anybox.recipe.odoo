@@ -17,15 +17,17 @@ Recipe options
 zc.recipe.egg options
 ---------------------
 
-This recipe reuses the *zc.recipe.egg* recipe, so the options are the same
-(*eggs*, *interpreter*, etc.)
+This recipe reuses the *zc.recipe.eggi:scripts* recipe, so the options
+are the same (*eggs*, *interpreter*, etc.), with specific options, and
+some changes, documented below.
 Consult the documentation here http://pypi.python.org/pypi/zc.recipe.egg/1.3.2
+
 
 New in version 0.16: the recipe takes care of all needed eggs for
 OpenERP itself. The intended way to use the *eggs* option is to
 provide extra dependencies that the additional addons may need.
 
-specific options
+Specific options
 ----------------
 
 It also adds a few specific options :
@@ -59,6 +61,21 @@ For the *addons* option, you can either specifiy a directory holding
 addons, or a single one. In that latter case, it will be actually
 placed one directory below
 
+Changed options
+---------------
+Here are the options whose behaviour is different than the one from
+``zc.recipe.eggs:scripts``:
+
+ * `scripts`: by default, no script other than those directly related
+   to OpenERP are generated are generated, but you may specify some
+   explicitely, with the same semantics as the normal behaviour (we
+   simply set an empty default value, which means not to produce scripts) :
+
+        scripts = change_tz
+
+   In the current state, beware *not* to require the same script in
+   different parts or rename them. See
+   https://bugs.launchpad.net/anybox.recipe.openerp/+bug/1020967 for details.
 
 Official version
 ----------------

@@ -116,6 +116,7 @@ conf = openerp.tools.config
         qualified_name = 'gunicorn_%s' % self.name
         options = self.options.copy()
         options['scripts'] = 'gunicorn=' + qualified_name
+        options['dependent-scripts'] = 'false'
         # gunicorn's main() does not take arguments, that's why we have
         # to resort on hacking sys.argv
         options['initialization'] = (
@@ -141,6 +142,7 @@ conf = openerp.tools.config
         options['scripts'] = 'openerp_starter=' + script_name
         options['arguments'] = '%r, %r' % (
             join(self.openerp_dir, 'openerp-server'), self.config_path)
+        options['dependent-scripts'] = 'false'
         zc.recipe.egg.Scripts(self.buildout, '', options).install()
 
         self.openerp_installed.append(join(self.bin_dir, script_name))
