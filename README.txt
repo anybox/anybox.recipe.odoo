@@ -46,6 +46,8 @@ It also adds a few specific options :
 
  * **addons**: specify additional addons, either a path or a repository.
  * **script_name**: specify the name of the startup script to generate
+ * **with_devtools**: loads development and useful testing tools, such as
+   ``anybox.testing.datetime``.
 
 For the *version* and *addons* option, if you use a remote repository the syntax is::
 

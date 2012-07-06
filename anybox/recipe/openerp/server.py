@@ -5,6 +5,7 @@ import stat
 import sys, logging
 import subprocess
 import zc.buildout
+from anybox.recipe.openerp import devtools
 from anybox.recipe.openerp.base import BaseRecipe
 
 logger = logging.getLogger(__name__)
@@ -48,6 +49,9 @@ class ServerRecipe(BaseRecipe):
 
         if self.gunicorn_entry:
             self.requirements.extend(('psutil','gunicorn'))
+
+        if self.options.get('with_devtools', 'false').lower() == 'true':
+            self.requirements.extend(devtools.requirements)
 
         BaseRecipe.merge_requirements(self)
 
@@ -146,6 +150,10 @@ conf = openerp.tools.config
         options['entry-points'] = ('openerp_starter=anybox.recipe.'
                                    'openerp.start_openerp:main')
         options['scripts'] = 'openerp_starter=' + script_name
+        if options.pop('with_devtools', 'false').lower().strip() == 'true':
+            options['initialization'] = os.linesep.join(('',
+                 'from anybox.recipe.openerp import devtools',
+                 'devtools.load()', ''))
 
         if self.version_detected.startswith('6.0'):
             server_cmd = join('bin', 'openerp-server.py')
