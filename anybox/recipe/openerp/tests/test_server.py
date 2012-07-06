@@ -8,7 +8,7 @@ import unittest
 import os
 import shutil
 from tempfile import mkdtemp
-from anybox.recipe.openerp import ServerRecipe
+from anybox.recipe.openerp.server import ServerRecipe
 from anybox.recipe.openerp import vcs
 
 class FakeRepo(vcs.BaseRepo):
