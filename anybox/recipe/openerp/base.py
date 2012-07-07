@@ -313,16 +313,22 @@ class BaseRecipe(object):
         os.chdir(self.openerp_dir) # GR probably not needed any more
         self.read_openerp_setup()
 
+        is_60 = self.version_detected[:3] == '6.0'
         # configure addons_path option
         if addons_paths:
             if 'options.addons_path' not in self.options:
                 self.options['options.addons_path'] = ''
-            if self.version_detected[:3] == '6.0':
+            if is_60:
                 self.options['options.addons_path'] += join(self.openerp_dir, 'bin', 'addons') + ','
             else:
                 self.options['options.addons_path'] += join(self.openerp_dir, 'openerp', 'addons') + ','
 
             self.options['options.addons_path'] += ','.join(addons_paths)
+        elif is_60:
+            self.options['options.addons_path'] = join(self.openerp_dir,
+                                                       'bin', 'addons')
+        if is_60 and 'options.root_path' not in self.options:
+            self.options['options.root_path'] = join(self.openerp_dir, 'bin')
 
         # add openerp paths into the extra-paths
         if 'extra-paths' not in self.options:
