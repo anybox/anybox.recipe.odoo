@@ -74,8 +74,8 @@ class ServerRecipe(BaseRecipe):
 
         Derived from the standard gunicorn.conf.py shipping with OpenERP.
         """
-        port = self.options.get('xmlrpc_port', '8069')
-        interface = self.options.get('xmlrpc_interface', '0.0.0.0')
+        port = self.options.get('options.xmlrpc_port', '8069')
+        interface = self.options.get('options.xmlrpc_interface', '0.0.0.0')
         bind = '%s:%s' % (interface, port)
         qualified_name = 'gunicorn_%s' % self.name
         f = open(join(self.etc, qualified_name + '.conf.py'), 'w')
