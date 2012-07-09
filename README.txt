@@ -201,6 +201,25 @@ the Gunicorn WSGI server.
 
 Use ``proxied`` if you plan to run Gunicorn behind a reverse proxy.
 
+Gunicorn-specific options are to be specified with the ``gunicorn.``
+prefix and will end up in the the Gunicorn python configuration file
+``etc/gunicorn_<part_name>.conf.py``, such as::
+
+  gunicorn.workers = 8
+
+If you don't specify ``gunicorn.bind``, then a value is constructed
+from the relevant options for the OpenERP script (currently
+``options.xmlrpc_port`` and ``options.xmlrpc_interface``).
+Other supported options and their default values are::
+
+  gunicorn.workers = 4
+  gunicorn.timeout = 240
+  gunicorn.max_requests = 2000
+
+Finally, you can specify the Gunicorn script name with the
+``gunicorn_script_name`` option. The configuration file will be named
+accordingly.
+
 Example OpenERP 6.0 buildout
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
