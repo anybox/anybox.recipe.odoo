@@ -259,7 +259,7 @@ listening on 2 different ports, and 2 web clients::
     
     [versions]
     MarkupSafe = 0.15
-    Pillow = 1.1.7
+    Pillow = 1.7.7
     anybox.recipe.openerp = 0.9
     caldav = 0.1.10
     collective.recipe.cmd = 0.5
@@ -314,7 +314,7 @@ local addon you are developping for a client project::
     
     [versions]
     MarkupSafe = 0.15
-    Pillow = 1.1.7
+    Pillow = 1.7.7
     PyXML = 0.8.4
     babel = 0.9.6
     feedparser = 5.1.1
