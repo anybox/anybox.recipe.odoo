@@ -12,6 +12,9 @@ DOWNLOAD_URL = { '6.0': 'http://www.openerp.com/download/stable/source/',
                  '6.1': 'http://nightly.openerp.com/6.1/releases/'
                 }
 
+NIGHTLY_DOWNLOAD_URL = {'6.1': 'http://nightly.openerp.com/6.1/nightly/src/',
+                        }
+
 class BaseRecipe(object):
     """Base class for other recipes
     """
@@ -66,7 +69,7 @@ class BaseRecipe(object):
             logger.warn('Specifying "6.1" as OpenERP version is deprecated and'
                         'will not be allowed in future versions of the recipe.'
                         'Still correcting to "6.1-1". '
-                        'Please update your buildout')
+                        'Please update your buildout configuration')
             self.version_wanted = '6.1-1'
 
         self.preinstall_version_check()
@@ -86,6 +89,16 @@ class BaseRecipe(object):
             else:
                 self.type = 'local'
                 self.openerp_dir = self.version_wanted
+        elif version_split[0] == 'nightly': # GR TODO refactor/test all of this
+            if len(version_split) != 3:
+                raise ValueError(
+                    "Unrecognized nightly version specification: "
+                    "%r (expecting series, number) % version_split[1:]")
+            series, self.version_wanted = version_split[1:]
+            self.type = 'downloadable'
+            self.archive_filename = self.archive_nightly_filenames[series] % self.version_wanted
+            self.archive_path = join(self.downloads_dir, self.archive_filename)
+            self.url = NIGHTLY_DOWNLOAD_URL[series] + self.archive_filename
 
         # remote repository
         if getattr(self, 'type', None) is None:

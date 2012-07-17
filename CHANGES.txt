@@ -3,6 +3,7 @@ Changes
 
 0.17 (unreleased)
 -----------------
+- launchpad #1025617: Support for nightly versions in 6.1 series
 - launchpad #1019888: Gunicorn integration.
 - launchpad #1019886: installation of 'openerp' as a develop distribution, and
   full python server startup script.
