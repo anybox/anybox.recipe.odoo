@@ -183,3 +183,14 @@ conf = openerp.tools.config
                                               'gunicorn_%s' % self.name)
             self._create_gunicorn_conf(qualified_name)
             self._install_gunicorn_startup_script(qualified_name)
+
+    def _60_fix_root_path(self):
+        """Correction of root path for OpenERP 6.0 pure python install"""
+
+        if 'options.root_path' not in self.options:
+            self.options['options.root_path'] = join(self.openerp_dir, 'bin')
+
+    def _60_default_addons_path(self):
+        """Set the correct default addons path for OpenERP 6.0."""
+        self.options['options.addons_path'] = join(self.openerp_dir,
+                                                   'bin', 'addons')

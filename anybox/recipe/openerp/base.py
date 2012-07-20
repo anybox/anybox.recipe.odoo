@@ -338,10 +338,10 @@ class BaseRecipe(object):
 
             self.options['options.addons_path'] += ','.join(addons_paths)
         elif is_60:
-            self.options['options.addons_path'] = join(self.openerp_dir,
-                                                       'bin', 'addons')
-        if is_60 and 'options.root_path' not in self.options:
-            self.options['options.root_path'] = join(self.openerp_dir, 'bin')
+            self._60_default_addons_path()
+
+        if is_60:
+            self._60_fix_root_path()
 
         # add openerp paths into the extra-paths
         if 'extra-paths' not in self.options:
@@ -399,3 +399,15 @@ class BaseRecipe(object):
         raise NotImplementedError
 
     update = install
+
+    def _60_fix_root_path(self):
+        """Correction of root path for OpenERP 6.0 pure python install
+
+        Actual implementation is up to subclasses
+        """
+
+    def _60_default_addons_path(self):
+        """Set the default addons patth for OpenERP 6.0 pure python install
+
+        Actual implementation is up to subclasses
+        """
