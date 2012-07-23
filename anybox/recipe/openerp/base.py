@@ -1,9 +1,13 @@
 # coding: utf-8
 from os.path import join, basename
 import os, sys, urllib, tarfile, setuptools, logging, stat, imp
+import shutil
 import ConfigParser
 import zc.recipe.egg
 
+import httplib
+import rfc822
+from urlparse import urlparse
 import vcs
 
 logger = logging.getLogger(__name__)
@@ -15,12 +19,20 @@ DOWNLOAD_URL = { '6.0': 'http://www.openerp.com/download/stable/source/',
 NIGHTLY_DOWNLOAD_URL = {'6.1': 'http://nightly.openerp.com/6.1/nightly/src/',
                         }
 
+def rfc822_time(h):
+    """Parse RFC 2822-formatted http header and return a time int."""
+    rfc822.mktime_tz(rfc822.parsedate_tz(h))
+
 class BaseRecipe(object):
     """Base class for other recipes
     """
 
     recipe_requirements = () # distribution required for the recipe itself
     requirements = () # requirements for what the recipe installs to run
+
+    # Caching logic for the main OpenERP part (e.g, without addons)
+    # Can be 'filename' or 'http-head'
+    main_http_caching = 'filename'
 
     def __init__(self, buildout, name, options):
         self.requirements = list(self.requirements)
@@ -102,6 +114,9 @@ class BaseRecipe(object):
                     "%r (expecting series, number) % version_split[1:]")
             series, self.version_wanted = version_split[1:]
             self.type = 'downloadable'
+            if self.version_wanted == 'latest':
+                self.main_http_caching = 'http-head'
+
             self.archive_filename = self.archive_nightly_filenames[series] % self.version_wanted
             self.archive_path = join(self.downloads_dir, self.archive_filename)
             self.url = NIGHTLY_DOWNLOAD_URL[series] + self.archive_filename
@@ -278,6 +293,67 @@ class BaseRecipe(object):
             addons_paths.append(addons_dir)
         return addons_paths
 
+    def main_download(self):
+        """Perform the http download for the main part of the software.
+
+        Return a tar file ready for processing
+        """
+        if self.offline:
+            raise IOError("%s not found, and offline mode requested" % self.archive_path)
+        logger.info("Downloading %s ..." % self.url)
+
+        try:
+            msg = urllib.urlretrieve(self.url, self.archive_path)
+            if msg[1].type == 'text/html':
+                os.unlink(self.archive_path)
+                raise LookupError(
+                    'Wanted version was not found: %r' % self.url)
+
+            return tar
+
+        except (tarfile.TarError, IOError):
+            # GR: ContentTooShortError subclasses IOError
+            os.unlink(self.archive_path)
+            raise IOError('The archive does not seem valid: ' +
+                          repr(self.archive_path))
+
+    def is_stale_http_head(self):
+        """Tell if the download is stale by doing a HEAD request.
+
+        Assumes the correct date had been written upon download.
+        This is the same system as in GNU Wget 1.12. It works even if
+        the server does not implement conditional responses such as 304
+        """
+        stat = os.stat(self.archive_path)
+        length, modified = stat.st_size, stat.st_mtime
+
+        logger.info("Checking if %s if fresh wrt %s",
+                    self.archive_path, self.url)
+        parsed = urlparse(self.url)
+        if parsed.scheme == 'https':
+            cnx_cls = httplib.HTTPSConnection
+        else:
+            cnx_cls = httplib.HTTPConnection
+        try:
+            cnx = cnx_cls(parsed.netloc)
+            cnx.request('HEAD', parsed.path) # TODO query ? fragment ?
+            res = cnx.getresponse()
+        except IOError:
+            return True
+
+        if res.status != 200:
+            return True
+
+        if int(res.getheader('Content-Length')) != length:
+            return True
+
+        head_modified = res.getheader('Last-Modified')
+        logger.debug("Last-modified from HEAD request: %s", head_modified)
+        if rfc822_time(head_modified) > modified:
+            return True
+
+        logger.info("No need to re-download %s", self.archive_path)
+
     def install(self):
         self.openerp_installed = []
         os.chdir(self.parts)
@@ -285,40 +361,30 @@ class BaseRecipe(object):
         # install server, webclient or gtkclient
         logger.info('Selected install type: %s', self.type)
         if self.type == 'downloadable':
-            # download and extract
-            if self.archive_path and not os.path.exists(self.archive_path):
-                if self.offline:
-                    raise IOError("%s not found, and offline mode requested" % self.archive_path)
-                logger.info("Downloading %s ..." % self.url)
-            try:
-                msg = urllib.urlretrieve(self.url, self.archive_path)
-                if msg[1].type == 'text/html':
-                    os.unlink(self.archive_path)
-                    raise LookupError(
-                        'Wanted version was not found: %r' % self.url)
+            # download if needed
+            if ((self.archive_path  and not os.path.exists(self.archive_path))
+                 or (self.main_http_caching == 'http-head'
+                     and self.is_stale_http_head())):
+                self.main_download()
 
-                logger.info(u'Inspecting %s ...' % self.archive_path)
-                tar = tarfile.open(self.archive_path)
-                first = tar.next()
-                # Everything that follows assumes all tarball members
-                # are inside a directory with an expected name such
-                # as openerp-6.1-1
-                assert(first.isdir())
-                extracted_name = first.name.split('/')[0]
-                self.openerp_dir = join(self.parts, extracted_name)
-                # protection against malicious tarballs
-                assert(not os.path.isabs(extracted_name))
-                assert(self.openerp_dir.startswith(self.parts))
+            logger.info(u'Inspecting %s ...' % self.archive_path)
+            tar = tarfile.open(self.archive_path)
+            first = tar.next()
+            # Everything that follows assumes all tarball members
+            # are inside a directory with an expected name such
+            # as openerp-6.1-1
+            assert(first.isdir())
+            extracted_name = first.name.split('/')[0]
+            self.openerp_dir = join(self.parts, extracted_name)
+            # protection against malicious tarballs
+            assert(not os.path.isabs(extracted_name))
+            assert(self.openerp_dir.startswith(self.parts))
 
-            except (tarfile.TarError, IOError):
-                # GR: ContentTooShortError subclasses IOError
-                os.unlink(self.archive_path)
-                raise IOError('The archive does not seem valid: ' +
-                              repr(self.archive_path))
-
-            if self.openerp_dir and not os.path.exists(self.openerp_dir):
-                logger.info(u'Extracting %s ...' % self.archive_path)
-                self.sandboxed_tar_extract(extracted_name, tar, first=first)
+            logger.info("Cleaning existing %s", self.openerp_dir)
+            if os.path.exists(self.openerp_dir):
+                shutil.rmtree(self.openerp_dir)
+            logger.info(u'Extracting %s ...' % self.archive_path)
+            self.sandboxed_tar_extract(extracted_name, tar, first=first)
             tar.close()
         elif self.type == 'local':
             logger.info('Local directory chosen, nothing to do')
@@ -335,7 +401,10 @@ class BaseRecipe(object):
         self.install_recipe_requirements()
         os.chdir(self.openerp_dir) # GR probably not needed any more
         self.read_openerp_setup()
-
+        if self.type == 'downloadable' and self.version_wanted == 'latest':
+            logger.warn("Detected version: %s, you may want to fix that "
+                        "in your config file for replayability",
+                        self.version_detected)
         is_60 = self.version_detected[:3] == '6.0'
         # configure addons_path option
         if addons_paths:
