@@ -9,36 +9,13 @@ import os
 import shutil
 from tempfile import mkdtemp
 from anybox.recipe.openerp.server import ServerRecipe
-from anybox.recipe.openerp import vcs
-
-class FakeRepo(vcs.BaseRepo):
-
-    log = []
-
-    log_std_options = True
-
-    vcs_control_dir = '.fake'
-
-    def get_update(self, revision):
-        if not os.path.isdir(self.target_dir):
-            os.mkdir(self.target_dir)
-        control = os.path.join(self.target_dir, self.vcs_control_dir)
-        if not os.path.isdir(control):
-            os.mkdir(control)
-
-        options = self.options.copy()
-        if self.log_std_options:
-            options['offline'] = self.offline
-            options['clear_locks'] = self.clear_locks
-        self.log.append((self.target_dir, self.url, revision, options),)
-
-vcs.SUPPORTED['fakevcs'] = FakeRepo
+from anybox.recipe.openerp.testing import get_vcs_log, clear_vcs_log
 
 class TestServer(unittest.TestCase):
 
     def setUp(self):
         b_dir = self.buildout_dir = mkdtemp('test_oerp_recipe')
-        self.clear_vcs_log()
+        clear_vcs_log()
         self.buildout = {}
         self.buildout['buildout'] = {
             'directory': b_dir,
@@ -53,12 +30,6 @@ class TestServer(unittest.TestCase):
     def make_recipe(self, name='openerp', **options):
         recipe = self.recipe = ServerRecipe(self.buildout, name, options)
 
-    def get_vcs_log(self):
-        return FakeRepo.log
-
-    def clear_vcs_log(self):
-        FakeRepo.log = []
-
     def test_correct_v_6_1(self):
         self.make_recipe(version='6.1')
         self.assertEquals(self.recipe.version_wanted, '6.1-1')
@@ -68,7 +39,7 @@ class TestServer(unittest.TestCase):
         addons_dir = os.path.join(self.buildout_dir, 'addons-custom')
         self.make_recipe(version='6.1', addons='local addons-custom')
         paths = self.recipe.retrieve_addons()
-        self.assertEquals(self.get_vcs_log(), [])
+        self.assertEquals(get_vcs_log(), [])
         self.assertEquals(paths, [addons_dir])
 
     def test_retrieve_addons_local_options(self):
@@ -78,7 +49,7 @@ class TestServer(unittest.TestCase):
         addons_dir = os.path.join(custom_dir, 'addons')
         self.make_recipe(version='6.1', addons='local custom subdir=addons')
         paths = self.recipe.retrieve_addons()
-        self.assertEquals(self.get_vcs_log(), [])
+        self.assertEquals(get_vcs_log(), [])
         self.assertEquals(paths, [addons_dir])
 
     def test_retrieve_addons_vcs(self):
@@ -90,7 +61,7 @@ class TestServer(unittest.TestCase):
         addons_dir = os.path.join(self.buildout_dir, 'addons-trunk')
         paths = self.recipe.retrieve_addons()
         self.assertEquals(
-            self.get_vcs_log(), [
+            get_vcs_log(), [
                 (addons_dir, 'http://trunk.example', 'rev',
                  dict(offline=False, clear_locks=False)
                  )])
@@ -107,7 +78,7 @@ class TestServer(unittest.TestCase):
         other_dir = os.path.join(self.buildout_dir, 'addons-other')
         paths = self.recipe.retrieve_addons()
         self.assertEquals(
-            self.get_vcs_log(), [
+            get_vcs_log(), [
                 (addons_dir, 'http://trunk.example', 'rev',
                  dict(offline=False, clear_locks=False)),
                 (other_dir, 'http://other.example', '76',
@@ -123,7 +94,7 @@ class TestServer(unittest.TestCase):
         web_dir = os.path.join(self.buildout_dir, 'web')
         web_addons_dir = os.path.join(web_dir, 'addons')
         paths = self.recipe.retrieve_addons()
-        self.assertEquals(self.get_vcs_log(), [
+        self.assertEquals(get_vcs_log(), [
                           (web_dir, 'lp:openerp-web', 'last:1',
                            dict(offline=False, clear_locks=False))
                           ])
@@ -144,7 +115,7 @@ class TestServer(unittest.TestCase):
 
         # update works
         self.recipe.retrieve_addons()
-        self.assertEquals(self.get_vcs_log()[-1][0], moved_addon)
+        self.assertEquals(get_vcs_log()[-1][0], moved_addon)
 
 
     def test_retrieve_addons_single_collision(self):
@@ -166,7 +137,7 @@ class TestServer(unittest.TestCase):
         options['vcs-clear-locks'] = 'True'
         self.make_recipe(**options)
         paths = self.recipe.retrieve_addons()
-        self.assertEquals(self.get_vcs_log(), [
+        self.assertEquals(get_vcs_log(), [
                           (addons_dir, 'lp:my-addons', '-1',
                            dict(offline=False, clear_locks=True))
                           ])

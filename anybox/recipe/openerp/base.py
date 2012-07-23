@@ -58,10 +58,16 @@ class BaseRecipe(object):
                 logger.info('Created %s/ directory' % basename(d))
                 os.mkdir(d)
 
-        if 'version' not in self.options:
+        self.parse_version()
+
+    def parse_version(self):
+        """Set attributes describing retrieval actions to be taken.
+        """
+
+        self.version_wanted = self.options.get('version')
+        if self.version_wanted is None:
             raise Exception('You must specify the version')
 
-        # set variables depending on provided version or url
         self.version_wanted = self.options['version']
 
         # correct an assumed 6.1 version
