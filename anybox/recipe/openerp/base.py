@@ -290,12 +290,13 @@ class BaseRecipe(object):
                 if self.offline:
                     raise IOError("%s not found, and offline mode requested" % self.archive_path)
                 logger.info("Downloading %s ..." % self.url)
+            try:
                 msg = urllib.urlretrieve(self.url, self.archive_path)
                 if msg[1].type == 'text/html':
                     os.unlink(self.archive_path)
-                    raise IOError('Wanted version was not found: %s' % self.url)
+                    raise LookupError(
+                        'Wanted version was not found: %r' % self.url)
 
-            try:
                 logger.info(u'Inspecting %s ...' % self.archive_path)
                 tar = tarfile.open(self.archive_path)
                 first = tar.next()
@@ -308,7 +309,10 @@ class BaseRecipe(object):
                 # protection against malicious tarballs
                 assert(not os.path.isabs(extracted_name))
                 assert(self.openerp_dir.startswith(self.parts))
+
             except (tarfile.TarError, IOError):
+                # GR: ContentTooShortError subclasses IOError
+                os.unlink(self.archive_path)
                 raise IOError('The archive does not seem valid: ' +
                               repr(self.archive_path))
 

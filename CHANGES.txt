@@ -7,8 +7,9 @@ Changes
 - launchpad #1019888: Gunicorn integration.
 - launchpad #1019886: installation of 'openerp' as a develop distribution, and
   full python server startup script.
-- launchpad #1020967: stop creating scripts by default
 - launchpad #1021083: optional development tools loading in startup script
+- launchpad #1020967: stop creating scripts by default
+- launchpad #1027986: Better handling of interrupted downloads
 
 0.16 (29-06-2012)
 -----------------
