@@ -294,9 +294,7 @@ class BaseRecipe(object):
         return addons_paths
 
     def main_download(self):
-        """Perform the http download for the main part of the software.
-
-        Return a tar file ready for processing
+        """HTTP download for main part of the software to self.archive_path.
         """
         if self.offline:
             raise IOError("%s not found, and offline mode requested" % self.archive_path)
@@ -308,8 +306,6 @@ class BaseRecipe(object):
                 os.unlink(self.archive_path)
                 raise LookupError(
                     'Wanted version was not found: %r' % self.url)
-
-            return tar
 
         except (tarfile.TarError, IOError):
             # GR: ContentTooShortError subclasses IOError
