@@ -46,6 +46,9 @@ It also adds a few specific options :
 
  * **addons**: specify additional addons, either a path or a repository.
  * **script_name**: specify the name of the startup script to generate
+ * **startup_delay**: specify a time in seconds to wait within the startup
+   script before actually launching OpenERP. The Gunicorn startup script (see
+   below) is not affected by this setting.
  * **with_devtools**: loads development and useful testing tools, such as
    ``anybox.testing.datetime``.
 

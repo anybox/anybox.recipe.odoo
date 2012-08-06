@@ -155,15 +155,23 @@ conf = openerp.tools.config
         a tweaked call to a dedicated instance of zc.recipe.eggs:scripts.
         """
         script_name = self.options.get('script_name', 'start_' + self.name)
+        startup_delay = float(self.options.get('startup_delay', 0))
 
         options = self.options.copy()
         options['entry-points'] = ('openerp_starter=anybox.recipe.'
                                    'openerp.start_openerp:main')
         options['scripts'] = 'openerp_starter=' + script_name
+
+        initialization = ['']
         if options.pop('with_devtools', 'false').lower().strip() == 'true':
-            options['initialization'] = os.linesep.join(('',
-                 'from anybox.recipe.openerp import devtools',
-                 'devtools.load()', ''))
+            initialization.extend(('from anybox.recipe.openerp import devtools',
+                                   'devtools.load()', ''))
+
+        if startup_delay:
+            initialization.extend(('import time',
+                                   'time.sleep(%f)' % startup_delay))
+
+        options['initialization'] = os.linesep.join((initialization))
 
         if self.version_detected.startswith('6.0'):
             server_cmd = join('bin', 'openerp-server.py')
