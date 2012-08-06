@@ -3,7 +3,7 @@ Changes
 
 0.17 (unreleased)
 -----------------
-- launchpad #1020553: startup_delay option
+- launchpad #1033525: startup_delay option
 - launchpad #1019888: Gunicorn integration.
 - launchpad #1019886: installation of 'openerp' as a develop distribution, and
   full python server startup script.
