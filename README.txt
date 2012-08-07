@@ -356,7 +356,5 @@ The primary branch is on the launchpad:
  * Code repository and bug tracker: https://launchpad.net/anybox.recipe.openerp
  * PyPI page: http://pypi.python.org/pypi/anybox.recipe.openerp
 
-Please branch on the launchpad or contact the authors to report any bug or ask
-for a new feature.
-
-
+Please don't hesitate to give feedback and especially report bugs or
+ask for new features through launchpad.
