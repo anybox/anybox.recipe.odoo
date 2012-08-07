@@ -1,7 +1,7 @@
 Changes
 ~~~~~~~
 
-0.17 (unreleased)
+0.17 (07-08-2012)
 -----------------
 - launchpad #1033525: startup_delay option
 - launchpad #1019888: Gunicorn integration.
@@ -9,6 +9,8 @@ Changes
   full python server startup script.
 - launchpad #1025617: Support for nightly versions in 6.1 series
 - launchpad #1025620: Support for latest version
+- launchpad #1034124: Fix interference of buildout options with
+  gtkclient recipe
 - launchpad #1021083: optional development tools loading in startup script
 - launchpad #1020967: stop creating scripts by default
 - launchpad #1027986: Better handling of interrupted downloads

@@ -26,8 +26,13 @@ class GtkClientRecipe(BaseRecipe):
             __builtin__.__dict__['openerp_version'] = __version__
             import translate
             translate.setlang()
+            # temp replacing sys.argv to avoid buildout options
+            # being interpreted by gtk client's OptionParser
+            argv_bak = sys.argv
+            sys.argv = [argv_bak[0]]
             import options
             options.configmanager(self.config_path).save()
+            sys.argv = argv_bak
 
     def _install_startup_scripts(self):
         script_name = self.options.get('script_name', 'start_' + self.name)
