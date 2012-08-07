@@ -1,6 +1,9 @@
 Changes
 ~~~~~~~
 
+1.0 (unreleased)
+----------------
+
 0.17 (07-08-2012)
 -----------------
 - launchpad #1033525: startup_delay option
