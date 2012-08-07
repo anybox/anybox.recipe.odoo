@@ -17,7 +17,7 @@ Recipe options
 zc.recipe.egg options
 ---------------------
 
-This recipe reuses the *zc.recipe.eggi:scripts* recipe, so the options
+This recipe reuses the *zc.recipe.egg:scripts* recipe, so the options
 are the same (*eggs*, *interpreter*, etc.), with specific options, and
 some changes, documented below.
 Consult the documentation here http://pypi.python.org/pypi/zc.recipe.egg/1.3.2
