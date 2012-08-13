@@ -3,7 +3,8 @@ Changes
 
 1.0 (unreleased)
 ----------------
-- launchpad #1035978: restored 'local' version scheme for OpenERP itself
+- launchpad #1035978: restored 'local' version scheme for OpenERP
+  itself. Also implemented the 'url' version scheme.
 - removed deprecated renaming of 6.1 to 6.1-1
 
 0.17 (07-08-2012)

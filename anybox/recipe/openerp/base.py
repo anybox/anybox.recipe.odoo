@@ -102,6 +102,11 @@ class BaseRecipe(object):
         if type_spec in ('local', 'path'):
             self.type = 'local'
             self.openerp_dir = join(self.buildout_dir, version_split[1])
+        elif type_spec == 'url':
+            self.type = 'downloadable'
+            self.url = version_split[1]
+            self.archive_filename = urlparse(self.url).path.split('/')[-1]
+            self.archive_path = join(self.downloads_dir, self.archive_filename)
         elif type_spec == 'nightly':
             if len(version_split) != 3:
                 raise ValueError(

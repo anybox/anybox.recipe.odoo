@@ -66,3 +66,10 @@ class TestBaseRecipe(unittest.TestCase):
         self.assertEquals(recipe.type, 'local')
         self.assertTrue(recipe.openerp_dir.endswith(local_path))
 
+    def test_version_url(self):
+        url = 'http://download.example/future/openerp-12.0.tgz'
+        self.make_recipe(version='url ' + url)
+        recipe = self.recipe
+        self.assertEquals(recipe.type, 'downloadable')
+        self.assertEquals(recipe.url, url)
+        self.assertEquals(recipe.archive_filename, 'openerp-12.0.tgz')
