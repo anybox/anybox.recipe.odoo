@@ -30,10 +30,6 @@ class TestBaseRecipe(unittest.TestCase):
     def make_recipe(self, name='openerp', **options):
         recipe = self.recipe = TestingRecipe(self.buildout, name, options)
 
-    def test_correct_v_6_1(self):
-        self.make_recipe(version='6.1')
-        self.assertEquals(self.recipe.version_wanted, '6.1-1')
-
     def test_version_release_6_1(self):
         self.make_recipe(version='6.1-1')
 

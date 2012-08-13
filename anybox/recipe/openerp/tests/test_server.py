@@ -30,10 +30,6 @@ class TestServer(unittest.TestCase):
     def make_recipe(self, name='openerp', **options):
         recipe = self.recipe = ServerRecipe(self.buildout, name, options)
 
-    def test_correct_v_6_1(self):
-        self.make_recipe(version='6.1')
-        self.assertEquals(self.recipe.version_wanted, '6.1-1')
-
     def test_retrieve_addons_local(self):
         """Setting up a local addons line."""
         addons_dir = os.path.join(self.buildout_dir, 'addons-custom')

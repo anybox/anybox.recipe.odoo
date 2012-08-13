@@ -80,14 +80,6 @@ class BaseRecipe(object):
         if self.version_wanted is None:
             raise ValueError('You must specify the version')
 
-        # correct an assumed 6.1 version
-        if self.version_wanted == '6.1':
-            logger.warn('Specifying "6.1" as OpenERP version is deprecated and'
-                        'will not be allowed in future versions of the recipe.'
-                        'Still correcting to "6.1-1". '
-                        'Please update your buildout configuration')
-            self.version_wanted = '6.1-1'
-
         self.preinstall_version_check()
 
         version_split = self.version_wanted.split()
@@ -307,7 +299,8 @@ class BaseRecipe(object):
             if msg[1].type == 'text/html':
                 os.unlink(self.archive_path)
                 raise LookupError(
-                    'Wanted version was not found: %r' % self.url)
+                    'Wanted version %r not found on server (tried %s)' % (
+                        self.version_wanted, self.url))
 
         except (tarfile.TarError, IOError):
             # GR: ContentTooShortError subclasses IOError
