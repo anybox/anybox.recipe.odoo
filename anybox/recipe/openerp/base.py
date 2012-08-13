@@ -12,13 +12,6 @@ import vcs
 
 logger = logging.getLogger(__name__)
 
-DOWNLOAD_URL = { '6.0': 'http://www.openerp.com/download/stable/source/',
-                 '6.1': 'http://nightly.openerp.com/6.1/releases/'
-                }
-
-NIGHTLY_DOWNLOAD_URL = {'6.1': 'http://nightly.openerp.com/6.1/nightly/src/',
-                        }
-
 def rfc822_time(h):
     """Parse RFC 2822-formatted http header and return a time int."""
     rfc822.mktime_tz(rfc822.parsedate_tz(h))
@@ -26,6 +19,13 @@ def rfc822_time(h):
 class BaseRecipe(object):
     """Base class for other recipes
     """
+
+    default_dl_url = { '6.0': 'http://www.openerp.com/download/stable/source/',
+                       '6.1': 'http://nightly.openerp.com/6.1/releases/'
+                       }
+
+    nightly_dl_url = {'6.1': 'http://nightly.openerp.com/6.1/nightly/src/',
+                      }
 
     recipe_requirements = () # distribution required for the recipe itself
     requirements = () # requirements for what the recipe installs to run
@@ -87,14 +87,17 @@ class BaseRecipe(object):
         if len(version_split) == 1:
             # version can be a simple version name, such as 6.1-1
             major_wanted = self.version_wanted[:3]
-            if major_wanted not in DOWNLOAD_URL:
+            pattern = self.archive_filenames[major_wanted]
+            if pattern is None:
                 raise ValueError(
                     'OpenERP version %r is not supported' % self.version_wanted)
 
+            self.archive_filename = pattern % self.version_wanted
             self.type = 'downloadable'
-            self.archive_filename = self.archive_filenames[major_wanted] % self.version_wanted
             self.archive_path = join(self.downloads_dir, self.archive_filename)
-            self.url = DOWNLOAD_URL[major_wanted] + self.archive_filename
+            base_url = self.options.get(
+                'base_url', self.default_dl_url[major_wanted])
+            self.url = '/'.join((base_url.strip('/'), self.archive_filename))
             return
 
         # in all other cases, the first token is the type of version
@@ -119,7 +122,8 @@ class BaseRecipe(object):
 
             self.archive_filename = self.archive_nightly_filenames[series] % self.version_wanted
             self.archive_path = join(self.downloads_dir, self.archive_filename)
-            self.url = NIGHTLY_DOWNLOAD_URL[series] + self.archive_filename
+            base_url = self.options.get('base_url', self.nightly_dl_url[series])
+            self.url = '/'.join((base_url.strip('/'), self.archive_filename))
         else:
             # VCS types
             if len(version_split) != 4:

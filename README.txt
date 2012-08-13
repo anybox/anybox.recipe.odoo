@@ -51,6 +51,10 @@ It also adds a few specific options :
    below) is not affected by this setting.
  * **with_devtools**: loads development and useful testing tools, such as
    ``anybox.testing.datetime``.
+ * **base_url**: URL to download official and nightly versions from
+   (assuming the archive filenames are constistent with those in
+   OpenERP download server). This is a basic mirroring capability.
+
 
 For the *version* and *addons* option, if you use a remote repository the syntax is::
 

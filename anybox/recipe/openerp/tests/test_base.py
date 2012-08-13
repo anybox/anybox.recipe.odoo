@@ -9,8 +9,8 @@ from anybox.recipe.openerp.server import BaseRecipe
 class TestingRecipe(BaseRecipe):
     """A subclass with just enough few defaults for unit testing."""
 
-    archive_filenames = {'6.1': '6-1-blob-%s'}
-    archive_nightly_filenames = {'6.1': '6-1-nightly-%s'}
+    archive_filenames = {'6.1': 'blob-%s.tgz'}
+    archive_nightly_filenames = {'6.1': '6-1-nightly-%s.tbz'}
 
 class TestBaseRecipe(unittest.TestCase):
 
@@ -38,7 +38,7 @@ class TestBaseRecipe(unittest.TestCase):
         self.assertEquals(recipe.type, 'downloadable')
         self.assertEquals(
             recipe.url,
-            'http://nightly.openerp.com/6.1/releases/6-1-blob-6.1-1')
+            'http://nightly.openerp.com/6.1/releases/blob-6.1-1.tgz')
 
     def test_version_nightly_6_1(self):
         self.make_recipe(version='nightly 6.1 1234-5')
@@ -47,7 +47,7 @@ class TestBaseRecipe(unittest.TestCase):
         self.assertEquals(recipe.type, 'downloadable')
         self.assertEquals(
             recipe.url,
-            'http://nightly.openerp.com/6.1/nightly/src/6-1-nightly-1234-5')
+            'http://nightly.openerp.com/6.1/nightly/src/6-1-nightly-1234-5.tbz')
 
     def test_version_bzr_6_1(self):
         self.make_recipe(
@@ -73,3 +73,18 @@ class TestBaseRecipe(unittest.TestCase):
         self.assertEquals(recipe.type, 'downloadable')
         self.assertEquals(recipe.url, url)
         self.assertEquals(recipe.archive_filename, 'openerp-12.0.tgz')
+
+    def test_base_url(self):
+        self.make_recipe(version='6.1-1', base_url='http://example.org/openerp')
+        recipe = self.recipe
+        self.assertEquals(recipe.type, 'downloadable')
+        self.assertEquals(recipe.url,
+                          'http://example.org/openerp/blob-6.1-1.tgz')
+
+    def test_base_url_nightly(self):
+        self.make_recipe(version='nightly 6.1 1234-5',
+                         base_url='http://example.org/openerp')
+        recipe = self.recipe
+        self.assertEquals(recipe.type, 'downloadable')
+        self.assertEquals(recipe.url,
+                          'http://example.org/openerp/6-1-nightly-1234-5.tbz')
