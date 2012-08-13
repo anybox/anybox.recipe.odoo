@@ -3,6 +3,7 @@ Changes
 
 1.0 (unreleased)
 ----------------
+- launchpad #1035978: restored 'local' version scheme for OpenERP itself
 
 0.17 (07-08-2012)
 -----------------

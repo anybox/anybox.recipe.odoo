@@ -78,9 +78,7 @@ class BaseRecipe(object):
 
         self.version_wanted = self.options.get('version')
         if self.version_wanted is None:
-            raise Exception('You must specify the version')
-
-        self.version_wanted = self.options['version']
+            raise ValueError('You must specify the version')
 
         # correct an assumed 6.1 version
         if self.version_wanted == '6.1':
@@ -92,22 +90,27 @@ class BaseRecipe(object):
 
         self.preinstall_version_check()
 
-        # downloadable version, or local path
         version_split = self.version_wanted.split()
 
         if len(version_split) == 1:
-            if not os.path.exists(self.version_wanted):
-                # Unsupported versions
-                if self.version_wanted[:3] not in DOWNLOAD_URL.keys():
-                    raise Exception('OpenERP version %s is not supported' % self.version_wanted)
-                self.type = 'downloadable'
-                self.archive_filename = self.archive_filenames[self.version_wanted[:3]] % self.version_wanted
-                self.archive_path = join(self.downloads_dir, self.archive_filename)
-                self.url = DOWNLOAD_URL[self.version_wanted[:3]] + self.archive_filename
-            else:
-                self.type = 'local'
-                self.openerp_dir = self.version_wanted
-        elif version_split[0] == 'nightly': # GR TODO refactor/test all of this
+            # version can be a simple version name, such as 6.1-1
+            major_wanted = self.version_wanted[:3]
+            if major_wanted not in DOWNLOAD_URL:
+                raise ValueError(
+                    'OpenERP version %r is not supported' % self.version_wanted)
+
+            self.type = 'downloadable'
+            self.archive_filename = self.archive_filenames[major_wanted] % self.version_wanted
+            self.archive_path = join(self.downloads_dir, self.archive_filename)
+            self.url = DOWNLOAD_URL[major_wanted] + self.archive_filename
+            return
+
+        # in all other cases, the first token is the type of version
+        type_spec = version_split[0]
+        if type_spec in ('local', 'path'):
+            self.type = 'local'
+            self.openerp_dir = join(self.buildout_dir, version_split[1])
+        elif type_spec == 'nightly':
             if len(version_split) != 3:
                 raise ValueError(
                     "Unrecognized nightly version specification: "
@@ -120,9 +123,8 @@ class BaseRecipe(object):
             self.archive_filename = self.archive_nightly_filenames[series] % self.version_wanted
             self.archive_path = join(self.downloads_dir, self.archive_filename)
             self.url = NIGHTLY_DOWNLOAD_URL[series] + self.archive_filename
-
-        # remote repository
-        if getattr(self, 'type', None) is None:
+        else:
+            # VCS types
             if len(version_split) != 4:
                 raise ValueError("Unrecognized version specification: %r "
                                  "(expecting type, url, target, revision for "

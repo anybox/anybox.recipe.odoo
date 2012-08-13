@@ -63,3 +63,10 @@ class TestBaseRecipe(unittest.TestCase):
         self.assertEquals(recipe.openerp_dir,
                           os.path.join(recipe.parts, 'openerp-6.1'))
 
+    def test_version_local(self):
+        local_path = 'path/to/local/version'
+        self.make_recipe(version='local ' + local_path)
+        recipe = self.recipe
+        self.assertEquals(recipe.type, 'local')
+        self.assertTrue(recipe.openerp_dir.endswith(local_path))
+
