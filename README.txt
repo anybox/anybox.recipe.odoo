@@ -1,141 +1,117 @@
 anybox.recipe.openerp
 =====================
 
+This is a `Buildout <https://github.com/buildout/buildout>`_ recipe for
+downloading, installing and configuring one or several OpenERP servers, web
+clients and/or gtk clients. It currently supports versions 6.0 and 6.1, custom
+branches, custom addons and gunicorn deployment. For a quickstart you can
+jump to the example section.
+
 .. contents::
 
-This is a buildout recipe to download, install and configure OpenERP server,
-web client and gtk client. It currently supports versions 6.0 and 6.1 and
-custom branches. You get 3 recipes at once. The recipe to use is the following:
+Recipes
+~~~~~~~
 
- - For the server: recipe = anybox.recipe.openerp:server
- - For the web client: recipe = anybox.recipe.openerp:webclient
- - For the gtk client: recipe = anybox.recipe.openerp:gtkclient
+You get 3 recipes at once. The recipe to use is the following:
 
-Recipe options
-~~~~~~~~~~~~~~
+For the server::
 
-zc.recipe.egg options
----------------------
+    recipe = anybox.recipe.openerp:server
+
+For the web client::
+
+    recipe = anybox.recipe.openerp:webclient
+
+For the gtk client::
+
+    recipe = anybox.recipe.openerp:gtkclient
+
+Default options from zc.recipe.egg
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This recipe reuses the *zc.recipe.egg:scripts* recipe, so the options
-are the same (*eggs*, *interpreter*, etc.), with specific options, and
-some changes, documented below.
+are the same (*eggs*, *interpreter*, etc.), and some changes, documented below.
+
 Consult the documentation here http://pypi.python.org/pypi/zc.recipe.egg/1.3.2
 
+The main useful ones are below:
 
-New in version 0.16: the recipe takes care of all needed eggs for
-OpenERP itself. The intended way to use the *eggs* option is to
-provide extra dependencies that the additional addons may need.
+eggs
+----
+
+Starting from version 0.16 of the recipe, you don't need to put anything in
+this option by default.  But you may specify additional eggs needed by addons,
+or just useful ones::
+
+    eggs = 
+        ipython
+        openobject-library
+
+scripts
+--------
+
+The behaviour of this option is slightly modified :
+by default, no script other than those directly related to OpenERP are
+generated, but you may specify some explicitely, with the same semantics as the
+normal behaviour (we simply set an empty default value, which means to not
+produce scripts)::
+
+        scripts =
+            change_tz
+
+In the current state, beware to *not* require the same script in different
+parts or rename them. See
+https://bugs.launchpad.net/anybox.recipe.openerp/+bug/1020967 for details.
+
+interpreter
+-----------
+
+This is the default `interpreter` option of `zc.recipe.egg` that specifies the name 
+of the Python interpreter that shoud be included in the ``bin`` directory of the buildout::
+
+    interpreter = erp_python
+
 
 Specific options
-----------------
+~~~~~~~~~~~~~~~~
 
-It also adds a few specific options :
+The recipe also adds a few specific options:
 
- * **version**: specify one of:
-   * the version number of an official OpenERP (server, web client or gtk client)
-   * a custom download: `url http://example.com/openerp.tar.gz`
-   * an absolute or a relative path: `path /my/path/to/a/custom/openerp`
-   * the url of a custom bzr/hg/git/svn branch or repository. See *addons* below.
-   The download area for official versions and custom downloads can be
-   specified in the **openerp-downloads-directory** of the
-   ``[buildout]`` section. Like all paths, if not absolute, it will be
-   interpretated relatively to the buildout directory. By setting it in your
-   ``default.cfg``, you may share the downloads among different
-   buildouts.
+version
+-------
 
- * **addons**: specify additional addons, either a path or a repository.
- * **script_name**: specify the name of the startup script to generate
- * **startup_delay**: specify a time in seconds to wait within the startup
-   script before actually launching OpenERP. The Gunicorn startup script (see
-   below) is not affected by this setting.
- * **with_devtools**: loads development and useful testing tools, such as
-   ``anybox.testing.datetime``.
- * **base_url**: URL to download official and nightly versions from
-   (assuming the archive filenames are constistent with those in
-   OpenERP download server). This is a basic mirroring capability.
+Specifies the OpenERP version to use. It can be:
 
+The **version number** of an official OpenERP (server, web client or gtk client)::
 
-For the *version* and *addons* option, if you use a remote repository the syntax is::
+  version = 6.0.3
 
-  type url directory revision
+A **custom download**::
 
-where:
- * `type` can be bzr, hg, git or svn
- * `url` is any URL supported by the versionning tool
- * `directory` is the local directory that will be created
- * `revision` is any version specification supported
+  version = url http://example.com/openerp.tar.gz
 
-For the *addons* option, you can either specifiy a directory holding
-addons, or a single one. In that latter case, it will be actually
-placed one directory below
+An absolute or a relative **path**::
 
-Changed options
----------------
-Here are the options whose behaviour is different than the one from
-``zc.recipe.eggs:scripts``:
+  version = path /my/path/to/a/custom/openerp
 
- * `scripts`: by default, no script other than those directly related
-   to OpenERP are generated are generated, but you may specify some
-   explicitely, with the same semantics as the normal behaviour (we
-   simply set an empty default value, which means not to produce scripts) :
+A custom **bzr, hg, git or svn** branch or repository. The syntax is the same
+as the `addons` option (see below)::
 
-        scripts = change_tz
+  version = bzr lp:openobject-server/6.1 openerp61 last:1
 
-   In the current state, beware *not* to require the same script in
-   different parts or rename them. See
-   https://bugs.launchpad.net/anybox.recipe.openerp/+bug/1020967 for details.
+A **nightly** build::
 
-Official version
-----------------
+  version = nightly 6.1 20120814-233345
 
-To use an official OpenERP version, just specify the version. For instance with the webclient::
+or (dangerous)::
 
-    [webclient]
-    recipe = anybox.recipe.openerp:webclient
-    version = 6.0.3
-
-Note: with OpenERP 6.1 the web client is natively included in the server as a simple module. In that case you don't need to write a separate part for the web client, unless that's what you really want to do.
-
-Custom or development version
------------------------------
-
-If you want to use your own custom branch at revision 4751::
-
-    [webclient]
-    recipe = anybox.recipe.openerp:webclient
-    version = bzr https://code.launchpad.net/~anybox/openobject-client-web/6.0-bug-906449 webclient-debug 4751
-
-If you don't specify the revision, it will use the latest revision of
-the branch.
-The branch will be updated at each buildout run.
+  version = nightly 6.1 latest
 
 
-Custom addons
--------------
+addons
+------
 
-The `addons` option has a specific behaviour. You can use it to specify
-additional OpenERP addons, either a relative or absolute path or
-a specification for a version control system (VCS).
-
-The first word of the value specifies the retrieval type (either
-``local`` or a VCS short name). In the ``local`` case, the remainings
-of the value is the path on the filesystem (relative to the buildout
-directory or absolute).
-
-In VCS cases, the syntax is uniformly::
-
-  VCS_TYPE SOURCE_URL DESTINATION REVISION [OPTIONS]
-
-Of these, URL and REVISION are interpreted by the prescribed VCS
-system, while DESTINATION is an absolute path on the
-filesystem, or relative to the buildout dir.
-
-OPTIONS take the form ``name=value``. Currently, only the ``subdir``
-option is recognized. If used, the given subdirectory of the
-repository is registered as an addons directory.
-
-The currently supported VCS types are bzr,hg,git and svn.
+Specifies additional addons, either a local path or a repository.
 
 Example::
 
@@ -147,22 +123,135 @@ Example::
            svn http://example.com/some_addons addons3 head
            bzr lp:openerp-web/trunk/ openerp-web last:1 subdir=addons
 
-VCS sources are updated on each build according to the specified
+When using ``local`` paths you can either specify a directory holding
+addons, or a single one. In that latter case, it will be actually
+placed one directory below
+    
+For remote repositories the syntax is:
+
+``TYPE  URL  DESTINATION  REVISION  [OPTIONS]``
+
+* *TYPE* can be ``bzr``, ``hg``, ``git`` or ``svn``
+* *URL* is any URL scheme supported by the versionning tool
+* *DESTINATION* is the local directory that will be created (relative or absolute)
+* *REVISION* is any version specification supported (revision, tag, etc.)
+* *OPTIONS* take the form ``name=value``. Currently, only the ``subdir``
+  option is recognized. If used, the given subdirectory of the
+  repository is registered as an addons directory.
+
+Repositories are updated on each build according to the specified
 revision. You have to be careful with the revision specification.
 
 Buildout offline mode is supported. In that case, update to the
-prescibed revision is performed, if the VCS allows it (Subversion does not).
+specified revision is performed, if the VCS allows it (Subversion does not).
+
+script_name
+-----------
+
+Startup scripts are created in the `bin` directory. By default the name is:
+start_<part_name>, so you can have several startup scripts for each part if you
+configure several OpenERP servers or clients. You can pass additional typical
+arguments to the server via the startup script, such as -i or -u options.
+
+You can choose another name for the script by using the *script_name*
+option ::
+
+    script_name = start_erp  
+
+startup_delay
+-------------
+
+Specifies a time in seconds to wait within the startup
+script before actually launching OpenERP. The Gunicorn startup script (see
+below) is not affected by this setting ::
+
+    startup_delay = 3
+
+with_devtools
+-------------
+
+Allows to load development and useful testing tools, such as
+``anybox.testing.datetime``. False by default::
+
+    with_devtools = true
+
+base_url
+--------
+
+URL to download official and nightly versions from
+(assuming the archive filenames are constistent with those in
+OpenERP download server). This is a basic mirroring capability::
+
+    base_url = http://download.example.com/openerp/
+
+openerp-downloads-directory
+---------------------------
+
+Specifies the destination download directory for OpenERP archives. The path may
+be absolute or relative to thebuildout directory.  By setting it in your
+``default.cfg``, you may share the downloads among different buildouts.
+
+Example::
+
+    [buildout]
+    openerp-downloads-directory = /home/user/.buildout/openerp-downloads
+
+gunicorn
+--------
+
+Gunicorn integration is only supported on OpenERP >= 6.1
+This options allow to generate a script to start OpenERP with Gunicorn.
+It currently support two values: ``direct`` and ``proxied``
+
+Direct mode
+```````````
+Direct mode should be used to let Gunicorn serve requests directly::
+
+    gunicorn = direct
+
+Proxied mode
+````````````
+
+Use this mode if you plan to run Gunicorn behind a reverse proxy::
+
+    gunicorn = proxied
+
+Gunicorn options
+````````````````
+
+Gunicorn-specific options are to be specified with the ``gunicorn.``
+prefix and will end up in the the Gunicorn python configuration file
+``etc/gunicorn_<part_name>.conf.py``, such as::
+
+  gunicorn.workers = 8
+
+If you don't specify ``gunicorn.bind``, then a value is constructed
+from the relevant options for the OpenERP script (currently
+``options.xmlrpc_port`` and ``options.xmlrpc_interface``).
+
+Other supported options and their default values are::
+
+  gunicorn.workers = 4
+  gunicorn.timeout = 240
+  gunicorn.max_requests = 2000
+
+Finally, you can specify the Gunicorn script name with the
+``gunicorn_script_name`` option. The configuration file will be named
+accordingly.
+
 
 OpenERP options
 ---------------
-The OpenERP configuration files are generated by OpenERP itself in the buildout
-`etc` directory during the first buildout run.  You can overwrite options in
-these config files in the recipe section of your buildout.cfg.  The options
-must be written using a dotted notation prefixed with the name of the section.
-The specified options will just overwrite the existing options in the
-corresponding config files. You don't have to replicate all the options in your
-buildout.cfg.  If an option or a section does not exist in the openerp config
-file, it can be created from there.
+
+You can define OpenERP options directly from the buildout file.  The OpenERP
+configuration files are generated by OpenERP itself in the buildout `etc`
+directory during the first buildout run.  You can overwrite these options in
+from the recipe section of your buildout.cfg.  The options must be written
+using a dotted notation prefixed with the name of the section.  The specified
+options will just overwrite the existing options in the corresponding config
+files. You don't have to replicate all the options in your buildout.cfg.  If an
+option or a section does not exist in the openerp config file, it can be
+created from there.
 
 For example you can specify the xmlrpc port for the server or
 even an additional option that does not exist in the default config file::
@@ -188,44 +277,6 @@ It will modify the corresponding web client config::
 
   [openerp-web]
   company.url = 'http://anybox.fr'
-
-Generated startup scripts
--------------------------
-
-Startup scripts are created in the `bin` directory. By default the name is:
-start_<part_name>, so you can have several startup scripts for each part if you
-configure several OpenERP servers or clients. You can pass additional typical
-arguments to the server via the startup script, such as -i or -u options.
-You can choose another name for the script by using the *script_name*
-option.
-
-Gunicorn integration (OpenERP >= 6.1 only)
-------------------------------------------
-If you add a ``gunicorn`` option with value ``direct`` or ``proxied``,
-you'll also get for OpenERP >= 6.1 a script named
-``gunicorn_<part_name>`` to serve your OpeneERP part right away with
-the Gunicorn WSGI server.
-
-Use ``proxied`` if you plan to run Gunicorn behind a reverse proxy.
-
-Gunicorn-specific options are to be specified with the ``gunicorn.``
-prefix and will end up in the the Gunicorn python configuration file
-``etc/gunicorn_<part_name>.conf.py``, such as::
-
-  gunicorn.workers = 8
-
-If you don't specify ``gunicorn.bind``, then a value is constructed
-from the relevant options for the OpenERP script (currently
-``options.xmlrpc_port`` and ``options.xmlrpc_interface``).
-Other supported options and their default values are::
-
-  gunicorn.workers = 4
-  gunicorn.timeout = 240
-  gunicorn.max_requests = 2000
-
-Finally, you can specify the Gunicorn script name with the
-``gunicorn_script_name`` option. The configuration file will be named
-accordingly.
 
 Example OpenERP 6.0 buildout
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -298,7 +349,13 @@ Example OpenERP 6.1 buildout
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Here is a simple example for a stock OpenERP 6.1, with a GTK client, and a
-local addon you are developping for a client project::
+local addon you are developping for a client project
+
+.. note:: with OpenERP 6.1 the web client is natively included in the server as a
+    simple module. In that case you don't need to write a separate part for the web
+    client, unless that's what you really want to do.
+
+::
 
     [buildout]
     parts = openerp gtk
@@ -350,7 +407,7 @@ local addon you are developping for a client project::
 
 Contribute
 ~~~~~~~~~~
-Author and contributors:
+Authors and contributors:
 
  * Christophe Combelles
  * Georges Racinet
@@ -361,4 +418,4 @@ The primary branch is on the launchpad:
  * PyPI page: http://pypi.python.org/pypi/anybox.recipe.openerp
 
 Please don't hesitate to give feedback and especially report bugs or
-ask for new features through launchpad.
+ask for new features through launchpad at this URL: https://bugs.launchpad.net/anybox.recipe.openerp/+bugs
