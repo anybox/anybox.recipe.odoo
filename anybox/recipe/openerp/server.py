@@ -168,7 +168,8 @@ conf = openerp.tools.config
                                    'devtools.load()', ''))
 
         if startup_delay:
-            initialization.extend(('import time',
+            initialization.extend(('print("sleeping %s seconds...")' % startup_delay,
+                                   'import time',
                                    'time.sleep(%f)' % startup_delay))
 
         options['initialization'] = os.linesep.join((initialization))
