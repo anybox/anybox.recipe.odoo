@@ -423,13 +423,14 @@ class BaseRecipe(object):
             self._60_fix_root_path()
 
         # add openerp paths into the extra-paths
-        if 'extra-paths' not in self.options:
-            self.options['extra-paths'] = ''
-        self.options['extra-paths'] = (
-                '\n'.join([join(self.openerp_dir, 'bin'),
-                           join(self.openerp_dir, 'bin', 'addons')]
-                         )
-                + '\n' + self.options['extra-paths'])
+        if self.version_detected.startswith('7'): # TODO use a tuple and <
+            paths = [self.openerp_dir,
+                     join(self.openerp_dir, 'addons')] # TODO necessary ?
+        else:
+            paths = [join(self.openerp_dir, 'bin'),
+                     join(self.openerp_dir, 'bin', 'addons')]
+        paths.append(self.options.get('extra-paths', ''))
+        self.options['extra-paths'] = os.linesep.join(paths)
 
         if self.version_detected is None:
             raise EnvironmentError('Version of OpenERP could not be detected')
