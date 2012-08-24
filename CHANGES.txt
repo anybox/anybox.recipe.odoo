@@ -1,8 +1,13 @@
 Changes
 ~~~~~~~
 
-1.0.1 (24-08-2012)
+1.0.3 (24-08-2012)
 ------------------
+- no actual difference with 1.0 (only changelogs and the like) 
+
+1.0 (24-08-2012)
+----------------
+- launchpad #1040011: works with current OpenERP trunk (future 7.0)
 - launchpad #1027994: 'base_url' option, to download from mirrors
 - launchpad #1035978: restored 'local' version scheme for OpenERP
   itself. Also implemented the 'url' version scheme.
