@@ -1,6 +1,9 @@
 Changes
 ~~~~~~~
 
+1.1 (UNRELEASED)
+----------------
+
 1.0.3 (24-08-2012)
 ------------------
 - no actual difference with 1.0 (only changelogs and the like) 
