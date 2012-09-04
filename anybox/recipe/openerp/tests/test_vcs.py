@@ -255,14 +255,33 @@ class BzrTestCase(VcsTestCase):
         """Method to update branch.conf does it and stores old values"""
         # Setting up a prior branch
         target_dir = os.path.join(self.dst_dir, "clone to update")
-        BzrBranch(target_dir, self.src_repo)('1')
+        branch = BzrBranch(target_dir, self.src_repo)
+        branch('1')
+        # src may have become relative, let's keep it in that form
+        old_src = branch.parse_conf()['parent_location']
 
         # first rename.
         # We test that pull actually works rather than
         # just checking branch.conf to avoid logical loop testing nothing
         new_src = os.path.join(self.src_dir, 'new-src-repo')
         os.rename(self.src_repo, new_src)
-        BzrBranch(target_dir, new_src)('last:1')
+        branch = BzrBranch(target_dir, new_src)
+        branch('last:1')
+
+        self.assertEquals(branch.parse_conf(), dict(
+                buildout_save_parent_location_1=old_src,
+                parent_location=new_src))
+
+        # second rename
+        new_src2 = os.path.join(self.src_dir, 'new-src-repo2')
+        os.rename(new_src, new_src2)
+        branch = BzrBranch(target_dir, new_src2)
+        branch('1')
+
+        self.assertEquals(branch.parse_conf(), dict(
+                buildout_save_parent_location_1=old_src,
+                buildout_save_parent_location_2=new_src,
+                parent_location=new_src2))
 
     def test_update_clear_locks(self):
         """Testing update with clear locks option."""

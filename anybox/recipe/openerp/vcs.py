@@ -2,10 +2,12 @@ import os
 import subprocess
 import logging
 import shutil
+
 from StringIO import StringIO
 from ConfigParser import ConfigParser, NoOptionError
 
 from utils import working_directory_keeper
+from utils import use_or_open
 logger = logging.getLogger(__name__)
 
 SUBPROCESS_ENV = os.environ.copy()
@@ -147,44 +149,34 @@ class BzrBranch(BaseRepo):
 
     vcs_control_dir = '.bzr'
 
+    def conf_file_path(self):
+        return os.path.join(self.target_dir, '.bzr', 'branch', 'branch.conf')
 
     def parse_conf(self, from_file=None):
         """Return a dict of paths from standard conf (or the given file-like)
 
         Reference: http://doc.bazaar.canonical.com/bzr.0.18/configuration.htm
 
+        >>> from pprint import pprint
+        >>> from StringIO import StringIO
         >>> branch = BzrBranch('', '')
-        >>> branch.parse_conf("parent_location = /some/path \n"
-        ...                   "submit_location = /other_path")
-
+        >>> pprint(branch.parse_conf(StringIO(os.linesep.join([
+        ...        "parent_location = /some/path",
+        ...        "submit_location = /other/path"]))))
+        {'parent_location': '/some/path', 'submit_location': '/other/path'}
         """
-        try:
-            if from_file is None:
-                conffile = open(os.path.join(self.target_dir, '.bzr',
-                                             'branch', 'branch.conf'))
-            else:
-                conffile = from_file
-
+        with use_or_open(from_file, self.conf_file_path()) as conffile:
             return dict((name.strip(), url.strip())
                         for name, url in (line.split('=', 1)
                                           for line in conffile
                                           if not line.startswith('#')))
 
-
-        finally:
-            if from_file is None:
-                try:
-                    conffile.close()
-                except IOError:
-                    pass
-
-    def write_conf(self, conf, conffile=None):
+    def write_conf(self, conf, to_file=None):
         """Write counterpart to read_conf (see docstring of read_conf)
         """
         lines = ('%s = %s' % (k, v) + os.linesep
                  for k, v in conf.items())
-        with open(os.path.join(self.target_dir, '.bzr',
-                               'branch', 'branch.conf'), 'w') as conffile:
+        with use_or_open(to_file, self.conf_file_path(), 'w') as conffile:
             conffile.writelines(lines)
 
     def update_conf(self):
@@ -192,6 +184,13 @@ class BzrBranch(BaseRepo):
         old_parent = conf['parent_location']
         if old_parent == self.url:
             return
+        count = 1
+        while True:
+            save = 'buildout_save_parent_location_%d' % count
+            if save not in conf:
+                conf[save] = old_parent
+                break
+            count += 1
         conf['parent_location'] = self.url
         self.write_conf(conf)
 
