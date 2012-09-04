@@ -251,6 +251,19 @@ class BzrTestCase(VcsTestCase):
         f.close()
         self.assertEquals(lines[0].strip(), 'first')
 
+    def test_url_update(self):
+        """Method to update branch.conf does it and stores old values"""
+        # Setting up a prior branch
+        target_dir = os.path.join(self.dst_dir, "clone to update")
+        BzrBranch(target_dir, self.src_repo)('1')
+
+        # first rename.
+        # We test that pull actually works rather than
+        # just checking branch.conf to avoid logical loop testing nothing
+        new_src = os.path.join(self.src_dir, 'new-src-repo')
+        os.rename(self.src_repo, new_src)
+        BzrBranch(target_dir, new_src)('last:1')
+
     def test_update_clear_locks(self):
         """Testing update with clear locks option."""
         # Setting up a prior branch

@@ -147,6 +147,54 @@ class BzrBranch(BaseRepo):
 
     vcs_control_dir = '.bzr'
 
+
+    def parse_conf(self, from_file=None):
+        """Return a dict of paths from standard conf (or the given file-like)
+
+        Reference: http://doc.bazaar.canonical.com/bzr.0.18/configuration.htm
+
+        >>> branch = BzrBranch('', '')
+        >>> branch.parse_conf("parent_location = /some/path \n"
+        ...                   "submit_location = /other_path")
+
+        """
+        try:
+            if from_file is None:
+                conffile = open(os.path.join(self.target_dir, '.bzr',
+                                             'branch', 'branch.conf'))
+            else:
+                conffile = from_file
+
+            return dict((name.strip(), url.strip())
+                        for name, url in (line.split('=', 1)
+                                          for line in conffile
+                                          if not line.startswith('#')))
+
+
+        finally:
+            if from_file is None:
+                try:
+                    conffile.close()
+                except IOError:
+                    pass
+
+    def write_conf(self, conf, conffile=None):
+        """Write counterpart to read_conf (see docstring of read_conf)
+        """
+        lines = ('%s = %s' % (k, v) + os.linesep
+                 for k, v in conf.items())
+        with open(os.path.join(self.target_dir, '.bzr',
+                               'branch', 'branch.conf'), 'w') as conffile:
+            conffile.writelines(lines)
+
+    def update_conf(self):
+        conf = self.parse_conf()
+        old_parent = conf['parent_location']
+        if old_parent == self.url:
+            return
+        conf['parent_location'] = self.url
+        self.write_conf(conf)
+
     def get_update(self, revision):
         """Ensure that target_dir is a branch of url at specified revision.
 
@@ -190,6 +238,7 @@ class BzrBranch(BaseRepo):
                         p.returncode, repr(['bzr', 'break-lock', target_dir]))
 
             if not offline:
+                self.update_conf()
                 logger.info("Pull for branch %s ...", target_dir)
                 try:
                     subprocess.check_call(['bzr', 'pull',
