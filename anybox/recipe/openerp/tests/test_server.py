@@ -28,7 +28,7 @@ class TestServer(unittest.TestCase):
         shutil.rmtree(self.buildout_dir)
 
     def make_recipe(self, name='openerp', **options):
-        recipe = self.recipe = ServerRecipe(self.buildout, name, options)
+        self.recipe = ServerRecipe(self.buildout, name, options)
 
     def test_retrieve_addons_local(self):
         """Setting up a local addons line."""
@@ -132,9 +132,8 @@ class TestServer(unittest.TestCase):
         options = dict(version='6.1', addons='fakevcs lp:my-addons addons -1')
         options['vcs-clear-locks'] = 'True'
         self.make_recipe(**options)
-        paths = self.recipe.retrieve_addons()
+        self.recipe.retrieve_addons()
         self.assertEquals(get_vcs_log(), [
                           (addons_dir, 'lp:my-addons', '-1',
                            dict(offline=False, clear_locks=True))
                           ])
-
