@@ -61,6 +61,7 @@ class ServerRecipe(BaseRecipe):
     def _create_default_config(self):
         """Have OpenERP generate its default config file.
         """
+        self.options.setdefault('options.admin_passwd', '')
         if self.version_detected.startswith('6.0'):
             # root-path not available as command-line option
             os.chdir(join(self.openerp_dir, 'bin'))
