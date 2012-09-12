@@ -149,6 +149,42 @@ conf = openerp.tools.config
         zc.recipe.egg.Scripts(self.buildout, '', options).install()
         self.openerp_installed.append(join(self.bin_dir, qualified_name))
 
+    def _install_cron_worker_startup_script(self, qualified_name):
+        """Install the cron worker script.
+
+        This worker script has been introduced in openobject-server, rev 4184
+        together with changes in the main code that it requires.
+        These changes appeared in nightly build 6.1-20120530-233414.
+        The worker script itself does not appear in nightly builds.
+        """
+
+        script_src = join(self.openerp_dir, 'openerp-cron-worker')
+        if not os.path.isfile(script_src):
+            version = self.version_detected
+            if ((version.startswith('6.1-2012') and version[4:12] < '20120530')
+                or self.version_wanted == '6.1-1'):
+                logger.warn(
+                    "Can't use openerp-cron-worker with version %s "
+                    "You have to run a separate regular OpenERP process "
+                    "for cron jobs to be launched.", version)
+                return
+
+            logger.info("Cron launcher openerp-cron-worker not found in "
+                        "openerp source tree (version %s). "
+                        "This is expected with some nightly builds. "
+                        "Using the launcher script distributed "
+                        "with the recipe.", version)
+            script_src = join(os.path.split(__file__)[0], 'openerp-cron-worker')
+
+        options = self.options.copy()
+        options['entry-points'] = ('openerp_starter=anybox.recipe.'
+                                   'openerp.start_openerp:main')
+        options['scripts'] = 'openerp_starter=' + qualified_name
+        options['arguments'] = '%r, %r' % (script_src, self.config_path)
+        options['dependent-scripts'] = 'false'
+        zc.recipe.egg.Scripts(self.buildout, '', options).install()
+
+
     def _install_startup_scripts(self):
         """install startup and control scripts.
 
@@ -193,6 +229,10 @@ conf = openerp.tools.config
                                               'gunicorn_%s' % self.name)
             self._create_gunicorn_conf(qualified_name)
             self._install_gunicorn_startup_script(qualified_name)
+
+            qualified_name = self.options.get('cron_worker_script_name',
+                                              'cron_worker_%s' % self.name)
+            self._install_cron_worker_startup_script(qualified_name)
 
     def _60_fix_root_path(self):
         """Correction of root path for OpenERP 6.0 pure python install"""

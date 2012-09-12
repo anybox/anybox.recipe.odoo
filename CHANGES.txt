@@ -4,11 +4,12 @@ Changes
 1.1 (UNRELEASED)
 ----------------
 - launchpad #1041231: Resilience to changes of bzr locations
+- launchpad #1049519: openerp-cron-worker startup script
 - launchpad #1025144: By default, admin passwd is now disabled
 
 1.0.3 (24-08-2012)
 ------------------
-- no actual difference with 1.0 (only changelogs and the like) 
+- no actual difference with 1.0 (only changelogs and the like)
 
 1.0 (24-08-2012)
 ----------------
