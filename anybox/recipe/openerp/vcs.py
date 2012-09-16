@@ -2,6 +2,8 @@ import os
 import subprocess
 import logging
 import shutil
+import urlparse
+import urllib
 
 from StringIO import StringIO
 from ConfigParser import ConfigParser, NoOptionError
@@ -144,10 +146,32 @@ class HgRepo(BaseRepo):
 
 SUPPORTED['hg'] = HgRepo
 
+try:
+    from bzrlib.plugins.launchpad.lp_directory import LaunchpadDirectory
+except ImportError:
+    LPDIR = None
+else:
+    LPDIR = LaunchpadDirectory()
+
 class BzrBranch(BaseRepo):
     """Represent a Bazaar branch tied to a reference branch."""
 
     vcs_control_dir = '.bzr'
+
+    def __init__(self, *a, **kw):
+        super(BzrBranch, self).__init__(*a, **kw)
+        if self.url.startswith('lp:'):
+            if LPDIR is None:
+                raise RuntimeError(
+                    "To use launchpad locations (lp:), bzrlib must be "
+                    "importable. Please also take care that it's the same "
+                    "or working exactly as the one behind the bzr executable")
+
+            # first arg (name) of look_up is acturally ignored
+            url = LPDIR.look_up('', self.url)
+            parsed = list(urlparse.urlparse(url))
+            parsed[2] = urllib.quote(parsed[2])
+            self.url = urlparse.urlunparse(parsed)
 
     def conf_file_path(self):
         return os.path.join(self.target_dir, '.bzr', 'branch', 'branch.conf')

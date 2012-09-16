@@ -51,7 +51,8 @@ class BaseRecipe(object):
         self.downloads_dir = self.make_absolute(
             self.b_options.get('openerp-downloads-directory', 'downloads'))
         self.version_wanted = None  # from the buildout
-        self.version_detected = None  # from the openerp setup.py
+        self.version_detected = None  # string from the openerp setup.py
+        self.version_tuple = None # typed version suitable for comparisons
         self.parts = self.buildout['buildout']['parts-directory']
         self.addons = self.options.get('addons')
         self.openerp_dir = None

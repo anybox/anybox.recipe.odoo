@@ -283,6 +283,24 @@ class BzrTestCase(VcsTestCase):
                 buildout_save_parent_location_2=new_src,
                 parent_location=new_src2))
 
+    def test_lp_url(self):
+        """lp: locations are being rewritten to the actual target."""
+        branch = BzrBranch('', 'lp:anybox.recipe.openerp')
+        # just testing for now that it's been rewritten
+        self.failIf(branch.url.startswith('lp:'))
+
+        # checking idempotency of rewritting
+        branch2 = BzrBranch('', branch.url)
+        self.assertEquals(branch2.url, branch.url)
+
+    def test_lp_url_nobzrlib(self):
+        """We can't safely handle lp: locations without bzrlib."""
+        from anybox.recipe.openerp import vcs
+        save = vcs.LPDIR
+        vcs.LPDIR = None
+        self.assertRaises(RuntimeError, BzrBranch, '', 'lp:something')
+        vcs.LPDIR = save
+
     def test_update_clear_locks(self):
         """Testing update with clear locks option."""
         # Setting up a prior branch

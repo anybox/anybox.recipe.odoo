@@ -25,7 +25,7 @@ setup(
     include_package_data=True,
     namespace_packages=['anybox', 'anybox.recipe'],
     install_requires=requires,
-    tests_require=requires + ['nose'],
+    tests_require=requires + ['nose', 'bzr'],
     classifiers=[
       'Development Status :: 4 - Beta',
       'Framework :: Buildout :: Recipe',
