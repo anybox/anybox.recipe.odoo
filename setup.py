@@ -18,7 +18,7 @@ setup(
     author_email="contact@anybox.fr",
     description="A buildout recipe to install and configure OpenERP",
     license="ZPL",
-    long_description=open('README.txt').read() + open('CHANGES.txt').read(),
+    long_description=open('README.rst').read() + open('CHANGES.rst').read(),
     url="https://launchpad.net/anybox.recipe.openerp",
     packages=find_packages(),
     zip_safe=False,
