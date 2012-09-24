@@ -1,6 +1,9 @@
 Changes
 ~~~~~~~
 
+1.2
+---
+
 1.1.2 (24-09-2012)
 ------------------
 - launchpad #1041231: Resilience to changes of bzr locations
