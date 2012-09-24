@@ -199,8 +199,10 @@ Example::
 gunicorn
 --------
 
-Gunicorn integration is only supported on OpenERP >= 6.1
-This options allow to generate a script to start OpenERP with Gunicorn.
+Gunicorn integration is only supported on OpenERP >= 6.1.
+This option makes the recipe generate a script to start OpenERP with Gunicorn
+and (*new in version 1.1*) a dedicated script to handle cron jobs.
+
 It currently support two values: ``direct`` and ``proxied``
 
 Direct mode
