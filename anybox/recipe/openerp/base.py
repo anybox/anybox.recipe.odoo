@@ -195,7 +195,7 @@ class BaseRecipe(object):
                     raise exception
             except Exception, exception:
                 raise EnvironmentError('Problem while reading OpenERP setup.py: ' + exception.message)
-        _ = sys.path.pop(0)
+        sys.path.pop(0)
         setuptools.setup = old_setup
 
     def make_absolute(self, path):
@@ -424,7 +424,8 @@ class BaseRecipe(object):
             self._60_fix_root_path()
 
         # add openerp paths into the extra-paths
-        if self.version_detected.startswith('7'): # TODO use a tuple and <
+        if (self.version_detected.startswith('7')
+            or self.version_detected.startswith('6.2')): # TODO use a tuple !
             paths = [self.openerp_dir,
                      join(self.openerp_dir, 'addons')] # TODO necessary ?
         else:
