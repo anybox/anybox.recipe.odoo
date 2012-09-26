@@ -1,6 +1,10 @@
 Changes
 ~~~~~~~
 
+1.2
+---
+- 
+
 1.1.3 (26-09-2012)
 ------------------
 - fixed packaging problem with openerp-cron-worker
