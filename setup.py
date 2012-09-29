@@ -23,7 +23,8 @@ setup(
     packages=find_packages(),
     zip_safe=False,
     include_package_data=True,
-    namespace_packages=['anybox', 'anybox.recipe'],
+    data_files=[('anybox/recipe/openerp',
+                 ['anybox/recipe/openerp/openerp-cron-worker',])],
     install_requires=requires,
     tests_require=requires + ['nose', 'bzr'],
     classifiers=[

@@ -174,7 +174,7 @@ conf = openerp.tools.config
                         "This is expected with some nightly builds. "
                         "Using the launcher script distributed "
                         "with the recipe.", version)
-            script_src = join(os.path.split(__file__)[0], 'openerp-cron-worker.py')
+            script_src = join(os.path.split(__file__)[0], 'openerp-cron-worker')
 
         options = self.options.copy()
         options['entry-points'] = ('openerp_starter=anybox.recipe.'
