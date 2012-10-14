@@ -4,6 +4,7 @@ Changes
 1.1.4 (14-10-2012)
 ------------------
 - Improved documentation (bootstrap and sample buildouts)
+- Re-enabled support for trunk nightly (and maybe 7.0 final)
 
 1.1.3 (26-09-2012)
 ------------------

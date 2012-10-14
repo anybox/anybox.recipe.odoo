@@ -4,9 +4,9 @@ anybox.recipe.openerp
 This is a `Buildout <https://github.com/buildout/buildout>`_ recipe that can
 download, install and configure one or several OpenERP servers, web clients,
 gtk clients and addons modules, from official or custom sources, or any bzr,
-hg, git or svn repositories.  It currently supports versions 6.0 and 6.1, with
-gunicorn deployment and an additional cron worker. It works under
-Linux and MacOs. It might work under Windows but it is untested.
+hg, git or svn repositories.  It currently supports versions 6.0, 6.1 and 7.0,
+with gunicorn deployment and an additional cron worker. It works under Linux
+and MacOs. It might work under Windows but it is untested.
 
 For a **quickstart** you can jump to the howto_ section.
 
@@ -113,9 +113,13 @@ A **nightly** build::
 
   version = nightly 6.1 20120814-233345
 
-or (dangerous)::
+or (dangerously unpinned version)::
 
   version = nightly 6.1 latest
+
+or even more dangerous::
+
+  version = nightly trunk latest
 
 
 addons
@@ -294,6 +298,12 @@ It will modify the corresponding web client config::
   company.url = 'http://anybox.fr'
 
 
+.. note:: Note that for security reason, the superadmin password is not set by
+    default. If you want to create a database you should temporary set it manually
+    in the etc/openerp.conf file
+
+
+
 .. _howto:
 How to create and bootstrap a buildout
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -383,6 +393,7 @@ custom addon hosted on Bitbucket:
     
     [openerp]
     recipe = anybox.recipe.openerp:server
+    # replace '6.1' with 'trunk' to get a 7.0 current nightly:
     version = nightly 6.1 latest
     addons = hg https://bitbucket.org/anybox/anytracker addons default
 

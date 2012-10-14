@@ -21,10 +21,13 @@ class BaseRecipe(object):
     """
 
     default_dl_url = { '6.0': 'http://www.openerp.com/download/stable/source/',
-                       '6.1': 'http://nightly.openerp.com/6.1/releases/'
+                       '6.1': 'http://nightly.openerp.com/6.1/releases/',
+                       '7.0': 'http://nightly.openerp.com/7.0/releases/',
                        }
 
     nightly_dl_url = {'6.1': 'http://nightly.openerp.com/6.1/nightly/src/',
+                      '7.0': 'http://nightly.openerp.com/7.0/nightly/src/',
+                      'trunk': 'http://nightly.openerp.com/trunk/nightly/src/',
                       }
 
     recipe_requirements = () # distribution required for the recipe itself
@@ -326,7 +329,7 @@ class BaseRecipe(object):
         the server does not implement conditional responses such as 304
         """
         archivestat = os.stat(self.archive_path)
-        length, modified = archivestat.st_size, stat.st_mtime
+        length, modified = archivestat.st_size, archivestat.st_mtime
 
         logger.info("Checking if %s if fresh wrt %s",
                     self.archive_path, self.url)

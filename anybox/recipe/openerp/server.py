@@ -16,7 +16,8 @@ class ServerRecipe(BaseRecipe):
                          '6.1': 'openerp-%s.tar.gz'}
     archive_nightly_filenames = {
         '6.1': 'openerp-6.1-%s.tar.gz',
-        '6.2dev': 'openerp-6.2dev-%s.tar.gz'
+        '7.0': 'openerp-7.0-%s.tar.gz',
+        'trunk': 'openerp-6.2dev-%s.tar.gz'
         }
     recipe_requirements = ('babel',)
     requirements = ('pychart', 'anybox.recipe.openerp')
