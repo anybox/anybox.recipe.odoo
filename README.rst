@@ -1,11 +1,21 @@
 anybox.recipe.openerp
 =====================
 
-This is a `Buildout <https://github.com/buildout/buildout>`_ recipe for
-downloading, installing and configuring one or several OpenERP servers, web
-clients and/or gtk clients. It currently supports versions 6.0 and 6.1, custom
-branches, custom addons and gunicorn deployment. For a quickstart you can
-jump to the example section.
+This is a `Buildout <https://github.com/buildout/buildout>`_ recipe that can
+download, install and configure one or several OpenERP servers, web clients,
+gtk clients and addons modules, from official or custom sources, or any bzr,
+hg, git or svn repositories.  It currently supports versions 6.0 and 6.1, with
+gunicorn deployment and an additional cron worker. It works under
+Linux and MacOs. It might work under Windows but it is untested.
+
+For a **quickstart** you can jump to the howto_ section.
+
+A "Buildout recipe" is the engine behind a Buildout "part". A "buildout part"
+is a part of a larger application built with the Buildout sandbox build system.
+Using Buildout is harmless for your system because it is entirely
+self-contained in a single directory: just delete the directory and the
+buildout is gone. You never have to use administrative rights, except for
+build dependencies.
 
 .. contents::
 
@@ -40,7 +50,7 @@ eggs
 ----
 
 Starting from version 0.16 of the recipe, you don't need to put anything in
-this option by default.  But you may specify additional eggs needed by addons,
+this option by default. But you may specify additional eggs needed by addons,
 or just useful ones::
 
     eggs = 
@@ -48,7 +58,7 @@ or just useful ones::
         openobject-library
 
 scripts
---------
+-------
 
 The behaviour of this option is slightly modified :
 by default, no script other than those directly related to OpenERP are
@@ -111,7 +121,7 @@ or (dangerous)::
 addons
 ------
 
-Specifies additional addons, either a local path or a repository.
+Specifies additional OpenERP addons, either a local path or a repository.
 
 Example::
 
@@ -124,10 +134,10 @@ Example::
            bzr lp:openerp-web/trunk/ openerp-web last:1 subdir=addons
 
 When using ``local`` paths you can either specify a directory holding
-addons, or a single one. In that latter case, it will be actually
-placed one directory below
+addons, or a single addon. In that latter case, it will be actually
+placed one directory below.
     
-For remote repositories the syntax is:
+For remote repositories, the syntax is:
 
 ``TYPE  URL  DESTINATION  REVISION  [OPTIONS]``
 
@@ -140,7 +150,7 @@ For remote repositories the syntax is:
   repository is registered as an addons directory.
 
 Repositories are updated on each build according to the specified
-revision. You have to be careful with the revision specification.
+revision. You must be careful with the revision specification.
 
 Buildout offline mode is supported. In that case, update to the
 specified revision is performed, if the VCS allows it (Subversion does not).
@@ -148,7 +158,7 @@ specified revision is performed, if the VCS allows it (Subversion does not).
 script_name
 -----------
 
-Startup scripts are created in the `bin` directory. By default the name is:
+OpenERP startup scripts are created in the `bin` directory. By default the name is:
 start_<part_name>, so you can have several startup scripts for each part if you
 configure several OpenERP servers or clients. You can pass additional typical
 arguments to the server via the startup script, such as -i or -u options.
@@ -161,9 +171,10 @@ option ::
 startup_delay
 -------------
 
-Specifies a time in seconds to wait within the startup
-script before actually launching OpenERP. The Gunicorn startup script (see
-below) is not affected by this setting ::
+Specifies a delay in seconds to wait before actually launching OpenERP. This
+option was a preliminary hack to support both gunicorn instance and a legacy
+instance.  The Gunicorn startup script (see below) itself is not affected by
+this setting ::
 
     startup_delay = 3
 
@@ -178,7 +189,7 @@ Allows to load development and useful testing tools, such as
 base_url
 --------
 
-URL to download official and nightly versions from
+URL from which to download official and nightly versions
 (assuming the archive filenames are constistent with those in
 OpenERP download server). This is a basic mirroring capability::
 
@@ -187,9 +198,10 @@ OpenERP download server). This is a basic mirroring capability::
 openerp-downloads-directory
 ---------------------------
 
-Specifies the destination download directory for OpenERP archives. The path may
-be absolute or relative to thebuildout directory.  By setting it in your
-``default.cfg``, you may share the downloads among different buildouts.
+Allows to share OpenERP downloads among several buildouts. You should put this
+option in your ``~/.buildout/default.cfg`` file.  It specifies the destination
+download directory for OpenERP archives. The path may be absolute or relative
+to the buildout directory.
 
 Example::
 
@@ -246,14 +258,15 @@ OpenERP options
 ---------------
 
 You can define OpenERP options directly from the buildout file.  The OpenERP
-configuration files are generated by OpenERP itself in the buildout `etc`
-directory during the first buildout run.  You can overwrite these options in
-from the recipe section of your buildout.cfg.  The options must be written
-using a dotted notation prefixed with the name of the section.  The specified
-options will just overwrite the existing options in the corresponding config
-files. You don't have to replicate all the options in your buildout.cfg.  If an
-option or a section does not exist in the openerp config file, it can be
-created from there.
+configuration files are generated by OpenERP itself in the `etc` directory of
+the buildout during the first Buildout run.  You can overwrite these options
+from the recipe section of your ``buildout.cfg``.  The options in the buildout
+file must be written using a dotted notation prefixed with the name of the
+corresponding section of the OpenERP config file.  The specified options will
+just overwrite the existing options in the corresponding config files. You
+don't have to replicate all the options in your ``buildout.cfg``.  If an option
+or a section does not natively exist in the openerp config file, it can be
+created from there for your application.
 
 For example you can specify the xmlrpc port for the server or
 even an additional option that does not exist in the default config file::
@@ -280,10 +293,138 @@ It will modify the corresponding web client config::
   [openerp-web]
   company.url = 'http://anybox.fr'
 
+
+.. _howto:
+How to create and bootstrap a buildout
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To create a buildout and run the build, you just need **1 file** and **2 commands**:
+
+- Create a single ``buildout.cfg`` file.
+- Be sure you installed all your build dependencies
+- Bootstrap the buildout with: ``python bootstrap.py``
+- Run the build with: ``bin/buildout``
+
+The same with more details below :
+
+Creating the buildout
+---------------------
+
+Create a ``buildout.cfg`` file in an empty directory, containing the
+configuration of the `example 6.1`_ section.
+
+.. _dependencies:
+Installing build dependencies
+-----------------------------
+
+You basically need typical development tools needed to build all the Python
+dependency eggs of OpenERP. You can do this by yourself with your system or
+Linux distribution.
+
+Or if you're using a Debian system, we provide a single dependency package you
+can use to install all dependencies in one shot:
+
+Add the following line in your ``/etc/apt/sources.list``::
+
+  deb http://apt.anybox.fr/openerp common main
+
+Install the dependency package::
+
+  $ sudo aptitude update 
+  $ sudo aptitude install openerp-server-system-build-deps
+
+You can uninstall this package with `aptitude` after the build to automatically remove all un-needed dependencies.
+
+Bootstrapping the buildout
+--------------------------
+
+Bootstrapping the buildout consists in creating the basic structure of the buildout, and installing buildout itself in the directory.
+
+The easiest and recommended way to bootstrap is to use a ``bootstrap.py`` script::
+
+  $ wget https://raw.github.com/buildout/buildout/master/bootstrap/bootstrap.py
+  $ python bootstrap.py
+
+As an alternative and more complicated solution, you may also bootstrap by
+creating a virtualenv, installing zc.buildout, then run the bootstrap::
+
+  $ virtualenv sandbox
+  $ sandbox/bin/pip install zc.buildout
+  $ sandbox/bin/buildout bootstrap
+
+Running the build
+-----------------
+
+Just run ::
+
+  $ bin/buildout
+
+Starting OpenERP
+----------------
+
+Just run ::
+
+  $ bin/start_openerp
+
+
+.. _example 6.1:
+Example OpenERP 6.1 buildout
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Here is a very simple example for a latest OpenERP 6.1 nightly and a
+custom addon hosted on Bitbucket:
+
+::
+
+    [buildout]
+    parts = openerp 
+    versions = versions
+    find-links = http://download.gna.org/pychart/
+    
+    [openerp]
+    recipe = anybox.recipe.openerp:server
+    version = nightly 6.1 latest
+    addons = hg https://bitbucket.org/anybox/anytracker addons default
+
+    [versions]
+    MarkupSafe = 0.15
+    Pillow = 1.7.7
+    PyXML = 0.8.4
+    babel = 0.9.6
+    feedparser = 5.1.1
+    gdata = 2.0.16
+    lxml = 2.3.3
+    mako = 0.6.2
+    psycopg2 = 2.4.4
+    pychart = 1.39
+    pydot = 1.0.28
+    pyparsing = 1.5.6
+    python-dateutil = 1.5
+    python-ldap = 2.4.9
+    python-openid = 2.2.5
+    pytz = 2012b
+    pywebdav = 0.9.4.1
+    pyyaml = 3.10
+    reportlab = 2.5
+    simplejson = 2.4.0
+    vatnumber = 1.0
+    vobject = 0.8.1c
+    werkzeug = 0.8.3
+    xlwt = 0.7.3
+    zc.buildout = 1.5.2
+    zc.recipe.egg = 1.3.2
+    zsi = 2.0-rc3
+
+
+.. note:: with OpenERP 6.1 the web client is natively included in the server as a
+    simple module. In that case you don't need to write a separate part for the web
+    client, unless that's what you really want to do.
+
+
 Example OpenERP 6.0 buildout
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Here is a sample buildout with versions specification, 2 OpenERP servers (with
+Here is a sample buildout with version specification, 2 OpenERP servers (with
 one using the latest 6.0 branch on the launchpad) using only NETRPC and
 listening on 2 different ports, and 2 web clients::
 
@@ -347,65 +488,29 @@ listening on 2 different ports, and 2 web clients::
     simplejson = 2.1.6
 
 
-Example OpenERP 6.1 buildout
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Other sample buildouts
+~~~~~~~~~~~~~~~~~~~~~~
 
-Here is a simple example for a stock OpenERP 6.1, with a GTK client, and a
-local addon you are developping for a client project
+Here are a few ready-to-use buildouts:
 
-.. note:: with OpenERP 6.1 the web client is natively included in the server as a
-    simple module. In that case you don't need to write a separate part for the web
-    client, unless that's what you really want to do.
+(Be sure to install system dependencies_ first)
 
-::
+OpenERP with the Magento connector development branches::
 
-    [buildout]
-    parts = openerp gtk
-    #allow-picked-versions = false
-    versions = versions
-    find-links = http://download.gna.org/pychart/
-    
-    [openerp]
-    recipe = anybox.recipe.openerp:server
-    version = 6.1-1
-    addons = local ../path/to/my/local/addons
+  $ hg clone https://bitbucket.org/anybox/openerp_connect_magento_buildout
+  $ cd openerp_connect_magento_buildout
+  $ python bootstrap.py
+  $ bin/buildout
+  $ bin/start_openerp
 
-    options.xmlrpcs = False
+OpenERP with the Prestashop connector development branches::
 
-    gunicorn = direct
+  $ hg clone https://bitbucket.org/anybox/openerp_connect_prestashop_buildout
+  $ cd openerp_connect_prestashop_buildout
+  $ python bootstrap.py
+  $ bin/buildout
+  $ bin/start_openerp
 
-    [gtk]
-    recipe = anybox.recipe.openerp:gtkclient
-    version = 6.1-1
-    
-    [versions]
-    MarkupSafe = 0.15
-    Pillow = 1.7.7
-    PyXML = 0.8.4
-    babel = 0.9.6
-    feedparser = 5.1.1
-    gdata = 2.0.16
-    lxml = 2.3.3
-    mako = 0.6.2
-    psycopg2 = 2.4.4
-    pychart = 1.39
-    pydot = 1.0.28
-    pyparsing = 1.5.6
-    python-dateutil = 1.5
-    python-ldap = 2.4.9
-    python-openid = 2.2.5
-    pytz = 2012b
-    pywebdav = 0.9.4.1
-    pyyaml = 3.10
-    reportlab = 2.5
-    simplejson = 2.4.0
-    vatnumber = 1.0
-    vobject = 0.8.1c
-    werkzeug = 0.8.3
-    xlwt = 0.7.3
-    zc.buildout = 1.5.2
-    zc.recipe.egg = 1.3.2
-    zsi = 2.0-rc3
 
 Contribute
 ~~~~~~~~~~
