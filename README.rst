@@ -305,6 +305,7 @@ It will modify the corresponding web client config::
 
 
 .. _howto:
+
 How to create and bootstrap a buildout
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -324,6 +325,7 @@ Create a ``buildout.cfg`` file in an empty directory, containing the
 configuration of the `example 6.1`_ section.
 
 .. _dependencies:
+
 Installing build dependencies
 -----------------------------
 
@@ -378,6 +380,7 @@ Just run ::
 
 
 .. _example 6.1:
+
 Example OpenERP 6.1 buildout
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
