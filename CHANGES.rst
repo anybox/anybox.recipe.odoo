@@ -1,6 +1,11 @@
 Changes
 ~~~~~~~
 
+1.1.6 (unreleased)
+------------------
+
+- ...
+
 1.1.5 (14-10-2012)
 ------------------
 - Improved documentation (bootstrap and sample buildouts)
