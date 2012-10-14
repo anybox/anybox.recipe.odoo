@@ -2,7 +2,7 @@ import os
 import sys
 from setuptools import setup, find_packages
 
-version = '1.1.5dev'
+version = '1.1.5'
 
 if sys.version_info < (2, 6):
     sys.stderr.write("This package requires Python 2.6 or newer. "
@@ -23,8 +23,6 @@ setup(
     packages=find_packages(),
     zip_safe=False,
     include_package_data=True,
-    data_files=[('anybox/recipe/openerp',
-                 ['anybox/recipe/openerp/openerp-cron-worker',])],
     install_requires=requires,
     tests_require=requires + ['nose', 'bzr'],
     classifiers=[

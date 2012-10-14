@@ -1,1 +1,2 @@
 include *.rst
+include anybox/recipe/openerp/openerp-cron-worker
