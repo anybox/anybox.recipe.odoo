@@ -5,18 +5,15 @@ Changes
 ------------------
 - Improved documentation (bootstrap and sample buildouts)
 - Re-enabled support for trunk nightly (and maybe 7.0 final)
-- fixed a packaging problem in 1.1.4
+- fixed a packaging problem with openerp-cron-worker in 1.1.4
 
 1.1.3 (26-09-2012)
-------------------
-- fixed packaging problem with openerp-cron-worker
-
-1.1.2 (24-09-2012)
 ------------------
 - launchpad #1041231: Resilience to changes of bzr locations
 - launchpad #1049519: openerp-cron-worker startup script
 - launchpad #1025144: By default, admin passwd is now disabled
 - launchpad #1054667: Problem with current dev nightlies for OpenERP 6.2
+- fixed a packaging problem with openerp-cron-worker in 1.1.2
 
 1.0.3 (24-08-2012)
 ------------------
