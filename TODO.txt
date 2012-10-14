@@ -1,11 +1,8 @@
 TODO
 ====
 
- - add base server addons (9 modules missing). Understand why they are missing.
  - missing deps for the gtk client (hippocanvas)
- - missing _thread error on py2.7 (dateutils 1.5 instead of 2.0!)
  - allow a different DOWNLOAD_URL
  - stop on error behavior for external programs
  - honor offline option (-o) in new auto update capability for addons
  - insecure mode for hg??
- - support wsgi deployment

@@ -1,9 +1,9 @@
 Changes
 ~~~~~~~
 
-1.2
----
-- 
+1.1.4 (14-10-2012)
+------------------
+- Improved documentation (bootstrap and sample buildouts)
 
 1.1.3 (26-09-2012)
 ------------------

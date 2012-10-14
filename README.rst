@@ -495,7 +495,7 @@ Here are a few ready-to-use buildouts:
 
 (Be sure to install system dependencies_ first)
 
-OpenERP with the Magento connector development branches::
+OpenERP with the development branches of the Magento connector addons::
 
   $ hg clone https://bitbucket.org/anybox/openerp_connect_magento_buildout
   $ cd openerp_connect_magento_buildout
@@ -503,7 +503,7 @@ OpenERP with the Magento connector development branches::
   $ bin/buildout
   $ bin/start_openerp
 
-OpenERP with the Prestashop connector development branches::
+OpenERP with the development branches of the Prestashop connector addons::
 
   $ hg clone https://bitbucket.org/anybox/openerp_connect_prestashop_buildout
   $ cd openerp_connect_prestashop_buildout
@@ -511,9 +511,14 @@ OpenERP with the Prestashop connector development branches::
   $ bin/buildout
   $ bin/start_openerp
 
+Other examples are available in the archive of this recipe, and used in the
+`anybox buildbot <http://buildbot.anybox.fr/>`_ which is powered by
+`anybox.buildbot.openerp <http://pypi.python.org/pypi/anybox.buildbot.openerp>`_.
+
 
 Contribute
 ~~~~~~~~~~
+
 Authors and contributors:
 
  * Christophe Combelles
@@ -526,3 +531,4 @@ The primary branch is on the launchpad:
 
 Please don't hesitate to give feedback and especially report bugs or
 ask for new features through launchpad at this URL: https://bugs.launchpad.net/anybox.recipe.openerp/+bugs
+
