@@ -325,8 +325,8 @@ class BaseRecipe(object):
         This is the same system as in GNU Wget 1.12. It works even if
         the server does not implement conditional responses such as 304
         """
-        stat = os.stat(self.archive_path)
-        length, modified = stat.st_size, stat.st_mtime
+        archivestat = os.stat(self.archive_path)
+        length, modified = archivestat.st_size, stat.st_mtime
 
         logger.info("Checking if %s if fresh wrt %s",
                     self.archive_path, self.url)
