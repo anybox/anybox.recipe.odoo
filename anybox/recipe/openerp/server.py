@@ -57,6 +57,11 @@ class ServerRecipe(BaseRecipe):
         if self.options.get('with_devtools', 'false').lower() == 'true':
             self.requirements.extend(devtools.requirements)
 
+        self.with_openerp_command = (
+            self.options.get('openerp_command_name') is not None)
+        if self.with_openerp_command:
+            self.requirements.append('openerp-command')
+
         BaseRecipe.merge_requirements(self)
 
     def _create_default_config(self):
@@ -150,6 +155,23 @@ conf = openerp.tools.config
         zc.recipe.egg.Scripts(self.buildout, '', options).install()
         self.openerp_installed.append(join(self.bin_dir, qualified_name))
 
+    def _install_openerp_command(self, qualified_name):
+        """Install https://launchpad.net/openerp-command)
+        """
+        logger.warn("Installing openerp-command as %r. This is useful for "
+                    "development operations, but not ready to launch "
+                    "production instances yet.", qualified_name)
+
+        options = self.options.copy()
+        options['scripts'] = 'oe=' + qualified_name
+        addons = self.options['options.addons_path'].split(',')
+        options['initialization'] = (
+            "import os; "
+            "os.environ['OPENERP_ADDONS'] = %r") % ':'.join(addons)
+
+        zc.recipe.egg.Scripts(self.buildout, '', options).install()
+        self.openerp_installed.append(join(self.bin_dir, qualified_name))
+
     def _install_cron_worker_startup_script(self, qualified_name):
         """Install the cron worker script.
 
@@ -224,6 +246,10 @@ conf = openerp.tools.config
 
         self.script_path = join(self.bin_dir, script_name)
         self.openerp_installed.append(self.script_path)
+
+        if self.with_openerp_command:
+            self._install_openerp_command(
+                self.options.get('openerp_command_name'))
 
         if self.gunicorn_entry:
             qualified_name = self.options.get('gunicorn_script_name',

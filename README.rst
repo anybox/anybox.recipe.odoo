@@ -190,6 +190,9 @@ Allows to load development and useful testing tools, such as
 
     with_devtools = true
 
+It will also add some dependencies that are typical to development
+setups (tests related packages etc.)
+
 base_url
 --------
 
@@ -256,6 +259,33 @@ Other supported options and their default values are::
 Finally, you can specify the Gunicorn script name with the
 ``gunicorn_script_name`` option. The configuration file will be named
 accordingly.
+
+openerp_command_name
+--------------------
+
+OpenERP Command Line Tools (openerp-command for short) is an
+alternative set of command-line tools that may someday subsede the
+current monolithic startup script. Currently experimental, but
+already very useful in development mode.
+
+By default, it is not enabled, but if you specify a wished name like
+this, that will trigger the script installation.
+
+  openerp_command_name = oe
+
+This works by requiring the ``openerp-command`` python
+distribution, which is not on PyPI as of this writting. You may want
+to use the ``vcsdevelop`` extension to get it from Launchpad::
+
+  [buildout]
+  extensions = gp.vcsdevelop
+  vcs-extend-develop = bzr+http://bazaar.launchpad.net/openerp/openerp-command#egg=openerp-command
+
+.. warning::
+
+  Do not use to launch production servers, especially in an automatic
+  way, openerp-command is really unstable and that may damage your
+  installation.
 
 
 OpenERP options
