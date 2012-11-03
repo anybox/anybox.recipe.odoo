@@ -56,6 +56,9 @@ class ServerRecipe(BaseRecipe):
 
         if self.options.get('with_devtools', 'false').lower() == 'true':
             self.requirements.extend(devtools.requirements)
+            self.with_devtools = True
+        else:
+            self.with_devtools = False
 
         self.with_openerp_command = (
             self.options.get('openerp_command_name') is not None)
@@ -207,9 +210,8 @@ conf = openerp.tools.config
         options['dependent-scripts'] = 'false'
         zc.recipe.egg.Scripts(self.buildout, '', options).install()
 
-
-    def _install_startup_scripts(self):
-        """install startup and control scripts.
+    def _install_main_startup_script(self):
+        """Install the main startup script, usually called ``start_openerp``.
 
         Uses a derivation to a console script provided by the recipe and
         a tweaked call to a dedicated instance of zc.recipe.eggs:scripts.
@@ -223,9 +225,11 @@ conf = openerp.tools.config
         options['scripts'] = 'openerp_starter=' + script_name
 
         initialization = ['']
-        if options.pop('with_devtools', 'false').lower().strip() == 'true':
-            initialization.extend(('from anybox.recipe.openerp import devtools',
-                                   'devtools.load()', ''))
+        if self.with_devtools:
+            initialization.extend((
+                    'from anybox.recipe.openerp import devtools',
+                    'devtools.load()',
+                    ''))
 
         if startup_delay:
             initialization.extend(('print("sleeping %s seconds...")' % startup_delay,
@@ -247,9 +251,53 @@ conf = openerp.tools.config
         self.script_path = join(self.bin_dir, script_name)
         self.openerp_installed.append(self.script_path)
 
+    def _install_test_script(self):
+        """Install the main startup script, usually called ``start_openerp``.
+
+        Uses a derivation to a console script provided by the recipe and
+        a tweaked call to a dedicated instance of zc.recipe.eggs:scripts.
+        """
+
+        script_name = self.options.get('test_script_name', 'test_' + self.name)
+
+        options = self.options.copy()
+        options['entry-points'] = ('openerp_tester=anybox.recipe.'
+                                   'openerp.test_openerp:main')
+        options['scripts'] = 'openerp_tester=' + script_name
+
+        initialization = ['']
+        initialization.extend(('from anybox.recipe.openerp import devtools',
+                               'devtools.load()', ''))
+
+        options['initialization'] = os.linesep.join((initialization))
+
+        if self.version_detected.startswith('6.0'):
+            server_cmd = join('bin', 'openerp-server.py')
+        else:
+            server_cmd = 'openerp-server'
+
+        options['arguments'] = '%r, %r, %r' % (
+            join(self.openerp_dir, server_cmd), self.config_path,
+            self.version_detected)
+        options['dependent-scripts'] = 'false'
+        zc.recipe.egg.Scripts(self.buildout, '', options).install()
+
+        self.script_path = join(self.bin_dir, script_name)
+        self.openerp_installed.append(self.script_path)
+
+
+    def _install_startup_scripts(self):
+        """install startup and control scripts.
+        """
+
+        self._install_main_startup_script()
+
         if self.with_openerp_command:
             self._install_openerp_command(
                 self.options.get('openerp_command_name'))
+
+        if self.with_devtools:
+            self._install_test_script()
 
         if self.gunicorn_entry:
             qualified_name = self.options.get('gunicorn_script_name',

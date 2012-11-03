@@ -4,7 +4,7 @@ Changes
 1.1.6 (unreleased)
 ------------------
 
-- ...
+- launchpad #1073917: test_openerp scripts
 
 1.1.5 (14-10-2012)
 ------------------
