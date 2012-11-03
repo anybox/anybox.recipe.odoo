@@ -4,7 +4,8 @@ Changes
 1.1.6 (unreleased)
 ------------------
 
-- launchpad #1073917: test_openerp scripts
+- launchpad #1073917: separated test command (bin/test_openerp)
+- launchpad #1073127: support for openerp-command
 
 1.1.5 (14-10-2012)
 ------------------
