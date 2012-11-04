@@ -25,8 +25,13 @@ class ServerRecipe(BaseRecipe):
 
     def __init__(self, *a, **kw):
         super(ServerRecipe, self).__init__(*a, **kw)
+        opt = self.options
         self.gunicorn_entry = dict(direct='core', proxied='proxied').get(
-            self.options.get('gunicorn', '').strip().lower())
+            opt.get('gunicorn', '').strip().lower())
+        self.with_devtools = (
+            opt.get('with_devtools', 'false').lower() == 'true')
+        self.with_openerp_command = (
+            self.options.get('openerp_command_name') is not None)
 
     def merge_requirements(self):
         """Prepare for installation by zc.recipe.egg
@@ -48,20 +53,17 @@ class ServerRecipe(BaseRecipe):
         if not 'PIL' in self.options.get('eggs', '').split():
             self.requirements.append('Pillow')
         if self.version_detected[:3] == '6.1':
-            self.develop(self.openerp_dir)
+            openerp_dir = getattr(self, 'openerp_dir', None)
+            if openerp_dir is not None: # happens in unit tests
+                self.develop(openerp_dir)
             self.requirements.append('openerp')
 
         if self.gunicorn_entry:
             self.requirements.extend(('psutil','gunicorn'))
 
-        if self.options.get('with_devtools', 'false').lower() == 'true':
+        if self.with_devtools:
             self.requirements.extend(devtools.requirements)
-            self.with_devtools = True
-        else:
-            self.with_devtools = False
 
-        self.with_openerp_command = (
-            self.options.get('openerp_command_name') is not None)
         if self.with_openerp_command:
             self.requirements.append('openerp-command')
 

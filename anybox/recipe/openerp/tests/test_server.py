@@ -137,3 +137,34 @@ class TestServer(unittest.TestCase):
                           (addons_dir, 'lp:my-addons', '-1',
                            dict(offline=False, clear_locks=True))
                           ])
+
+    def test_merge_requirements(self):
+        self.make_recipe(version='6.1')
+        self.recipe.version_detected = '6.1-1'
+        self.recipe.merge_requirements()
+        self.assertEquals(set(self.recipe.requirements),
+                          set(['pychart', 'anybox.recipe.openerp',
+                               'Pillow', 'openerp']))
+
+    def test_merge_requirements_gunicorn(self):
+        self.make_recipe(version='6.1', gunicorn='direct')
+        self.recipe.version_detected = '6.1-1'
+        self.recipe.merge_requirements()
+        req = self.recipe.requirements
+        self.assertTrue('gunicorn' in req)
+        self.assertTrue('psutil' in req)
+
+    def test_merge_requirements_devtools(self):
+        self.make_recipe(version='6.1', with_devtools='true')
+        self.recipe.version_detected = '6.1-1'
+        self.recipe.merge_requirements()
+        from anybox.recipe.openerp import devtools
+        self.assertTrue(set(devtools.requirements).issubset(
+                self.recipe.requirements))
+
+    def test_merge_requirements_oe(self):
+        self.make_recipe(version='nightly trunk 20121101',
+                         openerp_command_name='oe')
+        self.recipe.version_detected = '7.0alpha'
+        self.recipe.merge_requirements()
+        self.assertTrue('openerp-command' in self.recipe.requirements)
