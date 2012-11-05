@@ -3,6 +3,7 @@ from os.path import join, basename
 import os, sys, urllib, tarfile, setuptools, logging, stat, imp
 import shutil
 import ConfigParser
+from zc.buildout.easy_install import MissingDistribution
 import zc.recipe.egg
 
 import httplib
@@ -66,6 +67,15 @@ class BaseRecipe(object):
 
         if options.get('scripts') is None:
             options['scripts'] = ''
+
+        # a dictionnary of messages to display in case a distribution is
+        # not installable.
+        self.missing_deps_instructions = {
+            'PIL': ("You don't need to require it for OpenERP any more, since "
+                    "the recipe automatically adds a dependency to Pillow. "
+                    "If you really need it for other reasons, installing it "
+                    "system-wide is a good option. "),
+            }
 
         self.openerp_installed = []
 
@@ -169,7 +179,16 @@ class BaseRecipe(object):
     def install_requirements(self):
         """Install egg requirements and scripts"""
         eggs = zc.recipe.egg.Scripts(self.buildout, '', self.options)
-        ws = eggs.install()
+        try:
+            ws = eggs.install()
+        except MissingDistribution, exc:
+            project_name = exc.data[0].project_name
+            msg = self.missing_deps_instructions.get(project_name)
+            if msg is None:
+                raise
+            logger.error("Could not find %r. " + msg, project_name)
+            sys.exit(1)
+
         _, ws = eggs.working_set()
         self.ws = ws
 
@@ -444,6 +463,7 @@ class BaseRecipe(object):
             raise EnvironmentError('Version of OpenERP could not be detected')
         self.merge_requirements()
         self.install_requirements()
+
         self._install_startup_scripts()
 
         # create the config file
