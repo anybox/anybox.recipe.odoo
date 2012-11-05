@@ -6,8 +6,10 @@ an embedded http server, etc.
 import unittest
 
 import os
+import sys
 import shutil
 from tempfile import mkdtemp
+import anybox.recipe.openerp
 from anybox.recipe.openerp.server import ServerRecipe
 from anybox.recipe.openerp.testing import get_vcs_log, clear_vcs_log
 
@@ -15,6 +17,8 @@ class TestServer(unittest.TestCase):
 
     def setUp(self):
         b_dir = self.buildout_dir = mkdtemp('test_oerp_recipe')
+        develop_dir = os.path.join(b_dir, 'develop-eggs')
+        os.mkdir(develop_dir)
         clear_vcs_log()
         self.buildout = {}
         self.buildout['buildout'] = {
@@ -22,7 +26,15 @@ class TestServer(unittest.TestCase):
             'offline': False,
             'parts-directory': os.path.join(b_dir, 'parts'),
             'bin-directory': os.path.join(b_dir, 'bin'),
+            'find-links': '',
+            'allow-hosts': '',
+            'eggs-directory': 'eggs',
+            'develop-eggs-directory': develop_dir,
+            'python': 'main_python',
             }
+
+        self.buildout['main_python'] = dict(executable=sys.executable)
+
 
     def tearDown(self):
         shutil.rmtree(self.buildout_dir)
@@ -168,3 +180,35 @@ class TestServer(unittest.TestCase):
         self.recipe.version_detected = '7.0alpha'
         self.recipe.merge_requirements()
         self.assertTrue('openerp-command' in self.recipe.requirements)
+
+    def test_install_scripts_61(self):
+        """A complete integration test again a typical OpenERP 6.1 setup.py
+
+        Uses a minimal set of dependencies, though
+        Actually tests nothing but that production of the scripts is possible.
+        """
+        test_dir = os.path.split(__file__)[0]
+        oerp61_dir = os.path.join(test_dir, 'oerp61')
+        self.make_recipe(version='local %s' % oerp61_dir,
+                         gunicorn='direct',
+                         with_devtools='true')
+        self.recipe.version_detected = "6.1-20121003-233130"
+
+        self.recipe.install_recipe_requirements()
+        self.recipe.develop(os.path.join(test_dir, 'fake_gunicorn'))
+        self.recipe.requirements = ['anybox.recipe.openerp', 'gunicorn']
+        self.recipe.merge_requirements()
+        self.recipe.install_requirements()
+        self.recipe.develop(self.recipe.openerp_dir)
+
+        bindir = os.path.join(self.buildout_dir, 'bin')
+        os.mkdir(bindir)
+
+        self.recipe._install_startup_scripts()
+        binlist = os.listdir(bindir)
+
+        for script in ('start_openerp', 'test_openerp',
+                       'gunicorn_openerp', # missing at this point
+                       'cron_worker_openerp',):
+            if not script in binlist:
+                self.fail("Script %r missing in bin directory." % script)

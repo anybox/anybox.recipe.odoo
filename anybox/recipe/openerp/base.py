@@ -66,6 +66,8 @@ class BaseRecipe(object):
         if options.get('scripts') is None:
             options['scripts'] = ''
 
+        self.openerp_installed = []
+
         self.etc = self.make_absolute('etc')
         self.bin_dir = self.buildout['buildout']['bin-directory']
         self.config_path = join(self.etc, self.name + '.cfg')
@@ -238,10 +240,11 @@ class BaseRecipe(object):
         develop() launches a subprocess, to which we need to forward
         the paths to requirements via PYTHONPATH
         """
+        logger.debug("Developing %r", src_directory)
         develop_dir = self.b_options['develop-eggs-directory']
         pythonpath_bak = os.getenv('PYTHONPATH')
         os.putenv('PYTHONPATH', ':'.join(self.recipe_requirements_paths))
-        zc.buildout.easy_install.develop(self.openerp_dir, develop_dir)
+        zc.buildout.easy_install.develop(src_directory, develop_dir)
         if pythonpath_bak is None:
             os.unsetenv('PYTHONPATH')
         else:
@@ -359,7 +362,6 @@ class BaseRecipe(object):
         logger.info("No need to re-download %s", self.archive_path)
 
     def install(self):
-        self.openerp_installed = []
         os.chdir(self.parts)
 
         # install server, webclient or gtkclient
