@@ -13,6 +13,9 @@ import anybox.recipe.openerp
 from anybox.recipe.openerp.server import ServerRecipe
 from anybox.recipe.openerp.testing import get_vcs_log, clear_vcs_log
 
+TEST_DIR = os.path.split(__file__)[0]
+
+
 class TestServer(unittest.TestCase):
 
     def setUp(self):
@@ -176,32 +179,58 @@ class TestServer(unittest.TestCase):
 
     def test_merge_requirements_oe(self):
         self.make_recipe(version='nightly trunk 20121101',
-                         openerp_command_name='oe')
+                         with_devtools='true')
         self.recipe.version_detected = '7.0alpha'
+        self.recipe.apply_version_dependent_decisions()
         self.recipe.merge_requirements()
         self.assertTrue('openerp-command' in self.recipe.requirements)
 
-    def test_install_scripts_61(self):
-        """A complete integration test again a typical OpenERP 6.1 setup.py
+    def test_merge_requirements_oe_nodevtools(self):
+        self.make_recipe(version='nightly trunk 20121101',
+                         with_devtools='false')
+        self.recipe.version_detected = '7.0alpha'
+        self.recipe.merge_requirements()
+        self.assertFalse('openerp-command' in self.recipe.requirements)
+
+    def test_merge_requirements_oe_61(self):
+        self.make_recipe(version='nightly 6.1 20121101',
+                         with_devtools='true')
+        self.recipe.version_detected = '6.1-20121101'
+        self.recipe.merge_requirements()
+        self.assertFalse('openerp-command' in self.recipe.requirements)
+
+    def assertScripts(self, wanted):
+        """Assert that scripts have been produced."""
+
+        bindir = os.path.join(self.buildout_dir, 'bin')
+        binlist = os.listdir(bindir)
+        for script in wanted:
+            if not script in binlist:
+                self.fail("Script %r missing in bin directory." % script)
+
+    def install_scripts(self, extra_develop=None):
+        """Helper for full integration tests again a typical OpenERP setup.py
 
         Uses a minimal set of dependencies, though
-        Actually tests nothing but that production of the scripts is possible.
         """
-        test_dir = os.path.split(__file__)[0]
-        oerp61_dir = os.path.join(test_dir, 'oerp61')
-        self.make_recipe(version='local %s' % oerp61_dir,
-                         gunicorn='direct',
-                         with_devtools='true')
-        self.recipe.version_detected = "6.1-20121003-233130"
+
+        self.recipe.apply_version_dependent_decisions()
+        develop = {'gunicorn': 'fake_gunicorn'}
+        if extra_develop is not None:
+            develop.update(extra_develop)
 
         # providing a babel package without resorting to PyPI
-        self.recipe.develop(os.path.join(test_dir, 'fake_babel'))
+        self.recipe.develop(os.path.join(TEST_DIR, 'fake_babel'))
         self.recipe.install_recipe_requirements()
 
-        # minimal way of providing a gunicorn egg with the console
-        # script entry point and requiring it for script creation
-        self.recipe.develop(os.path.join(test_dir, 'fake_gunicorn'))
-        self.recipe.options['eggs'] = 'gunicorn'
+        # minimal way of providing eggs with console
+        # script entry points and requiring them for script creation
+        eggs = []
+        for egg, src in develop.items():
+            self.recipe.develop(os.path.join(TEST_DIR, src))
+            eggs.append(egg)
+
+        self.recipe.options['eggs'] = os.linesep.join(eggs)
 
         self.recipe.install_requirements()
         self.recipe.develop(self.recipe.openerp_dir)
@@ -210,10 +239,34 @@ class TestServer(unittest.TestCase):
         os.mkdir(bindir)
 
         self.recipe._install_startup_scripts()
-        binlist = os.listdir(bindir)
 
-        for script in ('start_openerp', 'test_openerp',
-                       'gunicorn_openerp', # missing at this point
-                       'cron_worker_openerp',):
-            if not script in binlist:
-                self.fail("Script %r missing in bin directory." % script)
+    def test_install_scripts_61(self):
+        self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'oerp61'),
+                         gunicorn='direct',
+                         with_devtools='true')
+        self.recipe.version_detected = "6.1-20121003-233130"
+
+        self.install_scripts()
+        self.assertScripts(('start_openerp',
+                            'test_openerp',
+                            'gunicorn_openerp',
+                            'cron_worker_openerp',
+                            ))
+
+    def test_install_scripts_70(self):
+        self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'oerp70'),
+                         gunicorn='direct',
+                         with_devtools='true')
+        self.recipe.version_detected = "7.0alpha"
+
+        # necessary for openerp-command, will be part of post-release refactor
+        self.recipe.options['options.addons_path'] = ''
+
+        self.install_scripts(extra_develop={
+                'openerp-command': 'fake_openerp-command'})
+        self.assertScripts(('start_openerp',
+                            'test_openerp',
+                            'gunicorn_openerp',
+                            'cron_worker_openerp',
+                            'openerp_command',
+                            ))

@@ -21,6 +21,7 @@ class ServerRecipe(BaseRecipe):
         }
     recipe_requirements = ('babel',)
     requirements = ('pychart', 'anybox.recipe.openerp')
+    with_openerp_command = False
     ws = None
 
     def __init__(self, *a, **kw):
@@ -30,8 +31,19 @@ class ServerRecipe(BaseRecipe):
             opt.get('gunicorn', '').strip().lower())
         self.with_devtools = (
             opt.get('with_devtools', 'false').lower() == 'true')
+
+        self.missing_deps_instructions.update({
+            'openerp-command': ("Please provide it with 'develop' or "
+                                "'gp.vcsdevelop'. "
+                                "You may download it on ",
+                                "https://launchpad.net/openerp-command."),
+            })
+
+    def apply_version_dependent_decisions(self):
+        """Store some booleans depending on detected version."""
         self.with_openerp_command = (
-            self.options.get('openerp_command_name') is not None)
+            self.with_devtools
+            and self.version_detected[:3] in ('6.2', '7.0'))
 
     def merge_requirements(self):
         """Prepare for installation by zc.recipe.egg
@@ -296,7 +308,8 @@ conf = openerp.tools.config
 
         if self.with_openerp_command:
             self._install_openerp_command(
-                self.options.get('openerp_command_name'))
+                self.options.get('openerp_command_name',
+                                 '%s_command' % self.name))
 
         if self.with_devtools:
             self._install_test_script()

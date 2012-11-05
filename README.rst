@@ -274,10 +274,7 @@ alternative set of command-line tools that may someday subsede the
 current monolithic startup script. Currently experimental, but
 already very useful in development mode.
 
-By default, it is not enabled, but if you specify a wished name like
-this, that will trigger the script installation.
-
-  openerp_command_name = oe
+It is currently enabled if the ``with_devtools`` option is on.
 
 This works by requiring the ``openerp-command`` python
 distribution, which is not on PyPI as of this writting. You may want
@@ -286,6 +283,14 @@ to use the ``vcsdevelop`` extension to get it from Launchpad::
   [buildout]
   extensions = gp.vcsdevelop
   vcs-extend-develop = bzr+http://bazaar.launchpad.net/openerp/openerp-command#egg=openerp-command
+
+As for other scripts, you can control its name of the produced script, e.g::
+
+  openerp_command_name = oe
+
+the name defaults otherwise to ``<part_name>_command``. Note that
+``oe`` is the classical name for this script outside of the realm of
+this buildout recipe.
 
 .. warning::
 

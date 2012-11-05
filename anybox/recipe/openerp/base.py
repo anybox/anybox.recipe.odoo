@@ -192,6 +192,13 @@ class BaseRecipe(object):
         _, ws = eggs.working_set()
         self.ws = ws
 
+    def apply_version_dependent_decisions(self):
+        """Store some booleans depending on detected version.
+
+        To be refined by subclasses.
+        """
+        pass
+
     def read_openerp_setup(self):
         """Ugly method to extract requirements & version from ugly setup.py.
 
@@ -222,6 +229,7 @@ class BaseRecipe(object):
                 raise EnvironmentError('Problem while reading OpenERP setup.py: ' + exception.message)
         sys.path.pop(0)
         setuptools.setup = old_setup
+        self.apply_version_dependent_decisions()
 
     def make_absolute(self, path):
         """Make a path absolute if needed.
