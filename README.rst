@@ -140,7 +140,13 @@ Example::
 When using ``local`` paths you can either specify a directory holding
 addons, or a single addon. In that latter case, it will be actually
 placed one directory below.
-    
+
+.. warning::
+
+   Never name one of these addons directory simply ``addons``. It
+   leads to obscure and blocking install errors for addons in other
+   directories, claiming that some files don't exist while they do.
+
 For remote repositories, the syntax is:
 
 ``TYPE  URL  DESTINATION  REVISION  [OPTIONS]``
@@ -428,7 +434,7 @@ custom addon hosted on Bitbucket:
     recipe = anybox.recipe.openerp:server
     # replace '6.1' with 'trunk' to get a 7.0 current nightly:
     version = nightly 6.1 latest
-    addons = hg https://bitbucket.org/anybox/anytracker addons default
+    addons = hg https://bitbucket.org/anybox/anytracker addons-at default
 
     [versions]
     MarkupSafe = 0.15
