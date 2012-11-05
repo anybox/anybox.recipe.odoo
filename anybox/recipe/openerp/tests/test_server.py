@@ -195,9 +195,12 @@ class TestServer(unittest.TestCase):
         self.recipe.version_detected = "6.1-20121003-233130"
 
         self.recipe.install_recipe_requirements()
+
+        # minimal way of providing a gunicorn egg with the console
+        # script entry point and requiring it for script creation
         self.recipe.develop(os.path.join(test_dir, 'fake_gunicorn'))
-        self.recipe.requirements = ['anybox.recipe.openerp', 'gunicorn']
-        self.recipe.merge_requirements()
+        self.recipe.options['eggs'] = 'gunicorn'
+
         self.recipe.install_requirements()
         self.recipe.develop(self.recipe.openerp_dir)
 
