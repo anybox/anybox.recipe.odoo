@@ -31,6 +31,7 @@ class BaseRecipe(object):
                       }
 
     recipe_requirements = () # distribution required for the recipe itself
+    recipe_requirements_paths = () # a default value is useful in unit tests
     requirements = () # requirements for what the recipe installs to run
 
     # Caching logic for the main OpenERP part (e.g, without addons)

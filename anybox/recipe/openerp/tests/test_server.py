@@ -194,6 +194,8 @@ class TestServer(unittest.TestCase):
                          with_devtools='true')
         self.recipe.version_detected = "6.1-20121003-233130"
 
+        # providing a babel package without resorting to PyPI
+        self.recipe.develop(os.path.join(test_dir, 'fake_babel'))
         self.recipe.install_recipe_requirements()
 
         # minimal way of providing a gunicorn egg with the console
