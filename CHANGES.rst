@@ -7,6 +7,8 @@ Changes
 - launchpad #1073917: separated test command (bin/test_openerp)
 - launchpad #1073127: support for openerp-command
 - major improvement of test coverage in server recipe
+- included buildout configurations for buildbotting of the recipe in source
+  distribution
 
 1.1.5 (14-10-2012)
 ------------------
