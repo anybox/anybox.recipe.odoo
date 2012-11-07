@@ -194,7 +194,7 @@ Allows to load development and install useful devlopment and testing
 tools, notably the following scripts:
 
 * ``test_openerp``: a uniform test launcher for all supported
-  versions. See test_openerp_name option below for details.
+  versions. See test_script_name option below for details.
 * ``openerp_command``: see openerp_command_name option below for
   details. Not installed for OpenERP major versions less than or equal to 6.1.
 
