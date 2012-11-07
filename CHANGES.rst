@@ -1,11 +1,12 @@
 Changes
 ~~~~~~~
 
-1.1.6 (unreleased)
+1.1.6 (07-11-2012)
 ------------------
 
 - launchpad #1073917: separated test command (bin/test_openerp)
 - launchpad #1073127: support for openerp-command
+- major improvement of test coverage in server recipe
 
 1.1.5 (14-10-2012)
 ------------------
