@@ -1,8 +1,8 @@
 Changes
 ~~~~~~~
 
-1.1.6 (07-11-2012)
-------------------
+1.2 (07-11-2012)
+----------------
 
 - launchpad #1073917: separated test command (bin/test_openerp)
 - launchpad #1073127: support for openerp-command
