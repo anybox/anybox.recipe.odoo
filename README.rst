@@ -190,14 +190,41 @@ this setting ::
 
 with_devtools
 -------------
+Allows to load development and install useful devlopment and testing
+tools, notably the following scripts:
 
-Allows to load development and useful testing tools, such as
-``anybox.testing.datetime``. False by default::
+* ``test_openerp``: a uniform test launcher for all supported
+  versions. See test_openerp_name option below for details.
+* ``openerp_command``: see openerp_command_name option below for
+  details. Not installed for OpenERP major versions less than or equal to 6.1.
+
+This option is False by default, hence it's activated this way::
 
     with_devtools = true
 
 It will also add some dependencies that are typical to development
-setups (tests related packages etc.)
+setups (tests related packages etc.) and automatically load where
+needed helpers, such as `anybox.testing.datetime
+<http://pypi.python.org/pypi/anybox.testing.datetime>`_ (allows to
+cheat with system time).
+
+test_script_name
+----------------
+If the ``with_devtools`` is set to True, the recipe will create a
+test script, which is named by default ``test_<part_name>``. You may
+override the name in the configuration as in the following example::
+
+  test_script_name = test_erp
+
+The test script takes the same arguments as the regular startup
+script::
+
+  bin/test_openerp --help
+  bin/test_openerp -d test_db -i purchase,sale
+
+At the time of this writing, all this script does compared to the
+regular startup script is to bring uniformity across OpenERP versions
+by tweaking options internally.
 
 base_url
 --------
