@@ -35,7 +35,7 @@ class ServerRecipe(BaseRecipe):
         self.missing_deps_instructions.update({
             'openerp-command': ("Please provide it with 'develop' or "
                                 "'gp.vcsdevelop'. "
-                                "You may download it on ",
+                                "You may download it on "
                                 "https://launchpad.net/openerp-command."),
             })
 
