@@ -121,13 +121,18 @@ import openerp
 bind = %(bind)r
 pidfile = %(qualified_name)r + '.pid'
 workers = %(workers)s
-on_starting = openerp.wsgi.core.on_starting
-try:
-  when_ready = openerp.wsgi.core.when_ready
-except AttributeError: # not in current head of 6.1
-  pass
-pre_request = openerp.wsgi.core.pre_request
-post_request = openerp.wsgi.core.post_request
+
+if openerp.release.major_version == '6.1':
+    on_starting = openerp.wsgi.core.on_starting
+    try:
+      when_ready = openerp.wsgi.core.when_ready
+    except AttributeError: # not in current head of 6.1
+      pass
+    pre_request = openerp.wsgi.core.pre_request
+    post_request = openerp.wsgi.core.post_request
+else: #openerp.release.major_version == '7.0':
+    application = openerp.service.wsgi_server:application
+
 timeout = %(timeout)s
 max_requests = %(max_requests)s
 
@@ -161,13 +166,24 @@ conf = openerp.tools.config
         options = self.options.copy()
         options['scripts'] = 'gunicorn=' + qualified_name
         options['dependent-scripts'] = 'false'
+
+        gunicorn_options = {}
+        gunicorn_prefix = 'gunicorn.'
+        gunicorn_options.update((k[len(gunicorn_prefix):], v)
+                                for k, v in self.options.items()
+                                if k.startswith(gunicorn_prefix))
+
+        # entry point in 7.0 has changed so we need it to be configurable
+        guncorn_entry_point = gunicorn_options.get(
+                'entry_point',
+                'openerp:wsgi.%application' % (self.gunicorn_entry, ))
         # gunicorn's main() does not take arguments, that's why we have
         # to resort on hacking sys.argv
         options['initialization'] = (
             "from sys import argv; "
-            "argv[1:] = ['openerp:wsgi.%s.application', "
+            "argv[1:] = ['%s', "
             "            '-c', '%s.conf.py']") % (
-            self.gunicorn_entry, join(self.etc, qualified_name))
+            gunicorn_entry_point, join(self.etc, qualified_name))
 
         zc.recipe.egg.Scripts(self.buildout, '', options).install()
         self.openerp_installed.append(join(self.bin_dir, qualified_name))
