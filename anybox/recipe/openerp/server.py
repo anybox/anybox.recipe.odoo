@@ -41,9 +41,8 @@ class ServerRecipe(BaseRecipe):
 
     def apply_version_dependent_decisions(self):
         """Store some booleans depending on detected version."""
-        self.with_openerp_command = (
-            self.with_devtools
-            and self.version_detected[:3] in ('6.2', '7.0'))
+        self.with_openerp_command = (self.with_devtools
+                                     and self.major_version >= (6, 2))
 
     def merge_requirements(self):
         """Prepare for installation by zc.recipe.egg
@@ -64,7 +63,7 @@ class ServerRecipe(BaseRecipe):
         """
         if not 'PIL' in self.options.get('eggs', '').split():
             self.requirements.append('Pillow')
-        if self.version_detected[:3] == '6.1':
+        if self.major_version >= (6, 1):
             openerp_dir = getattr(self, 'openerp_dir', None)
             if openerp_dir is not None: # happens in unit tests
                 self.develop(openerp_dir)
@@ -85,7 +84,7 @@ class ServerRecipe(BaseRecipe):
         """Have OpenERP generate its default config file.
         """
         self.options.setdefault('options.admin_passwd', '')
-        if self.version_detected.startswith('6.0'):
+        if self.major_version == (6, 0):
             # root-path not available as command-line option
             os.chdir(join(self.openerp_dir, 'bin'))
             subprocess.check_call([self.script_path, '--stop-after-init', '-s',
@@ -252,7 +251,7 @@ conf = openerp.tools.config
 
         options['initialization'] = os.linesep.join((initialization))
 
-        if self.version_detected.startswith('6.0'):
+        if self.major_version == (6, 0):
             server_cmd = join('bin', 'openerp-server.py')
         else:
             server_cmd = 'openerp-server'
@@ -285,7 +284,7 @@ conf = openerp.tools.config
 
         options['initialization'] = os.linesep.join((initialization))
 
-        if self.version_detected.startswith('6.0'):
+        if self.major_version == (6, 0):
             server_cmd = join('bin', 'openerp-server.py')
         else:
             server_cmd = 'openerp-server'

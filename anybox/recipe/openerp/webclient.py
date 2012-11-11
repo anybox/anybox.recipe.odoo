@@ -31,7 +31,7 @@ class WebClientRecipe(BaseRecipe):
             sys.exit(1)
 
     def _create_default_config(self):
-        if self.version_detected[:3] == '6.0':
+        if self.major_version == (6, 0):
             shutil.copyfile(join(self.openerp_dir, 'doc', 'openerp-web.cfg'),
                             self.config_path)
 
@@ -44,7 +44,7 @@ class WebClientRecipe(BaseRecipe):
         """
         paths = [ self.openerp_dir ]
         paths.extend([egg.location for egg in self.ws])
-        if self.version_detected[:3] == '6.0':
+        if self.major_version == (6, 0):
             ext = '.py'
             config = '-c %s' % self.config_path
         else:

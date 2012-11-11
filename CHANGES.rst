@@ -4,7 +4,8 @@ Changes
 1.3 (unreleased)
 ----------------
 
-- 
+- launchpad #1055466: refactor version logic by providing major
+  version tuple for comparisons.
 
 1.2.2 (11-11-2012)
 ------------------

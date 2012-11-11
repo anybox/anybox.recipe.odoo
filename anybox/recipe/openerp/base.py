@@ -9,7 +9,8 @@ import zc.recipe.egg
 import httplib
 import rfc822
 from urlparse import urlparse
-import vcs
+from . import vcs
+from . import utils
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,6 @@ class BaseRecipe(object):
             self.b_options.get('openerp-downloads-directory', 'downloads'))
         self.version_wanted = None  # from the buildout
         self.version_detected = None  # string from the openerp setup.py
-        self.version_tuple = None # typed version suitable for comparisons
         self.parts = self.buildout['buildout']['parts-directory']
         self.addons = self.options.get('addons')
         self.openerp_dir = None
@@ -198,6 +198,13 @@ class BaseRecipe(object):
         To be refined by subclasses.
         """
         pass
+
+    @property
+    def major_version(self):
+        detected = self.version_detected
+        if detected is None:
+            return None
+        return utils.major_version(detected)
 
     def read_openerp_setup(self):
         """Ugly method to extract requirements & version from ugly setup.py.
@@ -439,7 +446,7 @@ class BaseRecipe(object):
             logger.warn("Detected version: %s, you may want to fix that "
                         "in your config file for replayability",
                         self.version_detected)
-        is_60 = self.version_detected[:3] == '6.0'
+        is_60 = self.major_version == (6, 0)
         # configure addons_path option
         if addons_paths:
             if 'options.addons_path' not in self.options:
@@ -457,8 +464,7 @@ class BaseRecipe(object):
             self._60_fix_root_path()
 
         # add openerp paths into the extra-paths
-        if (self.version_detected.startswith('7')
-            or self.version_detected.startswith('6.2')): # TODO use a tuple !
+        if self.major_version >= (6, 2):
             paths = [self.openerp_dir,
                      join(self.openerp_dir, 'addons')] # TODO necessary ?
         else:

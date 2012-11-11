@@ -1,4 +1,5 @@
 import os
+import re
 from contextlib import contextmanager
 
 class WorkingDirectoryKeeper(object):
@@ -31,3 +32,24 @@ def use_or_open(provided, path, *open_args):
         with open(path, *open_args) as f:
             yield f
 
+
+NIGHTLY_VERSION_RE = re.compile(r'(\d+)[.](\d+)-(\d+-\d+)$')
+
+MAJOR_VERSION_RE = re.compile(r'(\d+)[.](\d+)')
+
+
+def major_version(version_string):
+    """The least common denominator of OpenERP versions : two numbers.
+
+    OpenERP version numbers are a bit hard to compare if we consider nightly
+    releases, bzr versions etc. It's almost impossible to compare them without
+    an a priori knowledge of release dates and revisions.
+
+    Beware, the packaging script does funny things, such as labeling current
+    nightlies as 6.2-date-time whereas version_info is (7, 0, 0, ALPHA)
+    We can in recipe code check for >= (6, 2), that's not a big issue.
+    """
+
+    m = MAJOR_VERSION_RE.match(version_string)
+    if m is not None:
+        return tuple(int(m.group(i)) for i in (1,2))
