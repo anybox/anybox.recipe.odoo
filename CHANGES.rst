@@ -1,13 +1,13 @@
 Changes
 ~~~~~~~
 
-1.3 (unreleased)
-----------------
+1.2.2 (11-11-2012)
+------------------
 
-- 
+- Nothing but fix of changelog RST
 
 1.2.1 (08-11-2012)
-----------------
+------------------
 
 - Fixed an error in user feedback if openerp-command package is missing but
   needed
