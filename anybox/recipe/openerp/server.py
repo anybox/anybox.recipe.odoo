@@ -22,13 +22,12 @@ class ServerRecipe(BaseRecipe):
     recipe_requirements = ('babel',)
     requirements = ('pychart', 'anybox.recipe.openerp')
     with_openerp_command = False
+    with_gunicorn = False
     ws = None
 
     def __init__(self, *a, **kw):
         super(ServerRecipe, self).__init__(*a, **kw)
         opt = self.options
-        self.gunicorn_entry = dict(direct='core', proxied='proxied').get(
-            opt.get('gunicorn', '').strip().lower())
         self.with_devtools = (
             opt.get('with_devtools', 'false').lower() == 'true')
 
@@ -40,7 +39,24 @@ class ServerRecipe(BaseRecipe):
             })
 
     def apply_version_dependent_decisions(self):
-        """Store some booleans depending on detected version."""
+        """Store some booleans depending on detected version.
+
+        Also does some options normalization accordingly.
+        """
+        gunicorn = self.options.get('gunicorn', '').strip().lower()
+        self.with_gunicorn = bool(gunicorn)
+
+        if gunicorn and self.major_version == (6, 1):
+            entries = dict(direct='core', proxied='proxied')
+            self.gunicorn_entry = entries.get(gunicorn)
+            assert self.gunicorn_entry is not None, (
+                "In OpenERP 6.1, gunicorn option value must be "
+                "one of %r" % entries.keys())
+        elif self.major_version >= (6, 2) and gunicorn == 'proxied':
+            self.options['options.proxy_mode'] = 'True'
+            logger.warn("'gunicorn = proxied' now superseded in this OpenERP "
+                        "version by the 'proxy_mode' OpenERP server option ")
+
         self.with_openerp_command = (self.with_devtools
                                      and self.major_version >= (6, 2))
 
@@ -69,7 +85,7 @@ class ServerRecipe(BaseRecipe):
                 self.develop(openerp_dir)
             self.requirements.append('openerp')
 
-        if self.gunicorn_entry:
+        if self.with_gunicorn:
             self.requirements.extend(('psutil','gunicorn'))
 
         if self.with_devtools:
@@ -120,13 +136,16 @@ import openerp
 bind = %(bind)r
 pidfile = %(qualified_name)r + '.pid'
 workers = %(workers)s
-on_starting = openerp.wsgi.core.on_starting
-try:
-  when_ready = openerp.wsgi.core.when_ready
-except AttributeError: # not in current head of 6.1
-  pass
-pre_request = openerp.wsgi.core.pre_request
-post_request = openerp.wsgi.core.post_request
+
+if openerp.release.major_version == '6.1':
+    on_starting = openerp.wsgi.core.on_starting
+    try:
+      when_ready = openerp.wsgi.core.when_ready
+    except AttributeError: # not in current head of 6.1
+      pass
+    pre_request = openerp.wsgi.core.pre_request
+    post_request = openerp.wsgi.core.post_request
+
 timeout = %(timeout)s
 max_requests = %(max_requests)s
 
@@ -160,13 +179,29 @@ conf = openerp.tools.config
         options = self.options.copy()
         options['scripts'] = 'gunicorn=' + qualified_name
         options['dependent-scripts'] = 'false'
+
+        gunicorn_options = {}
+        gunicorn_prefix = 'gunicorn.'
+        gunicorn_options.update((k[len(gunicorn_prefix):], v)
+                                for k, v in self.options.items()
+                                if k.startswith(gunicorn_prefix))
+
+        gunicorn_entry_point = gunicorn_options.get('entry_point')
+        if gunicorn_entry_point is None:
+            if self.major_version >= (6, 2):
+                # proxy vs direct now handled by an OpenERP server option
+                gunicorn_entry_point = 'openerp:service.wsgi_server.application'
+            else:
+                gunicorn_entry_point = (
+                    'openerp:wsgi.%s.application' % self.gunicorn_entry)
+
         # gunicorn's main() does not take arguments, that's why we have
         # to resort on hacking sys.argv
         options['initialization'] = (
             "from sys import argv; "
-            "argv[1:] = ['openerp:wsgi.%s.application', "
+            "argv[1:] = ['%s', "
             "            '-c', '%s.conf.py']") % (
-            self.gunicorn_entry, join(self.etc, qualified_name))
+            gunicorn_entry_point, join(self.etc, qualified_name))
 
         zc.recipe.egg.Scripts(self.buildout, '', options).install()
         self.openerp_installed.append(join(self.bin_dir, qualified_name))
@@ -313,7 +348,7 @@ conf = openerp.tools.config
         if self.with_devtools:
             self._install_test_script()
 
-        if self.gunicorn_entry:
+        if self.with_gunicorn:
             qualified_name = self.options.get('gunicorn_script_name',
                                               'gunicorn_%s' % self.name)
             self._create_gunicorn_conf(qualified_name)

@@ -252,23 +252,27 @@ gunicorn
 --------
 
 Gunicorn integration is only supported on OpenERP >= 6.1.
-This option makes the recipe generate a script to start OpenERP with Gunicorn
-and (*new in version 1.1*) a dedicated script to handle cron jobs.
+Any value of this option makes the recipe generate a script to start
+OpenERP with Gunicorn and (*new in version 1.1*) a dedicated script to
+handle cron jobs.
 
-It currently support two values: ``direct`` and ``proxied``
-
-Direct mode
-```````````
-Direct mode should be used to let Gunicorn serve requests directly::
-
-    gunicorn = direct
+For OpenERP 6.1, the only accepted values are ``direct`` and
+``proxied``. Any value is suitable for OpenERP >= 7
 
 Proxied mode
 ````````````
-
-Use this mode if you plan to run Gunicorn behind a reverse proxy::
+For OpenERP 6.1, a special value of the ``gunicorn`` option is to be
+used if you plan to run Gunicorn behind a reverse proxy::
 
     gunicorn = proxied
+
+This behaviour has been kept for OpenERP >= 7 to keep
+backwards compatibility, but the option is now superseded by the
+general ``proxy_mode`` option of the server. In the buildout context,
+that'd be::
+
+    options.proxy_mode = True
+
 
 Gunicorn options
 ````````````````

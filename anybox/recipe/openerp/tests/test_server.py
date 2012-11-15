@@ -164,6 +164,7 @@ class TestServer(unittest.TestCase):
     def test_merge_requirements_gunicorn(self):
         self.make_recipe(version='6.1', gunicorn='direct')
         self.recipe.version_detected = '6.1-1'
+        self.recipe.apply_version_dependent_decisions() # TODO make a helper
         self.recipe.merge_requirements()
         req = self.recipe.requirements
         self.assertTrue('gunicorn' in req)
@@ -269,4 +270,19 @@ class TestServer(unittest.TestCase):
                             'gunicorn_openerp',
                             'cron_worker_openerp',
                             'openerp_command',
+                            ))
+
+    def test_install_scripts_70_gunicorn_proxied(self):
+        self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'oerp70'),
+                         gunicorn='proxied')
+        self.recipe.version_detected = "7.0alpha"
+
+        # necessary for openerp-command, will be part of post-release refactor
+        self.recipe.options['options.addons_path'] = ''
+
+        self.install_scripts(extra_develop={
+                'openerp-command': 'fake_openerp-command'})
+        self.assertScripts(('start_openerp',
+                            'gunicorn_openerp',
+                            'cron_worker_openerp',
                             ))
