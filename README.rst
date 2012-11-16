@@ -417,7 +417,17 @@ Install the dependency package::
   $ sudo aptitude update 
   $ sudo aptitude install openerp-server-system-build-deps
 
-You can uninstall this package with `aptitude` after the build to automatically remove all un-needed dependencies.
+You can uninstall this package with `aptitude` after the build to
+automatically remove all un-needed dependencies, but you need to
+install *run dependencies* before that ::
+
+  $ sudo aptitude install openerp-server-system-run-deps
+  $ sudo aptitude remove openerp-server-system-build-deps
+
+Please note that these package will have your system install the
+*client* part of PostgreSQL software only. If you want a
+PostgreSQL server on the same host, that's not in the recipe scope,
+just install it as well.
 
 Bootstrapping the buildout
 --------------------------
