@@ -78,6 +78,8 @@ class ServerRecipe(BaseRecipe):
         and put it in needed scripts, interpreters etc.
         """
         if not 'PIL' in self.options.get('eggs', '').split():
+            if 'PIL' in self.requirements:
+                self.requirements.remove('PIL')
             self.requirements.append('Pillow')
         if self.major_version >= (6, 1):
             openerp_dir = getattr(self, 'openerp_dir', None)

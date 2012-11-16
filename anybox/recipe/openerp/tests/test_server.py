@@ -161,6 +161,15 @@ class TestServer(unittest.TestCase):
                           set(['pychart', 'anybox.recipe.openerp',
                                'Pillow', 'openerp']))
 
+    def test_merge_requirements_PIL(self):
+        self.make_recipe(version='nightly trunk latest')
+        self.recipe.version_detected = '6.2-nightly-20121110-003000'
+        requirements = self.recipe.requirements
+        requirements.append('PIL')
+        self.recipe.merge_requirements()
+        self.assertTrue('PIL' not in requirements)
+        self.assertTrue('Pillow' in requirements)
+
     def test_merge_requirements_gunicorn(self):
         self.make_recipe(version='6.1', gunicorn='direct')
         self.recipe.version_detected = '6.1-1'
