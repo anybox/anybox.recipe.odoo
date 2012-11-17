@@ -4,6 +4,7 @@ Changes
 1.3 (unreleased)
 ----------------
 
+- launchpad #1077048: fix gunicorn startup script for OpenERP 7
 - launchpad #1079819: take into account newly introduced hard
   dependency to PIL in OpenERP 7
 - launchpad #1055466: refactor version logic by providing major

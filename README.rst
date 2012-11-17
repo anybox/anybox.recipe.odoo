@@ -293,6 +293,11 @@ Other supported options and their default values are::
   gunicorn.timeout = 240
   gunicorn.max_requests = 2000
 
+The recipe sets the proper WSGI entry point according to OpenERP
+version, you may manually override that with an option::
+
+  gunicorn.entry_point = mypackage:wsgi.app
+
 Finally, you can specify the Gunicorn script name with the
 ``gunicorn_script_name`` option. The configuration file will be named
 accordingly.
@@ -615,10 +620,14 @@ Other examples are available in the archive of this recipe, and used in the
 Contribute
 ~~~~~~~~~~
 
-Authors and contributors:
+Authors:
 
  * Christophe Combelles
  * Georges Racinet
+
+Contributors:
+
+ * Yannick Vaucher
 
 The primary branch is on the launchpad:
 
