@@ -77,14 +77,16 @@ class ServerRecipe(BaseRecipe):
         Once 'openerp' is required, zc.recipe.egg will take it into account
         and put it in needed scripts, interpreters etc.
         """
+        setup_has_pil = False
         if not 'PIL' in self.options.get('eggs', '').split():
             if 'PIL' in self.requirements:
+                setup_has_pil = True
                 self.requirements.remove('PIL')
             self.requirements.append('Pillow')
         if self.major_version >= (6, 1):
             openerp_dir = getattr(self, 'openerp_dir', None)
             if openerp_dir is not None: # happens in unit tests
-                self.develop(openerp_dir)
+                self.develop(openerp_dir, setup_has_pil=setup_has_pil)
             self.requirements.append('openerp')
 
         if self.with_gunicorn:

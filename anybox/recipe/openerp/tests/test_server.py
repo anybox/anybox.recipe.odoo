@@ -218,7 +218,7 @@ class TestServer(unittest.TestCase):
             if not script in binlist:
                 self.fail("Script %r missing in bin directory." % script)
 
-    def install_scripts(self, extra_develop=None):
+    def install_scripts(self, extra_develop=None, setup_has_pil=False):
         """Helper for full integration tests again a typical OpenERP setup.py
 
         Uses a minimal set of dependencies, though
@@ -243,7 +243,8 @@ class TestServer(unittest.TestCase):
         self.recipe.options['eggs'] = os.linesep.join(eggs)
 
         self.recipe.install_requirements()
-        self.recipe.develop(self.recipe.openerp_dir)
+        self.recipe.develop(self.recipe.openerp_dir,
+                            setup_has_pil=setup_has_pil)
 
         bindir = os.path.join(self.buildout_dir, 'bin')
         os.mkdir(bindir)
@@ -290,7 +291,8 @@ class TestServer(unittest.TestCase):
         self.recipe.options['options.addons_path'] = ''
 
         self.install_scripts(extra_develop={
-                'openerp-command': 'fake_openerp-command'})
+                'openerp-command': 'fake_openerp-command'},
+                             setup_has_pil=True)
         self.assertScripts(('start_openerp',
                             'gunicorn_openerp',
                             'cron_worker_openerp',

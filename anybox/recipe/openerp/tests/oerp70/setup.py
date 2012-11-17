@@ -92,6 +92,8 @@ setuptools.setup(
       data_files       = data(),
       packages         = setuptools.find_packages(),
       dependency_links = ['http://download.gna.org/pychart/'],
+      install_requires = ['PIL',
+                          ],
       #include_package_data = True,
       **py2exe_options()
 )

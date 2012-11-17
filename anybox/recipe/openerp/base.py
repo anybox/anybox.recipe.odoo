@@ -268,18 +268,41 @@ class BaseRecipe(object):
                 logger.warn('Tarball member %r is outside of %r. Ignored.',
                             tinfo, sandbox)
 
-    def develop(self, src_directory):
+    def _produce_setup_without_pil(self, src_directory):
+        """Create a copy of setup.py without PIL and return a path to it."""
+
+        new_setup_path = join(src_directory, 'setup.nopil.py')
+        with open(join(src_directory, 'setup.py')) as inp:
+            setup_str = inp.read()
+        with open(new_setup_path, 'w') as out:
+            out.write(setup_str.replace("'PIL',", ''))
+        return new_setup_path
+
+    def develop(self, src_directory, setup_has_pil=False):
         """Develop the specified source distribution.
 
         Any call to zc.recipe.eggs will use that developped version.
         develop() launches a subprocess, to which we need to forward
-        the paths to requirements via PYTHONPATH
+        the paths to requirements via PYTHONPATH.
+        If setup_has_pil is True, an altered version of setup that does not
+        require it is produced to perform the develop.
         """
         logger.debug("Developing %r", src_directory)
         develop_dir = self.b_options['develop-eggs-directory']
         pythonpath_bak = os.getenv('PYTHONPATH')
         os.putenv('PYTHONPATH', ':'.join(self.recipe_requirements_paths))
-        zc.buildout.easy_install.develop(src_directory, develop_dir)
+
+        if setup_has_pil:
+            setup = self._produce_setup_without_pil(src_directory)
+        else:
+            setup = src_directory
+
+        try:
+            zc.buildout.easy_install.develop(setup, develop_dir)
+        finally:
+            if setup_has_pil:
+                os.unlink(setup)
+
         if pythonpath_bak is None:
             os.unsetenv('PYTHONPATH')
         else:
