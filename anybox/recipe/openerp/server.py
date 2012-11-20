@@ -21,6 +21,7 @@ class ServerRecipe(BaseRecipe):
         }
     recipe_requirements = ('babel',)
     requirements = ('pychart', 'anybox.recipe.openerp')
+    soft_requirements = ('openerp-command',)
     with_openerp_command = False
     with_gunicorn = False
     ws = None

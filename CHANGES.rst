@@ -9,6 +9,8 @@ Changes
   dependency to PIL in OpenERP 7
 - launchpad #1055466: refactor version logic by providing major
   version tuple for comparisons.
+- launchpad #1081039: introduced soft requirements and made
+  openerp-command one of these.
 
 1.2.2 (11-11-2012)
 ------------------

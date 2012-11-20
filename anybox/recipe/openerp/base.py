@@ -35,6 +35,7 @@ class BaseRecipe(object):
     recipe_requirements = () # distribution required for the recipe itself
     recipe_requirements_paths = () # a default value is useful in unit tests
     requirements = () # requirements for what the recipe installs to run
+    soft_requirements = () # subset of requirements that's not necessary
 
     # Caching logic for the main OpenERP part (e.g, without addons)
     # Can be 'filename' or 'http-head'
@@ -177,17 +178,31 @@ class BaseRecipe(object):
             self.options['eggs'] += '\n' + '\n'.join(self.requirements)
 
     def install_requirements(self):
-        """Install egg requirements and scripts"""
-        eggs = zc.recipe.egg.Scripts(self.buildout, '', self.options)
-        try:
-            ws = eggs.install()
-        except MissingDistribution, exc:
-            project_name = exc.data[0].project_name
-            msg = self.missing_deps_instructions.get(project_name)
-            if msg is None:
-                raise
-            logger.error("Could not find %r. " + msg, project_name)
-            sys.exit(1)
+        """Install egg requirements and scripts.
+
+        If some distributions are known as soft requirements, will retry
+        without them
+        """
+        while True:
+            eggs = zc.recipe.egg.Scripts(self.buildout, '', self.options)
+            try:
+                ws = eggs.install()
+            except MissingDistribution, exc:
+                project_name = exc.data[0].project_name
+                msg = self.missing_deps_instructions.get(project_name)
+                if msg is None:
+                    raise
+                logger.error("Could not find %r. " + msg, project_name)
+                # GR this condition won't be enough in case of version
+                # conditions in requirement
+                if project_name not in self.soft_requirements:
+                    sys.exit(1)
+                else:
+                    attempted = self.options['eggs'].split(os.linesep)
+                    self.options['eggs'] = os.linesep.join(
+                        [egg for egg in attempted if egg != project_name])
+            else:
+                break
 
         _, ws = eggs.working_set()
         self.ws = ws

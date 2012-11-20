@@ -9,7 +9,6 @@ import os
 import sys
 import shutil
 from tempfile import mkdtemp
-import anybox.recipe.openerp
 from anybox.recipe.openerp.server import ServerRecipe
 from anybox.recipe.openerp.testing import get_vcs_log, clear_vcs_log
 
@@ -218,7 +217,8 @@ class TestServer(unittest.TestCase):
             if not script in binlist:
                 self.fail("Script %r missing in bin directory." % script)
 
-    def install_scripts(self, extra_develop=None, setup_has_pil=False):
+    def install_scripts(self, extra_develop=None, setup_has_pil=False,
+                        extra_requirements=()):
         """Helper for full integration tests again a typical OpenERP setup.py
 
         Uses a minimal set of dependencies, though
@@ -235,7 +235,7 @@ class TestServer(unittest.TestCase):
 
         # minimal way of providing eggs with console
         # script entry points and requiring them for script creation
-        eggs = []
+        eggs = list(extra_requirements)
         for egg, src in develop.items():
             self.recipe.develop(os.path.join(TEST_DIR, src))
             eggs.append(egg)
@@ -258,6 +258,25 @@ class TestServer(unittest.TestCase):
         self.recipe.version_detected = "6.1-20121003-233130"
 
         self.install_scripts()
+        self.assertScripts(('start_openerp',
+                            'test_openerp',
+                            'gunicorn_openerp',
+                            'cron_worker_openerp',
+                            ))
+
+    def test_install_scripts_soft_deps(self):
+        """If a soft requirement is missing, the scripts are still generated.
+        """
+        self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'oerp61'),
+                         gunicorn='direct',
+                         with_devtools='true')
+        self.recipe.version_detected = "6.1-20121003-233130"
+
+        softreq = 'zztest-softreq'
+        self.recipe.missing_deps_instructions[softreq] = (
+            "This is an expected condition in this test.")
+        self.recipe.soft_requirements = (softreq,)
+        self.install_scripts(extra_requirements=(softreq,))
         self.assertScripts(('start_openerp',
                             'test_openerp',
                             'gunicorn_openerp',
