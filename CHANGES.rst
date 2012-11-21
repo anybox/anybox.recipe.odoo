@@ -1,7 +1,7 @@
 Changes
 ~~~~~~~
 
-1.3 (unreleased)
+1.3 (21-11-2012)
 ----------------
 
 - launchpad #1077048: fix gunicorn startup script for OpenERP 7
