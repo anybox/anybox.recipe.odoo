@@ -281,7 +281,7 @@ conf = openerp.tools.config
         if self.with_devtools:
             initialization.extend((
                     'from anybox.recipe.openerp import devtools',
-                    'devtools.load()',
+                    'devtools.load(for_tests=False)',
                     ''))
 
         if startup_delay:
@@ -320,7 +320,7 @@ conf = openerp.tools.config
 
         initialization = ['']
         initialization.extend(('from anybox.recipe.openerp import devtools',
-                               'devtools.load()', ''))
+                               'devtools.load(for_tests=True)', ''))
 
         options['initialization'] = os.linesep.join((initialization))
 

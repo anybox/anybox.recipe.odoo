@@ -4,7 +4,8 @@ Changes
 1.4 (unreleased)
 ----------------
 
-- 
+- launchpad #1084535: finer behaviour of ``with_devtools`` option:
+  load testing hacks only in tests launcher script
 
 1.3 (21-11-2012)
 ----------------
