@@ -3,6 +3,7 @@ from os.path import join, basename
 import os, sys, urllib, tarfile, setuptools, logging, stat, imp
 import shutil
 import ConfigParser
+import distutils.core
 from zc.buildout.easy_install import MissingDistribution
 import zc.recipe.egg
 
@@ -25,6 +26,7 @@ class BaseRecipe(object):
     default_dl_url = { '6.0': 'http://www.openerp.com/download/stable/source/',
                        '6.1': 'http://nightly.openerp.com/6.1/releases/',
                        '7.0': 'http://nightly.openerp.com/7.0/releases/',
+                       '5.0': 'http://v6.openerp.com/download/stable/source/',
                        }
 
     nightly_dl_url = {'6.1': 'http://nightly.openerp.com/6.1/nightly/src/',
@@ -227,12 +229,16 @@ class BaseRecipe(object):
         Primarily designed for 6.0, but works with 6.1 as well.
         """
         old_setup = setuptools.setup
+        old_distutils_setup = distutils.core.setup # 5.0 directly imports this
         def new_setup(*args, **kw):
-            self.requirements.extend(kw['install_requires'])
+            self.requirements.extend(kw.get('install_requires', ()))
             self.version_detected = kw['version']
         setuptools.setup = new_setup
+        distutils.core.setup = new_setup
         sys.path.insert(0, '.')
         with open(join(self.openerp_dir,'setup.py'), 'rb') as f:
+            saved_argv = sys.argv
+            sys.argv = ['setup.py', 'develop']
             try:
                 imp.load_module('setup', f, 'setup.py', ('.py', 'r', imp.PY_SOURCE))
             except SystemExit, exception:
@@ -249,8 +255,11 @@ class BaseRecipe(object):
                     raise exception
             except Exception, exception:
                 raise EnvironmentError('Problem while reading OpenERP setup.py: ' + exception.message)
+            finally:
+                sys.argv = saved_argv
         sys.path.pop(0)
         setuptools.setup = old_setup
+        distutils.core.setup = old_distutils_setup
         self.apply_version_dependent_decisions()
 
     def make_absolute(self, path):

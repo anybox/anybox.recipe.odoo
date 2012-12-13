@@ -10,7 +10,8 @@ class GtkClientRecipe(BaseRecipe):
     """Recipe for gtk client and config
     """
     archive_filenames = {'6.0': 'openerp-client-%s.tar.gz',
-                        '6.1': 'openerp-client-%s.tar.gz' }
+                         '6.1': 'openerp-client-%s.tar.gz',
+                         '5.0': 'openerp-client-%s.tar.gz'}
     recipe_requirements = () # neither PyGTK nor PyGObject can be locally built
     requirements = ('pydot', )
 
