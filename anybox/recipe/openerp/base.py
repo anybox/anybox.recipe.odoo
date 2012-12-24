@@ -20,7 +20,25 @@ def rfc822_time(h):
     rfc822.mktime_tz(rfc822.parsedate_tz(h))
 
 class BaseRecipe(object):
-    """Base class for other recipes
+    """Base class for other recipes.
+
+    It implements notably fetching of the main software part plus addons.
+    The ``addons`` attributes is a dict storing how to fetch the specified
+    addons. It has the following structure:
+
+        local path -> (type, location_spec, options).
+
+        type can be
+            - 'local'
+            - 'url'
+            - one of the supported vcs
+
+        location_spec is, depending on the type, a tuple specifying how to
+        fetch : (url, None), or (vcs_url, vcs_revision) or None
+
+        addons options are typically used to specify that the addons directory
+        is actually a subdir of the specified one.
+
     """
 
     default_dl_url = { '6.0': 'http://www.openerp.com/download/stable/source/',
@@ -62,7 +80,7 @@ class BaseRecipe(object):
         self.version_wanted = None  # from the buildout
         self.version_detected = None  # string from the openerp setup.py
         self.parts = self.buildout['buildout']['parts-directory']
-        self.addons = self.options.get('addons')
+        self.parse_addons(options)
         self.openerp_dir = None
         self.url = None
         self.archive_filename = None
@@ -332,6 +350,30 @@ class BaseRecipe(object):
         else:
             os.putenv('PYTHONPATH', pythonpath_bak)
 
+    def parse_addons(self, options):
+        """Parse the addons options into the ``addons`` attribute.
+
+        See ``BaseRecipe`` docstring for details about the ``addons`` dict.
+        """
+
+        self.addons = {}
+        for line in options.get('addons', '').split(os.linesep):
+            split = line.split()
+            if not split:
+                return
+            loc_type = split[0]
+            spec_len = 2 if loc_type == 'local' else 4
+
+            options = dict(opt.split('=') for opt in split[spec_len:])
+            if loc_type == 'local':
+                addons_dir = split[1]
+                location_spec = None
+            else: # vcs
+                repo_url, addons_dir, repo_rev = split[1:4]
+                location_spec = (repo_url, repo_rev)
+
+            self.addons[addons_dir] = (loc_type, location_spec, options)
+
     def retrieve_addons(self):
         """Parse the addons option line, download and return a list of paths.
 
@@ -344,30 +386,24 @@ class BaseRecipe(object):
 
         addons_paths = []
 
-        for line in self.addons.split('\n'):
-            split = line.split()
-            repo_type = split[0]
-            spec_len = repo_type == 'local' and 2 or 4
+        for local_dir, (loc_type, loc_spec, addons_options) in self.addons.items():
 
-            addons_options = dict(opt.split('=') for opt in split[spec_len:])
+            local_dir = self.make_absolute(local_dir)
+            options = dict(offline=self.offline,
+                           clear_locks=self.vcs_clear_locks)
 
-            if repo_type == 'local':
-                repo_dir = self.make_absolute(split[1])
-            else:
-                repo_url, repo_dir, repo_rev = split[1:4]
-                repo_dir = self.make_absolute(repo_dir)
-                options = dict(offline=self.offline,
-                               clear_locks=self.vcs_clear_locks)
+            if loc_type != 'local':
                 for k, v in self.options.items():
-                    if k.startswith(repo_type + '-'):
+                    if k.startswith(loc_type + '-'):
                         options[k] = v
 
-                vcs.get_update(repo_type, repo_dir, repo_url, repo_rev,
+                repo_url, repo_rev = loc_spec
+                vcs.get_update(loc_type, local_dir, repo_url, repo_rev,
                                clear_retry=self.clear_retry,
                                **options)
 
             subdir = addons_options.get('subdir')
-            addons_dir = subdir and join(repo_dir, subdir) or repo_dir
+            addons_dir = join(local_dir, subdir) if subdir else local_dir
 
             manifest = os.path.join(addons_dir, '__openerp__.py')
             if os.path.isfile(manifest):
