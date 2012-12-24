@@ -632,3 +632,31 @@ class BaseRecipe(object):
 
         Actual implementation is up to subclasses
         """
+
+    def buildout_cfg_name(self, argv=None):
+        """Return the name of the config file that's been called.
+        """
+
+        # not using optparse because it's not obvious how to tell it to
+        # consider just one option and ignore the others.
+
+        if argv is None:
+            argv = sys.argv[1:]
+
+        # -c FILE or --config FILE syntax
+        for opt in ('-c', '--config'):
+            try:
+                i = argv.index(opt)
+            except ValueError:
+                continue
+            else:
+                return argv[i+1]
+
+        # --config=FILE syntax
+        prefix="--config="
+        for a in argv:
+            if a.startswith(prefix):
+                return a[len(prefix):]
+
+        return 'buildout.cfg'
+

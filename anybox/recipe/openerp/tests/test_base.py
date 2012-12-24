@@ -90,3 +90,14 @@ class TestBaseRecipe(unittest.TestCase):
                          base_url='http://example.org/openerp')
         self.assertDownloadUrl(
                           'http://example.org/openerp/6-1-nightly-1234-5.tbz')
+
+    def test_buildout_cfg_name(self):
+        self.make_recipe(version='6.1-1')
+        bcn = self.recipe.buildout_cfg_name
+        self.assertEquals(bcn(), 'buildout.cfg')
+        self.assertEquals(bcn(('-D', 'install', 'openerp')), 'buildout.cfg')
+        self.assertEquals(bcn(('-c', '6.1.cfg')), '6.1.cfg')
+        self.assertEquals(bcn(('--config', '6.1.cfg')), '6.1.cfg')
+        self.assertEquals(bcn(('-o', '--config', '6.1.cfg')), '6.1.cfg')
+        self.assertEquals(bcn(('--config=6.1.cfg',)), '6.1.cfg')
+        self.assertEquals(bcn(('--config=6.1.cfg', '-o')), '6.1.cfg')
