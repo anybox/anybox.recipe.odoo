@@ -37,22 +37,24 @@ class TestBaseRecipe(unittest.TestCase):
     def get_source_url(self):
         return self.recipe.sources[main_software][1][0]
 
+    def assertDownloadUrl(self, url):
+        """Assert that main software is 'downloadable' with given url."""
+        source = self.recipe.sources[main_software]
+        self.assertEquals(source[0], 'downloadable')
+        self.assertEquals(source[1][0], url)
+
     def test_version_release_6_1(self):
         self.make_recipe(version='6.1-1')
 
         recipe = self.recipe
         self.assertEquals(recipe.version_wanted, '6.1-1')
-        self.assertEquals(self.get_source_type(), 'downloadable')
-        self.assertEquals(
-            self.get_source_url(),
+        self.assertDownloadUrl(
             'http://nightly.openerp.com/6.1/releases/blob-6.1-1.tgz')
 
     def test_version_nightly_6_1(self):
         self.make_recipe(version='nightly 6.1 1234-5')
 
-        self.assertEquals(self.get_source_type(), 'downloadable')
-        self.assertEquals(
-            self.get_source_url(),
+        self.assertDownloadUrl(
             'http://nightly.openerp.com/6.1/nightly/src/6-1-nightly-1234-5.tbz')
 
     def test_version_bzr_6_1(self):
@@ -76,19 +78,15 @@ class TestBaseRecipe(unittest.TestCase):
         url = 'http://download.example/future/openerp-12.0.tgz'
         self.make_recipe(version='url ' + url)
         recipe = self.recipe
-        self.assertEquals(self.get_source_type(), 'downloadable')
-        self.assertEquals(self.get_source_url(), url)
+        self.assertDownloadUrl(url)
         self.assertEquals(recipe.archive_filename, 'openerp-12.0.tgz')
 
     def test_base_url(self):
         self.make_recipe(version='6.1-1', base_url='http://example.org/openerp')
-        self.assertEquals(self.get_source_type(), 'downloadable')
-        self.assertEquals(self.get_source_url(),
-                          'http://example.org/openerp/blob-6.1-1.tgz')
+        self.assertDownloadUrl('http://example.org/openerp/blob-6.1-1.tgz')
 
     def test_base_url_nightly(self):
         self.make_recipe(version='nightly 6.1 1234-5',
                          base_url='http://example.org/openerp')
-        self.assertEquals(self.get_source_type(), 'downloadable')
-        self.assertEquals(self.get_source_url(),
+        self.assertDownloadUrl(
                           'http://example.org/openerp/6-1-nightly-1234-5.tbz')
