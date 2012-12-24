@@ -19,18 +19,23 @@ def rfc822_time(h):
     """Parse RFC 2822-formatted http header and return a time int."""
     rfc822.mktime_tz(rfc822.parsedate_tz(h))
 
+main_software = object()
+
 class BaseRecipe(object):
     """Base class for other recipes.
 
     It implements notably fetching of the main software part plus addons.
-    The ``addons`` attributes is a dict storing how to fetch the specified
-    addons. It has the following structure:
+    The ``sources`` attributes is a dict storing how to fetch the main software
+    part and specified addons. It has the following structure:
 
         local path -> (type, location_spec, options).
 
+        where local path is the ``main_software`` object for the main software
+        part, and otherwise a local path to an addons container.
+
         type can be
             - 'local'
-            - 'url'
+            - 'downloadable'
             - one of the supported vcs
 
         location_spec is, depending on the type, a tuple specifying how to
@@ -80,9 +85,9 @@ class BaseRecipe(object):
         self.version_wanted = None  # from the buildout
         self.version_detected = None  # string from the openerp setup.py
         self.parts = self.buildout['buildout']['parts-directory']
+        self.sources = {}
         self.parse_addons(options)
         self.openerp_dir = None
-        self.url = None
         self.archive_filename = None
         self.archive_path = None # downloaded tar.gz
 
@@ -111,9 +116,8 @@ class BaseRecipe(object):
         self.parse_version()
 
     def parse_version(self):
-        """Set attributes describing retrieval actions to be taken.
+        """Set the main software in ``sources`` and related attributes.
         """
-
         self.version_wanted = self.options.get('version')
         if self.version_wanted is None:
             raise ValueError('You must specify the version')
@@ -131,37 +135,40 @@ class BaseRecipe(object):
                     'OpenERP version %r is not supported' % self.version_wanted)
 
             self.archive_filename = pattern % self.version_wanted
-            self.type = 'downloadable'
             self.archive_path = join(self.downloads_dir, self.archive_filename)
             base_url = self.options.get(
                 'base_url', self.default_dl_url[major_wanted])
-            self.url = '/'.join((base_url.strip('/'), self.archive_filename))
+            self.sources[main_software] = (
+                'downloadable',
+                ('/'.join((base_url.strip('/'), self.archive_filename)), None))
             return
 
         # in all other cases, the first token is the type of version
         type_spec = version_split[0]
         if type_spec in ('local', 'path'):
-            self.type = 'local'
             self.openerp_dir = join(self.buildout_dir, version_split[1])
+            self.sources[main_software] = ('local', None)
         elif type_spec == 'url':
-            self.type = 'downloadable'
-            self.url = version_split[1]
-            self.archive_filename = urlparse(self.url).path.split('/')[-1]
+            url = version_split[1]
+            self.archive_filename = urlparse(url).path.split('/')[-1]
             self.archive_path = join(self.downloads_dir, self.archive_filename)
+            self.sources[main_software] = ('downloadable', (url, None))
         elif type_spec == 'nightly':
             if len(version_split) != 3:
                 raise ValueError(
                     "Unrecognized nightly version specification: "
                     "%r (expecting series, number) % version_split[1:]")
             series, self.version_wanted = version_split[1:]
-            self.type = 'downloadable'
+            type_spec = 'downloadable'
             if self.version_wanted == 'latest':
                 self.main_http_caching = 'http-head'
 
             self.archive_filename = self.archive_nightly_filenames[series] % self.version_wanted
             self.archive_path = join(self.downloads_dir, self.archive_filename)
             base_url = self.options.get('base_url', self.nightly_dl_url[series])
-            self.url = '/'.join((base_url.strip('/'), self.archive_filename))
+            self.sources[main_software] = (
+                'downloadable',
+                ('/'.join((base_url.strip('/'), self.archive_filename)), None))
         else:
             # VCS types
             if len(version_split) != 4:
@@ -170,8 +177,10 @@ class BaseRecipe(object):
                                  "remote repository or explicit download) " % (
                         version_split))
 
-            self.type, self.url, repo_dir, self.version_wanted = version_split
+            type_spec, url, repo_dir, self.version_wanted = version_split
             self.openerp_dir = join(self.parts, repo_dir)
+            self.sources[main_software] = (type_spec,
+                                           (url, self.version_wanted))
 
     def preinstall_version_check(self):
         """Perform version checks before any attempt to install.
@@ -356,7 +365,6 @@ class BaseRecipe(object):
         See ``BaseRecipe`` docstring for details about the ``addons`` dict.
         """
 
-        self.addons = {}
         for line in options.get('addons', '').split(os.linesep):
             split = line.split()
             if not split:
@@ -372,7 +380,7 @@ class BaseRecipe(object):
                 repo_url, addons_dir, repo_rev = split[1:4]
                 location_spec = (repo_url, repo_rev)
 
-            self.addons[addons_dir] = (loc_type, location_spec, options)
+            self.sources[addons_dir] = (loc_type, location_spec, options)
 
     def retrieve_addons(self):
         """Parse the addons option line, download and return a list of paths.
@@ -381,13 +389,17 @@ class BaseRecipe(object):
               or an absolute or relative path
         options are themselves in the key=value form
         """
-        if not self.addons:
+        sources = self.sources.items()
+        if not sources:
             return []
 
         addons_paths = []
 
-        for local_dir, (loc_type, loc_spec, addons_options) in self.addons.items():
+        for local_dir, source_spec in sources:
+            if local_dir is main_software:
+                continue
 
+            loc_type, loc_spec, addons_options = source_spec
             local_dir = self.make_absolute(local_dir)
             options = dict(offline=self.offline,
                            clear_locks=self.vcs_clear_locks)
@@ -426,15 +438,16 @@ class BaseRecipe(object):
         """
         if self.offline:
             raise IOError("%s not found, and offline mode requested" % self.archive_path)
-        logger.info("Downloading %s ..." % self.url)
+        url = self.sources[main_software][1][0]
+        logger.info("Downloading %s ..." % url)
 
         try:
-            msg = urllib.urlretrieve(self.url, self.archive_path)
+            msg = urllib.urlretrieve(url, self.archive_path)
             if msg[1].type == 'text/html':
                 os.unlink(self.archive_path)
                 raise LookupError(
                     'Wanted version %r not found on server (tried %s)' % (
-                        self.version_wanted, self.url))
+                        self.version_wanted, url))
 
         except (tarfile.TarError, IOError):
             # GR: ContentTooShortError subclasses IOError
@@ -452,9 +465,10 @@ class BaseRecipe(object):
         archivestat = os.stat(self.archive_path)
         length, modified = archivestat.st_size, archivestat.st_mtime
 
+        url = self.sources[main_software][1][0]
         logger.info("Checking if %s if fresh wrt %s",
-                    self.archive_path, self.url)
-        parsed = urlparse(self.url)
+                    self.archive_path, url)
+        parsed = urlparse(url)
         if parsed.scheme == 'https':
             cnx_cls = httplib.HTTPSConnection
         else:
@@ -483,8 +497,12 @@ class BaseRecipe(object):
         os.chdir(self.parts)
 
         # install server, webclient or gtkclient
-        logger.info('Selected install type: %s', self.type)
-        if self.type == 'downloadable':
+        source = self.sources[main_software]
+        type_spec = source[0]
+        logger.info('Selected install type: %s', type_spec)
+        if type_spec == 'local':
+            logger.info('Local directory chosen, nothing to do')
+        elif type_spec == 'downloadable':
             # download if needed
             if ((self.archive_path  and not os.path.exists(self.archive_path))
                  or (self.main_http_caching == 'http-head'
@@ -510,12 +528,10 @@ class BaseRecipe(object):
             logger.info(u'Extracting %s ...' % self.archive_path)
             self.sandboxed_tar_extract(extracted_name, tar, first=first)
             tar.close()
-        elif self.type == 'local':
-            logger.info('Local directory chosen, nothing to do')
         else:
-            vcs.get_update(self.type, self.openerp_dir, self.url,
-                           self.version_wanted, offline=self.offline,
-                           clear_retry=self.clear_retry)
+            url, rev = source[1]
+            vcs.get_update(type_spec, self.openerp_dir, url, rev,
+                           offline=self.offline, clear_retry=self.clear_retry)
 
         addons_paths = self.retrieve_addons()
         for path in addons_paths:
@@ -525,7 +541,7 @@ class BaseRecipe(object):
         self.install_recipe_requirements()
         os.chdir(self.openerp_dir) # GR probably not needed any more
         self.read_openerp_setup()
-        if self.type == 'downloadable' and self.version_wanted == 'latest':
+        if type_spec == 'downloadable' and self.version_wanted == 'latest':
             logger.warn("Detected version: %s, you may want to fix that "
                         "in your config file for replayability",
                         self.version_detected)
