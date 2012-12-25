@@ -376,8 +376,8 @@ current configuration.
 
 It is meant for release processes, and as such includes some
 consistency checks to avoid as much as possible issuing a frozen
-configuration that could be different from what the developper just
-tested. Namely:
+configuration that could be different from what the developper or
+release manager is assumed to have just tested. Namely:
 
 * it works only in offline mode (command-line ``-o`` flag). This is to
   avoid fetching new revisions from VCSes or PyPI
@@ -391,16 +391,14 @@ part is called ``openerp-server-1``::
     bin/buildout -o openerp-server-1:freeze-to=frozen.cfg
 
 This produces a buildout configuration file named ``frozen.cfg``,
-which uses the ``revisions`` option of the ``openerp-server-1`` part
-to freeze everything.
+with notably an ``openerp-server-1`` part having a ``revisions`` option that
+freezes everything.
 
 For configurations with several openerp related parts, you can freeze
 them together or in different files. This gives you flexibility in the
-distributions you may want to produce from a single developpment
-oriented configuration::
+distributions you may want to produce from a single configuration file::
 
-   bin/buildout -o openerp-server-1:freeze-to=server.cfg \
-     openerp-server-2:freeze-to=server.cfg gtkclient:freeze-to=client.cfg
+   bin/buildout -o openerp-server-1:freeze-to=server.cfg openerp-server-2:freeze-to=server.cfg gtkclient:freeze-to=client.cfg
 
 In that latter example, ``server.cfg`` will have the two server parts,
 while ``client.cfg`` will have the ``gtkclient`` part only.
@@ -415,8 +413,8 @@ while ``client.cfg`` will have the ``gtkclient`` part only.
           that kind of purpose.
 
 .. warning:: the recipe will also freeze python distributions installed
-             with the ``gp.vcsdevelop`` extension but can't currently
-             protect against local modifications.
+             with the ``gp.vcsdevelop`` extension but cannot currently
+             protect against local modifications of these.
 
 OpenERP options
 ---------------
