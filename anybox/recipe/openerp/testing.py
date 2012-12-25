@@ -10,7 +10,10 @@ class FakeRepo(vcs.BaseRepo):
 
     vcs_control_dir = '.fake'
 
+    revision = 'fakerev'
+
     def get_update(self, revision):
+        self.revision = revision
         if not os.path.isdir(self.target_dir):
             os.mkdir(self.target_dir)
         control = os.path.join(self.target_dir, self.vcs_control_dir)
@@ -22,6 +25,9 @@ class FakeRepo(vcs.BaseRepo):
             options['offline'] = self.offline
             options['clear_locks'] = self.clear_locks
         self.log.append((self.target_dir, self.url, revision, options),)
+
+    def parents(self):
+        return [self.revision]
 
 vcs.SUPPORTED['fakevcs'] = FakeRepo
 

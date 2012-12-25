@@ -21,6 +21,8 @@ def rfc822_time(h):
 
 main_software = object()
 
+GP_VCS_EXTEND_DEVELOP = 'vcs-extend-develop'
+
 class BaseRecipe(object):
     """Base class for other recipes.
 
@@ -629,10 +631,7 @@ class BaseRecipe(object):
             # read configuration started by other recipe
             out_conf.read(self.make_absolute(out_config_path))
         else:
-            out_conf.add_section('buildout')
-            out_conf.set('buildout', 'extends', self.buildout_cfg_name())
-            out_conf.add_section('versions')
-            out_conf.set('buildout', 'versions', 'versions')
+            self._prepare_frozen_buildout(out_conf)
 
         self._freeze_egg_versions(out_conf, 'versions')
 
@@ -670,6 +669,32 @@ class BaseRecipe(object):
             out_conf.write(out)
         frozen.add(out_config_path)
 
+    def _prepare_frozen_buildout(self, conf):
+        """Create the 'buildout' section in conf."""
+        conf.add_section('buildout')
+        conf.set('buildout', 'extends', self.buildout_cfg_name())
+        conf.add_section('versions')
+        conf.set('buildout', 'versions', 'versions')
+
+        # freezing for gp.vcsdevelop
+        extends = []
+        for gp_vcs in self.b_options.get(
+            GP_VCS_EXTEND_DEVELOP, '').split(os.linesep):
+            if not gp_vcs:
+                continue
+            url, fragment = gp_vcs.rsplit('#', 1)
+            url = url.rsplit('@', 1)[0]
+            vcs_type = url.split('+', 1)[0]
+            path = self.make_absolute(url.rsplit('/', 1)[-1])
+            # vcs-develop process adds .egg-info file (often forgotten in VCS
+            # ignore files) and changes setup.cfg.
+            # For now we'll have to allow local modifications.
+            revision = self._freeze_vcs_source(vcs_type, path,
+                                               allow_local_modification=True)
+            extends.append('%s@%s#%s' % (url, revision, fragment))
+
+        conf.set('buildout', GP_VCS_EXTEND_DEVELOP, os.linesep.join(extends))
+
     def _freeze_downloadable_main_software(self, conf):
         """If needed, sets the main version option in ConfigParser.
 
@@ -697,14 +722,15 @@ class BaseRecipe(object):
         for name, version in versions.items():
             conf.set(section, name, version)
 
-    def _freeze_vcs_source(self, vcs_type, abspath):
+    def _freeze_vcs_source(self, vcs_type, abspath,
+                           allow_local_modification=False):
         """Return the current revision for that VCS source."""
 
         repo_cls = vcs.SUPPORTED[vcs_type]
         abspath = repo_cls.fix_target(abspath)
         repo = repo_cls(abspath, '')  # no need of remote URL
 
-        if repo.uncommitted_changes():
+        if not allow_local_modification and repo.uncommitted_changes():
             raise RuntimeError("You have uncommitted changes or "
                                "non ignored untracked files in %r. "
                                "Unsafe to freeze. Please commit or "

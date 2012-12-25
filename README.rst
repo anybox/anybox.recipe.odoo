@@ -341,6 +341,9 @@ This option is meant to produce an extension buildout configuration
 that effectively freezes the variable versions and revisions of the
 current configuration.
 
+.. note:: supported VCSes for this feature are currently Mercurial and
+          Bazaar only.
+
 It is meant for release processes, and as such includes some
 consistency checks to avoid as much as possible issuing a frozen
 configuration that could be different from what the developper just
@@ -381,8 +384,9 @@ while ``client.cfg`` will have the ``gtkclient`` part only.
           You are encouraged to use an external release script for
           that kind of purpose.
 
-.. warning:: the recipe is not yet able to freeze libraries installed
-             with the ``gp.vcsdevelop`` extension.
+.. warning:: the recipe will also freeze python distributions installed
+             with the ``gp.vcsdevelop`` extension but can't currently
+             protect against local modifications.
 
 OpenERP options
 ---------------

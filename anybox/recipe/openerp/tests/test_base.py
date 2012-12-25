@@ -8,7 +8,8 @@ import subprocess
 from ConfigParser import ConfigParser, NoOptionError
 from anybox.recipe.openerp.server import BaseRecipe
 from anybox.recipe.openerp.base import main_software
-
+from anybox.recipe.openerp.base import GP_VCS_EXTEND_DEVELOP
+import anybox.recipe.openerp.testing  # noqa, to register fakevcs
 
 class TestingRecipe(BaseRecipe):
     """A subclass with just enough few defaults for unit testing."""
@@ -192,3 +193,42 @@ class TestBaseRecipe(unittest.TestCase):
             f.write('something else')
         self.assertRaises(RuntimeError,
                           self.recipe._freeze_vcs_source, 'hg', repo_path)
+
+    def test_prepare_frozen_buildout(self):
+        self.make_recipe(version='6.1-1')
+        conf = ConfigParser()
+        self.recipe._prepare_frozen_buildout(conf)
+        self.assertTrue('buildout' in conf.sections())
+
+    def test_prepare_frozen_buildout_gp_vcsdevelop(self):
+        self.make_recipe(version='6.1-1')
+        self.recipe.b_options[GP_VCS_EXTEND_DEVELOP] = (""
+            "fakevcs+http://example.com/aeroolib#egg=aeroolib")
+
+        conf = ConfigParser()
+        self.recipe._prepare_frozen_buildout(conf)
+        extends_develop = conf.get('buildout', GP_VCS_EXTEND_DEVELOP)
+        self.assertEquals(extends_develop.strip(),
+                          "fakevcs+http://example.com/aeroolib@fakerev"
+                          "#egg=aeroolib")
+
+    def test_prepare_frozen_buildout_gp_vcsdevelop_already_fixed(self):
+        """Test that prepare_frozen_buildout understands existing pinning.
+
+        One might say that we souldn't touch an existing revision pinning, but
+        a difference can arise from a tag resolution, or simply someone
+        manually updating the repo. In all cases, the instrospected revision
+        will be used.
+        """
+        self.make_recipe(version='6.1-1')
+        self.recipe.b_options[GP_VCS_EXTEND_DEVELOP] = (""
+            "fakevcs+http://example.com/aeroolib@somerev#egg=aeroolib")
+
+        conf = ConfigParser()
+        self.recipe._prepare_frozen_buildout(conf)
+        extends_develop = conf.get('buildout', GP_VCS_EXTEND_DEVELOP)
+        self.assertEquals(extends_develop.strip(),
+                          "fakevcs+http://example.com/aeroolib@fakerev"
+                          "#egg=aeroolib")
+
+
