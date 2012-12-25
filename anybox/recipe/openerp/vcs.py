@@ -71,6 +71,17 @@ class BaseRepo(object):
                 return new_target
         return target_dir
 
+    def uncommitted_changes(self):
+        """True if we have uncommitted changes."""
+        raise NotImplementedError
+
+    def parents(self):
+        """Return universal identifier for parent nodes, aka current revisions.
+
+        There might be more than one with some VCSes (ex: pending merge in hg).
+        """
+        raise NotImplementedError
+
 
 def get_update(vcs_type, target_dir, url, revision, **options):
     """General entry point."""
