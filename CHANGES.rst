@@ -5,6 +5,8 @@ Changes
 ----------------
 
 - launchpad #1068360: new 'revisions' option to fix VCS revisions separately
+- launchpad #1093474: freeze feature of revisions and versions of
+  python distributions
 - launchpad #1084535: finer behaviour of ``with_devtools`` option:
   load testing hacks only in tests launcher script
 

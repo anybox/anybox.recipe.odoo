@@ -56,6 +56,33 @@ class BaseRepo(object):
         """
         return os.path.exists(os.path.join(path, cls.vcs_control_dir))
 
+    @classmethod
+    def fix_target(cls, target_dir):
+        """Take into account that some targets are actually shifted below.
+
+        That is the case of standalon addon (see launchpad #1012899).
+        """
+
+        if os.path.exists(target_dir) and not cls.is_versioned(target_dir):
+            name = os.path.split(target_dir)[-1]
+            new_target = os.path.join(target_dir, name)
+            manifest = os.path.join(new_target, '__openerp__.py')
+            if cls.is_versioned(new_target) and os.path.exists(manifest):
+                return new_target
+        return target_dir
+
+    def uncommitted_changes(self):
+        """True if we have uncommitted changes."""
+        raise NotImplementedError
+
+    def parents(self):
+        """Return universal identifier for parent nodes, aka current revisions.
+
+        There might be more than one with some VCSes (ex: pending merge in hg).
+        """
+        raise NotImplementedError
+
+
 def get_update(vcs_type, target_dir, url, revision, **options):
     """General entry point."""
     cls = SUPPORTED.get(vcs_type)
@@ -63,13 +90,7 @@ def get_update(vcs_type, target_dir, url, revision, **options):
         raise ValueError("Unsupported VCS type: %r" % vcs_type)
 
     # case of standalon addon (see launchpad #1012899)
-    if os.path.exists(target_dir) and not cls.is_versioned(target_dir):
-        name = os.path.split(target_dir)[-1]
-        new_target = os.path.join(target_dir, name)
-        manifest = os.path.join(new_target, '__openerp__.py')
-        if cls.is_versioned(new_target) and os.path.exists(manifest):
-            target_dir = new_target
-
+    target_dir = cls.fix_target(target_dir)
     cls(target_dir, url, **options)(revision)
 
 class HgRepo(BaseRepo):
@@ -107,6 +128,13 @@ class HgRepo(BaseRepo):
         p = subprocess.Popen(['hg', '--cwd', self.target_dir, 'status'],
                              stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
         return bool(p.communicate()[0])
+
+    def parents(self):
+        """Return full hash of parent nodes. """
+        p = subprocess.Popen(['hg', '--cwd', self.target_dir, 'parents',
+                              '--template={node}'],
+                             stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
+        return p.communicate()[0].split()
 
     def get_update(self, revision):
         """Ensure that target_dir is a clone of url at specified revision.
@@ -217,6 +245,23 @@ class BzrBranch(BaseRepo):
             count += 1
         conf['parent_location'] = self.url
         self.write_conf(conf)
+
+    def uncommitted_changes(self):
+        """True if we have uncommitted changes."""
+        p = subprocess.Popen(['bzr', 'status', self.target_dir],
+                             stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
+        return bool(p.communicate()[0])
+
+    def parents(self):
+        """Return current revision.
+
+        Must be used in conjunction with uncommitted_changes to be sure
+        that we are indeed on this revision
+        """
+
+        p = subprocess.Popen(['bzr', 'revno', self.target_dir],
+                             stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
+        return [p.communicate()[0].strip()]
 
     def get_update(self, revision):
         """Ensure that target_dir is a branch of url at specified revision.

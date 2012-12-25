@@ -28,6 +28,8 @@ class MainSoftware(object):
 
 main_software = MainSoftware()
 
+GP_VCS_EXTEND_DEVELOP = 'vcs-extend-develop'
+
 class BaseRecipe(object):
     """Base class for other recipes.
 
@@ -80,8 +82,9 @@ class BaseRecipe(object):
         self.b_options = self.buildout['buildout']
         self.buildout_dir = self.b_options['directory']
         # GR: would prefer lower() but doing as in 'zc.recipe.egg'
+        # (later) the standard way for all booleans is to use
+        # options.query_bool() or get_bool(), but it doesn't lower() at all
         self.offline = self.b_options['offline'] == 'true'
-
         clear_locks = options.get('vcs-clear-locks', '').lower()
         self.vcs_clear_locks = clear_locks == 'true'
         clear_retry = options.get('vcs-clear-retry', '').lower()
@@ -166,11 +169,11 @@ class BaseRecipe(object):
                 raise ValueError(
                     "Unrecognized nightly version specification: "
                     "%r (expecting series, number) % version_split[1:]")
-            series, self.version_wanted = version_split[1:]
+            self.nightly_series, self.version_wanted = version_split[1:]
             type_spec = 'downloadable'
             if self.version_wanted == 'latest':
                 self.main_http_caching = 'http-head'
-
+            series = self.nightly_series
             self.archive_filename = self.archive_nightly_filenames[series] % self.version_wanted
             self.archive_path = join(self.downloads_dir, self.archive_filename)
             base_url = self.options.get('base_url', self.nightly_dl_url[series])
@@ -472,8 +475,8 @@ class BaseRecipe(object):
                     tmp = addons_dir + '_%d' % c
                 os.rename(addons_dir, tmp)
                 os.mkdir(addons_dir)
-                os.rename(tmp, join(addons_dir, name))
-
+                new_dir = join(addons_dir, name)
+                os.rename(tmp, new_dir)
             addons_paths.append(addons_dir)
         return addons_paths
 
@@ -540,6 +543,12 @@ class BaseRecipe(object):
     def install(self):
         os.chdir(self.parts)
 
+        freeze_to = self.options.get('freeze-to')
+        if freeze_to is not None and not self.offline:
+            raise ValueError("To freeze a part, you must run offline "
+                             "so that there's no modification from what "
+                             "you just tested. Please rerun with -o.")
+
         # install server, webclient or gtkclient
         source = self.sources[main_software]
         type_spec = source[0]
@@ -586,9 +595,10 @@ class BaseRecipe(object):
         os.chdir(self.openerp_dir) # GR probably not needed any more
         self.read_openerp_setup()
         if type_spec == 'downloadable' and self.version_wanted == 'latest':
-            logger.warn("Detected version: %s, you may want to fix that "
-                        "in your config file for replayability",
-                        self.version_detected)
+            self.nightly_version = self.version_detected.split('-', 1)[1]
+            logger.warn("Detected 'nighlty latest version', you may want to "
+                        "fix it in your config file for replayability: \n    "
+                        "version = " + self.dump_nightly_latest_version())
         is_60 = self.major_version == (6, 0)
         # configure addons_path option
         if addons_paths:
@@ -642,7 +652,141 @@ class BaseRecipe(object):
         with open(self.config_path, 'wb') as configfile:
             config.write(configfile)
 
+        if freeze_to:
+            self.freeze_to(freeze_to)
         return self.openerp_installed
+
+    def dump_nightly_latest_version(self):
+        """After download/analysis of 'nightly latest', give equivalent spec.
+        """
+        return ' '.join((self.nightly_series, 'nightly', self.nightly_version))
+
+    def freeze_to(self, out_config_path):
+        """Create an extension buildout freezing current revisions & versions.
+        """
+
+        out_conf = ConfigParser.ConfigParser()
+
+        frozen = getattr(self.buildout, '_openerp_recipe_frozen', None)
+        if frozen is None:
+            frozen = self.buildout._openerp_recipe_frozen = set()
+
+        if out_config_path in frozen:
+            # read configuration started by other recipe
+            out_conf.read(self.make_absolute(out_config_path))
+        else:
+            self._prepare_frozen_buildout(out_conf)
+
+        self._freeze_egg_versions(out_conf, 'versions')
+
+        out_conf.add_section(self.name)
+        addons_option = []
+        for local_path, source in self.sources.items():
+            source_type = source[0]
+            if source_type == 'local':
+                continue
+
+            if local_path is main_software:
+                if source_type == 'downloadable':
+                    self._freeze_downloadable_main_software(out_conf)
+                else:  # vcs
+                    abspath = self.openerp_dir
+                    self.cleanup_openerp_dir()
+            else:
+                abspath = self.make_absolute(local_path)
+
+            if source_type == 'downloadable':
+                continue
+
+            revision = self._freeze_vcs_source(source_type, abspath)
+            if local_path is main_software:
+                addons_option.insert(0, '%s  ; main software part' % revision)
+                # actually, that comment will be lost if this is not the
+                # last part (dropped upon reread)
+            else:
+                addons_option.append(' '.join((local_path, revision)))
+
+        if addons_option:
+            out_conf.set(self.name, 'revisions', os.linesep.join(addons_option))
+
+        with open(self.make_absolute(out_config_path), 'w') as out:
+            out_conf.write(out)
+        frozen.add(out_config_path)
+
+    def _prepare_frozen_buildout(self, conf):
+        """Create the 'buildout' section in conf."""
+        conf.add_section('buildout')
+        conf.set('buildout', 'extends', self.buildout_cfg_name())
+        conf.add_section('versions')
+        conf.set('buildout', 'versions', 'versions')
+
+        # freezing for gp.vcsdevelop
+        extends = []
+        for gp_vcs in self.b_options.get(
+            GP_VCS_EXTEND_DEVELOP, '').split(os.linesep):
+            if not gp_vcs:
+                continue
+            url, fragment = gp_vcs.rsplit('#', 1)
+            url = url.rsplit('@', 1)[0]
+            vcs_type = url.split('+', 1)[0]
+            path = self.make_absolute(url.rsplit('/', 1)[-1])
+            # vcs-develop process adds .egg-info file (often forgotten in VCS
+            # ignore files) and changes setup.cfg.
+            # For now we'll have to allow local modifications.
+            revision = self._freeze_vcs_source(vcs_type, path,
+                                               allow_local_modification=True)
+            extends.append('%s@%s#%s' % (url, revision, fragment))
+
+        conf.set('buildout', GP_VCS_EXTEND_DEVELOP, os.linesep.join(extends))
+
+    def _freeze_downloadable_main_software(self, conf):
+        """If needed, sets the main version option in ConfigParser.
+
+        Currently does not dump the fully resolved URL, since future
+        reproduction may be better done with another URL base holding archived
+        old versions : it's better to let tomorrow logic handle that
+        from higher level information.
+        """
+
+        if self.version_wanted == 'latest':
+            conf.set(self.name, 'version', self.dump_nightly_latest_version())
+
+    def _freeze_egg_versions(self, conf, section, exclude=('distribute')):
+        """Update a ConfigParser section with current working set egg versions.
+
+        distribute is excluded by default because at the time of this writing
+        freezing its version produces bootstrap failures each time a new one
+        gets available on PyPI.
+        """
+        versions = dict((name, conf.get(section, name))
+                        for name in conf.options(section))
+        versions.update((name, egg.version)
+                        for name, egg in self.ws.by_key.items()
+                        if name not in exclude)
+        for name, version in versions.items():
+            conf.set(section, name, version)
+
+    def _freeze_vcs_source(self, vcs_type, abspath,
+                           allow_local_modification=False):
+        """Return the current revision for that VCS source."""
+
+        repo_cls = vcs.SUPPORTED[vcs_type]
+        abspath = repo_cls.fix_target(abspath)
+        repo = repo_cls(abspath, '')  # no need of remote URL
+
+        if not allow_local_modification and repo.uncommitted_changes():
+            raise RuntimeError("You have uncommitted changes or "
+                               "non ignored untracked files in %r. "
+                               "Unsafe to freeze. Please commit or "
+                               "revert and test again !" % abspath)
+
+        parents = repo.parents()
+        if len(parents) > 1:
+            raise RuntimeError("Current context of %r has several "
+                               "parents. Ongoing merge ? "
+                               "Can't freeze." % abspath)
+
+        return parents[0]
 
     def _install_script(self, name, content):
         """Install and register a script with prescribed name and content.
@@ -676,6 +820,14 @@ class BaseRecipe(object):
 
         Actual implementation is up to subclasses
         """
+
+    def cleanup_openerp_dir(self):
+        """Revert local modifications that have been made during installation.
+
+        These can be, e.g., forbidden by the freeze process."""
+
+        shutil.rmtree(join(self.openerp_dir, 'openerp.egg-info'))
+        # setup rewritten without PIL is cleaned during the process itself
 
     def buildout_cfg_name(self, argv=None):
         """Return the name of the config file that's been called.

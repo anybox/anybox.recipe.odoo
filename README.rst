@@ -192,7 +192,8 @@ Some interesting use-cases:
 * temporary fixing some revision in cas of upstream regression with no
   impact on your main development configuration (no risk to commit an
   unwanted freeze if the main configuration is itself versionned).
-* freezing satisfactory revisions in a release process.
+* freezing satisfactory revisions in a release process (the recipe can
+  do that automatically for you, see ``freeze-to`` option below).
 
 script_name
 -----------
@@ -363,6 +364,59 @@ this buildout recipe.
   way, openerp-command is really unstable and that may damage your
   installation.
 
+freeze-to
+---------
+
+This option is meant to produce an extension buildout configuration
+that effectively freezes the variable versions and revisions of the
+current configuration.
+
+.. note:: supported VCSes for this feature are currently Mercurial and
+          Bazaar only.
+
+It is meant for release processes, and as such includes some
+consistency checks to avoid as much as possible issuing a frozen
+configuration that could be different from what the developper just
+tested. Namely:
+
+* it works only in offline mode (command-line ``-o`` flag). This is to
+  avoid fetching new revisions from VCSes or PyPI
+* it fails if some VCS-controlled addons or main software have local
+  modifications, including pending merges.
+
+The recommended way to use it is through the command line (all
+buildout options can be set this way). Here's an example, assuming the
+part is called ``openerp-server-1``::
+
+    bin/buildout -o openerp-server-1:freeze-to=frozen.cfg
+
+This produces a buildout configuration file named ``frozen.cfg``,
+which uses the ``revisions`` option of the ``openerp-server-1`` part
+to freeze everything.
+
+For configurations with several openerp related parts, you can freeze
+them together or in different files. This gives you flexibility in the
+distributions you may want to produce from a single developpment
+oriented configuration::
+
+   bin/buildout -o openerp-server-1:freeze-to=server.cfg \
+     openerp-server-2:freeze-to=server.cfg gtkclient:freeze-to=client.cfg
+
+In that latter example, ``server.cfg`` will have the two server parts,
+while ``client.cfg`` will have the ``gtkclient`` part only.
+
+.. note:: in DVCSes cases, nothing is done to check that the locally
+          extracted revisions are actually pushed where they should.
+
+          Also, if the buildout configuration is itself under version
+          control (a good practice), it is not in the recipe scope to
+          commit or tag it.
+          You are encouraged to use an external release script for
+          that kind of purpose.
+
+.. warning:: the recipe will also freeze python distributions installed
+             with the ``gp.vcsdevelop`` extension but can't currently
+             protect against local modifications.
 
 OpenERP options
 ---------------
