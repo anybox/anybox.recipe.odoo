@@ -381,6 +381,9 @@ while ``client.cfg`` will have the ``gtkclient`` part only.
           You are encouraged to use an external release script for
           that kind of purpose.
 
+.. warning:: the recipe is not yet able to freeze libraries installed
+             with the ``gp.vcsdevelop`` extension.
+
 OpenERP options
 ---------------
 

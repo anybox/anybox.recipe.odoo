@@ -631,6 +631,10 @@ class BaseRecipe(object):
         else:
             out_conf.add_section('buildout')
             out_conf.set('buildout', 'extends', self.buildout_cfg_name())
+            out_conf.add_section('versions')
+            out_conf.set('buildout', 'versions', 'versions')
+
+        self._freeze_egg_versions(out_conf, 'versions')
 
         out_conf.add_section(self.name)
         addons_option = []
@@ -671,6 +675,8 @@ class BaseRecipe(object):
             revision = parents[0]
             if local_path is main_software:
                 addons_option.insert(0, '%s  ; main software part' % revision)
+                # actually, that comment will be lost if this is not the
+                # last part (dropped upon reread)
             else:
                 addons_option.append(' '.join((local_path, revision)))
 
@@ -680,6 +686,21 @@ class BaseRecipe(object):
         with open(self.make_absolute(out_config_path), 'w') as out:
             out_conf.write(out)
         frozen.add(out_config_path)
+
+    def _freeze_egg_versions(self, conf, section, exclude=('distribute')):
+        """Update a ConfigParser section with current working set egg versions.
+
+        distribute is excluded by default because at the time of this writing
+        freezing its version produces bootstrap failures each time a new one
+        gets available on PyPI.
+        """
+        versions = dict((name, conf.get(section, name))
+                        for name in conf.options(section))
+        versions.update((name, egg.version)
+                        for name, egg in self.ws.by_key.items()
+                        if name not in exclude)
+        for name, version in versions.items():
+            conf.set(section, name, version)
 
     def _install_script(self, name, content):
         """Install and register a script with prescribed name and content.
