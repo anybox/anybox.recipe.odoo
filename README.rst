@@ -334,6 +334,41 @@ this buildout recipe.
   way, openerp-command is really unstable and that may damage your
   installation.
 
+freeze-to
+---------
+
+This option is meant to produce an extension buildout configuration
+that effectively freezes the variable versions and revisions of the
+current configuration.
+
+It is meant for release processes, and as such includes some
+consistency checks to avoid as much as possible issuing a frozen
+configuration that could be different from what the developper just
+tested. Namely:
+
+* it works only in offline mode (command-line ``-o`` flag). This is to
+  avoid fetching new revisions from VCSes or PyPI
+* it fails if some VCS-controlled addons or main software have local
+  modifications, including pending merges.
+
+The recommended way to use it is through the command line (all
+buildout options can be set this way). Here's an example, assuming the
+part is called ``openerp-server-1``::
+
+    bin/buildout -o openerp-server-1:freeze-to=frozen.cfg
+
+This produces a buildout configuration file named ``frozen.cfg``,
+which uses the ``revisions`` option of the ``openerp-server-1`` part
+to freeze everything.
+
+.. note:: in DVCSes cases, nothing is done to check that the locally
+          extracted revisions are actually pushed where they should.
+
+          Also, if the buildout configuration is itself under version
+          control (a good practice), it is not in the recipe scope to
+          commit or tag it.
+          You are encouraged to use an external release script for
+          that kind of purpose.
 
 OpenERP options
 ---------------

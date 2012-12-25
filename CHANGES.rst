@@ -4,6 +4,7 @@ Changes
 1.4 (unreleased)
 ----------------
 
+- launchpad #1093474: revisions freeze feature
 - launchpad #1084535: finer behaviour of ``with_devtools`` option:
   load testing hacks only in tests launcher script
 
