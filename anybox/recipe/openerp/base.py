@@ -625,7 +625,6 @@ class BaseRecipe(object):
         if frozen is None:
             frozen = self.buildout._openerp_recipe_frozen = set()
 
-        import pdb; pdb.set_trace()
         if out_config_path in frozen:
             # read configuration started by other recipe
             out_conf.read(self.make_absolute(out_config_path))
