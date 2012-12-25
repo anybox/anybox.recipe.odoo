@@ -3,43 +3,15 @@
 NB: zc.buildout.testing provides utilities for integration tests, with
 an embedded http server, etc.
 """
-import unittest
-
 import os
-import sys
-import shutil
-from tempfile import mkdtemp
 from anybox.recipe.openerp.server import ServerRecipe
-from anybox.recipe.openerp.testing import get_vcs_log, clear_vcs_log
+from anybox.recipe.openerp.testing import get_vcs_log
+from anybox.recipe.openerp.testing import RecipeTestCase
 
 TEST_DIR = os.path.split(__file__)[0]
 
 
-class TestServer(unittest.TestCase):
-
-    def setUp(self):
-        b_dir = self.buildout_dir = mkdtemp('test_oerp_recipe')
-        develop_dir = os.path.join(b_dir, 'develop-eggs')
-        os.mkdir(develop_dir)
-        clear_vcs_log()
-        self.buildout = {}
-        self.buildout['buildout'] = {
-            'directory': b_dir,
-            'offline': False,
-            'parts-directory': os.path.join(b_dir, 'parts'),
-            'bin-directory': os.path.join(b_dir, 'bin'),
-            'find-links': '',
-            'allow-hosts': '',
-            'eggs-directory': 'eggs',
-            'develop-eggs-directory': develop_dir,
-            'python': 'main_python',
-            }
-
-        self.buildout['main_python'] = dict(executable=sys.executable)
-
-
-    def tearDown(self):
-        shutil.rmtree(self.buildout_dir)
+class TestServer(RecipeTestCase):
 
     def make_recipe(self, name='openerp', **options):
         self.recipe = ServerRecipe(self.buildout, name, options)

@@ -1,5 +1,9 @@
 """Utilities for unit tests."""
 import os
+import unittest
+import sys
+import shutil
+from tempfile import mkdtemp
 from anybox.recipe.openerp import vcs
 
 class FakeRepo(vcs.BaseRepo):
@@ -36,4 +40,31 @@ def get_vcs_log():
 
 def clear_vcs_log():
     FakeRepo.log = []
+
+
+class RecipeTestCase(unittest.TestCase):
+    """A base setup for tests of recipe classes"""
+
+    def setUp(self):
+        b_dir = self.buildout_dir = mkdtemp('test_oerp_base_recipe')
+        develop_dir = os.path.join(b_dir, 'develop-eggs')
+        os.mkdir(develop_dir)
+        self.buildout = {}
+        self.buildout['buildout'] = {
+            'directory': b_dir,
+            'offline': False,
+            'parts-directory': os.path.join(b_dir, 'parts'),
+            'bin-directory': os.path.join(b_dir, 'bin'),
+            'find-links': '',
+            'allow-hosts': '',
+            'eggs-directory': 'eggs',
+            'develop-eggs-directory': develop_dir,
+            'python': 'main_python',
+            }
+
+        self.buildout['main_python'] = dict(executable=sys.executable)
+
+    def tearDown(self):
+        clear_vcs_log()
+        shutil.rmtree(self.buildout_dir)
 

@@ -1,15 +1,12 @@
 import unittest
 
 import os
-import sys
-import shutil
-from tempfile import mkdtemp
 import subprocess
 from ConfigParser import ConfigParser, NoOptionError
 from anybox.recipe.openerp.server import BaseRecipe
 from anybox.recipe.openerp.base import main_software
 from anybox.recipe.openerp.base import GP_VCS_EXTEND_DEVELOP
-import anybox.recipe.openerp.testing  # noqa, to register fakevcs
+from anybox.recipe.openerp.testing import RecipeTestCase
 
 class TestingRecipe(BaseRecipe):
     """A subclass with just enough few defaults for unit testing."""
@@ -17,29 +14,7 @@ class TestingRecipe(BaseRecipe):
     archive_filenames = {'6.1': 'blob-%s.tgz'}
     archive_nightly_filenames = {'6.1': '6-1-nightly-%s.tbz'}
 
-class TestBaseRecipe(unittest.TestCase):
-
-    def setUp(self):
-        b_dir = self.buildout_dir = mkdtemp('test_oerp_base_recipe')
-        develop_dir = os.path.join(b_dir, 'develop-eggs')
-        os.mkdir(develop_dir)
-        self.buildout = {}
-        self.buildout['buildout'] = {
-            'directory': b_dir,
-            'offline': False,
-            'parts-directory': os.path.join(b_dir, 'parts'),
-            'bin-directory': os.path.join(b_dir, 'bin'),
-            'find-links': '',
-            'allow-hosts': '',
-            'eggs-directory': 'eggs',
-            'develop-eggs-directory': develop_dir,
-            'python': 'main_python',
-            }
-
-        self.buildout['main_python'] = dict(executable=sys.executable)
-
-    def tearDown(self):
-        shutil.rmtree(self.buildout_dir)
+class TestBaseRecipe(RecipeTestCase):
 
     def make_recipe(self, name='openerp', **options):
         self.recipe = TestingRecipe(self.buildout, name, options)
