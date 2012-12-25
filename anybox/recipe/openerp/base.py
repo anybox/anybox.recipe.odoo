@@ -8,6 +8,7 @@ from zc.buildout.easy_install import MissingDistribution
 import zc.recipe.egg
 
 import httplib
+import pip.req
 import rfc822
 from urlparse import urlparse
 from . import vcs
@@ -726,16 +727,18 @@ class BaseRecipe(object):
             GP_VCS_EXTEND_DEVELOP, '').split(os.linesep):
             if not gp_vcs:
                 continue
-            url, fragment = gp_vcs.rsplit('#', 1)
+            local_path = pip.req.parse_editable(gp_vcs)[0]
+            hash_split = gp_vcs.rsplit('#')
+            url = hash_split[0]
             url = url.rsplit('@', 1)[0]
             vcs_type = url.split('+', 1)[0]
-            path = self.make_absolute(url.rsplit('/', 1)[-1])
             # vcs-develop process adds .egg-info file (often forgotten in VCS
             # ignore files) and changes setup.cfg.
             # For now we'll have to allow local modifications.
-            revision = self._freeze_vcs_source(vcs_type, path,
+            revision = self._freeze_vcs_source(vcs_type,
+                                               self.make_absolute(local_path),
                                                allow_local_modification=True)
-            extends.append('%s@%s#%s' % (url, revision, fragment))
+            extends.append('%s@%s#%s' % (url, revision, hash_split[1]))
 
         conf.set('buildout', GP_VCS_EXTEND_DEVELOP, os.linesep.join(extends))
 

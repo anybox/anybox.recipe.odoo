@@ -16,6 +16,8 @@ class FakeRepo(vcs.BaseRepo):
 
     revision = 'fakerev'
 
+    name = 'fakevcs' # for pip.vcs.VersionSupport registration
+
     def get_update(self, revision):
         self.revision = revision
         if not os.path.isdir(self.target_dir):
@@ -34,6 +36,8 @@ class FakeRepo(vcs.BaseRepo):
         return [self.revision]
 
 vcs.SUPPORTED['fakevcs'] = FakeRepo
+from pip.vcs import vcs
+vcs.register(FakeRepo)  # for tests around gp.vcsdevelop
 
 def get_vcs_log():
     return FakeRepo.log
