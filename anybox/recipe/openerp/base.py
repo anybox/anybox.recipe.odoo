@@ -638,41 +638,24 @@ class BaseRecipe(object):
 
         out_conf.add_section(self.name)
         addons_option = []
-        for local_path, location_spec in self.sources.items():
-            type_spec = location_spec[0]
-            if type_spec == 'local':
+        for local_path, source in self.sources.items():
+            source_type = source[0]
+            if source_type == 'local':
                 continue
 
             if local_path is main_software:
-                # don't dump the resolved URL, as future reproduction may be
-                # better done with another URL base holding archived old
-                # versions : it's better to let tomorrow logic handle that
-                # from high level information.
-                if self.version_wanted == 'latest':
-                    out_conf.set(self.name, 'version',
-                                 self.dump_nightly_latest_version())
-                    continue
-                abspath = self.openerp_dir
-                self.cleanup_openerp_dir()
+                if source_type == 'downloadable':
+                    self._freeze_downloadable_main_software(out_conf)
+                else:  # vcs
+                    abspath = self.openerp_dir
+                    self.cleanup_openerp_dir()
             else:
-                abspath = vcs.HgRepo.fix_target(self.make_absolute(local_path))
+                abspath = self.make_absolute(local_path)
 
-            url, rev = location_spec[1]
-            repo = vcs.SUPPORTED[type_spec](abspath, url)
+            if source_type == 'downloadable':
+                continue
 
-            if repo.uncommitted_changes():
-                raise RuntimeError("You have uncommitted changes or "
-                                   "non ignored untracked files in %r. "
-                                   "Unsafe to freeze. Please commit or "
-                                   "revert and test again !" % abspath)
-
-            parents = repo.parents()
-            if len(parents) > 1:
-                raise RuntimeError("Current context of %r has several "
-                                   "parents. Ongoing merge ? "
-                                   "Can't freeze." % abspath)
-
-            revision = parents[0]
+            revision = self._freeze_vcs_source(source_type, abspath)
             if local_path is main_software:
                 addons_option.insert(0, '%s  ; main software part' % revision)
                 # actually, that comment will be lost if this is not the
@@ -686,6 +669,18 @@ class BaseRecipe(object):
         with open(self.make_absolute(out_config_path), 'w') as out:
             out_conf.write(out)
         frozen.add(out_config_path)
+
+    def _freeze_downloadable_main_software(self, conf):
+        """If needed, sets the main version option in ConfigParser.
+
+        Currently does not dump the fully resolved URL, since future
+        reproduction may be better done with another URL base holding archived
+        old versions : it's better to let tomorrow logic handle that
+        from higher level information.
+        """
+
+        if self.version_wanted == 'latest':
+            conf.set(self.name, 'version', self.dump_nightly_latest_version())
 
     def _freeze_egg_versions(self, conf, section, exclude=('distribute')):
         """Update a ConfigParser section with current working set egg versions.
@@ -701,6 +696,27 @@ class BaseRecipe(object):
                         if name not in exclude)
         for name, version in versions.items():
             conf.set(section, name, version)
+
+    def _freeze_vcs_source(self, vcs_type, abspath):
+        """Return the current revision for that VCS source."""
+
+        repo_cls = vcs.SUPPORTED[vcs_type]
+        abspath = repo_cls.fix_target(abspath)
+        repo = repo_cls(abspath, '')  # no need of remote URL
+
+        if repo.uncommitted_changes():
+            raise RuntimeError("You have uncommitted changes or "
+                               "non ignored untracked files in %r. "
+                               "Unsafe to freeze. Please commit or "
+                               "revert and test again !" % abspath)
+
+        parents = repo.parents()
+        if len(parents) > 1:
+            raise RuntimeError("Current context of %r has several "
+                               "parents. Ongoing merge ? "
+                               "Can't freeze." % abspath)
+
+        return parents[0]
 
     def _install_script(self, name, content):
         """Install and register a script with prescribed name and content.
