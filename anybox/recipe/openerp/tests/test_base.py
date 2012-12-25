@@ -4,6 +4,7 @@ import os
 import shutil
 from tempfile import mkdtemp
 from anybox.recipe.openerp.server import BaseRecipe
+from anybox.recipe.openerp.base import main_software
 
 
 class TestingRecipe(BaseRecipe):
@@ -28,25 +29,32 @@ class TestBaseRecipe(unittest.TestCase):
         shutil.rmtree(self.buildout_dir)
 
     def make_recipe(self, name='openerp', **options):
-        recipe = self.recipe = TestingRecipe(self.buildout, name, options)
+        self.recipe = TestingRecipe(self.buildout, name, options)
+
+    def get_source_type(self):
+        return self.recipe.sources[main_software][0]
+
+    def get_source_url(self):
+        return self.recipe.sources[main_software][1][0]
+
+    def assertDownloadUrl(self, url):
+        """Assert that main software is 'downloadable' with given url."""
+        source = self.recipe.sources[main_software]
+        self.assertEquals(source[0], 'downloadable')
+        self.assertEquals(source[1][0], url)
 
     def test_version_release_6_1(self):
         self.make_recipe(version='6.1-1')
 
         recipe = self.recipe
         self.assertEquals(recipe.version_wanted, '6.1-1')
-        self.assertEquals(recipe.type, 'downloadable')
-        self.assertEquals(
-            recipe.url,
+        self.assertDownloadUrl(
             'http://nightly.openerp.com/6.1/releases/blob-6.1-1.tgz')
 
     def test_version_nightly_6_1(self):
         self.make_recipe(version='nightly 6.1 1234-5')
 
-        recipe = self.recipe
-        self.assertEquals(recipe.type, 'downloadable')
-        self.assertEquals(
-            recipe.url,
+        self.assertDownloadUrl(
             'http://nightly.openerp.com/6.1/nightly/src/6-1-nightly-1234-5.tbz')
 
     def test_version_bzr_6_1(self):
@@ -54,8 +62,8 @@ class TestBaseRecipe(unittest.TestCase):
             version='bzr lp:openobject-server/6.1 openerp-6.1 last:1')
 
         recipe = self.recipe
-        self.assertEquals(recipe.type, 'bzr')
-        self.assertEquals(recipe.url, 'lp:openobject-server/6.1')
+        self.assertEquals(self.get_source_type(), 'bzr')
+        self.assertEquals(self.get_source_url(), 'lp:openobject-server/6.1')
         self.assertEquals(recipe.openerp_dir,
                           os.path.join(recipe.parts, 'openerp-6.1'))
 
@@ -63,28 +71,33 @@ class TestBaseRecipe(unittest.TestCase):
         local_path = 'path/to/local/version'
         self.make_recipe(version='local ' + local_path)
         recipe = self.recipe
-        self.assertEquals(recipe.type, 'local')
+        self.assertEquals(self.get_source_type(), 'local')
         self.assertTrue(recipe.openerp_dir.endswith(local_path))
 
     def test_version_url(self):
         url = 'http://download.example/future/openerp-12.0.tgz'
         self.make_recipe(version='url ' + url)
         recipe = self.recipe
-        self.assertEquals(recipe.type, 'downloadable')
-        self.assertEquals(recipe.url, url)
+        self.assertDownloadUrl(url)
         self.assertEquals(recipe.archive_filename, 'openerp-12.0.tgz')
 
     def test_base_url(self):
         self.make_recipe(version='6.1-1', base_url='http://example.org/openerp')
-        recipe = self.recipe
-        self.assertEquals(recipe.type, 'downloadable')
-        self.assertEquals(recipe.url,
-                          'http://example.org/openerp/blob-6.1-1.tgz')
+        self.assertDownloadUrl('http://example.org/openerp/blob-6.1-1.tgz')
 
     def test_base_url_nightly(self):
         self.make_recipe(version='nightly 6.1 1234-5',
                          base_url='http://example.org/openerp')
-        recipe = self.recipe
-        self.assertEquals(recipe.type, 'downloadable')
-        self.assertEquals(recipe.url,
+        self.assertDownloadUrl(
                           'http://example.org/openerp/6-1-nightly-1234-5.tbz')
+
+    def test_buildout_cfg_name(self):
+        self.make_recipe(version='6.1-1')
+        bcn = self.recipe.buildout_cfg_name
+        self.assertEquals(bcn(), 'buildout.cfg')
+        self.assertEquals(bcn(('-D', 'install', 'openerp')), 'buildout.cfg')
+        self.assertEquals(bcn(('-c', '6.1.cfg')), '6.1.cfg')
+        self.assertEquals(bcn(('--config', '6.1.cfg')), '6.1.cfg')
+        self.assertEquals(bcn(('-o', '--config', '6.1.cfg')), '6.1.cfg')
+        self.assertEquals(bcn(('--config=6.1.cfg',)), '6.1.cfg')
+        self.assertEquals(bcn(('--config=6.1.cfg', '-o')), '6.1.cfg')

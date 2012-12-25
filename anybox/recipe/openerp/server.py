@@ -220,10 +220,12 @@ conf = openerp.tools.config
 
         options = self.options.copy()
         options['scripts'] = 'oe=' + qualified_name
-        addons = self.options['options.addons_path'].split(',')
+        # can't reuse self.addons here, because the true addons path maybe
+        # different depending on addons options, such as subdir
+        addons = self.options['options.addons_path'].replace(',', ':')
         options['initialization'] = (
             "import os; "
-            "os.environ['OPENERP_ADDONS'] = %r") % ':'.join(addons)
+            "os.environ['OPENERP_ADDONS'] = %r") % addons
 
         zc.recipe.egg.Scripts(self.buildout, '', options).install()
         self.openerp_installed.append(join(self.bin_dir, qualified_name))
