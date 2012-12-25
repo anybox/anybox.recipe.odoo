@@ -101,3 +101,24 @@ class TestBaseRecipe(unittest.TestCase):
         self.assertEquals(bcn(('-o', '--config', '6.1.cfg')), '6.1.cfg')
         self.assertEquals(bcn(('--config=6.1.cfg',)), '6.1.cfg')
         self.assertEquals(bcn(('--config=6.1.cfg', '-o')), '6.1.cfg')
+
+
+    def test_parse_addons_revisions(self):
+        """Test both parse_addons and parse_revisions."""
+        self.make_recipe(version='bzr lp:openobject-server server last:1')
+        recipe = self.recipe
+
+        recipe.parse_revisions(dict(revisions='1234'))
+        self.assertEquals(recipe.sources[main_software],
+                          ('bzr', ('lp:openobject-server', '1234')))
+
+        recipe.parse_addons(
+            dict(addons='hg http://some/repo addons-specific default opt=spam'))
+        self.assertEquals(recipe.sources['addons-specific'],
+                          ('hg', ('http://some/repo', 'default'),
+                           {'opt': 'spam'}))
+
+        recipe.parse_revisions(dict(revisions='1111\naddons-specific 1.0'))
+        self.assertEquals(recipe.sources['addons-specific'],
+                          ('hg', ('http://some/repo', '1.0'), {'opt': 'spam'}))
+        self.assertEquals(recipe.sources[main_software][1][1], '1111')

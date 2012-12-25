@@ -163,7 +163,36 @@ Repositories are updated on each build according to the specified
 revision. You must be careful with the revision specification.
 
 Buildout offline mode is supported. In that case, update to the
-specified revision is performed, if the VCS allows it (Subversion does not).
+specified revision is performed, if the VCS allows it (Subversion does
+not).
+
+revisions
+---------
+
+This option allows to further precise what has been specified through
+the  ``addons`` and ``version`` options by fixing VCS revisions.
+
+The main use-case it to apply it in an extension buildout
+configuration file::
+
+   [buildout]
+   extends = base.cfg
+
+   [openerp]
+   revisions = 4320  ; main software
+               addons-openerp 7109
+
+As you can see in that example, the first token is the target
+filesystem path, as in the ``addons`` option, the second one is the
+revision, except in the case of the main software (if VCS based), for
+which there's no filesystem path.
+
+Some interesting use-cases:
+
+* temporary fixing some revision in cas of upstream regression with no
+  impact on your main development configuration (no risk to commit an
+  unwanted freeze if the main configuration is itself versionned).
+* freezing satisfactory revisions in a release process.
 
 script_name
 -----------

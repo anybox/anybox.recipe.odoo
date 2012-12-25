@@ -4,6 +4,7 @@ Changes
 1.4 (unreleased)
 ----------------
 
+- launchpad #1068360: new 'revisions' option to fix VCS revisions separately
 - launchpad #1084535: finer behaviour of ``with_devtools`` option:
   load testing hacks only in tests launcher script
 

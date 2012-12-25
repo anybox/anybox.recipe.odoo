@@ -19,7 +19,14 @@ def rfc822_time(h):
     """Parse RFC 2822-formatted http header and return a time int."""
     rfc822.mktime_tz(rfc822.parsedate_tz(h))
 
-main_software = object()
+class MainSoftware(object):
+    """Placeholder to represent the main software instead of an addon location.
+    """
+
+    def __str__(self):
+        return 'Main Software'
+
+main_software = MainSoftware()
 
 class BaseRecipe(object):
     """Base class for other recipes.
@@ -85,8 +92,6 @@ class BaseRecipe(object):
         self.version_wanted = None  # from the buildout
         self.version_detected = None  # string from the openerp setup.py
         self.parts = self.buildout['buildout']['parts-directory']
-        self.sources = {}
-        self.parse_addons(options)
         self.openerp_dir = None
         self.archive_filename = None
         self.archive_path = None # downloaded tar.gz
@@ -113,7 +118,10 @@ class BaseRecipe(object):
                 logger.info('Created %s/ directory' % basename(d))
                 os.mkdir(d)
 
+        self.sources = {}
+        self.parse_addons(options)
         self.parse_version()
+        self.parse_revisions(options)
 
     def parse_version(self):
         """Set the main software in ``sources`` and related attributes.
@@ -381,6 +389,42 @@ class BaseRecipe(object):
                 location_spec = (repo_url, repo_rev)
 
             self.sources[addons_dir] = (loc_type, location_spec, options)
+
+    def parse_revisions(self, options):
+        """Parse revisions options and update the ``sources`` attribute.
+
+        It is assumed that ``sources`` has already been populated, and
+        notably has a main_software part.
+        This allows for easy fixing of revisions in an extension buildout
+        """
+        for line in options.get('revisions', '').split(os.linesep):
+            if not line:
+                continue
+            split = line.split()
+            if len(split) > 2:
+                raise ValueError("Invalid revisions line: %r" % line)
+
+            # addon or main software
+            if len(split) == 2:
+                local_path = split[0]
+            else:
+                local_path = main_software
+            revision = split[-1]
+
+            source = self.sources.get(local_path)
+            if source is None: # considered harmless for now
+                logger.warn("Ignoring attempt to fix revision on unknown "
+                            "source %r. You may have a leftover to clean",
+                            local_path)
+                continue
+
+            if source[0] in ('downloadable', 'local'):
+                raise ValueError("In revision line %r : can't fix a revision "
+                                 "for non-vcs source" % line)
+
+            logger.info("%s will be on revision %r", local_path, revision)
+            self.sources[local_path] = ((source[0], (source[1][0], revision))
+                                        + source[2:])
 
     def retrieve_addons(self):
         """Parse the addons option line, download and return a list of paths.
