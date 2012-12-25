@@ -620,12 +620,21 @@ class BaseRecipe(object):
         """
 
         out_conf = ConfigParser.ConfigParser()
-        # TODO reread what other recipes may have done
-        out_conf.add_section('buildout')
-        out_conf.add_section(self.name)
-        out_conf.set('buildout', 'extends', self.buildout_cfg_name())
-        addons_option = []
 
+        frozen = getattr(self.buildout, '_openerp_recipe_frozen', None)
+        if frozen is None:
+            frozen = self.buildout._openerp_recipe_frozen = set()
+
+        import pdb; pdb.set_trace()
+        if out_config_path in frozen:
+            # read configuration started by other recipe
+            out_conf.read(self.make_absolute(out_config_path))
+        else:
+            out_conf.add_section('buildout')
+            out_conf.set('buildout', 'extends', self.buildout_cfg_name())
+
+        out_conf.add_section(self.name)
+        addons_option = []
         for local_path, location_spec in self.sources.items():
             type_spec = location_spec[0]
             if type_spec == 'local':
@@ -671,6 +680,7 @@ class BaseRecipe(object):
 
         with open(self.make_absolute(out_config_path), 'w') as out:
             out_conf.write(out)
+        frozen.add(out_config_path)
 
     def _install_script(self, name, content):
         """Install and register a script with prescribed name and content.

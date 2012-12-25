@@ -361,6 +361,17 @@ This produces a buildout configuration file named ``frozen.cfg``,
 which uses the ``revisions`` option of the ``openerp-server-1`` part
 to freeze everything.
 
+For configurations with several openerp related parts, you can freeze
+them together or in different files. This gives you flexibility in the
+distributions you may want to produce from a single developpment
+oriented configuration::
+
+   bin/buildout -o openerp-server-1:freeze-to=server.cfg \
+     openerp-server-2:freeze-to=server.cfg gtkclient:freeze-to=client.cfg
+
+In that latter example, ``server.cfg`` will have the two server parts,
+while ``client.cfg`` will have the ``gtkclient`` part only.
+
 .. note:: in DVCSes cases, nothing is done to check that the locally
           extracted revisions are actually pushed where they should.
 
