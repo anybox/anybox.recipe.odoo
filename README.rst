@@ -421,13 +421,15 @@ extract-downloads-to
 
 Following the same kind of logic as ``freeze-to``, this option allows
 to turn a buildout that aggregates from various remote sources
-(tarball dowloads, VCSes).
+(tarball downloads, VCSes) into a self-contained buildout archive
+directory that can be packed for easy distribution.
 
 Actually it extracts only the downloaded elements into a target
-directory. If that target directoy has been itself initialized first with
+directory and issues a buildout configuration with local references
+only. If that target directory has been itself initialized first with
 the *fixed elements* (buildout configuration files, bootstrap scripts,
-local addons), the end result is a self-contained buildout archive
-directory that can be packed for easy distribution.
+local addons), then it has all the needed elements, except eggs to
+be downloaded from PyPI or the specified index site.
 
 Here is an example, assuming the *fixed elements* are themselves versioned
 with Mercurial::
