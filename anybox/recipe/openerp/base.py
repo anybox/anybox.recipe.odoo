@@ -808,6 +808,8 @@ class BaseRecipe(object):
         In the purpose of making a self-contained and offline playable archive,
         these are assumed to be already taken care of.
         """
+        logger.info("Extracting part %r to directory %r and config file %r "
+                    "therein.", self.name, target_dir, outconf_name)
         target_dir = self.make_absolute(target_dir)
         out_conf = ConfigParser.ConfigParser()
 
@@ -845,7 +847,11 @@ class BaseRecipe(object):
                 out_conf.set(self.name, 'version', 'local ' + rel_path)
                 continue
 
-            addons_option.append('local ' + local_path)
+            addons_line = ['local', local_path]
+            addons_line.extend('%s=%s' % (opt, val)
+                               for opt, val in source[2].items())
+            addons_option.append(' '.join(addons_line))
+
             repo_path = self.make_absolute(local_path)
             self._extract_vcs_source(source_type, repo_path, target_dir,
                                      local_path, extracted)
