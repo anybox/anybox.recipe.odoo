@@ -550,6 +550,14 @@ class BaseRecipe(object):
                              "so that there's no modification from what "
                              "you just tested. Please rerun with -o.")
 
+        extract_downloads_to = self.options.get('extract-downloads-to')
+
+        if ((freeze_to is not None or extract_downloads_to is not None)
+            and not self.offline):
+            raise ValueError("To freeze a part, you must run offline "
+                             "so that there's no modification from what "
+                             "you just tested. Please rerun with -o.")
+
         # install server, webclient or gtkclient
         source = self.sources[main_software]
         type_spec = source[0]
@@ -655,6 +663,8 @@ class BaseRecipe(object):
 
         if freeze_to:
             self.freeze_to(freeze_to)
+        if extract_downloads_to:
+            self.extract_downloads_to(extract_downloads_to)
         return self.openerp_installed
 
     def dump_nightly_latest_version(self):
@@ -790,6 +800,117 @@ class BaseRecipe(object):
                                "Can't freeze." % abspath)
 
         return parents[0]
+
+    def extract_downloads_to(self, target_dir, outconf_name='release.cfg'):
+        """Extract anything that has been downloaded to target_dir.
+
+        This doesn't copy intermediary buildout configurations nor local parts.
+        In the purpose of making a self-contained and offline playable archive,
+        these are assumed to be already taken care of.
+        """
+        target_dir = self.make_absolute(target_dir)
+        out_conf = ConfigParser.ConfigParser()
+
+        all_extracted = getattr(self.buildout, '_openerp_recipe_extracted',
+                                None)
+        if all_extracted is None:
+            all_extracted = self.buildout._openerp_recipe_extracted = {}
+        out_config_path = join(target_dir, outconf_name)
+
+        # GR TODO this will fail if same target dir has been used with
+        # a different outconf_name
+        if target_dir in all_extracted:
+            # read configuration started by other recipe
+            out_conf.read(out_config_path)
+            extracted = all_extracted[target_dir]
+        else:
+            self._prepare_extracted_buildout(out_conf)
+            extracted = all_extracted[target_dir] = set()
+
+        self._freeze_egg_versions(out_conf, 'versions')
+
+        if not os.path.exists(target_dir):
+            os.mkdir(target_dir)
+
+        out_conf.add_section(self.name)
+        addons_option = []
+        for local_path, source in self.sources.items():
+            source_type = source[0]
+            if source_type == 'local':
+                continue
+
+            if local_path is main_software:
+                rel_path = self._extract_main_software(source_type, target_dir,
+                                                       extracted)
+                out_conf.set(self.name, ' '.join(
+                        ('version', 'local', rel_path)))
+                continue
+
+            addons_option.append('local ' + local_path)
+            repo_path = self.make_absolute(local_path)
+            self._extract_vcs_source(source_type, repo_path, target_dir,
+                                     local_path, extracted)
+
+        out_conf.set(self.name, 'addons', os.linesep.join(addons_option))
+        with open(out_config_path, 'w') as out:
+            out_conf.write(out)
+
+    def _extract_vcs_source(self, vcs_type, repo_path, target_dir, local_path,
+                            extracted):
+        """Extract a VCS source.
+
+        The extracted argument is a set of previously extracted targets.
+        This is because some VCS will refuse an empty directory (bzr does)
+        """
+
+        repo_path = self.make_absolute(repo_path)
+        repo_cls = vcs.SUPPORTED[vcs_type]
+        fixed_repo_path = repo_cls.fix_target(repo_path)
+        target_path = os.path.join(target_dir, local_path)
+        if fixed_repo_path != repo_path:
+            # again the problem of shifts, temp lame solution
+            split = os.path.split(fixed_repo_path)
+            assert split[0] == repo_path
+            target_path = os.path.join(target_path, split[1])
+
+        utils.mkdirp(target_path)
+        if target_path in extracted:
+            return
+
+        repo = repo_cls(repo_path, '')  # no need of remote URL
+        repo.archive(target_path)
+        extracted.add(target_path)
+
+    def _extract_main_software(self, source_type, target_dir, extracted):
+        """Extract the main software to target_dir and return relative path.
+
+        The extracted set avoids extracting twice to same target (refused
+        by some VCSes anyway)
+        """
+        if not self.openerp_dir.startswith(self.buildout_dir):
+            raise RuntimeError(
+                "Main openerp directory %r outside of buildout "
+                "directory, don't know how to handle that" % self.openerp_dir)
+
+        local_path = self.openerp_dir[len(self.buildout_dir + os.sep):]
+        target_path = join(target_dir, local_path)
+        if target_path in extracted:
+            return local_path
+
+        if source_type == 'downloadable':
+            shutil.copytree(self.openerp_dir, target_path)
+        else:
+            self._extract_vcs_source(source_type, self.openerp_dir, target_dir,
+                                     local_path, extracted)
+        return local_path
+
+    def _prepare_extracted_buildout(self, conf):
+        """Create the 'buildout' section in conf."""
+        conf.add_section('buildout')
+        conf.set('buildout', 'extends', self.buildout_cfg_name())
+        conf.add_section('versions')
+        conf.set('buildout', 'versions', 'versions')
+
 
     def _install_script(self, name, content):
         """Install and register a script with prescribed name and content.
