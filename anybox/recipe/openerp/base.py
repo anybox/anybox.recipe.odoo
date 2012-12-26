@@ -545,11 +545,6 @@ class BaseRecipe(object):
         os.chdir(self.parts)
 
         freeze_to = self.options.get('freeze-to')
-        if freeze_to is not None and not self.offline:
-            raise ValueError("To freeze a part, you must run offline "
-                             "so that there's no modification from what "
-                             "you just tested. Please rerun with -o.")
-
         extract_downloads_to = self.options.get('extract-downloads-to')
 
         if ((freeze_to is not None or extract_downloads_to is not None)
@@ -557,6 +552,9 @@ class BaseRecipe(object):
             raise ValueError("To freeze a part, you must run offline "
                              "so that there's no modification from what "
                              "you just tested. Please rerun with -o.")
+
+        if extract_downloads_to is not None and freeze_to is None:
+            freeze_to = os.path.join(extract_downloads_to, 'extracted_from.cfg')
 
         # install server, webclient or gtkclient
         source = self.sources[main_software]

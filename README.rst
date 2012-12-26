@@ -446,8 +446,16 @@ connection, etc.
 The ``extract-downloads-to`` options can be used for several parts
 with the same target directory (same as ``freeze-to``).
 
-Python distributions managed with ``gp.vcsdevelop`` are also taken
-into account.
+Furthermore, a default ``freeze-to`` is issued, producing a buildout
+configuration called ``extracted_from.cfg`` in the target directory,
+for later reference (local modification tracking) or a more
+developper-friendly reproduction configuration (ready-made setup to
+derive bugfix branches from).
+
+This implication of ``freeze-to`` also has the side effect to enforce the
+same rules with respect to uncommitted changes.
+
+Python distributions managed with ``gp.vcsdevelop`` are taken into account.
 
 OpenERP options
 ---------------
