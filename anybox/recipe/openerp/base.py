@@ -659,10 +659,10 @@ class BaseRecipe(object):
         with open(self.config_path, 'wb') as configfile:
             config.write(configfile)
 
-        if freeze_to:
-            self.freeze_to(freeze_to)
         if extract_downloads_to:
             self.extract_downloads_to(extract_downloads_to)
+        if freeze_to:
+            self.freeze_to(freeze_to)
         return self.openerp_installed
 
     def dump_nightly_latest_version(self):
