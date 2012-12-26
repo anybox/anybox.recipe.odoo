@@ -4,6 +4,7 @@ Changes
 1.4 (unreleased)
 ----------------
 
+- launchpad #1093771: extraction feature of downloaded code (notably vcs)
 - launchpad #1068360: new 'revisions' option to fix VCS revisions separately
 - launchpad #1093474: freeze feature of revisions and versions of
   python distributions

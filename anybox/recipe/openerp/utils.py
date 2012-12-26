@@ -53,3 +53,10 @@ def major_version(version_string):
     m = MAJOR_VERSION_RE.match(version_string)
     if m is not None:
         return tuple(int(m.group(i)) for i in (1,2))
+
+def mkdirp(path):
+    """Same as mkdir -p."""
+    if not os.path.exists(path):
+        parent, name = os.path.split(path)
+        mkdirp(parent)
+        os.mkdir(path)

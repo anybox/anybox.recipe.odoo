@@ -172,6 +172,10 @@ class HgRepo(BaseRepo):
                     up_cmd.extend(['-r', revision])
                 subprocess.check_call(up_cmd, env=SUBPROCESS_ENV)
 
+    def archive(self, target_path):
+        subprocess.check_call(['hg', '--cwd', self.target_dir,
+                               'archive', target_path])
+
 SUPPORTED['hg'] = HgRepo
 
 try:
@@ -319,6 +323,11 @@ class BzrBranch(BaseRepo):
                 logger.info("Update to revision %s", revision)
                 subprocess.check_call(['bzr', 'up', '-r', revision, target_dir],
                                       env=SUBPROCESS_ENV)
+
+    def archive(self, target_path):
+        subprocess.check_call(['bzr', 'export', '-d',
+                               self.target_dir, target_path])
+
 
 SUPPORTED['bzr'] = BzrBranch
 

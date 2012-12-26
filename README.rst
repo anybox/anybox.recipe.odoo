@@ -416,6 +416,49 @@ while ``client.cfg`` will have the ``gtkclient`` part only.
              with the ``gp.vcsdevelop`` extension but cannot currently
              protect against local modifications of these.
 
+extract-downloads-to
+--------------------
+
+Following the same kind of logic as ``freeze-to``, this option allows
+to turn a buildout that aggregates from various remote sources
+(tarball downloads, VCSes) into a self-contained buildout archive
+directory that can be packed for easy distribution.
+
+Actually it extracts only the downloaded elements into a target
+directory and issues a buildout configuration with local references
+only. If that target directory has been itself initialized first with
+the *fixed elements* (buildout configuration files, bootstrap scripts,
+local addons), then it has all the needed elements, except eggs to
+be downloaded from PyPI or the specified index site.
+
+Here is an example, assuming the *fixed elements* are themselves versioned
+with Mercurial::
+
+  hg archive ../test-extract && bin/buildout -o openerp:extract-downloads-to=../test-extract
+
+The produced buildout configuration in the target directory is
+``release.cfg``. So, for instance, from our ``test-extract`` archive,
+the buildout can be executed like this::
+
+  python bootstrap.py && bin/buildout -c release.cfg
+
+or further extended for system-dependent options such as port, db
+connection, etc.
+
+The ``extract-downloads-to`` options can be used for several parts
+with the same target directory (same as ``freeze-to``).
+
+Furthermore, a default ``freeze-to`` is issued, producing a buildout
+configuration called ``extracted_from.cfg`` in the target directory,
+for later reference (local modification tracking) or a more
+developper-friendly reproduction configuration (ready-made setup to
+derive bugfix branches from).
+
+This implication of ``freeze-to`` also has the side effect to enforce the
+same rules with respect to uncommitted changes.
+
+Python distributions managed with ``gp.vcsdevelop`` are taken into account.
+
 OpenERP options
 ---------------
 
