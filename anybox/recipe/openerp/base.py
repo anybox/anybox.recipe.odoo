@@ -920,7 +920,7 @@ class BaseRecipe(object):
         # absolute paths to all vcs-extend-develop
         # controlled distributions. We'll replace them one after the other
         # by a relative path from buildouts dir in the extracted conf
-        develops = self.b_options.get('develop', '').split(os.linesep)
+        develops = set(self.b_options.get('develop', '').split(os.linesep))
 
         extracted = set() # no need to track, this is done just once
         for gp_vcs in self.b_options.get(
@@ -933,8 +933,8 @@ class BaseRecipe(object):
                 vcs_type, self.make_absolute(local_path),
                 target_dir, local_path, extracted)
 
-            develops.remove(self.make_absolute(local_path))
-            develops.append(local_path)
+            develops.discard(self.make_absolute(local_path))
+            develops.add(local_path)
 
         conf.set('buildout', GP_VCS_EXTEND_DEVELOP, '')
         conf.set('buildout', 'develop', os.linesep.join(develops))
