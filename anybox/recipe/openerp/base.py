@@ -674,6 +674,8 @@ class BaseRecipe(object):
         """Create an extension buildout freezing current revisions & versions.
         """
 
+        logger.info("Freezing part %r to config file %r", self.name,
+                    out_config_path)
         out_conf = ConfigParser.ConfigParser()
 
         frozen = getattr(self.buildout, '_openerp_recipe_frozen', None)
