@@ -824,7 +824,7 @@ class BaseRecipe(object):
             out_conf.read(out_config_path)
             extracted = all_extracted[target_dir]
         else:
-            self._prepare_extracted_buildout(out_conf)
+            self._prepare_extracted_buildout(out_conf, target_dir)
             extracted = all_extracted[target_dir] = set()
 
         self._freeze_egg_versions(out_conf, 'versions')
@@ -842,8 +842,7 @@ class BaseRecipe(object):
             if local_path is main_software:
                 rel_path = self._extract_main_software(source_type, target_dir,
                                                        extracted)
-                out_conf.set(self.name, ' '.join(
-                        ('version', 'local', rel_path)))
+                out_conf.set(self.name, 'version', 'local ' + rel_path)
                 continue
 
             addons_option.append('local ' + local_path)
@@ -904,13 +903,37 @@ class BaseRecipe(object):
                                      local_path, extracted)
         return local_path
 
-    def _prepare_extracted_buildout(self, conf):
+    def _prepare_extracted_buildout(self, conf, target_dir):
         """Create the 'buildout' section in conf."""
         conf.add_section('buildout')
         conf.set('buildout', 'extends', self.buildout_cfg_name())
         conf.add_section('versions')
         conf.set('buildout', 'versions', 'versions')
 
+        # extraction for gp.vcsdevelop driven distributions
+
+        # reading the general 'develop' options. Right now, it'll have
+        # absolute paths to all vcs-extend-develop
+        # controlled distributions. We'll replace them one after the other
+        # by a relative path from buildouts dir in the extracted conf
+        develops = self.b_options.get('develop', '').split(os.linesep)
+
+        extracted = set() # no need to track, this is done just once
+        for gp_vcs in self.b_options.get(
+            GP_VCS_EXTEND_DEVELOP, '').split(os.linesep):
+            if not gp_vcs:
+                continue
+            local_path = pip.req.parse_editable(gp_vcs)[0]
+            vcs_type = gp_vcs.split('+', 1)[0]
+            self._extract_vcs_source(
+                vcs_type, self.make_absolute(local_path),
+                target_dir, local_path, extracted)
+
+            develops.remove(self.make_absolute(local_path))
+            develops.append(local_path)
+
+        conf.set('buildout', GP_VCS_EXTEND_DEVELOP, '')
+        conf.set('buildout', 'develop', os.linesep.join(develops))
 
     def _install_script(self, name, content):
         """Install and register a script with prescribed name and content.
