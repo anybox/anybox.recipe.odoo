@@ -882,7 +882,7 @@ class BaseRecipe(object):
         if target_path in extracted:
             return
 
-        repo = repo_cls(repo_path, '')  # no need of remote URL
+        repo = repo_cls(fixed_repo_path, '')  # no need of remote URL
         repo.archive(target_path)
         extracted.add(target_path)
 
