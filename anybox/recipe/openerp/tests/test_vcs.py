@@ -28,11 +28,18 @@ class VcsTestCase(unittest.TestCase):
         os.mkdir(dst)
         self.create_src()
 
+    def create_src(self):
+        """Create a source repository to run most tests.
+
+        To be implemented in subclasses."""
+        raise NotImplementedError
+
     def tearDown(self):
         print "TEARDOWN remove " + self.sandbox
         shutil.rmtree(self.sandbox)
 
 class CommonTestCase(VcsTestCase):
+    """Test methods that are common among the different repository classes."""
 
     def create_src(self):
         """We use HgRepo to test the common features."""
