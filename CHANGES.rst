@@ -10,6 +10,8 @@ Changes
   python distributions
 - launchpad #1084535: finer behaviour of ``with_devtools`` option:
   load testing hacks only in tests launcher script
+- launchpad #1095645: missing devtools loading in openerp-command
+  scripts
 
 1.3 (21-11-2012)
 ----------------

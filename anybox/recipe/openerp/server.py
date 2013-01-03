@@ -223,9 +223,16 @@ conf = openerp.tools.config
         # can't reuse self.addons here, because the true addons path maybe
         # different depending on addons options, such as subdir
         addons = self.options['options.addons_path'].replace(',', ':')
-        options['initialization'] = (
-            "import os; "
-            "os.environ['OPENERP_ADDONS'] = %r") % addons
+        initialization = ["import os",
+                          "os.environ['OPENERP_ADDONS'] = %r" % addons,
+                          '']
+
+        if self.with_devtools:
+            initialization.extend((
+                    'from anybox.recipe.openerp import devtools',
+                    'devtools.load(for_tests=True)',
+                    ''))
+        options['initialization'] = os.linesep.join(initialization)
 
         zc.recipe.egg.Scripts(self.buildout, '', options).install()
         self.openerp_installed.append(join(self.bin_dir, qualified_name))
