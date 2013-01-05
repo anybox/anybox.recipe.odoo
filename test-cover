@@ -1,0 +1,1 @@
+python setup.py nosetests --with-coverage --cover-package=anybox --cover-erase --cover-html --cover-html-dir=$PWD/COVERAGE
