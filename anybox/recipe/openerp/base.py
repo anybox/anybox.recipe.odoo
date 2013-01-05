@@ -830,6 +830,17 @@ class BaseRecipe(object):
             extracted = all_extracted[target_dir] = set()
 
         self._freeze_egg_versions(out_conf, 'versions')
+        self._extract_sources(out_conf, target_dir, extracted)
+        with open(out_config_path, 'w') as out:
+            out_conf.write(out)
+
+    def _extract_sources(self, out_conf, target_dir, extracted):
+        """Core extraction method.
+
+        out_conf is a ConfigParser instance to write to
+        extracted is a technical set used to know what targets have already
+        been written by previous parts and store for subsequent ones.
+        """
 
         if not os.path.exists(target_dir):
             os.mkdir(target_dir)
@@ -857,8 +868,6 @@ class BaseRecipe(object):
                                      local_path, extracted)
 
         out_conf.set(self.name, 'addons', os.linesep.join(addons_option))
-        with open(out_config_path, 'w') as out:
-            out_conf.write(out)
 
     def _extract_vcs_source(self, vcs_type, repo_path, target_dir, local_path,
                             extracted):

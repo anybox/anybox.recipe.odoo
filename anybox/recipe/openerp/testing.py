@@ -5,6 +5,7 @@ import sys
 import shutil
 from tempfile import mkdtemp
 from anybox.recipe.openerp import vcs
+from anybox.recipe.openerp import utils
 
 class FakeRepo(vcs.BaseRepo):
 
@@ -34,6 +35,11 @@ class FakeRepo(vcs.BaseRepo):
 
     def parents(self):
         return [self.revision]
+
+    def archive(self, target):
+        utils.mkdirp(target)
+        with open(os.path.join(target, '.fake_archival.txt'), 'w') as f:
+            f.write(str(self.revision))
 
 vcs.SUPPORTED['fakevcs'] = FakeRepo
 from pip.vcs import vcs

@@ -1,7 +1,7 @@
-import unittest
-
 import os
 import subprocess
+import shutil
+import tempfile
 from ConfigParser import ConfigParser, NoOptionError
 from anybox.recipe.openerp.server import BaseRecipe
 from anybox.recipe.openerp.base import main_software
@@ -225,3 +225,25 @@ class TestBaseRecipe(RecipeTestCase):
         self.assertEquals(extends_develop.strip(),
                           "fakevcs+http://example.com/aeroolib@fakerev"
                           "#egg=aeroolib")
+
+    def test_extract_addons(self):
+        addons = ['local specific',
+                  'fakevcs http://some/repo vcs-addons revspec']
+        self.make_recipe(version='local mainsoftware',
+                         addons=os.linesep.join(addons))
+        target_dir = tempfile.mkdtemp('test_recipe_extract')
+        try:
+            conf = ConfigParser()
+            extracted = set()
+            self.recipe._extract_sources(conf, target_dir, extracted)
+            addons_options = set(conf.get('openerp', 'addons').split(os.linesep))
+            self.assertTrue('local vcs-addons' in addons_options)
+
+            # testing that archival took place for fakevcs.
+            # get_update having not been called, it is expected to have the
+            # default revision 'fakerev', instead of 'revspec'.
+            with open(os.path.join(target_dir, 'vcs-addons',
+                                   '.fake_archival.txt')) as f:
+                self.assertEquals(f.read(), 'fakerev')
+        finally:
+            shutil.rmtree(target_dir)
