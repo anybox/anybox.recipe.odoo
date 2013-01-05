@@ -8,7 +8,6 @@ from zc.buildout.easy_install import MissingDistribution
 import zc.recipe.egg
 
 import httplib
-import pip.req
 import rfc822
 from urlparse import urlparse
 from . import vcs
@@ -724,6 +723,26 @@ class BaseRecipe(object):
             out_conf.write(out)
         frozen.add(out_config_path)
 
+    def _get_gp_vcs_develops(self):
+        """Return a tuple of (raw, parsed) vcs-extends-develop specifications.
+        """
+        lines = self.b_options.get(
+            GP_VCS_EXTEND_DEVELOP)
+        if not lines:
+            return ()
+
+        try:
+            import pip.req
+        except ImportError:
+            logger.error("You have vcs-extends-develop distributions "
+                         "but pip is not available. That means that "
+                         "gp.vcsdevelop is not properly installed. Did "
+                         "you ever run that buildout ?")
+            raise
+
+        return tuple((line, pip.req.parse_editable(line))
+                     for line in lines.split(os.linesep) if line)
+
     def _prepare_frozen_buildout(self, conf):
         """Create the 'buildout' section in conf."""
         conf.add_section('buildout')
@@ -733,12 +752,9 @@ class BaseRecipe(object):
 
         # freezing for gp.vcsdevelop
         extends = []
-        for gp_vcs in self.b_options.get(
-            GP_VCS_EXTEND_DEVELOP, '').split(os.linesep):
-            if not gp_vcs:
-                continue
-            local_path = pip.req.parse_editable(gp_vcs)[0]
-            hash_split = gp_vcs.rsplit('#')
+        for raw, parsed in self._get_gp_vcs_develops():
+            local_path = parsed[0]
+            hash_split = raw.rsplit('#')
             url = hash_split[0]
             url = url.rsplit('@', 1)[0]
             vcs_type = url.split('+', 1)[0]
@@ -939,12 +955,9 @@ class BaseRecipe(object):
         develops = set(self.b_options.get('develop', '').split(os.linesep))
 
         extracted = set() # no need to track, this is done just once
-        for gp_vcs in self.b_options.get(
-            GP_VCS_EXTEND_DEVELOP, '').split(os.linesep):
-            if not gp_vcs:
-                continue
-            local_path = pip.req.parse_editable(gp_vcs)[0]
-            vcs_type = gp_vcs.split('+', 1)[0]
+        for raw, parsed in self._get_gp_vcs_develops():
+            local_path = parsed[0]
+            vcs_type = raw.split('+', 1)[0]
             self._extract_vcs_source(
                 vcs_type, self.make_absolute(local_path),
                 target_dir, local_path, extracted)

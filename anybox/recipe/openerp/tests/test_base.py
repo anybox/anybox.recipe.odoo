@@ -226,32 +226,69 @@ class TestBaseRecipe(RecipeTestCase):
                           "fakevcs+http://example.com/aeroolib@fakerev"
                           "#egg=aeroolib")
 
+class TestExtraction(RecipeTestCase):
+
+    def setUp(self):
+        super(TestExtraction, self).setUp()
+        self.extract_target_dir = tempfile.mkdtemp('test_recipe_extract')
+
+    def tearDown(self):
+        shutil.rmtree(self.extract_target_dir)
+        super(TestExtraction, self).tearDown()
+
+    def make_recipe(self, name='openerp', **options):
+        self.recipe = TestingRecipe(self.buildout, name, options)
+
+    def test_prepare_extracted_buildout(self):
+        self.make_recipe(version='6.1-1')
+        conf = ConfigParser()
+        self.recipe._prepare_extracted_buildout(conf, self.extract_target_dir)
+        self.assertTrue('buildout' in conf.sections())
+
     def test_extract_addons(self):
         """Test extract_downloads_to about addons ('local' server version).
         """
+        target_dir = self.extract_target_dir
         addons = ['local specific',
                   'fakevcs http://some/repo vcs-addons revspec']
         self.make_recipe(version='local mainsoftware',
                          addons=os.linesep.join(addons))
-        target_dir = tempfile.mkdtemp('test_recipe_extract')
-        try:
-            conf = ConfigParser()
-            extracted = set()
-            self.recipe._extract_sources(conf, target_dir, extracted)
-            addons_opt = set(conf.get('openerp', 'addons').split(os.linesep))
-            self.assertEquals(addons_opt,
-                              set(('local vcs-addons', 'local specific')))
-            self.assertEquals(extracted,
-                              set([os.path.join(target_dir, 'vcs-addons')]))
 
-            # testing that archival took place for fakevcs, but not for local
+        conf = ConfigParser()
+        extracted = set()
+        self.recipe._extract_sources(conf, target_dir, extracted)
+        addons_opt = set(conf.get('openerp', 'addons').split(os.linesep))
+        self.assertEquals(addons_opt,
+                          set(('local vcs-addons', 'local specific')))
+        self.assertEquals(extracted,
+                          set([os.path.join(target_dir, 'vcs-addons')]))
 
-            self.failIf(os.path.exists(os.path.join(target_dir, 'specific')),
-                        "Local addons dir should not have been extracted")
-            # get_update having not been called, it is expected to have the
-            # default revision 'fakerev', instead of 'revspec'.
-            with open(os.path.join(target_dir, 'vcs-addons',
+        # testing that archival took place for fakevcs, but not for local
+
+        self.failIf(os.path.exists(os.path.join(target_dir, 'specific')),
+                    "Local addons dir should not have been extracted")
+        # get_update having not been called, it is expected to have the
+        # default revision 'fakerev', instead of 'revspec'.
+        with open(os.path.join(target_dir, 'vcs-addons',
                                    '.fake_archival.txt')) as f:
-                self.assertEquals(f.read(), 'fakerev')
-        finally:
-            shutil.rmtree(target_dir)
+            self.assertEquals(f.read(), 'fakerev')
+
+    def test_prepare_extracted_buildout_gp_vcsdevelop(self):
+        self.make_recipe(version='6.1-1')
+        self.recipe.b_options[GP_VCS_EXTEND_DEVELOP] = (""
+            "fakevcs+http://example.com/aeroolib#egg=aeroolib")
+
+        conf = ConfigParser()
+        self.recipe._prepare_extracted_buildout(conf, self.extract_target_dir)
+        extends_develop = conf.get('buildout', GP_VCS_EXTEND_DEVELOP)
+        self.assertEquals(extends_develop.strip(), '')
+        develop = conf.get('buildout', 'develop').split(os.linesep)
+        self.assertEquals(set(d for d in develop if d),
+                          set(['aeroolib']))
+
+        # extraction has been done
+        target = os.path.join(self.extract_target_dir, 'aeroolib')
+        self.assertTrue(os.path.exists(target))
+        with open(os.path.join(target, '.fake_archival.txt')) as f:
+            self.assertEquals(f.read(), 'fakerev')
+
