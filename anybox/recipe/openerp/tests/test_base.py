@@ -227,6 +227,8 @@ class TestBaseRecipe(RecipeTestCase):
                           "#egg=aeroolib")
 
     def test_extract_addons(self):
+        """Test extract_downloads_to about addons ('local' server version).
+        """
         addons = ['local specific',
                   'fakevcs http://some/repo vcs-addons revspec']
         self.make_recipe(version='local mainsoftware',
@@ -236,10 +238,16 @@ class TestBaseRecipe(RecipeTestCase):
             conf = ConfigParser()
             extracted = set()
             self.recipe._extract_sources(conf, target_dir, extracted)
-            addons_options = set(conf.get('openerp', 'addons').split(os.linesep))
-            self.assertTrue('local vcs-addons' in addons_options)
+            addons_opt = set(conf.get('openerp', 'addons').split(os.linesep))
+            self.assertEquals(addons_opt,
+                              set(('local vcs-addons', 'local specific')))
+            self.assertEquals(extracted,
+                              set([os.path.join(target_dir, 'vcs-addons')]))
 
-            # testing that archival took place for fakevcs.
+            # testing that archival took place for fakevcs, but not for local
+
+            self.failIf(os.path.exists(os.path.join(target_dir, 'specific')),
+                        "Local addons dir should not have been extracted")
             # get_update having not been called, it is expected to have the
             # default revision 'fakerev', instead of 'revspec'.
             with open(os.path.join(target_dir, 'vcs-addons',

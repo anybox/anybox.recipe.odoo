@@ -849,9 +849,6 @@ class BaseRecipe(object):
         addons_option = []
         for local_path, source in self.sources.items():
             source_type = source[0]
-            if source_type == 'local':
-                continue
-
             if local_path is main_software:
                 rel_path = self._extract_main_software(source_type, target_dir,
                                                        extracted)
@@ -863,9 +860,13 @@ class BaseRecipe(object):
                                for opt, val in source[2].items())
             addons_option.append(' '.join(addons_line))
 
-            repo_path = self.make_absolute(local_path)
-            self._extract_vcs_source(source_type, repo_path, target_dir,
-                                     local_path, extracted)
+            abspath = self.make_absolute(local_path)
+            if source_type == 'downloadable':
+                shutil.copytree(abspath,
+                                os.path.join(target_dir, local_path))
+            elif source_type != 'local':  # vcs
+                self._extract_vcs_source(source_type, abspath, target_dir,
+                                         local_path, extracted)
 
         out_conf.set(self.name, 'addons', os.linesep.join(addons_option))
 
@@ -898,6 +899,10 @@ class BaseRecipe(object):
     def _extract_main_software(self, source_type, target_dir, extracted):
         """Extract the main software to target_dir and return relative path.
 
+        As this is for extract_downloads_to, local main software is not
+        extracted (supposed to be taken care of by the tool that does the
+        archival of buildout dir itself).
+
         The extracted set avoids extracting twice to same target (refused
         by some VCSes anyway)
         """
@@ -913,7 +918,7 @@ class BaseRecipe(object):
 
         if source_type == 'downloadable':
             shutil.copytree(self.openerp_dir, target_path)
-        else:
+        elif source_type != 'local': # see docstring for 'local'
             self._extract_vcs_source(source_type, self.openerp_dir, target_dir,
                                      local_path, extracted)
         return local_path
