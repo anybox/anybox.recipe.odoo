@@ -14,6 +14,8 @@ Changes
   scripts
 - launchpad #1096472: forbid standalone (single) local addons. A local
   addon must always be a directory that has addons inside.
+- launchpad #1096472: trailing slash in a standalone addon directory name
+  led to error.
 
 1.3 (21-11-2012)
 ----------------

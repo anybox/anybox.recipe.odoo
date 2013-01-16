@@ -391,6 +391,7 @@ class BaseRecipe(object):
                 repo_url, addons_dir, repo_rev = split[1:4]
                 location_spec = (repo_url, repo_rev)
 
+            addons_dir = addons_dir.rstrip('/')  # trailing / can be harmful
             self.sources[addons_dir] = (loc_type, location_spec, options)
 
     def parse_revisions(self, options):
