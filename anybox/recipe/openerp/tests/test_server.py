@@ -24,6 +24,15 @@ class TestServer(RecipeTestCase):
         self.assertEquals(get_vcs_log(), [])
         self.assertEquals(paths, [addons_dir])
 
+    def test_retrieve_addons_local_standalone(self):
+        """A local standalone addon is not permitted."""
+        addons_dir = os.path.join(self.buildout_dir, 'addons-custom')
+        os.mkdir(addons_dir)
+        with open(os.path.join(addons_dir, '__openerp__.py'), 'w') as f:
+            f.write("#Empty python package")
+        self.make_recipe(version='6.1', addons='local addons-custom')
+        self.assertRaises(ValueError, self.recipe.retrieve_addons)
+
     def test_retrieve_addons_local_options(self):
         """Addons options work for 'local' by testing (useless) subdir option.
         """

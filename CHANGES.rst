@@ -12,6 +12,8 @@ Changes
   load testing hacks only in tests launcher script
 - launchpad #1095645: missing devtools loading in openerp-command
   scripts
+- launchpad #1096472: forbid standalone (single) local addons. A local
+  addon must always be a directory that has addons inside.
 
 1.3 (21-11-2012)
 ----------------

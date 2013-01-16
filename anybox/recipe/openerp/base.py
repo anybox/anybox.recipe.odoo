@@ -466,6 +466,13 @@ class BaseRecipe(object):
 
             manifest = os.path.join(addons_dir, '__openerp__.py')
             if os.path.isfile(manifest):
+                if loc_type == 'local':
+                    raise ValueError(
+                        "Local addons line %r should refer to a directory "
+                        "containing addons, not to a standalone addon. "
+                        "The recipe can perform automatic creation of "
+                        "intermediate directories for VCS cases only"
+                        % addons_dir)
                 # repo is a single addon, put it actually below
                 name = os.path.split(addons_dir)[1]
                 c = 0
