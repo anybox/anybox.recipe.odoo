@@ -248,6 +248,9 @@ class TestServer(RecipeTestCase):
         self.recipe.missing_deps_instructions[softreq] = (
             "This is an expected condition in this test.")
         self.recipe.soft_requirements = (softreq,)
+        self.recipe.b_options['offline'] = 'true' # not enough, sadly
+        self.unreachable_distributions.add(softreq)
+
         self.install_scripts(extra_requirements=(softreq,))
         self.assertScripts(('start_openerp',
                             'test_openerp',

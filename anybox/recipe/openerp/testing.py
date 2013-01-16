@@ -4,6 +4,7 @@ import unittest
 import sys
 import shutil
 from tempfile import mkdtemp
+from zc.buildout.easy_install import Installer
 from anybox.recipe.openerp import vcs
 from anybox.recipe.openerp import utils
 
@@ -74,7 +75,19 @@ class RecipeTestCase(unittest.TestCase):
 
         self.buildout['main_python'] = dict(executable=sys.executable)
 
+        # temporary monkey patch of easy_install to avoid actual requests to
+        # PyPI (offline mode currently does not protect against that, even
+        # though I checked that it is recognized by zc.recipe.egg
+        self.unreachable_distributions = set()
+        Installer._orig_obtain = Installer._obtain
+        def _obtain(inst, requirement, source=None):
+            if requirement.project_name in self.unreachable_distributions:
+                return None
+            return inst._orig_obtain(requirement, source=source)
+        Installer._obtain = _obtain
+
     def tearDown(self):
         clear_vcs_log()
         shutil.rmtree(self.buildout_dir)
+        Installer._obtain = Installer._orig_obtain
 
