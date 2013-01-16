@@ -1,7 +1,7 @@
 Changes
 ~~~~~~~
 
-1.4 (unreleased)
+1.4 (16-01-2013)
 ----------------
 
 - launchpad #1093771: extraction feature of downloaded code (notably vcs)
