@@ -269,6 +269,9 @@ class TestExtraction(RecipeTestCase):
         self.assertEquals(extracted,
                           set([os.path.join(target_dir, 'vcs-addons')]))
 
+        # no need to override revisions
+        self.assertRaises(NoOptionError, conf.get, 'openerp', 'revisions')
+
         # testing that archival took place for fakevcs, but not for local
 
         self.failIf(os.path.exists(os.path.join(target_dir, 'specific')),
@@ -278,6 +281,25 @@ class TestExtraction(RecipeTestCase):
         with open(os.path.join(target_dir, 'vcs-addons',
                                '.fake_archival.txt')) as f:
             self.assertEquals(f.read(), 'fakerev')
+
+    def test_extract_addons_revisions(self):
+        """Test extract_downloads_to about revisions overriding.
+
+        In case the source buildout uses the revisions option, it must be
+        overridden in the extracted one because it does not make sense with
+        the 'local' scheme.
+        """
+        target_dir = self.extract_target_dir
+        addons = ['local specific',
+                  'fakevcs http://some/repo vcs-addons revspec']
+        self.make_recipe(version='local mainsoftware',
+                         addons=os.linesep.join(addons),
+                         revisions='vcs-addons 213')
+
+        conf = ConfigParser()
+        extracted = set()
+        self.recipe._extract_sources(conf, target_dir, extracted)
+        self.assertEquals(conf.get('openerp', 'revisions').strip(), '')
 
     def test_prepare_extracted_buildout_gp_vcsdevelop(self):
         self.make_recipe(version='6.1-1')

@@ -921,6 +921,18 @@ class BaseRecipe(object):
                                          local_path, extracted)
 
         out_conf.set(self.name, 'addons', os.linesep.join(addons_option))
+        if self.options.get('revisions'):
+            out_conf.set(self.name, 'revisions', '')
+            # GR hacky way to make a comment for a void value. Indeed,
+            # "revisions = ; comment" is not recognized as an inline comment
+            # because of overall stripping and a need for whitespace before
+            # the semicolon (sigh)
+            out_conf.set(self.name, '; about revisions',
+                         "the extended buildout '%s' uses the 'revisions' "
+                         "option. The present override disables it "
+                         "because it makes no sense after extraction and "
+                         "replacement by the "
+                         "'local' scheme" % self.buildout_cfg_name())
 
     def _extract_vcs_source(self, vcs_type, repo_path, target_dir, local_path,
                             extracted):

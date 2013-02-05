@@ -1,6 +1,13 @@
 Changes
 ~~~~~~~
 
+1.4.1 (unreleased)
+------------------
+
+- launchpad #1115503: now it's possible to apply ``extract-downloads-to``
+  for a buildout configuration that uses the ``revisions`` option: the
+  produced configuration resets ``revisions`` if needed.
+
 1.4 (16-01-2013)
 ----------------
 
