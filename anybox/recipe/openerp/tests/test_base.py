@@ -8,11 +8,13 @@ from anybox.recipe.openerp.base import main_software
 from anybox.recipe.openerp.base import GP_VCS_EXTEND_DEVELOP
 from anybox.recipe.openerp.testing import RecipeTestCase
 
+
 class TestingRecipe(BaseRecipe):
     """A subclass with just enough few defaults for unit testing."""
 
     archive_filenames = {'6.1': 'blob-%s.tgz'}
     archive_nightly_filenames = {'6.1': '6-1-nightly-%s.tbz'}
+
 
 class TestBaseRecipe(RecipeTestCase):
 
@@ -43,7 +45,8 @@ class TestBaseRecipe(RecipeTestCase):
         self.make_recipe(version='nightly 6.1 1234-5')
 
         self.assertDownloadUrl(
-            'http://nightly.openerp.com/6.1/nightly/src/6-1-nightly-1234-5.tbz')
+            'http://nightly.openerp.com/6.1/nightly/src/'
+            '6-1-nightly-1234-5.tbz')
 
     def test_version_bzr_6_1(self):
         self.make_recipe(
@@ -70,14 +73,15 @@ class TestBaseRecipe(RecipeTestCase):
         self.assertEquals(recipe.archive_filename, 'openerp-12.0.tgz')
 
     def test_base_url(self):
-        self.make_recipe(version='6.1-1', base_url='http://example.org/openerp')
+        self.make_recipe(version='6.1-1',
+                         base_url='http://example.org/openerp')
         self.assertDownloadUrl('http://example.org/openerp/blob-6.1-1.tgz')
 
     def test_base_url_nightly(self):
         self.make_recipe(version='nightly 6.1 1234-5',
                          base_url='http://example.org/openerp')
         self.assertDownloadUrl(
-                          'http://example.org/openerp/6-1-nightly-1234-5.tbz')
+            'http://example.org/openerp/6-1-nightly-1234-5.tbz')
 
     def test_buildout_cfg_name(self):
         self.make_recipe(version='6.1-1')
@@ -100,7 +104,8 @@ class TestBaseRecipe(RecipeTestCase):
                           ('bzr', ('lp:openobject-server', '1234')))
 
         recipe.parse_addons(
-            dict(addons='hg http://some/repo addons-specific default opt=spam'))
+            dict(addons='hg http://some/repo addons-specific default opt=spam')
+        )
         self.assertEquals(recipe.sources['addons-specific'],
                           ('hg', ('http://some/repo', 'default'),
                            {'opt': 'spam'}))
@@ -119,7 +124,7 @@ class TestBaseRecipe(RecipeTestCase):
         conf.add_section('freeze')
         self.make_recipe(version='6.1-1')
         self.recipe.options['eggs'] = 'nose'
-        self.recipe.install_requirements() # to get 'ws' attribute
+        self.recipe.install_requirements()  # to get 'ws' attribute
         self.recipe._freeze_egg_versions(conf, 'freeze')
         try:
             nose_version = conf.get('freeze', 'nose')
@@ -139,7 +144,7 @@ class TestBaseRecipe(RecipeTestCase):
         conf.set('freeze', 'some.distribution', '1.0alpha')
         self.make_recipe(version='6.1-1')
         self.recipe.options['eggs'] = 'nose'
-        self.recipe.install_requirements() # to get 'ws' attribute
+        self.recipe.install_requirements()  # to get 'ws' attribute
         self.recipe._freeze_egg_versions(conf, 'freeze')
         try:
             version = conf.get('freeze', 'some.distribution')
@@ -197,7 +202,7 @@ class TestBaseRecipe(RecipeTestCase):
 
     def test_prepare_frozen_buildout_gp_vcsdevelop(self):
         self.make_recipe(version='6.1-1')
-        self.recipe.b_options[GP_VCS_EXTEND_DEVELOP] = (""
+        self.recipe.b_options[GP_VCS_EXTEND_DEVELOP] = (
             "fakevcs+http://example.com/aeroolib#egg=aeroolib")
 
         conf = ConfigParser()
@@ -216,7 +221,7 @@ class TestBaseRecipe(RecipeTestCase):
         will be used.
         """
         self.make_recipe(version='6.1-1')
-        self.recipe.b_options[GP_VCS_EXTEND_DEVELOP] = (""
+        self.recipe.b_options[GP_VCS_EXTEND_DEVELOP] = (
             "fakevcs+http://example.com/aeroolib@somerev#egg=aeroolib")
 
         conf = ConfigParser()
@@ -225,6 +230,7 @@ class TestBaseRecipe(RecipeTestCase):
         self.assertEquals(extends_develop.strip(),
                           "fakevcs+http://example.com/aeroolib@fakerev"
                           "#egg=aeroolib")
+
 
 class TestExtraction(RecipeTestCase):
 
@@ -270,12 +276,12 @@ class TestExtraction(RecipeTestCase):
         # get_update having not been called, it is expected to have the
         # default revision 'fakerev', instead of 'revspec'.
         with open(os.path.join(target_dir, 'vcs-addons',
-                                   '.fake_archival.txt')) as f:
+                               '.fake_archival.txt')) as f:
             self.assertEquals(f.read(), 'fakerev')
 
     def test_prepare_extracted_buildout_gp_vcsdevelop(self):
         self.make_recipe(version='6.1-1')
-        self.recipe.b_options[GP_VCS_EXTEND_DEVELOP] = (""
+        self.recipe.b_options[GP_VCS_EXTEND_DEVELOP] = (
             "fakevcs+http://example.com/aeroolib#egg=aeroolib")
 
         conf = ConfigParser()
@@ -291,4 +297,3 @@ class TestExtraction(RecipeTestCase):
         self.assertTrue(os.path.exists(target))
         with open(os.path.join(target, '.fake_archival.txt')) as f:
             self.assertEquals(f.read(), 'fakerev')
-

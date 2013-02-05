@@ -1,6 +1,13 @@
 # coding: utf-8
 from os.path import join, basename
-import os, sys, urllib, tarfile, setuptools, logging, stat, imp
+import os
+import sys
+import urllib
+import tarfile
+import setuptools
+import logging
+import stat
+import imp
 import shutil
 import ConfigParser
 import distutils.core
@@ -15,9 +22,11 @@ from . import utils
 
 logger = logging.getLogger(__name__)
 
+
 def rfc822_time(h):
     """Parse RFC 2822-formatted http header and return a time int."""
     rfc822.mktime_tz(rfc822.parsedate_tz(h))
+
 
 class MainSoftware(object):
     """Placeholder to represent the main software instead of an addon location.
@@ -29,6 +38,7 @@ class MainSoftware(object):
 main_software = MainSoftware()
 
 GP_VCS_EXTEND_DEVELOP = 'vcs-extend-develop'
+
 
 class BaseRecipe(object):
     """Base class for other recipes.
@@ -55,21 +65,21 @@ class BaseRecipe(object):
 
     """
 
-    default_dl_url = { '6.0': 'http://www.openerp.com/download/stable/source/',
-                       '6.1': 'http://nightly.openerp.com/6.1/releases/',
-                       '7.0': 'http://nightly.openerp.com/7.0/releases/',
-                       '5.0': 'http://v6.openerp.com/download/stable/source/',
-                       }
+    default_dl_url = {'6.0': 'http://www.openerp.com/download/stable/source/',
+                      '6.1': 'http://nightly.openerp.com/6.1/releases/',
+                      '7.0': 'http://nightly.openerp.com/7.0/releases/',
+                      '5.0': 'http://v6.openerp.com/download/stable/source/',
+                      }
 
     nightly_dl_url = {'6.1': 'http://nightly.openerp.com/6.1/nightly/src/',
                       '7.0': 'http://nightly.openerp.com/7.0/nightly/src/',
                       'trunk': 'http://nightly.openerp.com/trunk/nightly/src/',
                       }
 
-    recipe_requirements = () # distribution required for the recipe itself
-    recipe_requirements_paths = () # a default value is useful in unit tests
-    requirements = () # requirements for what the recipe installs to run
-    soft_requirements = () # subset of requirements that's not necessary
+    recipe_requirements = ()  # distribution required for the recipe itself
+    recipe_requirements_paths = ()  # a default value is useful in unit tests
+    requirements = ()  # requirements for what the recipe installs to run
+    soft_requirements = ()  # subset of requirements that's not necessary
 
     # Caching logic for the main OpenERP part (e.g, without addons)
     # Can be 'filename' or 'http-head'
@@ -97,7 +107,7 @@ class BaseRecipe(object):
         self.parts = self.buildout['buildout']['parts-directory']
         self.openerp_dir = None
         self.archive_filename = None
-        self.archive_path = None # downloaded tar.gz
+        self.archive_path = None  # downloaded tar.gz
 
         if options.get('scripts') is None:
             options['scripts'] = ''
@@ -143,7 +153,8 @@ class BaseRecipe(object):
             pattern = self.archive_filenames[major_wanted]
             if pattern is None:
                 raise ValueError(
-                    'OpenERP version %r is not supported' % self.version_wanted)
+                    'OpenERP version %r'
+                    'is not supported' % self.version_wanted)
 
             self.archive_filename = pattern % self.version_wanted
             self.archive_path = join(self.downloads_dir, self.archive_filename)
@@ -174,9 +185,11 @@ class BaseRecipe(object):
             if self.version_wanted == 'latest':
                 self.main_http_caching = 'http-head'
             series = self.nightly_series
-            self.archive_filename = self.archive_nightly_filenames[series] % self.version_wanted
+            self.archive_filename = (
+                self.archive_nightly_filenames[series] % self.version_wanted)
             self.archive_path = join(self.downloads_dir, self.archive_filename)
-            base_url = self.options.get('base_url', self.nightly_dl_url[series])
+            base_url = self.options.get('base_url',
+                                        self.nightly_dl_url[series])
             self.sources[main_software] = (
                 'downloadable',
                 ('/'.join((base_url.strip('/'), self.archive_filename)), None))
@@ -186,7 +199,7 @@ class BaseRecipe(object):
                 raise ValueError("Unrecognized version specification: %r "
                                  "(expecting type, url, target, revision for "
                                  "remote repository or explicit download) " % (
-                        version_split))
+                                 version_split))
 
             type_spec, url, repo_dir, self.version_wanted = version_split
             self.openerp_dir = join(self.parts, repo_dir)
@@ -267,32 +280,40 @@ class BaseRecipe(object):
         Primarily designed for 6.0, but works with 6.1 as well.
         """
         old_setup = setuptools.setup
-        old_distutils_setup = distutils.core.setup # 5.0 directly imports this
+        old_distutils_setup = distutils.core.setup  # 5.0 directly imports this
+
         def new_setup(*args, **kw):
             self.requirements.extend(kw.get('install_requires', ()))
             self.version_detected = kw['version']
         setuptools.setup = new_setup
         distutils.core.setup = new_setup
         sys.path.insert(0, '.')
-        with open(join(self.openerp_dir,'setup.py'), 'rb') as f:
+        with open(join(self.openerp_dir, 'setup.py'), 'rb') as f:
             saved_argv = sys.argv
             sys.argv = ['setup.py', 'develop']
             try:
-                imp.load_module('setup', f, 'setup.py', ('.py', 'r', imp.PY_SOURCE))
+                imp.load_module('setup', f, 'setup.py',
+                                ('.py', 'r', imp.PY_SOURCE))
             except SystemExit, exception:
                 if 'dsextras' in exception.message:
-                    raise EnvironmentError('Please first install PyGObject and PyGTK !')
+                    raise EnvironmentError(
+                        'Please first install PyGObject and PyGTK !')
                 else:
-                    raise EnvironmentError('Problem while reading OpenERP setup.py: ' + exception.message)
+                    raise EnvironmentError('Problem while reading OpenERP '
+                                           'setup.py: ' + exception.message)
             except ImportError, exception:
                 if 'babel' in exception.message:
-                    raise EnvironmentError('OpenERP setup.py has an unwanted import Babel.\n'
-                                           '=> First install Babel on your system or virtualenv :(\n'
-                                           '(sudo aptitude install python-babel, or pip install babel)')
+                    raise EnvironmentError(
+                        'OpenERP setup.py has an unwanted import Babel.\n'
+                        '=> First install Babel on your system or '
+                        'virtualenv :(\n'
+                        '(sudo aptitude install python-babel, '
+                        'or pip install babel)')
                 else:
                     raise exception
             except Exception, exception:
-                raise EnvironmentError('Problem while reading OpenERP setup.py: ' + exception.message)
+                raise EnvironmentError('Problem while reading OpenERP '
+                                       'setup.py: ' + exception.message)
             finally:
                 sys.argv = saved_argv
         sys.path.pop(0)
@@ -317,7 +338,8 @@ class BaseRecipe(object):
         The option to start with a first member is useful for this case, since
         the recipe consumes a first member in the tar file to get the openerp
         main directory in parts.
-        It is taken for granted that this first member has already been checked.
+        It is taken for granted that this first member has already been
+        checked.
         """
 
         if first is not None:
@@ -387,7 +409,7 @@ class BaseRecipe(object):
             if loc_type == 'local':
                 addons_dir = split[1]
                 location_spec = None
-            else: # vcs
+            else:  # vcs
                 repo_url, addons_dir, repo_rev = split[1:4]
                 location_spec = (repo_url, repo_rev)
 
@@ -416,7 +438,7 @@ class BaseRecipe(object):
             revision = split[-1]
 
             source = self.sources.get(local_path)
-            if source is None: # considered harmless for now
+            if source is None:  # considered harmless for now
                 logger.warn("Ignoring attempt to fix revision on unknown "
                             "source %r. You may have a leftover to clean",
                             local_path)
@@ -492,7 +514,8 @@ class BaseRecipe(object):
         """HTTP download for main part of the software to self.archive_path.
         """
         if self.offline:
-            raise IOError("%s not found, and offline mode requested" % self.archive_path)
+            raise IOError("%s not found, and offline "
+                          "mode requested" % self.archive_path)
         url = self.sources[main_software][1][0]
         logger.info("Downloading %s ..." % url)
 
@@ -530,7 +553,7 @@ class BaseRecipe(object):
             cnx_cls = httplib.HTTPConnection
         try:
             cnx = cnx_cls(parsed.netloc)
-            cnx.request('HEAD', parsed.path) # TODO query ? fragment ?
+            cnx.request('HEAD', parsed.path)  # TODO query ? fragment ?
             res = cnx.getresponse()
         except IOError:
             return True
@@ -555,13 +578,14 @@ class BaseRecipe(object):
         extract_downloads_to = self.options.get('extract-downloads-to')
 
         if ((freeze_to is not None or extract_downloads_to is not None)
-            and not self.offline):
+                and not self.offline):
             raise ValueError("To freeze a part, you must run offline "
                              "so that there's no modification from what "
                              "you just tested. Please rerun with -o.")
 
         if extract_downloads_to is not None and freeze_to is None:
-            freeze_to = os.path.join(extract_downloads_to, 'extracted_from.cfg')
+            freeze_to = os.path.join(extract_downloads_to,
+                                     'extracted_from.cfg')
 
         # install server, webclient or gtkclient
         source = self.sources[main_software]
@@ -571,9 +595,9 @@ class BaseRecipe(object):
             logger.info('Local directory chosen, nothing to do')
         elif type_spec == 'downloadable':
             # download if needed
-            if ((self.archive_path  and not os.path.exists(self.archive_path))
-                 or (self.main_http_caching == 'http-head'
-                     and self.is_stale_http_head())):
+            if ((self.archive_path and not os.path.exists(self.archive_path))
+                or (self.main_http_caching == 'http-head'
+                    and self.is_stale_http_head())):
                 self.main_download()
 
             logger.info(u'Inspecting %s ...' % self.archive_path)
@@ -606,7 +630,7 @@ class BaseRecipe(object):
                 "Not a directory: %r (aborting)" % path)
 
         self.install_recipe_requirements()
-        os.chdir(self.openerp_dir) # GR probably not needed any more
+        os.chdir(self.openerp_dir)  # GR probably not needed any more
         self.read_openerp_setup()
         if type_spec == 'downloadable' and self.version_wanted == 'latest':
             self.nightly_version = self.version_detected.split('-', 1)[1]
@@ -619,9 +643,11 @@ class BaseRecipe(object):
             if 'options.addons_path' not in self.options:
                 self.options['options.addons_path'] = ''
             if is_60:
-                self.options['options.addons_path'] += join(self.openerp_dir, 'bin', 'addons') + ','
+                self.options['options.addons_path'] += join(
+                    self.openerp_dir, 'bin', 'addons') + ','
             else:
-                self.options['options.addons_path'] += join(self.openerp_dir, 'openerp', 'addons') + ','
+                self.options['options.addons_path'] += join(
+                    self.openerp_dir, 'openerp', 'addons') + ','
 
             self.options['options.addons_path'] += ','.join(addons_paths)
         elif is_60:
@@ -633,7 +659,7 @@ class BaseRecipe(object):
         # add openerp paths into the extra-paths
         if self.major_version >= (6, 2):
             paths = [self.openerp_dir,
-                     join(self.openerp_dir, 'addons')] # TODO necessary ?
+                     join(self.openerp_dir, 'addons')]  # TODO necessary ?
         else:
             paths = [join(self.openerp_dir, 'bin'),
                      join(self.openerp_dir, 'bin', 'addons')]
@@ -650,7 +676,8 @@ class BaseRecipe(object):
         # create the config file
         if os.path.exists(self.config_path):
             os.remove(self.config_path)
-        logger.info('Creating config file: ' + join(basename(self.etc), basename(self.config_path)))
+        logger.info('Creating config file: %s',
+                    join(basename(self.etc), basename(self.config_path)))
         self._create_default_config()
 
         # modify the config file according to recipe options
@@ -725,7 +752,8 @@ class BaseRecipe(object):
                 addons_option.append(' '.join((local_path, revision)))
 
         if addons_option:
-            out_conf.set(self.name, 'revisions', os.linesep.join(addons_option))
+            out_conf.set(self.name, 'revisions',
+                         os.linesep.join(addons_option))
 
         with open(self.make_absolute(out_config_path), 'w') as out:
             out_conf.write(out)
@@ -942,7 +970,7 @@ class BaseRecipe(object):
 
         if source_type == 'downloadable':
             shutil.copytree(self.openerp_dir, target_path)
-        elif source_type != 'local': # see docstring for 'local'
+        elif source_type != 'local':  # see docstring for 'local'
             self._extract_vcs_source(source_type, self.openerp_dir, target_dir,
                                      local_path, extracted)
         return local_path
@@ -962,7 +990,7 @@ class BaseRecipe(object):
         # by a relative path from buildouts dir in the extracted conf
         develops = set(self.b_options.get('develop', '').split(os.linesep))
 
-        extracted = set() # no need to track, this is done just once
+        extracted = set()  # no need to track, this is done just once
         for raw, parsed in self._get_gp_vcs_develops():
             local_path = parsed[0]
             vcs_type = raw.split('+', 1)[0]
@@ -1037,10 +1065,9 @@ class BaseRecipe(object):
                 return argv[i+1]
 
         # --config=FILE syntax
-        prefix="--config="
+        prefix = "--config="
         for a in argv:
             if a.startswith(prefix):
                 return a[len(prefix):]
 
         return 'buildout.cfg'
-
