@@ -12,6 +12,7 @@ import shutil
 import ConfigParser
 import distutils.core
 from zc.buildout.easy_install import MissingDistribution
+from zc.buildout import UserError
 import zc.recipe.egg
 
 import httplib
@@ -237,23 +238,28 @@ class BaseRecipe(object):
         without them
         """
         while True:
+            missing = None
             eggs = zc.recipe.egg.Scripts(self.buildout, '', self.options)
             try:
                 ws = eggs.install()
             except MissingDistribution, exc:
-                project_name = exc.data[0].project_name
-                msg = self.missing_deps_instructions.get(project_name)
+                missing = exc.data[0].project_name
+            except UserError, exc:  # zc.buildout >= 2.0
+                missing = exc.message.split(os.linesep)[0].split()[-1]
+
+            if missing is not None:
+                msg = self.missing_deps_instructions.get(missing)
                 if msg is None:
                     raise
-                logger.error("Could not find %r. " + msg, project_name)
+                logger.error("Could not find %r. " + msg, missing)
                 # GR this condition won't be enough in case of version
                 # conditions in requirement
-                if project_name not in self.soft_requirements:
+                if missing not in self.soft_requirements:
                     sys.exit(1)
                 else:
                     attempted = self.options['eggs'].split(os.linesep)
                     self.options['eggs'] = os.linesep.join(
-                        [egg for egg in attempted if egg != project_name])
+                        [egg for egg in attempted if egg != missing])
             else:
                 break
 

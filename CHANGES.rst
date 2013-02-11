@@ -7,6 +7,7 @@ Changes
 - launchpad #1115503: now it's possible to apply ``extract-downloads-to``
   for a buildout configuration that uses the ``revisions`` option: the
   produced configuration resets ``revisions`` if needed.
+- launchpad #1122015: soft requirements problem if offline on zc.buildout 2.0
 
 1.4 (16-01-2013)
 ----------------
