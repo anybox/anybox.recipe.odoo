@@ -120,7 +120,7 @@ class BaseRecipe(object):
                     "the recipe automatically adds a dependency to Pillow. "
                     "If you really need it for other reasons, installing it "
                     "system-wide is a good option. "),
-            }
+        }
 
         self.openerp_installed = []
 

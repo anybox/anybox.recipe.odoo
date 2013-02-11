@@ -1,9 +1,11 @@
 import sys
 import os
 
+
 def insert_args(arguments):
     for i, a in enumerate(arguments):
         sys.argv.insert(i+1, a)
+
 
 def main(starter, conf, openerp_version):
     arguments = ['-c', conf, '--log-level=test', '--stop-after-init']

@@ -1,9 +1,13 @@
 # coding: utf-8
 from os.path import join
-import sys, logging, shutil, re
+import sys
+import logging
+import shutil
+import re
 from anybox.recipe.openerp.base import BaseRecipe
 
 logger = logging.getLogger(__name__)
+
 
 class WebClientRecipe(BaseRecipe):
     """Recipe for web client install and config
@@ -42,7 +46,7 @@ class WebClientRecipe(BaseRecipe):
     def _create_startup_script(self):
         """Return startup_script content
         """
-        paths = [ self.openerp_dir ]
+        paths = [self.openerp_dir]
         paths.extend([egg.location for egg in self.ws])
         if self.major_version == (6, 0):
             ext = '.py'
@@ -54,10 +58,9 @@ class WebClientRecipe(BaseRecipe):
                   'export PYTHONPATH=%s\n'
                   'cd "%s"\n'
                   'exec %s openerp-web%s %s $@') % (
-                    ':'.join(paths),
-                    self.openerp_dir,
-                    self.buildout['buildout']['executable'],
-                    ext,
-                    config)
+                      ':'.join(paths),
+                      self.openerp_dir,
+                      self.buildout['buildout']['executable'],
+                      ext,
+                      config)
         return script
-

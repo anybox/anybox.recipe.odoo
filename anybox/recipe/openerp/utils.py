@@ -2,6 +2,7 @@ import os
 import re
 from contextlib import contextmanager
 
+
 class WorkingDirectoryKeeper(object):
     """A context manager to get back the working directory as it was before."""
 
@@ -18,6 +19,7 @@ class WorkingDirectoryKeeper(object):
         self.active = False
 
 working_directory_keeper = WorkingDirectoryKeeper()
+
 
 @contextmanager
 def use_or_open(provided, path, *open_args):
@@ -52,7 +54,8 @@ def major_version(version_string):
 
     m = MAJOR_VERSION_RE.match(version_string)
     if m is not None:
-        return tuple(int(m.group(i)) for i in (1,2))
+        return tuple(int(m.group(i)) for i in (1, 2))
+
 
 def mkdirp(path):
     """Same as mkdir -p."""

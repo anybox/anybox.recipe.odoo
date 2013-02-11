@@ -18,9 +18,11 @@ SUBPROCESS_ENV['PYTHONPATH'] = SUBPROCESS_ENV.pop(
 
 SUPPORTED = {}
 
+
 class UpdateError(subprocess.CalledProcessError):
     """Specific class for errors occurring during updates of existing repos.
     """
+
 
 class BaseRepo(object):
 
@@ -93,6 +95,7 @@ def get_update(vcs_type, target_dir, url, revision, **options):
     target_dir = cls.fix_target(target_dir)
     cls(target_dir, url, **options)(revision)
 
+
 class HgRepo(BaseRepo):
 
     vcs_control_dir = '.hg'
@@ -149,7 +152,10 @@ class HgRepo(BaseRepo):
         if not os.path.exists(target_dir):
             # TODO case of local url ?
             if offline:
-                raise IOError("hg repository %r does not exist; cannot clone it from %r (offline mode)" % (target_dir, url))
+                raise IOError(
+                    "hg repository %r does not exist; "
+                    "cannot clone it from %r (offline mode)" % (target_dir,
+                                                                url))
 
             logger.info("Cloning %s ...", url)
             clone_cmd = ['hg', 'clone']
@@ -184,6 +190,7 @@ except ImportError:
     LPDIR = None
 else:
     LPDIR = LaunchpadDirectory()
+
 
 class BzrBranch(BaseRepo):
     """Represent a Bazaar branch tied to a reference branch."""
@@ -281,7 +288,9 @@ class BzrBranch(BaseRepo):
         if not os.path.exists(target_dir):
             # TODO case of local url ?
             if offline:
-                raise IOError("bzr branch %s does not exist; cannot branch it from %s (offline mode)" % (target_dir, url))
+                raise IOError(
+                    "bzr branch %s does not exist; cannot branch it from "
+                    "%s (offline mode)" % (target_dir, url))
 
             logger.info("Branching %s ...", url)
             branch_cmd = ['bzr', 'branch']
@@ -301,7 +310,7 @@ class BzrBranch(BaseRepo):
                 yes.seek(0)
                 logger.info("Break-lock for branch %s ...", target_dir)
                 # GR newer versions of bzr have a --force option, but this call
-                # works for older ones as well (fortunately we don't need a pty)
+                # works also for older ones (fortunately we don't need a pty)
                 p = subprocess.Popen(['bzr', 'break-lock', target_dir],
                                      subprocess.PIPE)
                 out, err = p.communicate(input='y')
@@ -321,8 +330,9 @@ class BzrBranch(BaseRepo):
 
             if revision:
                 logger.info("Update to revision %s", revision)
-                subprocess.check_call(['bzr', 'up', '-r', revision, target_dir],
-                                      env=SUBPROCESS_ENV)
+                subprocess.check_call(
+                    ['bzr', 'up', '-r', revision, target_dir],
+                    env=SUBPROCESS_ENV)
 
     def archive(self, target_path):
         subprocess.check_call(['bzr', 'export', '-d',
@@ -330,6 +340,7 @@ class BzrBranch(BaseRepo):
 
 
 SUPPORTED['bzr'] = BzrBranch
+
 
 class GitRepo(BaseRepo):
     """Represent a Git clone tied to a reference branch."""
@@ -351,7 +362,9 @@ class GitRepo(BaseRepo):
             if not os.path.exists(target_dir):
                 # TODO case of local url ?
                 if offline:
-                    raise IOError("git repository %s does not exist; cannot clone it from %s (offline mode)" % (target_dir, url))
+                    raise IOError(
+                        "git repository %s does not exist; cannot clone it "
+                        "from %s (offline mode)" % (target_dir, url))
 
                 os.chdir(os.path.split(target_dir)[0])
                 logger.info("Cloning %s ...", url)
@@ -367,11 +380,12 @@ class GitRepo(BaseRepo):
                                           url, rev_str])
                 elif revision:
                     logger.info("Checkout %s to revision %s",
-                                target_dir,revision)
+                                target_dir, revision)
                     subprocess.check_call(['git', 'checkout', rev_str])
 
 
 SUPPORTED['git'] = GitRepo
+
 
 class SvnCheckout(BaseRepo):
 
@@ -393,7 +407,9 @@ class SvnCheckout(BaseRepo):
             if not os.path.exists(target_dir):
                 # TODO case of local url ?
                 if offline:
-                    raise IOError("svn checkout %s does not exist; cannot checkout  from %s (offline mode)" % (target_dir, url))
+                    raise IOError(
+                        "svn checkout %s does not exist; cannot checkout "
+                        "from %s (offline mode)" % (target_dir, url))
 
                 os.chdir(os.path.split(target_dir)[0])
                 logger.info("Checkouting %s ...", url)

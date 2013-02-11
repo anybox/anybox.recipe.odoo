@@ -8,6 +8,7 @@ from zc.buildout.easy_install import Installer
 from anybox.recipe.openerp import vcs
 from anybox.recipe.openerp import utils
 
+
 class FakeRepo(vcs.BaseRepo):
 
     log = []
@@ -18,7 +19,7 @@ class FakeRepo(vcs.BaseRepo):
 
     revision = 'fakerev'
 
-    name = 'fakevcs' # for pip.vcs.VersionSupport registration
+    name = 'fakevcs'  # for pip.vcs.VersionSupport registration
 
     def get_update(self, revision):
         self.revision = revision
@@ -46,8 +47,10 @@ vcs.SUPPORTED['fakevcs'] = FakeRepo
 from pip.vcs import vcs
 vcs.register(FakeRepo)  # for tests around gp.vcsdevelop
 
+
 def get_vcs_log():
     return FakeRepo.log
+
 
 def clear_vcs_log():
     FakeRepo.log = []
@@ -71,7 +74,7 @@ class RecipeTestCase(unittest.TestCase):
             'eggs-directory': 'eggs',
             'develop-eggs-directory': develop_dir,
             'python': 'main_python',
-            }
+        }
 
         self.buildout['main_python'] = dict(executable=sys.executable)
 
@@ -80,6 +83,7 @@ class RecipeTestCase(unittest.TestCase):
         # though I checked that it is recognized by zc.recipe.egg
         self.unreachable_distributions = set()
         Installer._orig_obtain = Installer._obtain
+
         def _obtain(inst, requirement, source=None):
             if requirement.project_name in self.unreachable_distributions:
                 return None
@@ -90,4 +94,3 @@ class RecipeTestCase(unittest.TestCase):
         clear_vcs_log()
         shutil.rmtree(self.buildout_dir)
         Installer._obtain = Installer._orig_obtain
-
