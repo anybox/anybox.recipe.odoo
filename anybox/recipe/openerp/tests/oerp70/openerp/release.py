@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# flake8: noqa
 ##############################################################################
 #
 #    OpenERP, Open Source Management Solution

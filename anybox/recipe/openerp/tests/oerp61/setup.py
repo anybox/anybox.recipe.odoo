@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# flake8: noqa
 #
 #  A setup.py from openobject-server 6.1, included as is, except for the
 #  dependency list
