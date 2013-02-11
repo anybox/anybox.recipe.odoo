@@ -1,7 +1,8 @@
 # coding: utf-8
 import os
 from os.path import join
-import sys, logging
+import sys
+import logging
 import subprocess
 import zc.buildout
 from anybox.recipe.openerp import devtools
@@ -9,16 +10,17 @@ from anybox.recipe.openerp.base import BaseRecipe
 
 logger = logging.getLogger(__name__)
 
+
 class ServerRecipe(BaseRecipe):
     """Recipe for server install and config
     """
-    archive_filenames = { '6.0': 'openerp-server-%s.tar.gz',
+    archive_filenames = {'6.0': 'openerp-server-%s.tar.gz',
                          '6.1': 'openerp-%s.tar.gz'}
     archive_nightly_filenames = {
         '6.1': 'openerp-6.1-%s.tar.gz',
         '7.0': 'openerp-7.0-%s.tar.gz',
         'trunk': 'openerp-6.2dev-%s.tar.gz'
-        }
+    }
     recipe_requirements = ('babel',)
     requirements = ('pychart', 'anybox.recipe.openerp')
     soft_requirements = ('openerp-command',)
@@ -37,7 +39,7 @@ class ServerRecipe(BaseRecipe):
                                 "'gp.vcsdevelop'. "
                                 "You may download it on "
                                 "https://launchpad.net/openerp-command."),
-            })
+        })
 
     def apply_version_dependent_decisions(self):
         """Store some booleans depending on detected version.
@@ -69,7 +71,7 @@ class ServerRecipe(BaseRecipe):
          - gunicorn's related dependencies if needed
 
         For PIL, extracted requirements are not taken into account. This way,
-        if at some point, 
+        if at some point,
         OpenERP introduce a hard dependency on PIL, we'll still install Pillow.
         The only case where PIL will have precedence over Pillow will thus be
         the case of a legacy buildout.
@@ -86,12 +88,12 @@ class ServerRecipe(BaseRecipe):
             self.requirements.append('Pillow')
         if self.major_version >= (6, 1):
             openerp_dir = getattr(self, 'openerp_dir', None)
-            if openerp_dir is not None: # happens in unit tests
+            if openerp_dir is not None:  # happens in unit tests
                 self.develop(openerp_dir, setup_has_pil=setup_has_pil)
             self.requirements.append('openerp')
 
         if self.with_gunicorn:
-            self.requirements.extend(('psutil','gunicorn'))
+            self.requirements.extend(('psutil', 'gunicorn'))
 
         if self.with_devtools:
             self.requirements.extend(devtools.requirements)
@@ -121,13 +123,15 @@ class ServerRecipe(BaseRecipe):
 
         Derived from the standard gunicorn.conf.py shipping with OpenERP.
         """
-        gunicorn_options = dict(workers='4',
-                                timeout='240',
-                                max_requests='2000',
-                                qualified_name=qualified_name,
-                                bind='%s:%s' % (
+        gunicorn_options = dict(
+            workers='4',
+            timeout='240',
+            max_requests='2000',
+            qualified_name=qualified_name,
+            bind='%s:%s' % (
                 self.options.get('options.xmlrpc_interface', '0.0.0.0'),
-                self.options.get('options.xmlrpc_port', '8069')))
+                self.options.get('options.xmlrpc_port', '8069')
+            ))
 
         gunicorn_prefix = 'gunicorn.'
         gunicorn_options.update((k[len(gunicorn_prefix):], v)
@@ -195,7 +199,8 @@ conf = openerp.tools.config
         if gunicorn_entry_point is None:
             if self.major_version >= (6, 2):
                 # proxy vs direct now handled by an OpenERP server option
-                gunicorn_entry_point = 'openerp:service.wsgi_server.application'
+                gunicorn_entry_point = ('openerp:'
+                                        'service.wsgi_server.application')
             else:
                 gunicorn_entry_point = (
                     'openerp:wsgi.%s.application' % self.gunicorn_entry)
@@ -206,7 +211,7 @@ conf = openerp.tools.config
             "from sys import argv; "
             "argv[1:] = ['%s', "
             "            '-c', '%s.conf.py']") % (
-            gunicorn_entry_point, join(self.etc, qualified_name))
+                gunicorn_entry_point, join(self.etc, qualified_name))
 
         zc.recipe.egg.Scripts(self.buildout, '', options).install()
         self.openerp_installed.append(join(self.bin_dir, qualified_name))
@@ -229,9 +234,9 @@ conf = openerp.tools.config
 
         if self.with_devtools:
             initialization.extend((
-                    'from anybox.recipe.openerp import devtools',
-                    'devtools.load(for_tests=True)',
-                    ''))
+                'from anybox.recipe.openerp import devtools',
+                'devtools.load(for_tests=True)',
+                ''))
         options['initialization'] = os.linesep.join(initialization)
 
         zc.recipe.egg.Scripts(self.buildout, '', options).install()
@@ -250,7 +255,7 @@ conf = openerp.tools.config
         if not os.path.isfile(script_src):
             version = self.version_detected
             if ((version.startswith('6.1-2012') and version[4:12] < '20120530')
-                or self.version_wanted == '6.1-1'):
+                    or self.version_wanted == '6.1-1'):
                 logger.warn(
                     "Can't use openerp-cron-worker with version %s "
                     "You have to run a separate regular OpenERP process "
@@ -262,7 +267,8 @@ conf = openerp.tools.config
                         "This is expected with some nightly builds. "
                         "Using the launcher script distributed "
                         "with the recipe.", version)
-            script_src = join(os.path.split(__file__)[0], 'openerp-cron-worker')
+            script_src = join(os.path.split(__file__)[0],
+                              'openerp-cron-worker')
 
         options = self.options.copy()
         options['entry-points'] = ('openerp_starter=anybox.recipe.'
@@ -289,14 +295,15 @@ conf = openerp.tools.config
         initialization = ['']
         if self.with_devtools:
             initialization.extend((
-                    'from anybox.recipe.openerp import devtools',
-                    'devtools.load(for_tests=False)',
-                    ''))
+                'from anybox.recipe.openerp import devtools',
+                'devtools.load(for_tests=False)',
+                ''))
 
         if startup_delay:
-            initialization.extend(('print("sleeping %s seconds...")' % startup_delay,
-                                   'import time',
-                                   'time.sleep(%f)' % startup_delay))
+            initialization.extend(
+                ('print("sleeping %s seconds...")' % startup_delay,
+                 'import time',
+                 'time.sleep(%f)' % startup_delay))
 
         options['initialization'] = os.linesep.join((initialization))
 
@@ -346,7 +353,6 @@ conf = openerp.tools.config
 
         self.script_path = join(self.bin_dir, script_name)
         self.openerp_installed.append(self.script_path)
-
 
     def _install_startup_scripts(self):
         """install startup and control scripts.
