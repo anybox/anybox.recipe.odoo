@@ -61,8 +61,8 @@ class TestServer(RecipeTestCase):
     def test_retrieve_addons_vcs_2(self):
         """Two VCS lines in addons."""
         self.make_recipe(version='6.1', addons=os.linesep.join((
-                'fakevcs http://trunk.example addons-trunk rev',
-                'fakevcs http://other.example addons-other 76')))
+            'fakevcs http://trunk.example addons-trunk rev',
+            'fakevcs http://other.example addons-other 76')))
         # manual creation because fakevcs does nothing but retrieve_addons
         # has assertions on existence of target directories
         addons_dir = os.path.join(self.buildout_dir, 'addons-trunk')
@@ -74,7 +74,7 @@ class TestServer(RecipeTestCase):
                  dict(offline=False, clear_locks=False)),
                 (other_dir, 'http://other.example', '76',
                  dict(offline=False, clear_locks=False)),
-                ])
+            ])
         self.assertEquals(paths, [addons_dir, other_dir])
 
     def test_retrieve_addons_subdir(self):
@@ -162,7 +162,7 @@ class TestServer(RecipeTestCase):
     def test_merge_requirements_gunicorn(self):
         self.make_recipe(version='6.1', gunicorn='direct')
         self.recipe.version_detected = '6.1-1'
-        self.recipe.apply_version_dependent_decisions() # TODO make a helper
+        self.recipe.apply_version_dependent_decisions()  # TODO make a helper
         self.recipe.merge_requirements()
         req = self.recipe.requirements
         self.assertTrue('gunicorn' in req)
@@ -174,7 +174,7 @@ class TestServer(RecipeTestCase):
         self.recipe.merge_requirements()
         from anybox.recipe.openerp import devtools
         self.assertTrue(set(devtools.requirements).issubset(
-                self.recipe.requirements))
+            self.recipe.requirements))
 
     def test_merge_requirements_oe(self):
         self.make_recipe(version='nightly trunk 20121101',
@@ -288,7 +288,7 @@ class TestServer(RecipeTestCase):
         self.recipe.options['options.addons_path'] = ''
 
         self.install_scripts(extra_develop={
-                'openerp-command': 'fake_openerp-command'})
+            'openerp-command': 'fake_openerp-command'})
         self.assertScripts(('start_openerp',
                             'test_openerp',
                             'gunicorn_openerp',
@@ -304,9 +304,9 @@ class TestServer(RecipeTestCase):
         # necessary for openerp-command, will be part of post-release refactor
         self.recipe.options['options.addons_path'] = ''
 
-        self.install_scripts(extra_develop={
-                'openerp-command': 'fake_openerp-command'},
-                             setup_has_pil=True)
+        self.install_scripts(
+            extra_develop={'openerp-command': 'fake_openerp-command'},
+            setup_has_pil=True)
         self.assertScripts(('start_openerp',
                             'gunicorn_openerp',
                             'cron_worker_openerp',

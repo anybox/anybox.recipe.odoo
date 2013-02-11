@@ -17,6 +17,7 @@ COMMIT_USER_NAME = 'Test'
 COMMIT_USER_EMAIL = 'test@example.org'
 COMMIT_USER_FULL = '%s %s' % (COMMIT_USER_NAME, COMMIT_USER_EMAIL)
 
+
 class VcsTestCase(unittest.TestCase):
     """Common fixture"""
 
@@ -37,6 +38,7 @@ class VcsTestCase(unittest.TestCase):
     def tearDown(self):
         print "TEARDOWN remove " + self.sandbox
         shutil.rmtree(self.sandbox)
+
 
 class CommonTestCase(VcsTestCase):
     """Test methods that are common among the different repository classes."""
@@ -85,6 +87,7 @@ class CommonTestCase(VcsTestCase):
         # no such wild retry in offline mode
         self.assertRaises(vcs.UpdateError, vcs.get_update, 'hg_fails_updates',
                           repo_path, self.src_repo, 'default', offline=True)
+
 
 class HgTestCase(VcsTestCase):
 
@@ -150,7 +153,8 @@ class HgTestCase(VcsTestCase):
         parser = ConfigParser()
         parser.read(os.path.join(target_dir, '.hg', 'hgrc'))
         self.assertEquals(parser.get('paths', 'default'), new_src)
-        self.assertEquals(parser.get('paths', 'buildout_save_1'), self.src_repo)
+        self.assertEquals(parser.get('paths', 'buildout_save_1'),
+                          self.src_repo)
 
         # second rename
         new_src_2 = os.path.join(self.src_dir, 'renew-src-repo')
@@ -158,7 +162,8 @@ class HgTestCase(VcsTestCase):
         parser = ConfigParser()
         parser.read(os.path.join(target_dir, '.hg', 'hgrc'))
         self.assertEquals(parser.get('paths', 'default'), new_src_2)
-        self.assertEquals(parser.get('paths', 'buildout_save_1'), self.src_repo)
+        self.assertEquals(parser.get('paths', 'buildout_save_1'),
+                          self.src_repo)
         self.assertEquals(parser.get('paths', 'buildout_save_2'), new_src)
 
     def test_url_change(self):
@@ -276,8 +281,8 @@ class BzrTestCase(VcsTestCase):
         branch('last:1')
 
         self.assertEquals(branch.parse_conf(), dict(
-                buildout_save_parent_location_1=old_src,
-                parent_location=new_src))
+            buildout_save_parent_location_1=old_src,
+            parent_location=new_src))
 
         # second rename
         new_src2 = os.path.join(self.src_dir, 'new-src-repo2')
@@ -286,9 +291,9 @@ class BzrTestCase(VcsTestCase):
         branch('1')
 
         self.assertEquals(branch.parse_conf(), dict(
-                buildout_save_parent_location_1=old_src,
-                buildout_save_parent_location_2=new_src,
-                parent_location=new_src2))
+            buildout_save_parent_location_1=old_src,
+            buildout_save_parent_location_2=new_src,
+            parent_location=new_src2))
 
     def test_lp_url(self):
         """lp: locations are being rewritten to the actual target."""
@@ -336,9 +341,9 @@ class GitTestCase(VcsTestCase):
         subprocess.call(['git', 'init', 'src-branch'])
         self.src_repo = os.path.join(self.src_dir, 'src-branch')
         os.chdir(self.src_repo)
-	# repo configuration is local by default
-	subprocess.call(['git', 'config', 'user.email', COMMIT_USER_EMAIL])
-	subprocess.call(['git', 'config', 'user.name', COMMIT_USER_NAME])
+        # repo configuration is local by default
+        subprocess.call(['git', 'config', 'user.email', COMMIT_USER_EMAIL])
+        subprocess.call(['git', 'config', 'user.name', COMMIT_USER_NAME])
         f = open('tracked', 'w')
         f.write("first" + os.linesep)
         f.close()
@@ -349,7 +354,6 @@ class GitTestCase(VcsTestCase):
         f.close()
         subprocess.call(['git', 'add', 'tracked'])
         subprocess.call(['git', 'commit', '-m', 'last version'])
-
 
     def test_clone(self):
         """Git clone."""
