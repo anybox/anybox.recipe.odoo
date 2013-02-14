@@ -1,9 +1,10 @@
 Changes
 ~~~~~~~
 
-1.4.1 (unreleased)
+1.5.0 (14-02-2013)
 ------------------
 
+- works with zc.buildout 2.0
 - launchpad #1115503: now it's possible to apply ``extract-downloads-to``
   for a buildout configuration that uses the ``revisions`` option: the
   produced configuration resets ``revisions`` if needed.
