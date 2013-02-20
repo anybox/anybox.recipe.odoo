@@ -4,8 +4,7 @@ Changes
 1.5.1 (unreleased)
 ------------------
 
--
-
+- launchpad #1130590: errors with inline comments such as freeze-to produces
 
 1.5.0 (14-02-2013)
 ------------------

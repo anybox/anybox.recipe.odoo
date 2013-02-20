@@ -430,8 +430,15 @@ class BaseRecipe(object):
         This allows for easy fixing of revisions in an extension buildout
         """
         for line in options.get('revisions', '').split(os.linesep):
+            # GR inline comment should have not gone through, but sometimes
+            # does (see lp:1130590). This below does not exactly conform to
+            # spec http://docs.python.org/2/library/configparser.html
+            # (we don't check for whitespace before separator), but is good
+            # enough in this case.
+            line = line.split(';', 1)[0].strip()
             if not line:
                 continue
+
             split = line.split()
             if len(split) > 2:
                 raise ValueError("Invalid revisions line: %r" % line)

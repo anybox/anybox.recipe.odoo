@@ -115,6 +115,11 @@ class TestBaseRecipe(RecipeTestCase):
                           ('hg', ('http://some/repo', '1.0'), {'opt': 'spam'}))
         self.assertEquals(recipe.sources[main_software][1][1], '1111')
 
+        # with a comment
+        recipe.parse_revisions(dict(revisions='1112 ; main software'
+                                    '\naddons-specific 1.0'))
+        self.assertEquals(recipe.sources[main_software][1][1], '1112')
+
     def test_freeze_egg_versions(self):
         """Test that an egg requirement is properly dumped with its version.
 
