@@ -12,13 +12,15 @@ if sys.version_info < (2, 6):
 requires = ['setuptools', 'zc.recipe.egg', 'zc.buildout']
 
 setup(
-    name = "anybox.recipe.openerp",
-    version = version,
+    name="anybox.recipe.openerp",
+    version=version,
     author="Anybox",
     author_email="contact@anybox.fr",
     description="A buildout recipe to install and configure OpenERP",
     license="ZPL",
-    long_description=open('README.rst').read() + '\n' + open('CHANGES.rst').read(),
+    long_description='\n'.join((
+        open('README.rst').read(),
+        open('CHANGES.rst').read())),
     url="https://launchpad.net/anybox.recipe.openerp",
     packages=find_packages(),
     zip_safe=False,
@@ -26,17 +28,15 @@ setup(
     install_requires=requires,
     tests_require=requires + ['nose', 'bzr'],
     classifiers=[
-      'Development Status :: 4 - Beta',
-      'Framework :: Buildout :: Recipe',
-      'Intended Audience :: Developers',
-      'Topic :: Software Development :: Build Tools',
-      'Topic :: Software Development :: Libraries :: Python Modules',
-      ],
-    entry_points = {'zc.buildout': [
+        'Development Status :: 4 - Beta',
+        'Framework :: Buildout :: Recipe',
+        'Intended Audience :: Developers',
+        'Topic :: Software Development :: Build Tools',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+    ],
+    entry_points={'zc.buildout': [
         'server = anybox.recipe.openerp.server:ServerRecipe',
         'webclient = anybox.recipe.openerp.webclient:WebClientRecipe',
         'gtkclient = anybox.recipe.openerp.gtkclient:GtkClientRecipe',
-        ]},
-    )
-
-
+    ]},
+)
