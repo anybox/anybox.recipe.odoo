@@ -3,8 +3,8 @@ Changes
 
 1.5.2 (unreleased)
 ------------------
-
--
+- launchpad #1133248: "need more than 1 value to unpack" if some bzr's
+  branch.conf has extra content not in the key = value form
 
 1.5.1 (27-02-2013)
 ------------------

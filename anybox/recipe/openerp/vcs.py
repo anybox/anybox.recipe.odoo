@@ -230,9 +230,9 @@ class BzrBranch(BaseRepo):
         """
         with use_or_open(from_file, self.conf_file_path()) as conffile:
             return dict((name.strip(), url.strip())
-                        for name, url in (line.split('=', 1)
-                                          for line in conffile
-                                          if not line.startswith('#')))
+                        for name, url in (
+                            line.split('=', 1) for line in conffile
+                            if not line.startswith('#') and '=' in line))
 
     def write_conf(self, conf, to_file=None):
         """Write counterpart to read_conf (see docstring of read_conf)

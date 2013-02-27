@@ -295,6 +295,36 @@ class BzrTestCase(VcsTestCase):
             buildout_save_parent_location_2=new_src,
             parent_location=new_src2))
 
+    def test_url_update_1133248(self):
+        """Method to update branch.conf is resilient wrt to actual content.
+
+        See lp:1133248 for details
+        """
+        # Setting up a prior branch
+        target_dir = os.path.join(self.dst_dir, "clone to update")
+        branch = BzrBranch(target_dir, self.src_repo)
+        branch('1')
+
+        conf_path = os.path.join(target_dir, '.bzr', 'branch', 'branch.conf')
+        with open(conf_path, 'a') as conf:
+            conf.seek(0, os.SEEK_END)
+            conf.write(os.linesep + "Some other stuff" + os.linesep)
+
+        # src may have become relative, let's keep it in that form
+        old_src = branch.parse_conf()['parent_location']
+
+        # first rename.
+        # We test that pull actually works rather than
+        # just checking branch.conf to avoid logical loop testing nothing
+        new_src = os.path.join(self.src_dir, 'new-src-repo')
+        os.rename(self.src_repo, new_src)
+        branch = BzrBranch(target_dir, new_src)
+        branch('last:1')
+
+        self.assertEquals(branch.parse_conf(), dict(
+            buildout_save_parent_location_1=old_src,
+            parent_location=new_src))
+
     def test_lp_url(self):
         """lp: locations are being rewritten to the actual target."""
         branch = BzrBranch('', 'lp:anybox.recipe.openerp')
