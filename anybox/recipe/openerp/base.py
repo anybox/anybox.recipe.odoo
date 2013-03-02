@@ -634,8 +634,9 @@ class BaseRecipe(object):
             tar.close()
         else:
             url, rev = source[1]
+            options = dict([(k,v) for k,v in self.options.iteritems() if k.startswith(type_spec + '-')])
             vcs.get_update(type_spec, self.openerp_dir, url, rev,
-                           offline=self.offline, clear_retry=self.clear_retry)
+                           offline=self.offline, clear_retry=self.clear_retry, **options)
 
         addons_paths = self.retrieve_addons()
         for path in addons_paths:
