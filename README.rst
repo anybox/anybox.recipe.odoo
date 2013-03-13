@@ -752,6 +752,7 @@ Authors:
 Contributors:
 
  * Yannick Vaucher
+ * Jacques-Etienne Baudoux
 
 The primary branch is on the launchpad:
 

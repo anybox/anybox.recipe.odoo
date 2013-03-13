@@ -6,6 +6,8 @@ Changes
 - launchpad #1154719: freeze-to does not take the correct bzr revision number
 - launchpad #1133248: "need more than 1 value to unpack" if some bzr's
   branch.conf has extra content not in the key = value form
+- support for bzr stacked branches for the server branch in the same
+  way as was already done in addons.
 
 1.5.1 (27-02-2013)
 ------------------
