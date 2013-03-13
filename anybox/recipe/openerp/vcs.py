@@ -270,7 +270,7 @@ class BzrBranch(BaseRepo):
         that we are indeed on this revision
         """
 
-        p = subprocess.Popen(['bzr', 'revno', self.target_dir],
+        p = subprocess.Popen(['bzr', 'revno', '--tree', self.target_dir],
                              stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
         return [p.communicate()[0].strip()]
 

@@ -136,9 +136,14 @@ class HgTestCase(VcsTestCase):
 
     def test_update(self):
         target_dir = os.path.join(self.dst_dir, "clone to update")
-        HgRepo(target_dir, self.src_repo)('default')
-        HgRepo(target_dir, self.src_repo)('future')
+        branch = HgRepo(target_dir, self.src_repo)
+        branch('default')
+        default_heads = branch.parents()
+
+        branch = HgRepo(target_dir, self.src_repo)
+        branch('future')
         self.assertFutureBranch(target_dir)
+        self.assertNotEqual(branch.parents(), default_heads)
 
     def test_hgrc_paths_update(self):
         """Method to update hgrc paths updates them and stores old values"""
@@ -243,25 +248,30 @@ class BzrTestCase(VcsTestCase):
     def test_branch_to_rev(self):
         """Directly clone and update to given revision."""
         target_dir = os.path.join(self.dst_dir, "My branch")
-        BzrBranch(target_dir, self.src_repo)('1')
+        branch = BzrBranch(target_dir, self.src_repo)
+        branch('1')
+
         self.assertTrue(os.path.isdir(target_dir))
         f = open(os.path.join(target_dir, 'tracked'))
         lines = f.readlines()
         f.close()
         self.assertEquals(lines[0].strip(), 'first')
+        self.assertEquals(branch.parents(), ['1'])
 
     def test_update(self):
-        # Setting up a prior branch
+        """Update to a revision that's not the latest available in target"""
         target_dir = os.path.join(self.dst_dir, "clone to update")
-        BzrBranch(target_dir, self.src_repo)('last:1')
+        branch = BzrBranch(target_dir, self.src_repo)('last:1')
 
         # Testing starts here
-        BzrBranch(target_dir, self.src_repo)('1')
+        branch = BzrBranch(target_dir, self.src_repo)
+        branch('1')
         self.assertTrue(os.path.isdir(target_dir))
         f = open(os.path.join(target_dir, 'tracked'))
         lines = f.readlines()
         f.close()
         self.assertEquals(lines[0].strip(), 'first')
+        self.assertEquals(branch.parents(), ['1'])
 
     def test_url_update(self):
         """Method to update branch.conf does it and stores old values"""
