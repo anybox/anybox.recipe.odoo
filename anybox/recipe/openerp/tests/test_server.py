@@ -245,6 +245,8 @@ class TestServer(RecipeTestCase):
         self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'oerp61'),
                          gunicorn='direct',
                          with_devtools='true')
+        self.recipe.options['options.log_handler'] = ":INFO,werkzeug:WARNING"
+        self.recipe.options['options.log_level'] = "WARNING"
         self.recipe.version_detected = "6.1-20121003-233130"
 
         self.install_scripts()
@@ -253,6 +255,11 @@ class TestServer(RecipeTestCase):
                             'gunicorn_openerp',
                             'cron_worker_openerp',
                             ))
+
+        with open(os.path.join(self.buildout_dir, 'etc',
+                               'gunicorn_openerp.conf.py')) as gconf:
+            s = gconf.read()
+            self.assertTrue("[':INFO', 'werkzeug:WARNING']" in s)
 
     def test_install_scripts_soft_deps(self):
         """If a soft requirement is missing, the scripts are still generated.
@@ -283,6 +290,7 @@ class TestServer(RecipeTestCase):
                          gunicorn='direct',
                          with_devtools='true')
         self.recipe.version_detected = "7.0alpha"
+        self.recipe.options['options.log_handler'] = ":INFO,werkzeug:WARNING"
 
         # necessary for openerp-command, will be part of post-release refactor
         self.recipe.options['options.addons_path'] = ''

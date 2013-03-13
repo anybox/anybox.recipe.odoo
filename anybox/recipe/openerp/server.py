@@ -10,6 +10,8 @@ from anybox.recipe.openerp.base import BaseRecipe
 
 logger = logging.getLogger(__name__)
 
+SERVER_COMMA_LIST_OPTIONS = ('log_handler', )
+
 
 class ServerRecipe(BaseRecipe):
     """Recipe for server install and config
@@ -167,13 +169,16 @@ conf = openerp.tools.config
         for opt, val in self.options.items():
             if not opt.startswith(prefix):
                 continue
-            if opt == 'options.log_level':
+            opt = opt[len(prefix):]
+            if opt == 'log_level':
                 # blindly following the sample script
                 val = dict(DEBUG=10, DEBUG_RPC=8, DEBUG_RPC_ANSWER=6,
                            DEBUG_SQL=5, INFO=20, WARNING=30, ERROR=40,
                            CRITICAL=50).get(val.strip().upper(), 30)
+            if opt in SERVER_COMMA_LIST_OPTIONS:
+                val = [i.strip() for i in val.split(',')]
 
-            conf += 'conf[%r] = %r' % (opt[len(prefix):], val) + os.linesep
+            conf += 'conf[%r] = %r' % (opt, val) + os.linesep
         f.write(conf)
         f.close()
 

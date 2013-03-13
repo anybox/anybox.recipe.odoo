@@ -8,6 +8,9 @@ Changes
   branch.conf has extra content not in the key = value form
 - support for bzr stacked branches for the server branch in the same
   way as was already done in addons.
+- launchpad #1152808: corrected parsing of options.log_handler in
+  gunicorn setups (introduced a constant to treat comma-separated list
+  options in gunicorn conf)
 
 1.5.1 (27-02-2013)
 ------------------
