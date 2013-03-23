@@ -650,7 +650,7 @@ class BaseRecipe(object):
         self.read_openerp_setup()
         if type_spec == 'downloadable' and self.version_wanted == 'latest':
             self.nightly_version = self.version_detected.split('-', 1)[1]
-            logger.warn("Detected 'nighlty latest version', you may want to "
+            logger.warn("Detected 'nightly latest version', you may want to "
                         "fix it in your config file for replayability: \n    "
                         "version = " + self.dump_nightly_latest_version())
         is_60 = self.major_version == (6, 0)
