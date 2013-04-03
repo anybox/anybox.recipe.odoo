@@ -147,6 +147,33 @@ class HgRepo(BaseRepo):
                              stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
         return p.communicate()[0].split()
 
+    def have_fixed_revision(self, revstr):
+        """True if revstr is a fixed revision that we already have.
+
+        Fixed in this case means that revstr is not an active branch
+        """
+        revstr = revstr.strip()
+        if revstr == 'tip' or not revstr:
+            return False
+        try:
+            subprocess.check_call(['hg', '--cwd', self.target_dir, 'log',
+                                   '-r', revstr,
+                                   '--template=[hg] found {rev}:{node}\n'],
+                                  env=SUBPROCESS_ENV)
+        except subprocess.CalledProcessError:
+            return False
+
+        # eliminate active branches
+        p = subprocess.Popen(
+            ['hg', '--cwd', self.target_dir, 'branches', '--active'],
+            stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
+        branches = p.communicate()[0]
+        for branch in branches.split(os.linesep):
+            if branch and branch.split()[0] == revstr:
+                return False
+
+        return True
+
     def get_update(self, revision):
         """Ensure that target_dir is a clone of url at specified revision.
 
@@ -174,17 +201,23 @@ class HgRepo(BaseRepo):
         else:
             self.update_hgrc_paths()
             # TODO what if remote repo is actually local fs ?
+            if self.have_fixed_revision(revision):
+                self._update(revision)
+                return
+
             if not offline:
                 logger.info("Pull for hg repo %r ...", target_dir)
                 subprocess.check_call(['hg', '--cwd', target_dir, 'pull'],
                                       env=SUBPROCESS_ENV)
-            if revision:
-                logger.info("Updating %s to revision %s",
-                            target_dir, revision)
-                up_cmd = ['hg', '--cwd', target_dir, 'up']
-                if revision:
-                    up_cmd.extend(['-r', revision])
-                subprocess.check_call(up_cmd, env=SUBPROCESS_ENV)
+            self._update(revision)
+
+    def _update(self, revision):
+        target_dir = self.target_dir
+        logger.info("Updating %s to revision %s", target_dir, revision)
+        up_cmd = ['hg', '--cwd', target_dir, 'up']
+        if revision:
+            up_cmd.extend(['-r', revision])
+        update_check_call(up_cmd, env=SUBPROCESS_ENV)
 
     def archive(self, target_path):
         subprocess.check_call(['hg', '--cwd', self.target_dir,
