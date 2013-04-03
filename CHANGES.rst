@@ -11,6 +11,8 @@ Changes
 - launchpad #1152808: corrected parsing of options.log_handler in
   gunicorn setups (introduced a constant to treat comma-separated list
   options in gunicorn conf)
+- launchpad #1153036: avoid pulls in case the specified revision is
+  a fixed one that we already have (bzr only)
 
 1.5.1 (27-02-2013)
 ------------------

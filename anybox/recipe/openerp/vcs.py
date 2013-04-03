@@ -24,6 +24,14 @@ class UpdateError(subprocess.CalledProcessError):
     """
 
 
+def update_check_call(*args, **kwargs):
+    """Variant on subprocess.check_call that raises UpdateError."""
+    try:
+        subprocess.check_call(*args, **kwargs)
+    except subprocess.CalledProcessError, e:
+        raise UpdateError(e.returncode, e.cmd)
+
+
 class BaseRepo(object):
 
     def __init__(self, target_dir, url, clear_retry=False,
@@ -274,11 +282,34 @@ class BzrBranch(BaseRepo):
                              stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
         return [p.communicate()[0].strip()]
 
+    def _update(self, revision):
+        """Update existing branch at target dir to given revision.
+
+        raise UpdateError in case of problems."""
+
+        update_check_call(['bzr', 'up', '-r', revision, self.target_dir],
+                          env=SUBPROCESS_ENV)
+        logger.info("Updated %r to revision %s", self.target_dir, revision)
+
+    def is_fixed_revision(self, revstr):
+        """True iff the given revision string is for a fixed revision."""
+
+        revstr = revstr.strip()  # one never knows
+        if not revstr or revstr.startswith('last:'):
+            return False
+        try:
+            revno = int(revstr)
+        except TypeError:
+            return True
+        else:
+            return revno >= 0
+
     def get_update(self, revision):
         """Ensure that target_dir is a branch of url at specified revision.
 
         If target_dir already exists, does a simple pull.
         Offline-mode: no branch nor pull, but update.
+        In all cases, an attempt to update is performed before any pull
         """
         target_dir = self.target_dir
         url = self.url
@@ -318,21 +349,21 @@ class BzrBranch(BaseRepo):
                     raise subprocess.CalledProcessError(
                         p.returncode, repr(['bzr', 'break-lock', target_dir]))
 
-            if not offline:
-                self.update_conf()
-                logger.info("Pull for branch %s ...", target_dir)
-                try:
-                    subprocess.check_call(['bzr', 'pull',
-                                           '-d', target_dir],
-                                          env=SUBPROCESS_ENV)
-                except subprocess.CalledProcessError, e:
-                    raise UpdateError(e.returncode, e.cmd)
+            self.update_conf()
 
-            if revision:
-                logger.info("Update to revision %s", revision)
-                subprocess.check_call(
-                    ['bzr', 'up', '-r', revision, target_dir],
-                    env=SUBPROCESS_ENV)
+            if self.is_fixed_revision(revision):
+                try:
+                    self._update(revision)
+                except UpdateError:
+                    if offline:
+                        raise
+                else:
+                    return
+
+            logger.info("Pull for branch %s ...", target_dir)
+            update_check_call(['bzr', 'pull', '-d', target_dir],
+                              env=SUBPROCESS_ENV)
+            self._update(revision)
 
     def archive(self, target_path):
         subprocess.check_call(['bzr', 'export', '-d',

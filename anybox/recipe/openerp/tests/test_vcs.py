@@ -12,6 +12,7 @@ from ConfigParser import ConfigParser
 
 from anybox.recipe.openerp import vcs
 from anybox.recipe.openerp.vcs import HgRepo, BzrBranch, GitRepo, SvnCheckout
+from anybox.recipe.openerp.vcs import UpdateError
 
 COMMIT_USER_NAME = 'Test'
 COMMIT_USER_EMAIL = 'test@example.org'
@@ -224,39 +225,45 @@ class BzrTestCase(VcsTestCase):
         f.close()
         subprocess.call(['bzr', 'commit', '-m', 'last version'])
 
-    def test_branch(self):
-        target_dir = os.path.join(self.dst_dir, "My branch")
-        BzrBranch(target_dir, self.src_repo)('last:1')
+    def assertRevision(self, branch, rev, first_line):
+        """Assert that branch is at prescribed revision
 
+        Double check with expected first line of 'tracked' file."""
+        target_dir = branch.target_dir
         self.assertTrue(os.path.isdir(target_dir))
         f = open(os.path.join(target_dir, 'tracked'))
         lines = f.readlines()
         f.close()
-        self.assertEquals(lines[0].strip(), 'last')
+        self.assertEquals(lines[0].strip(), first_line)
+        self.assertEquals(branch.parents(), [rev])
+
+    def assertRevision1(self, branch):
+        """Assert that branch is at revision 1."""
+        self.assertRevision(branch, '1', 'first')
+
+    def assertRevision2(self, branch):
+        """Assert that branch is at revision 2."""
+        self.assertRevision(branch, '2', 'last')
+
+    def test_branch(self):
+        target_dir = os.path.join(self.dst_dir, "My branch")
+        branch = BzrBranch(target_dir, self.src_repo)
+        branch('last:1')
+        self.assertRevision2(branch)
 
     def test_branch_stacked(self):
         target_dir = os.path.join(self.dst_dir, "My branch")
-        BzrBranch(target_dir, self.src_repo,
-                  **{'bzr-stacked-branches': 'True'})('last:1')
-
-        self.assertTrue(os.path.isdir(target_dir))
-        f = open(os.path.join(target_dir, 'tracked'))
-        lines = f.readlines()
-        f.close()
-        self.assertEquals(lines[0].strip(), 'last')
+        branch = BzrBranch(target_dir, self.src_repo,
+                           **{'bzr-stacked-branches': 'True'})
+        branch('last:1')
+        self.assertRevision2(branch)
 
     def test_branch_to_rev(self):
         """Directly clone and update to given revision."""
         target_dir = os.path.join(self.dst_dir, "My branch")
         branch = BzrBranch(target_dir, self.src_repo)
         branch('1')
-
-        self.assertTrue(os.path.isdir(target_dir))
-        f = open(os.path.join(target_dir, 'tracked'))
-        lines = f.readlines()
-        f.close()
-        self.assertEquals(lines[0].strip(), 'first')
-        self.assertEquals(branch.parents(), ['1'])
+        self.assertRevision1(branch)
 
     def test_update(self):
         """Update to a revision that's not the latest available in target"""
@@ -266,12 +273,36 @@ class BzrTestCase(VcsTestCase):
         # Testing starts here
         branch = BzrBranch(target_dir, self.src_repo)
         branch('1')
-        self.assertTrue(os.path.isdir(target_dir))
-        f = open(os.path.join(target_dir, 'tracked'))
-        lines = f.readlines()
-        f.close()
-        self.assertEquals(lines[0].strip(), 'first')
-        self.assertEquals(branch.parents(), ['1'])
+        self.assertRevision1(branch)
+
+    def test_update_offline(self):
+        """In offline mode, update to a revision that's already there."""
+        target_dir = os.path.join(self.dst_dir, "clone to update")
+        branch = BzrBranch(target_dir, self.src_repo)('last:1')
+
+        # Testing starts here
+        branch = BzrBranch(target_dir, self.src_repo, offline=True)
+        branch('1')
+        self.assertRevision1(branch)
+
+    def test_update_needs_pull(self):
+        """Update to a revision that needs to be pulled from target."""
+        target_dir = os.path.join(self.dst_dir, "clone to update")
+        branch = BzrBranch(target_dir, self.src_repo)('1')
+
+        # Testing starts here
+        branch = BzrBranch(target_dir, self.src_repo)
+        branch('2')
+        self.assertRevision2(branch)
+
+    def test_update_needs_pull_offline(self):
+        """In offline mode, update to a revision that needs to be pulled."""
+        target_dir = os.path.join(self.dst_dir, "clone to update")
+        branch = BzrBranch(target_dir, self.src_repo)('1')
+
+        # Testing starts here
+        branch = BzrBranch(target_dir, self.src_repo, offline=True)
+        self.assertRaises(UpdateError, branch, '2')
 
     def test_url_update(self):
         """Method to update branch.conf does it and stores old values"""
@@ -360,18 +391,15 @@ class BzrTestCase(VcsTestCase):
         BzrBranch(target_dir, self.src_repo)('last:1')
 
         # Testing starts here
-        BzrBranch(target_dir, self.src_repo, clear_locks=True)('1')
-        self.assertTrue(os.path.isdir(target_dir))
-        f = open(os.path.join(target_dir, 'tracked'))
-        lines = f.readlines()
-        f.close()
-        self.assertEquals(lines[0].strip(), 'first')
+        branch = BzrBranch(target_dir, self.src_repo, clear_locks=True)
+        branch('1')
+        self.assertRevision1(branch)
 
     def test_failed(self):
         target_dir = os.path.join(self.dst_dir, "My branch")
         branch = BzrBranch(target_dir, '/does-not-exist')
-        self.assertRaises(subprocess.CalledProcessError, branch.get_update,
-                          'default')
+        self.assertRaises(subprocess.CalledProcessError,
+                          branch.get_update, 'default')
 
 
 class GitTestCase(VcsTestCase):
