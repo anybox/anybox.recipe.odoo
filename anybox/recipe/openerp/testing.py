@@ -61,6 +61,8 @@ class RecipeTestCase(unittest.TestCase):
 
     def setUp(self):
         b_dir = self.buildout_dir = mkdtemp('test_oerp_base_recipe')
+        eggs_dir = os.path.join(b_dir, 'eggs')
+        os.mkdir(eggs_dir)
         develop_dir = os.path.join(b_dir, 'develop-eggs')
         os.mkdir(develop_dir)
         self.buildout = {}
@@ -71,7 +73,7 @@ class RecipeTestCase(unittest.TestCase):
             'bin-directory': os.path.join(b_dir, 'bin'),
             'find-links': '',
             'allow-hosts': '',
-            'eggs-directory': 'eggs',
+            'eggs-directory': eggs_dir,
             'develop-eggs-directory': develop_dir,
             'python': 'main_python',
         }
@@ -81,6 +83,9 @@ class RecipeTestCase(unittest.TestCase):
         # temporary monkey patch of easy_install to avoid actual requests to
         # PyPI (offline mode currently does not protect against that, even
         # though I checked that it is recognized by zc.recipe.egg
+        # TODO this does not seem to really work in some context
+        # (Debian wheezy buildslave in a virtualenv, with zc.recipe.egg 2.0.0a3
+        # we see nose being downloaded several times)
         self.unreachable_distributions = set()
         Installer._orig_obtain = Installer._obtain
 
