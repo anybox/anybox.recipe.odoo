@@ -368,6 +368,16 @@ class BzrTestCase(VcsTestCase):
         branch = BzrBranch(target_dir, self.src_repo, offline=True)
         self.assertRaises(UpdateError, branch, '2')
 
+    def test_archive(self):
+        target_dir = os.path.join(self.dst_dir, "clone to archive")
+        branch = BzrBranch(target_dir, self.src_repo)
+        branch('1')
+
+        archive_dir = os.path.join(self.dst_dir, "archive directory")
+        branch.archive(archive_dir)
+        with open(os.path.join(archive_dir, 'tracked')) as f:
+            self.assertEquals(f.readlines()[0].strip(), 'first')
+
     def test_url_update(self):
         """Method to update branch.conf does it and stores old values"""
         # Setting up a prior branch

@@ -399,8 +399,9 @@ class BzrBranch(BaseRepo):
             self._update(revision)
 
     def archive(self, target_path):
-        subprocess.check_call(['bzr', 'export', '-d',
-                               self.target_dir, target_path])
+        with working_directory_keeper:
+            os.chdir(self.target_dir)
+            subprocess.check_call(['bzr', 'export', target_path])
 
 
 SUPPORTED['bzr'] = BzrBranch
