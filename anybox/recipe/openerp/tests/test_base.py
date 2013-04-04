@@ -7,6 +7,7 @@ from anybox.recipe.openerp.server import BaseRecipe
 from anybox.recipe.openerp.base import main_software
 from anybox.recipe.openerp.base import GP_VCS_EXTEND_DEVELOP
 from anybox.recipe.openerp.testing import RecipeTestCase
+from ..testing import COMMIT_USER_FULL
 
 
 class TestingRecipe(BaseRecipe):
@@ -165,7 +166,9 @@ class TestBaseRecipe(RecipeTestCase):
         with open(os.path.join(repo_path, 'somefile'), 'w') as f:
             f.write('content')
         subprocess.check_call(['hg', '--cwd', repo_path,
-                               'commit', '-A', '-m', 'somerev'])
+                               'commit', '-A', '-m', 'somerev',
+                               '-u', COMMIT_USER_FULL,
+                               ])
 
         rev = self.recipe._freeze_vcs_source('hg', repo_path)
         hg = subprocess.Popen(['hg', '--cwd', repo_path, 'diff', '-r', rev],
@@ -184,7 +187,9 @@ class TestBaseRecipe(RecipeTestCase):
         with open(os.path.join(repo_path, 'somefile'), 'w') as f:
             f.write('content')
         subprocess.check_call(['hg', '--cwd', repo_path,
-                               'commit', '-A', '-m', 'somerev'])
+                               'commit', '-A', '-m', 'somerev',
+                               '-u', COMMIT_USER_FULL,
+                               ])
 
         # modification on tracked file
         with open(os.path.join(repo_path, 'somefile'), 'w') as f:

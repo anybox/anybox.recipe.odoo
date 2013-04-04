@@ -10,13 +10,10 @@ import tempfile
 import subprocess
 from ConfigParser import ConfigParser
 
-from anybox.recipe.openerp import vcs
-from anybox.recipe.openerp.vcs import HgRepo, BzrBranch, GitRepo, SvnCheckout
-from anybox.recipe.openerp.vcs import UpdateError
-
-COMMIT_USER_NAME = 'Test'
-COMMIT_USER_EMAIL = 'test@example.org'
-COMMIT_USER_FULL = '%s %s' % (COMMIT_USER_NAME, COMMIT_USER_EMAIL)
+from .. import vcs
+from ..vcs import HgRepo, BzrBranch, GitRepo, SvnCheckout
+from ..vcs import UpdateError
+from ..testing import COMMIT_USER_FULL, COMMIT_USER_EMAIL, COMMIT_USER_NAME
 
 
 class VcsTestCase(unittest.TestCase):

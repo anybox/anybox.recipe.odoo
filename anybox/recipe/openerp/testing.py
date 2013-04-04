@@ -8,6 +8,10 @@ from zc.buildout.easy_install import Installer
 from anybox.recipe.openerp import vcs
 from anybox.recipe.openerp import utils
 
+COMMIT_USER_NAME = 'Test'
+COMMIT_USER_EMAIL = 'test@example.org'
+COMMIT_USER_FULL = '%s %s' % (COMMIT_USER_NAME, COMMIT_USER_EMAIL)
+
 
 class FakeRepo(vcs.BaseRepo):
 
