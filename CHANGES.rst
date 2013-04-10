@@ -1,6 +1,10 @@
 Changes
 ~~~~~~~
 
+1.5.3 (unreleased)
+------------------
+
+
 1.5.2 (2013-04-06)
 ------------------
 - launchpad #1154719: freeze-to does not take the correct bzr revision number
