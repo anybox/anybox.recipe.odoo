@@ -324,6 +324,18 @@ class BzrBranch(BaseRepo):
                           env=SUBPROCESS_ENV)
         logger.info("Updated %r to revision %s", self.target_dir, revision)
 
+    def get_revid(self, revision):
+        with working_directory_keeper:
+            os.chdir(self.target_dir)
+            p = subprocess.Popen(['bzr', 'log', '--show-ids', '-r', revision],
+                                 stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
+            log = p.communicate()[0].split(os.linesep)
+            prefix = 'revision-id:'
+            for line in log:
+                if line.startswith(prefix):
+                    return line[len(prefix):].strip()
+            raise RuntimeError("could not find revision id for %r" % revision)
+
     def is_fixed_revision(self, revstr):
         """True iff the given revision string is for a fixed revision."""
 
@@ -332,8 +344,8 @@ class BzrBranch(BaseRepo):
             return False
         try:
             revno = int(revstr)
-        except TypeError:
-            return True
+        except ValueError:
+            return True  # a string is either a tag or a revid: spec
         else:
             return revno >= 0
 

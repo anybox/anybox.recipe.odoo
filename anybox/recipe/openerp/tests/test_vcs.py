@@ -346,6 +346,30 @@ class BzrTestCase(VcsTestCase):
         branch('1')
         self.assertRevision1(branch)
 
+    def test_update_offline_revid(self):
+        """In offline mode, update to an avalailable rev, identified by revid.
+        """
+        target_dir = os.path.join(self.dst_dir, "clone to update")
+        branch = BzrBranch(target_dir, self.src_repo)('last:1')
+
+        # Testing starts here
+        branch = BzrBranch(target_dir, self.src_repo, offline=True)
+        revid = branch.get_revid('1')
+        branch('revid:' + revid)
+        self.assertRevision1(branch)
+
+    def test_update_tag(self):
+        """Update to an avalailable rev, identified by tag.
+        """
+        os.chdir(self.src_repo)
+        subprocess.check_call(['bzr', 'tag', '-r', '1', 'sometag'])
+        target_dir = os.path.join(self.dst_dir, "clone to update")
+
+        # Testing starts here
+        branch = BzrBranch(target_dir, self.src_repo)
+        branch('sometag')
+        self.assertRevision1(branch)
+
     def test_update_needs_pull(self):
         """Update to a revision that needs to be pulled from target."""
         target_dir = os.path.join(self.dst_dir, "clone to update")
