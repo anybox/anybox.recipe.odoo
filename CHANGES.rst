@@ -1,7 +1,7 @@
 Changes
 ~~~~~~~
 
-1.5.3 (unreleased)
+1.5.3 (2013-04-11)
 ------------------
 - launchpad #1166788: regression with bzr "revid:" revision specifications
 
