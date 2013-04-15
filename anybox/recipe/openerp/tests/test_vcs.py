@@ -278,7 +278,7 @@ class HgTestCase(VcsTestCase):
                           repo.get_update, 'default')
 
 
-class BzrTestCase(VcsTestCase):
+class BzrBaseTestCase(VcsTestCase):
 
     def create_src(self):
         os.chdir(self.src_dir)
@@ -316,6 +316,9 @@ class BzrTestCase(VcsTestCase):
         """Assert that branch is at revision 2."""
         self.assertRevision(branch, '2', 'last')
 
+
+class BzrTestCase(BzrBaseTestCase):
+
     def test_branch(self):
         target_dir = os.path.join(self.dst_dir, "My branch")
         branch = BzrBranch(target_dir, self.src_repo)
@@ -346,32 +349,6 @@ class BzrTestCase(VcsTestCase):
         branch('1')
         self.assertRevision1(branch)
 
-    def test_update_offline(self):
-        """In offline mode, update to a revision that's already there."""
-        target_dir = os.path.join(self.dst_dir, "clone to update")
-        branch = BzrBranch(target_dir, self.src_repo)('last:1')
-
-        # Testing starts here
-        branch = BzrBranch(target_dir, self.src_repo, offline=True)
-
-        def _pull():
-            raise UpdateError("Should not update !")
-        branch._pull = _pull
-        branch('1')
-        self.assertRevision1(branch)
-
-    def test_update_offline_revid(self):
-        """In offline mode, update to an avalailable rev, identified by revid.
-        """
-        target_dir = os.path.join(self.dst_dir, "clone to update")
-        branch = BzrBranch(target_dir, self.src_repo)('last:1')
-
-        # Testing starts here
-        branch = BzrBranch(target_dir, self.src_repo, offline=True)
-        revid = branch.get_revid('1')
-        branch('revid:' + revid)
-        self.assertRevision1(branch)
-
     def test_update_tag(self):
         """Update to an avalailable rev, identified by tag.
         """
@@ -393,26 +370,6 @@ class BzrTestCase(VcsTestCase):
         branch = BzrBranch(target_dir, self.src_repo)
         branch('2')
         self.assertRevision2(branch)
-
-    def test_update_needs_pull_offline(self):
-        """In offline mode, update to a revision that needs to be pulled."""
-        target_dir = os.path.join(self.dst_dir, "clone to update")
-        branch = BzrBranch(target_dir, self.src_repo)('1')
-
-        # Testing starts here
-        branch = BzrBranch(target_dir, self.src_repo, offline=True)
-        self.assertRaises(UpdateError, branch, '2')
-
-    def test_update_last_offline(self):
-        """In offline mode, update to a last:1 revision."""
-        target_dir = os.path.join(self.dst_dir, "clone to update")
-        branch = BzrBranch(target_dir, self.src_repo)('1')
-
-        # Testing starts here
-        branch = BzrBranch(target_dir, self.src_repo, offline=True)
-
-        branch('last:1')
-        self.assertRevision1(branch)
 
     def test_archive(self):
         target_dir = os.path.join(self.dst_dir, "clone to archive")
@@ -520,6 +477,51 @@ class BzrTestCase(VcsTestCase):
         branch = BzrBranch(target_dir, '/does-not-exist')
         self.assertRaises(subprocess.CalledProcessError,
                           branch.get_update, 'default')
+
+
+class BzrOfflineTestCase(BzrBaseTestCase):
+
+    def make_local_branch(self, path, initial_rev):
+        """Make a local branch of the source at initial_rev and forbid pulls.
+        """
+        target_dir = os.path.join(self.dst_dir, path)
+        # initial branching (non offline
+        BzrBranch(target_dir, self.src_repo)(initial_rev)
+
+        # crippled offline branch
+        branch = BzrBranch(target_dir, self.src_repo, offline=True)
+
+        def _pull():
+            raise UpdateError("Should not pull !")
+
+        branch._pull = _pull
+        return branch
+
+    def test_update_needs_pull(self):
+        """[offline mode] updating to a non available rev raises UpdateError.
+        """
+        branch = self.make_local_branch("clone to update", '1')
+        self.assertRaises(UpdateError, branch, '2')
+
+    def test_update_last(self):
+        """[offline mode] update to a last:1 rev does nothing."""
+        branch = self.make_local_branch("clone to update", '1')
+        branch('last:1')
+        self.assertRevision1(branch)
+
+    def test_update_available_revno(self):
+        """[offline mode] update to an available revno works"""
+        branch = self.make_local_branch("clone to update", 'last:1')
+        branch('1')
+        self.assertRevision1(branch)
+
+    def test_update_available_revid(self):
+        """[offline mode] update to an available revid works.
+        """
+        branch = self.make_local_branch("clone to update", 'last:1')
+        revid = branch.get_revid('1')
+        branch('revid:' + revid)
+        self.assertRevision1(branch)
 
 
 class GitTestCase(VcsTestCase):
