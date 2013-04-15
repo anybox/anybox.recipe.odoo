@@ -3,6 +3,7 @@ Changes
 
 1.54 (unreleased)
 -----------------
+- launchpad #1169124: regression: offline mode not honoured with bzr
 
 1.5.3 (2013-04-11)
 ------------------

@@ -402,8 +402,9 @@ class BzrBranch(BaseRepo):
                 except UpdateError:
                     if offline:
                         raise
-                else:
-                    return
+            elif offline:
+                logger.info("Offline mode, no pull for revision %r", revision)
+                return
 
             logger.info("Pull for branch %s ...", target_dir)
             update_check_call(['bzr', 'pull', '-d', target_dir],

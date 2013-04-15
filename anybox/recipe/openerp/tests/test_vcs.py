@@ -389,6 +389,16 @@ class BzrTestCase(VcsTestCase):
         branch = BzrBranch(target_dir, self.src_repo, offline=True)
         self.assertRaises(UpdateError, branch, '2')
 
+    def test_update_last_offline(self):
+        """In offline mode, update to a last:1 revision."""
+        target_dir = os.path.join(self.dst_dir, "clone to update")
+        branch = BzrBranch(target_dir, self.src_repo)('1')
+
+        # Testing starts here
+        branch = BzrBranch(target_dir, self.src_repo, offline=True)
+        branch('last:1')
+        self.assertRevision1(branch)
+
     def test_archive(self):
         target_dir = os.path.join(self.dst_dir, "clone to archive")
         branch = BzrBranch(target_dir, self.src_repo)
