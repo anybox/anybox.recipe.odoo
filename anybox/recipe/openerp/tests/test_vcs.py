@@ -207,6 +207,16 @@ class HgTestCase(VcsTestCase):
         branch = HgRepo(target_dir, self.src_repo, offline=True)
         self.assertRaises(UpdateError, branch, 'future')
 
+    def test_offline_update_branch_head(self):
+        """In offline mode, test update on a fixed rev that we already have."""
+        target_dir = os.path.join(self.dst_dir, "clone to update")
+        branch = HgRepo(target_dir, self.src_repo)
+        branch('0')
+
+        branch = HgRepo(target_dir, self.src_repo, offline=True)
+        branch('default')
+        self.assertRevision(branch, '0')
+
     def test_hgrc_paths_update(self):
         """Method to update hgrc paths updates them and stores old values"""
         target_dir = os.path.join(self.dst_dir, "clone to update")
