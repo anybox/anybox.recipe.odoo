@@ -399,17 +399,21 @@ class BzrBranch(BaseRepo):
             if self.is_fixed_revision(revision):
                 try:
                     self._update(revision)
+                    return
                 except UpdateError:
                     if offline:
                         raise
-            elif offline:
-                logger.info("Offline mode, no pull for revision %r", revision)
-                return
 
-            logger.info("Pull for branch %s ...", target_dir)
-            update_check_call(['bzr', 'pull', '-d', target_dir],
-                              env=SUBPROCESS_ENV)
+            if offline:
+                logger.info("Offline mode, no pull for revision %r", revision)
+            else:
+                self._pull()
             self._update(revision)
+
+    def _pull(self):
+        logger.info("Pull for branch %s ...", self.target_dir)
+        update_check_call(['bzr', 'pull', '-d', self.target_dir],
+                          env=SUBPROCESS_ENV)
 
     def archive(self, target_path):
         with working_directory_keeper:

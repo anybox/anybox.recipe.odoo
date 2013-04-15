@@ -353,6 +353,10 @@ class BzrTestCase(VcsTestCase):
 
         # Testing starts here
         branch = BzrBranch(target_dir, self.src_repo, offline=True)
+
+        def _pull():
+            raise UpdateError("Should not update !")
+        branch._pull = _pull
         branch('1')
         self.assertRevision1(branch)
 
@@ -406,6 +410,7 @@ class BzrTestCase(VcsTestCase):
 
         # Testing starts here
         branch = BzrBranch(target_dir, self.src_repo, offline=True)
+
         branch('last:1')
         self.assertRevision1(branch)
 
