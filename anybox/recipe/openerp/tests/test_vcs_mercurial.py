@@ -9,7 +9,8 @@ from ..vcs import HgRepo
 from ..vcs import UpdateError
 
 
-class HgTestCase(VcsTestCase):
+class HgBaseTestCase(VcsTestCase):
+    """Common utilities for Mercurial test cases."""
 
     def create_src(self):
 
@@ -29,13 +30,31 @@ class HgTestCase(VcsTestCase):
         subprocess.call(['hg', 'commit', '-m', 'in branch',
                          '-u', COMMIT_USER_FULL])
 
-    def assertFutureBranch(self, target_dir):
+    def make_clone(self, path, initial_rev):
+        """Make a clone of the source at initial_rev.
+        """
+        target_dir = os.path.join(self.dst_dir, initial_rev)
+        repo = HgRepo(target_dir, self.src_repo)
+        repo(initial_rev)
+        return repo
+
+    def assertFutureBranch(self, repo):
         """Check that we are on the 'future' branch in target_dir repo."""
+        target_dir = repo.target_dir
         self.assertTrue(os.path.isdir(target_dir))
         f = open(os.path.join(target_dir, 'tracked'))
         lines = f.readlines()
         f.close()
         self.assertEquals(lines[0].strip(), 'future')
+
+    def assertDefaultBranch(self, repo):
+        """Check that we are on the 'future' branch in target_dir repo."""
+        target_dir = repo.target_dir
+        self.assertTrue(os.path.isdir(target_dir))
+        f = open(os.path.join(target_dir, 'tracked'))
+        lines = f.readlines()
+        f.close()
+        self.assertEquals(lines[0].strip(), 'default')
 
     def assertRevision(self, branch, revno):
         p = subprocess.Popen(['hg', '--cwd', branch.target_dir,
@@ -43,43 +62,34 @@ class HgTestCase(VcsTestCase):
                              stdout=subprocess.PIPE)
         self.assertEquals(p.communicate()[0].split(), [str(revno)])
 
-    def test_clone(self):
-        target_dir = os.path.join(self.dst_dir, "My clone")
-        HgRepo(target_dir, self.src_repo)('default')
 
-        self.assertTrue(os.path.isdir(target_dir))
-        f = open(os.path.join(target_dir, 'tracked'))
-        lines = f.readlines()
-        f.close()
-        self.assertEquals(lines[0].strip(), 'default')
+class HgTestCase(HgBaseTestCase):
+
+    def test_clone(self):
+        repo = self.make_clone("My clone", 'default')
+        self.assertDefaultBranch(repo)
 
     def test_clone_to_rev(self):
         """Directly clone and update to given revision."""
-        target_dir = os.path.join(self.dst_dir, "My clone")
-        HgRepo(target_dir, self.src_repo)('future')
-        self.assertFutureBranch(target_dir)
+        repo = self.make_clone("My clone", 'future')
+        self.assertFutureBranch(repo)
 
     def test_update(self):
-        target_dir = os.path.join(self.dst_dir, "clone to update")
-        branch = HgRepo(target_dir, self.src_repo)
-        branch('default')
-        default_heads = branch.parents()
+        repo = self.make_clone("clone to update", 'default')
+        default_heads = repo.parents()
 
-        branch = HgRepo(target_dir, self.src_repo)
-        branch('future')
-        self.assertFutureBranch(target_dir)
-        self.assertNotEqual(branch.parents(), default_heads)
+        repo('future')
+        self.assertFutureBranch(repo)
+        self.assertNotEqual(repo.parents(), default_heads)
 
     def test_update_same_branch(self):
         """Test that updating on a revision that we have but is a branch works.
 
         This should trigger a pull
         """
-        target_dir = os.path.join(self.dst_dir, "clone to update")
-        branch = HgRepo(target_dir, self.src_repo)
-        branch('future')
+        repo = self.make_clone("clone to update", 'future')
 
-        self.assertFutureBranch(self.src_repo)
+        # let's make a new revision in the remote repo
         newfile = os.path.join(self.src_repo, 'newfile')
         with open(newfile, 'w') as f:
             f.write('something')
@@ -87,64 +97,26 @@ class HgTestCase(VcsTestCase):
                                "new commit on future branch",
                                '-u', COMMIT_USER_FULL])
 
-        branch('future')
-        self.assertRevision(branch, 2)  # would not have worked without a pull
+        repo('future')
+        self.assertFutureBranch(repo)
+        self.assertRevision(repo, 2)  # would not have worked without a pull
 
     def test_update_fixed_rev(self):
         """Test update on a fixed rev that we already have."""
-        target_dir = os.path.join(self.dst_dir, "clone to update")
-        branch = HgRepo(target_dir, self.src_repo)
-        branch('default')
-
-        branch = HgRepo(target_dir, self.src_repo)
-        branch('0')
-        self.assertRevision(branch, 0)
+        repo = self.make_clone("clone to update", 'default')
+        repo('0')
+        self.assertRevision(repo, 0)
 
     def test_update_missing_fixed_rev(self):
         """Test update on a fixed rev that we don't have."""
-        target_dir = os.path.join(self.dst_dir, "clone to update")
-        branch = HgRepo(target_dir, self.src_repo)
-        branch('default')
-
-        branch = HgRepo(target_dir, self.src_repo)
-        branch('future')
-        self.assertRevision(branch, 1)
-
-    def test_offline_update_fixed_rev(self):
-        """In offline mode, test update on a fixed rev that we already have."""
-        target_dir = os.path.join(self.dst_dir, "clone to update")
-        branch = HgRepo(target_dir, self.src_repo)
-        branch('default')
-
-        branch = HgRepo(target_dir, self.src_repo, offline=True)
-        branch('0')
-        self.assertRevision(branch, 0)
-
-    def test_offline_update_missing_fixed_rev(self):
-        """In offline mode, test update on a fixed rev that we don't have."""
-        target_dir = os.path.join(self.dst_dir, "clone to update")
-        branch = HgRepo(target_dir, self.src_repo)
-        branch('default')
-
-        branch = HgRepo(target_dir, self.src_repo, offline=True)
-        self.assertRaises(UpdateError, branch, 'future')
-
-    def test_offline_update_branch_head(self):
-        """In offline mode, test update on a fixed rev that we already have."""
-        target_dir = os.path.join(self.dst_dir, "clone to update")
-        branch = HgRepo(target_dir, self.src_repo)
-        branch('0')
-
-        branch = HgRepo(target_dir, self.src_repo, offline=True)
-        branch('default')
-        self.assertRevision(branch, '0')
+        repo = self.make_clone("clone to update", 'default')
+        repo('1')
+        self.assertRevision(repo, 1)
 
     def test_hgrc_paths_update(self):
         """Method to update hgrc paths updates them and stores old values"""
-        target_dir = os.path.join(self.dst_dir, "clone to update")
-        repo = HgRepo(target_dir, self.src_repo)
-        # initial cloning
-        repo('default')
+        repo = self.make_clone("clone to update", 'default')
+        target_dir = repo.target_dir
 
         # first rename
         new_src = os.path.join(self.src_dir, 'new-src-repo')
@@ -167,16 +139,15 @@ class HgTestCase(VcsTestCase):
 
     def test_url_change(self):
         """HgRepo adapts itself to changes in source URL."""
-        target_dir = os.path.join(self.dst_dir, "clone to update")
-        repo = HgRepo(target_dir, self.src_repo)
-        # initial cloning
-        repo('default')
+        repo = self.make_clone("clone to update", 'default')
+        target_dir = repo.target_dir
 
         # rename and update
         new_src = os.path.join(self.src_dir, 'new-src-repo')
         os.rename(self.src_repo, new_src)
-        HgRepo(target_dir, new_src)('future')
-        self.assertFutureBranch(target_dir)
+        repo = HgRepo(target_dir, new_src)
+        repo('future')
+        self.assertFutureBranch(repo)
 
     def test_uncommitted_changes(self):
         """HgRepo can detect uncommitted changes."""
@@ -198,3 +169,34 @@ class HgTestCase(VcsTestCase):
         repo = HgRepo(target_dir, '/does-not-exit')
         self.assertRaises(subprocess.CalledProcessError,
                           repo.get_update, 'default')
+
+
+class HgOfflineTestCase(HgBaseTestCase):
+
+    def make_clone(self, path, initial_rev):
+        """Make a local branch of the source at initial_rev and forbid pulls.
+        """
+        repo = HgBaseTestCase.make_clone(self, path, initial_rev)
+        repo.offline = True
+
+        def _pull():
+            raise UpdateError("Should not pull !")
+        repo._pull = _pull
+        return repo
+
+    def test_update_fixed_rev(self):
+        """[offline mode] test update on a fixed rev that we already have."""
+        repo = self.make_clone("clone to update", 'default')
+        repo('0')
+        self.assertRevision(repo, 0)
+
+    def test_update_missing_fixed_rev(self):
+        """[offline mode] update on a fixed rev that we don't have raises."""
+        repo = self.make_clone("clone to update", 'default')
+        self.assertRaises(UpdateError, repo, 'future')
+
+    def test_update_branch_head(self):
+        """[offline mode] update on branch head should not pull"""
+        repo = self.make_clone("clone to update", '0')
+        repo('default')
+        self.assertRevision(repo, '0')
