@@ -206,10 +206,13 @@ class HgRepo(BaseRepo):
                 return
 
             if not offline:
-                logger.info("Pull for hg repo %r ...", target_dir)
-                subprocess.check_call(['hg', '--cwd', target_dir, 'pull'],
-                                      env=SUBPROCESS_ENV)
+                self._pull()
             self._update(revision)
+
+    def _pull(self):
+        logger.info("Pull for hg repo %r ...", self.target_dir)
+        subprocess.check_call(['hg', '--cwd', self.target_dir, 'pull'],
+                              env=SUBPROCESS_ENV)
 
     def _update(self, revision):
         target_dir = self.target_dir
