@@ -103,3 +103,25 @@ class RecipeTestCase(unittest.TestCase):
         clear_vcs_log()
         shutil.rmtree(self.buildout_dir)
         Installer._obtain = Installer._orig_obtain
+
+
+class VcsTestCase(unittest.TestCase):
+    """Common fixture"""
+
+    def setUp(self):
+        sandbox = self.sandbox = mkdtemp('test_oerp_recipe_vcs')
+        src = self.src_dir = os.path.join(sandbox, 'src')
+        dst = self.dst_dir = os.path.join(sandbox, 'dest')
+        os.mkdir(src)
+        os.mkdir(dst)
+        self.create_src()
+
+    def create_src(self):
+        """Create a source repository to run most tests.
+
+        To be implemented in subclasses."""
+        raise NotImplementedError
+
+    def tearDown(self):
+        print "TEARDOWN remove " + self.sandbox
+        shutil.rmtree(self.sandbox)
