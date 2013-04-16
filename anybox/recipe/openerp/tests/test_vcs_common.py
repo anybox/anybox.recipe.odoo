@@ -57,4 +57,3 @@ class CommonTestCase(testing.VcsTestCase):
         # no such wild retry in offline mode
         self.assertRaises(vcs.UpdateError, vcs.get_update, 'hg_fails_updates',
                           repo_path, self.src_repo, 'default', offline=True)
-
