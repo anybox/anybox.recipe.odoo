@@ -5,15 +5,14 @@ import subprocess
 from ConfigParser import ConfigParser
 from ..testing import COMMIT_USER_FULL
 from ..testing import VcsTestCase
-from ..vcs import HgRepo
-from ..vcs import UpdateError
+from ..hg import HgRepo
+from ..base import UpdateError
 
 
 class HgBaseTestCase(VcsTestCase):
     """Common utilities for Mercurial test cases."""
 
     def create_src(self):
-
         os.chdir(self.src_dir)
         subprocess.call(['hg', 'init', 'src-repo'])
         self.src_repo = os.path.join(self.src_dir, 'src-repo')
@@ -93,7 +92,8 @@ class HgTestCase(HgBaseTestCase):
         newfile = os.path.join(self.src_repo, 'newfile')
         with open(newfile, 'w') as f:
             f.write('something')
-        subprocess.check_call(['hg', 'commit', '-A', '-m',
+        subprocess.check_call(['hg', '--cwd', self.src_repo,
+                               'commit', '-A', '-m',
                                "new commit on future branch",
                                '-u', COMMIT_USER_FULL])
 

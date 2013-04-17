@@ -4,8 +4,9 @@ import os
 import subprocess
 from ..testing import COMMIT_USER_FULL
 from ..testing import VcsTestCase
-from ..vcs import BzrBranch
-from ..vcs import UpdateError
+from ..bzr import BzrBranch
+from ..bzr import working_directory_keeper
+from ..base import UpdateError
 
 
 class BzrBaseTestCase(VcsTestCase):
@@ -83,8 +84,10 @@ class BzrTestCase(BzrBaseTestCase):
     def test_update_tag(self):
         """Update to an avalailable rev, identified by tag.
         """
-        os.chdir(self.src_repo)
-        subprocess.check_call(['bzr', 'tag', '-r', '1', 'sometag'])
+        with working_directory_keeper:
+            os.chdir(self.src_repo)
+            subprocess.check_call(['bzr', 'tag', '-r', '1', 'sometag'])
+
         target_dir = os.path.join(self.dst_dir, "clone to update")
 
         # Testing starts here

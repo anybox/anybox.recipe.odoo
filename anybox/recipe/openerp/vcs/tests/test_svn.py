@@ -3,7 +3,7 @@
 import os
 import subprocess
 from ..testing import VcsTestCase
-from ..vcs import SvnCheckout
+from ..svn import SvnCheckout
 
 
 class SvnTestCase(VcsTestCase):

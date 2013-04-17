@@ -5,7 +5,7 @@ import subprocess
 from ..testing import COMMIT_USER_EMAIL
 from ..testing import COMMIT_USER_NAME
 from ..testing import VcsTestCase
-from ..vcs import GitRepo
+from ..git import GitRepo
 
 
 class GitTestCase(VcsTestCase):

@@ -5,8 +5,8 @@ import sys
 import shutil
 from tempfile import mkdtemp
 from zc.buildout.easy_install import Installer
-from anybox.recipe.openerp import vcs
-from anybox.recipe.openerp import utils
+from . import vcs
+from . import utils
 
 COMMIT_USER_NAME = 'Test'
 COMMIT_USER_EMAIL = 'test@example.org'
@@ -47,9 +47,10 @@ class FakeRepo(vcs.base.BaseRepo):
         with open(os.path.join(target, '.fake_archival.txt'), 'w') as f:
             f.write(str(self.revision))
 
+
 vcs.SUPPORTED['fakevcs'] = FakeRepo
-from pip.vcs import vcs
-vcs.register(FakeRepo)  # for tests around gp.vcsdevelop
+from pip.vcs import vcs as pip_vcs
+pip_vcs.register(FakeRepo)  # for tests around gp.vcsdevelop
 
 
 def get_vcs_log():
@@ -103,25 +104,3 @@ class RecipeTestCase(unittest.TestCase):
         clear_vcs_log()
         shutil.rmtree(self.buildout_dir)
         Installer._obtain = Installer._orig_obtain
-
-
-class VcsTestCase(unittest.TestCase):
-    """Common fixture"""
-
-    def setUp(self):
-        sandbox = self.sandbox = mkdtemp('test_oerp_recipe_vcs')
-        src = self.src_dir = os.path.join(sandbox, 'src')
-        dst = self.dst_dir = os.path.join(sandbox, 'dest')
-        os.mkdir(src)
-        os.mkdir(dst)
-        self.create_src()
-
-    def create_src(self):
-        """Create a source repository to run most tests.
-
-        To be implemented in subclasses."""
-        raise NotImplementedError
-
-    def tearDown(self):
-        print "TEARDOWN remove " + self.sandbox
-        shutil.rmtree(self.sandbox)
