@@ -13,7 +13,7 @@ COMMIT_USER_EMAIL = 'test@example.org'
 COMMIT_USER_FULL = '%s %s' % (COMMIT_USER_NAME, COMMIT_USER_EMAIL)
 
 
-class FakeRepo(vcs.BaseRepo):
+class FakeRepo(vcs.base.BaseRepo):
 
     log = []
 

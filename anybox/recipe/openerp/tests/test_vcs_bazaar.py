@@ -187,10 +187,10 @@ class BzrTestCase(BzrBaseTestCase):
     def test_lp_url_nobzrlib(self):
         """We can't safely handle lp: locations without bzrlib."""
         from anybox.recipe.openerp import vcs
-        save = vcs.LPDIR
-        vcs.LPDIR = None
+        save = vcs.bzr.LPDIR
+        vcs.bzr.LPDIR = None
         self.assertRaises(RuntimeError, BzrBranch, '', 'lp:something')
-        vcs.LPDIR = save
+        vcs.bzr.LPDIR = save
 
     def test_update_clear_locks(self):
         """Testing update with clear locks option."""
