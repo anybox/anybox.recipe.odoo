@@ -42,7 +42,7 @@ Default options from zc.recipe.egg
 This recipe reuses the *zc.recipe.egg:scripts* recipe, so the options
 are the same (*eggs*, *interpreter*, etc.), and some changes, documented below.
 
-Consult the documentation here http://pypi.python.org/pypi/zc.recipe.egg/1.3.2
+Consult the documentation here http://pypi.python.org/pypi/zc.recipe.egg
 
 The main useful ones are below:
 
@@ -736,7 +736,11 @@ OpenERP with the development branches of the Prestashop connector addons::
   $ bin/buildout
   $ bin/start_openerp
 
-Other examples are available in the archive of this recipe, and used in the
+Other examples are available in the ``buildbot`` subdirectory of the
+source distribution archive of this recipe (the ``tar.gz`` file that
+can be downloaded `from the PyPI
+<http://pypi.python.org/pypi/anybox.recipe.openerp>`_), and are
+continuously tested in the
 `anybox buildbot <http://buildbot.anybox.fr/>`_ which is powered by
 `anybox.buildbot.openerp <http://pypi.python.org/pypi/anybox.buildbot.openerp>`_.
 
