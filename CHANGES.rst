@@ -3,7 +3,8 @@ Changes
 
 1.5.5 (unreleased)
 ------------------
-- 
+- launchpad #1182146: clearer user feedback and exit status code = 17
+  for freeze-to in case of local modifications of VCS server or addons.
 
 1.5.4 (2013-05-14)
 ------------------

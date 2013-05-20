@@ -742,6 +742,7 @@ class BaseRecipe(object):
 
         out_conf.add_section(self.name)
         addons_option = []
+        self.local_modifications = []
         for local_path, source in self.sources.items():
             source_type = source[0]
             if source_type == 'local':
@@ -770,6 +771,16 @@ class BaseRecipe(object):
         if addons_option:
             out_conf.set(self.name, 'revisions',
                          os.linesep.join(addons_option))
+        if self.local_modifications:
+
+            logger.error(
+                "Uncommitted changes and/or untracked files in: %s"
+                "Unsafe to freeze. Please commit or revert and test again !",
+                os.linesep.join(
+                    ['', ''] + ['   - ' + p
+                                for p in self.local_modifications] + ['', '']))
+
+            sys.exit(17)  # GR I like that number
 
         with open(self.make_absolute(out_config_path), 'w') as out:
             out_conf.write(out)
@@ -856,16 +867,11 @@ class BaseRecipe(object):
         repo = repo_cls(abspath, '')  # no need of remote URL
 
         if not allow_local_modification and repo.uncommitted_changes():
-            raise RuntimeError("You have uncommitted changes or "
-                               "non ignored untracked files in %r. "
-                               "Unsafe to freeze. Please commit or "
-                               "revert and test again !" % abspath)
+            self.local_modifications.append(abspath)
 
         parents = repo.parents()
         if len(parents) > 1:
-            raise RuntimeError("Current context of %r has several "
-                               "parents. Ongoing merge ? "
-                               "Can't freeze." % abspath)
+            self.local_modifications.append(abspath)
 
         return parents[0]
 

@@ -191,18 +191,21 @@ class TestBaseRecipe(RecipeTestCase):
                                '-u', COMMIT_USER_FULL,
                                ])
 
+        self.recipe.local_modifications = []
         # modification on tracked file
         with open(os.path.join(repo_path, 'somefile'), 'w') as f:
             f.write('changed content')
-        self.assertRaises(RuntimeError,
-                          self.recipe._freeze_vcs_source, 'hg', repo_path)
+        self.recipe._freeze_vcs_source('hg', repo_path)
+        self.assertTrue(bool(self.recipe.local_modifications))
+
         subprocess.check_call(['hg', '--cwd', repo_path, 'revert', '--all'])
 
         # untracked file
+        self.recipe.local_modifications = []
         with open(os.path.join(repo_path, 'untracked'), 'w') as f:
             f.write('something else')
-        self.assertRaises(RuntimeError,
-                          self.recipe._freeze_vcs_source, 'hg', repo_path)
+        self.recipe._freeze_vcs_source('hg', repo_path)
+        self.assertTrue(bool(self.recipe.local_modifications))
 
     def test_prepare_frozen_buildout(self):
         self.make_recipe(version='6.1-1')
