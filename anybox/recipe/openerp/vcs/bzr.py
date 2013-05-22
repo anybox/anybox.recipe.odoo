@@ -73,7 +73,15 @@ class BzrBranch(BaseRepo):
             conffile.writelines(lines)
 
     def update_conf(self):
-        conf = self.parse_conf()
+        try:
+            conf = self.parse_conf()
+        except IOError:
+            logger.error("Cannot read branch.conf of Bazaar branch at %s "
+                         "Proceeding anyway, remote URLs shall not be "
+                         "updated if needed. Please check that the branch "
+                         "is in good shape.", self.target_dir)
+            return
+
         old_parent = conf['parent_location']
         if old_parent == self.url:
             return

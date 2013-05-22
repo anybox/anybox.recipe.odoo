@@ -1,7 +1,11 @@
 Changes
 ~~~~~~~
 
-1.5.5 (unreleased)
+1.5.6 (unreleased)
+------------------
+- launchpad #1182589: avoid IOError if a bzr branch has no branch.conf
+
+1.5.5 (2013-05-20)
 ------------------
 - launchpad #1182146: clearer user feedback and exit status code = 17
   for freeze-to in case of local modifications of VCS server or addons.
