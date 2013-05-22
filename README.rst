@@ -71,15 +71,22 @@ produce scripts)::
 
 In the current state, beware to *not* require the same script in different
 parts or rename them. See
-https://bugs.launchpad.net/anybox.recipe.openerp/+bug/1020967 for details.
+https://bugs.launchpad.net/anybox.recipe.openerp/+bug/1020967 for
+details.
 
 interpreter
 -----------
-
-This is the default `interpreter` option of `zc.recipe.egg` that specifies the name 
-of the Python interpreter that shoud be included in the ``bin`` directory of the buildout::
+With the ``gtklcient`` and ``webclient`` recipes,
+this is the default `interpreter` option of `zc.recipe.egg` that
+specifies the name of the Python interpreter that shoud be included in
+the``bin`` directory of the buildout::
 
     interpreter = erp_python
+
+With the ``server`` recipe, the ``interpreter`` option will be ignored,
+because it always creates an interpreter with preloaded objects to
+bootstrap openerp. Check the ``interpreter_name`` option below for
+more details.
 
 
 Specific options
@@ -207,6 +214,42 @@ You can choose another name for the script by using the *script_name*
 option ::
 
     script_name = start_erp  
+
+interpreter_name
+----------------
+
+The recipe will automatically create a python interpreter with a
+``session`` object that can bootstrap OpenERP with a database right
+away. You can use that for interactive sessions or to launch a script::
+
+    $ bin/python_openerp
+    To start the OpenERP working session, just do:
+       session.open()
+    or
+       session.open(db=DATABASE_NAME)
+    Then you can issue commands such as
+       session.registry('res.users').browse(session.cr, 1, 1)
+
+    >>>
+
+The interpreter name is  ``python_<part_name>`` by default; but it can
+be explicitely set like this::
+
+    interpreter_name = my_py
+
+If you want *not* to have the interpreter, juste do
+
+    interpreter_name =
+
+The bootstrapping facility may also be used within a script installed
+by an egg; just insert this in your code to get the session object as
+if you were in the interpreter::
+
+    from anybox.recipe.openerp.startup import Session
+    session = Session()
+
+.. note:: this facility is new in version 1.6.0, and tested with
+          OpenERP 7 only for now.
 
 startup_delay
 -------------

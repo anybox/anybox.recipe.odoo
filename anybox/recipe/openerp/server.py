@@ -35,6 +35,9 @@ class ServerRecipe(BaseRecipe):
         opt = self.options
         self.with_devtools = (
             opt.get('with_devtools', 'false').lower() == 'true')
+        # discarding, because we have a special behaviour with custom
+        # interpreters
+        del opt['interpreter']
 
         self.missing_deps_instructions.update({
             'openerp-command': ("Please provide it with 'develop' or "
@@ -325,6 +328,35 @@ conf = openerp.tools.config
         self.script_path = join(self.bin_dir, script_name)
         self.openerp_installed.append(self.script_path)
 
+    def _install_interpreter(self):
+        """Derivation to insulate initialization from the scripts."""
+        int_name = self.options.get('interpreter_name', None)
+        if int_name == '':  # conf requires not to build an interpreter
+            return
+        elif int_name is None:
+            int_name = 'python_' + self.name
+
+        options = self.options.copy()
+        options['initialization'] = os.linesep.join((
+            "",
+            "from anybox.recipe.openerp.startup import Session",
+            "session = Session(%r)" % self.config_path,
+            "print('To start the OpenERP working session, just do:')",
+            "print('    session.open(db=DATABASE_NAME)')",
+            "print('or, to use the database from the buildout part config:')",
+            "print('    session.open()')",
+            "print('All other options from buildout part config do apply.')",
+            ""
+            "print('Then you can issue commands such as')",
+            "print(\"    "
+            "session.registry('res.users').browse(session.cr, 1, 1)\")"
+            ""))
+        options['interpreter'] = int_name
+        options['scripts'] = None
+        options['dependent-scripts'] = 'false'
+        options.pop('arguments', None)
+        zc.recipe.egg.Scripts(self.buildout, '', options).install()
+
     def _install_test_script(self):
         """Install the main startup script, usually called ``start_openerp``.
 
@@ -364,6 +396,7 @@ conf = openerp.tools.config
         """
 
         self._install_main_startup_script()
+        self._install_interpreter()
 
         if self.with_openerp_command:
             self._install_openerp_command(
