@@ -37,7 +37,7 @@ class ServerRecipe(BaseRecipe):
             opt.get('with_devtools', 'false').lower() == 'true')
         # discarding, because we have a special behaviour with custom
         # interpreters
-        del opt['interpreter']
+        opt.pop('interpreter', None)
 
         self.missing_deps_instructions.update({
             'openerp-command': ("Please provide it with 'develop' or "
