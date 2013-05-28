@@ -4,6 +4,7 @@ import logging
 
 from ..utils import working_directory_keeper
 from .base import BaseRepo
+from .base import SUBPROCESS_ENV
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +13,13 @@ class GitRepo(BaseRepo):
     """Represent a Git clone tied to a reference branch."""
 
     vcs_control_dir = '.git'
+
+    def uncommitted_changes(self):
+        """True if we have uncommitted changes."""
+        os.chdir(self.target_dir)
+        p = subprocess.Popen(['git', 'status', '--short'],
+                             stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
+        return bool(p.communicate()[0])
 
     def get_update(self, revision):
         """Ensure that target_dir is a branch of url at specified revision.

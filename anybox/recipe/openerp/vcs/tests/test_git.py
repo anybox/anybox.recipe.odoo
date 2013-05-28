@@ -39,3 +39,18 @@ class GitTestCase(VcsTestCase):
         lines = f.readlines()
         f.close()
         self.assertEquals(lines[0].strip(), 'last')
+
+    def test_uncommitted_changes(self):
+        """GitRepo can detect uncommitted changes."""
+        # initial cloning
+        target_dir = os.path.join(self.dst_dir, "clone to update")
+        repo = GitRepo(target_dir, self.src_repo)
+        repo('master')
+
+        self.assertFalse(repo.uncommitted_changes())
+
+        f = open(os.path.join(target_dir, 'tracked'), 'w')
+        f.write('mod')
+        f.close()
+
+        self.assertTrue(repo.uncommitted_changes())
