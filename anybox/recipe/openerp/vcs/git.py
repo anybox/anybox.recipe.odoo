@@ -42,9 +42,9 @@ class GitRepo(BaseRepo):
                 if not offline:
                     logger.info("Pull for git repo %s (rev %s)...",
                                 target_dir, rev_str)
-                    subprocess.check_call(['git', 'pull',
-                                          url, rev_str])
-                elif revision:
+                    subprocess.check_call(['git', 'pull', url])
+
+                if revision:
                     logger.info("Checkout %s to revision %s",
                                 target_dir, revision)
                     subprocess.check_call(['git', 'checkout', rev_str])
