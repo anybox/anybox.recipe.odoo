@@ -14,6 +14,13 @@ class GitRepo(BaseRepo):
 
     vcs_control_dir = '.git'
 
+    def parents(self):
+        """Return full hash of parent nodes. """
+        os.chdir(self.target_dir)
+        p = subprocess.Popen(['git', 'rev-parse', '--verify', 'HEAD'],
+                             stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
+        return p.communicate()[0].split()
+
     def uncommitted_changes(self):
         """True if we have uncommitted changes."""
         os.chdir(self.target_dir)
