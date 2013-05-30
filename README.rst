@@ -414,8 +414,8 @@ This option is meant to produce an extension buildout configuration
 that effectively freezes the variable versions and revisions of the
 current configuration.
 
-.. note:: supported VCSes for this feature are currently Mercurial and
-          Bazaar only.
+.. note:: supported VCSes for this feature are currently Mercurial,
+          Bazaar and Git (excluding Subversion).
 
 It is meant for release processes, and as such includes some
 consistency checks to avoid as much as possible issuing a frozen
@@ -466,6 +466,9 @@ Following the same kind of logic as ``freeze-to``, this option allows
 to turn a buildout that aggregates from various remote sources
 (tarball downloads, VCSes) into a self-contained buildout archive
 directory that can be packed for easy distribution.
+
+.. note:: supported VCSes for this feature are currently Mercurial,
+          Bazaar and Git (excluding Subversion).
 
 Actually it extracts only the downloaded elements into a target
 directory and issues a buildout configuration with local references

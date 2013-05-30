@@ -1,11 +1,14 @@
 Changes
 ~~~~~~~
 
-1.6.0 (unreleased)
+1.6.0 (2013-05-30)
 ------------------
 - launchpad #1183005: python interpreter that can bootstrap OpenERP
   and open a database for interactive session or to launch a script.
 - launchpad #1182589: avoid IOError if a bzr branch has no branch.conf
+- launchpad #1185097, #1185100, #1185101, #1185741: advanced support
+  for Git (precise revision, freeze, extract) allows including Git
+  repositories in a full release process for tarball deployments.
 
 1.5.5 (2013-05-20)
 ------------------
