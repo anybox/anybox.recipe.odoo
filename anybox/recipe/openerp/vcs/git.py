@@ -67,9 +67,9 @@ class GitRepo(BaseRepo):
                     subprocess.check_call(['git', 'checkout', rev_str])
 
     def archive(self, target_path):
+        revision = self.parents()[0]
         with working_directory_keeper:
             os.chdir(self.target_dir)
-            revision = self.parents()[0]
             target_tar = os.path.split(self.target_dir)[1] + '.tar'
             target_tar = os.path.join('/', 'tmp', target_tar)
             subprocess.check_call(['git', 'archive', revision, '-o', target_tar])
