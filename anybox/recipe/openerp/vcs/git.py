@@ -16,10 +16,11 @@ class GitRepo(BaseRepo):
 
     def uncommitted_changes(self):
         """True if we have uncommitted changes."""
-        os.chdir(self.target_dir)
-        p = subprocess.Popen(['git', 'status', '--short'],
-                             stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
-        return bool(p.communicate()[0])
+        with working_directory_keeper:
+            os.chdir(self.target_dir)
+            p = subprocess.Popen(['git', 'status', '--short'],
+                                 stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
+            return bool(p.communicate()[0])
 
     def get_update(self, revision):
         """Ensure that target_dir is a branch of url at specified revision.
