@@ -72,7 +72,8 @@ class GitRepo(BaseRepo):
             os.chdir(self.target_dir)
             target_tar = os.path.split(self.target_dir)[1] + '.tar'
             target_tar = os.path.join('/', 'tmp', target_tar)
-            subprocess.check_call(['git', 'archive', revision, '-o', target_tar])
+            subprocess.check_call(['git', 'archive', revision,
+                                   '-o', target_tar])
             subprocess.check_call(['tar', '-x', '-f', target_tar,
                                    '-C', target_path])
             subprocess.check_call(['rm', target_tar])
