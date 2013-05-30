@@ -801,6 +801,7 @@ Authors:
 
 Contributors:
 
+ * Jean-Sébastien Suzanne
  * Yannick Vaucher
  * Jacques-Etienne Baudoux
 
