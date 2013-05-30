@@ -63,3 +63,13 @@ class GitRepo(BaseRepo):
                     logger.info("Checkout %s to revision %s",
                                 target_dir, revision)
                     subprocess.check_call(['git', 'checkout', rev_str])
+
+    def archive(self, target_path):
+        os.chdir(self.target_dir)
+        revision = self.parents()[0]
+        target_tar = os.path.split(self.target_dir)[1] + '.tar'
+        target_tar = os.path.join('/', 'tmp', target_tar)
+        subprocess.check_call(['git', 'archive', revision, '-o', target_tar])
+        subprocess.check_call(['tar', '-x', '-f', target_tar,
+                               '-C', target_path])
+        subprocess.check_call(['rm', target_tar])
