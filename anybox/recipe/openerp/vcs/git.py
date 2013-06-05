@@ -51,8 +51,8 @@ class GitRepo(BaseRepo):
 
                 os.chdir(os.path.split(target_dir)[0])
                 logger.info("Cloning %s ...", url)
-                subprocess.check_call(['git', 'clone', '-b',
-                                       rev_str, url, target_dir])
+                subprocess.check_call(['git', 'clone', url, target_dir])
+                os.chdir(target_dir)
             else:
                 os.chdir(target_dir)
                 # TODO what if remote repo is actually local fs ?
@@ -61,10 +61,10 @@ class GitRepo(BaseRepo):
                                 target_dir, rev_str)
                     subprocess.check_call(['git', 'pull', url])
 
-                if revision:
-                    logger.info("Checkout %s to revision %s",
-                                target_dir, revision)
-                    subprocess.check_call(['git', 'checkout', rev_str])
+            if revision:
+                logger.info("Checkout %s to revision %s",
+                            target_dir, revision)
+                subprocess.check_call(['git', 'checkout', rev_str])
 
     def archive(self, target_path):
         revision = self.parents()[0]
