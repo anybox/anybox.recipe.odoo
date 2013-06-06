@@ -1,6 +1,10 @@
 Changes
 ~~~~~~~
 
+1.6.1 (2013-06-06)
+------------------
+- launchpad #1188402: fixed git clone init on a precise revision
+
 1.6.0 (2013-05-30)
 ------------------
 - launchpad #1183005: python interpreter that can bootstrap OpenERP
