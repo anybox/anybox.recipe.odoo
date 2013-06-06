@@ -40,6 +40,18 @@ class GitTestCase(VcsTestCase):
         f.close()
         self.assertEquals(lines[0].strip(), 'last')
 
+    def test_clone_on_sha(self):
+        """Git clone."""
+        target_dir = os.path.join(self.dst_dir, "My clone")
+        repo = GitRepo(target_dir, self.src_repo)
+        repo('master')
+        sha = repo.parents()[0]
+        target_dir = os.path.join(self.dst_dir, "My clone 2")
+        repo = GitRepo(target_dir, self.src_repo)
+        repo(sha)
+        sha2 = repo.parents()[0]
+        self.assert_(sha == sha2, 'Bad clone on SHA')
+
     def test_uncommitted_changes(self):
         """GitRepo can detect uncommitted changes."""
         # initial cloning
