@@ -51,7 +51,6 @@ class BzrBranch(BaseRepo):
         Reference: http://doc.bazaar.canonical.com/bzr.0.18/configuration.htm
 
         >>> from pprint import pprint
-        >>> from StringIO import StringIO
         >>> branch = BzrBranch('', '')
         >>> pprint(branch.parse_conf(StringIO(os.linesep.join([
         ...        "parent_location = /some/path",
