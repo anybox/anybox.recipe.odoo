@@ -1,8 +1,13 @@
 """Utilities to start a server process."""
-
-import openerp
-from openerp.cli import server as startup
-from openerp.tools import config
+import warnings
+try:
+    import openerp
+except ImportError:
+    warnings.warn("This must be imported with a buildout openerp recipe driven sys.path",
+                  RuntimeWarning)
+else:
+    from openerp.cli import server as startup
+    from openerp.tools import config
 
 
 class Session(object):
