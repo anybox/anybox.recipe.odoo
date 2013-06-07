@@ -3,8 +3,8 @@ import warnings
 try:
     import openerp
 except ImportError:
-    warnings.warn("This must be imported with a buildout openerp recipe driven sys.path",
-                  RuntimeWarning)
+    warnings.warn("This must be imported with a buildout openerp recipe "
+                  "driven sys.path", RuntimeWarning)
 else:
     from openerp.cli import server as startup
     from openerp.tools import config
