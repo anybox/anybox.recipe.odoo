@@ -1,6 +1,10 @@
 Changes
 ~~~~~~~
 
+1.6.2 (unreleased)
+------------------
+-
+
 1.6.1 (2013-06-06)
 ------------------
 - launchpad #1188402: fixed git clone init on a precise revision
