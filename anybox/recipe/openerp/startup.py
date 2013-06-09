@@ -51,3 +51,13 @@ class Session(object):
 
     def close(self):
         self.cr.close()
+
+_imported_addons = set()
+
+
+def already_imported(module_name):
+    name = module_name.rsplit('.', 1)[-1]
+    if name in _imported_addons:
+        return True
+    _imported_addons.add(name)
+    return False
