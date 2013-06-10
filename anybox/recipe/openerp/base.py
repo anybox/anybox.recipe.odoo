@@ -14,7 +14,7 @@ import distutils.core
 try:
     from collections import OrderedDict
 except ImportError:
-    from .odict import OrderedDict  # Python < 2.7
+    from ordereddict import OrderedDict  # Python < 2.7
 from zc.buildout.easy_install import MissingDistribution
 from zc.buildout import UserError
 import zc.recipe.egg
