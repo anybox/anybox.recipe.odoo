@@ -11,6 +11,10 @@ import imp
 import shutil
 import ConfigParser
 import distutils.core
+try:
+    from collections import OrderedDict
+except ImportError:
+    from .odict import OrderedDict  # Python < 2.7
 from zc.buildout.easy_install import MissingDistribution
 from zc.buildout import UserError
 import zc.recipe.egg
@@ -132,7 +136,7 @@ class BaseRecipe(object):
                 logger.info('Created %s/ directory' % basename(d))
                 os.mkdir(d)
 
-        self.sources = {}
+        self.sources = OrderedDict()
         self.parse_addons(options)
         self.parse_version()
         self.parse_revisions(options)
