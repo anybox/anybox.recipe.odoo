@@ -11,6 +11,9 @@ if sys.version_info < (2, 6):
 
 requires = ['setuptools', 'zc.recipe.egg', 'zc.buildout']
 
+if sys.version_info < (2, 7):
+    requires.append('ordereddict')
+
 setup(
     name="anybox.recipe.openerp",
     version=version,

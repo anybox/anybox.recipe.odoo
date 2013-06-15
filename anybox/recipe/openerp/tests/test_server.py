@@ -77,6 +77,22 @@ class TestServer(RecipeTestCase):
             ])
         self.assertEquals(paths, [addons_dir, other_dir])
 
+    def test_retrieve_addons_vcs_order(self):
+        """Ordering of addons paths is respected."""
+        self.make_recipe(
+            version='6.1',
+            addons=os.linesep.join(
+                ['fakevcs http://trunk.example addons-%d rev' % d
+                 for d in range(10)]))
+
+        paths = self.recipe.retrieve_addons()
+        expected = [os.path.join(self.buildout_dir, 'addons-%d') % d
+                    for d in range(10)]
+
+        # fail only for ordering issues
+        if set(paths) == set(expected):
+            self.assertEquals(paths, expected)
+
     def test_retrieve_addons_subdir(self):
         self.make_recipe(version='6.1', addons='fakevcs lp:openerp-web web '
                          'last:1 subdir=addons')
