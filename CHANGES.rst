@@ -1,6 +1,9 @@
 Changes
 ~~~~~~~
 
+1.6.3 (unreleased)
+------------------
+
 1.6.2 (2013-06-15)
 ------------------
 - launchpad #1189402: order of the addons_path is now deterministic
