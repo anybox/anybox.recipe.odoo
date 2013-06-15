@@ -1,7 +1,7 @@
 Changes
 ~~~~~~~
 
-1.6.2 (unreleased)
+1.6.2 (2013-06-15)
 ------------------
 - launchpad #1189402: order of the addons_path is now deterministic
 - launchpad #1189162: registry helping avoid double evaluaton of
