@@ -207,7 +207,7 @@ class TestBaseRecipe(RecipeTestCase):
                 (('addon-dir', 'b', 'x.pyo'), False),
                 (('addon-dir', 'b', 'other-file'), True)):
             self.assertEquals(os.path.exists(os.path.join(b_dir, *path)),
-                                             expected)
+                              expected)
 
     def test_freeze_vcs_source_dirty(self):
         self.make_recipe(version='6.1-1')
