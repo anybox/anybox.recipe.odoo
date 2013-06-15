@@ -13,8 +13,8 @@ import ConfigParser
 import distutils.core
 try:
     from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict  # Python < 2.7
+except ImportError:  # Python < 2.7
+    from ordereddict import OrderedDict  # noqa
 from zc.buildout.easy_install import MissingDistribution
 from zc.buildout import UserError
 import zc.recipe.egg
