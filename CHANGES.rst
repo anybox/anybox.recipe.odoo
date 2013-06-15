@@ -6,6 +6,8 @@ Changes
 - launchpad #1189402: order of the addons_path is now deterministic
 - launchpad #1189162: registry helping avoid double evaluaton of
   custom addons models (helps launching unittest2 tests directly)
+- launchpad #1191279: first implementation of new 'clean' option,
+  dealing with python object files only.
 
 1.6.1 (2013-06-06)
 ------------------

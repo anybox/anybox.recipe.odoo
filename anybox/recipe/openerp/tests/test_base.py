@@ -179,6 +179,36 @@ class TestBaseRecipe(RecipeTestCase):
             self.fail("Invalid extracted revision: %r" % rev)
         self.assertEquals(out, '', 'Extracted revision shows some diff')
 
+    def test_clean(self):
+        self.make_recipe(version='local server-dir', addons='local addon-dir',
+                         clean='true')
+        b_dir = self.recipe.buildout_dir
+        for d in (['server-dir'], ['server-dir', 'a'],
+                  ['addon-dir'],
+                  ['addon-dir', 'a'], ['addon-dir', 'b']):
+            os.mkdir(os.path.join(b_dir, *d))
+        for path in (['server-dir', 'a', 'x.pyc'],
+                     ['addon-dir', 'a', 'x.pyc'],
+                     ['addon-dir', 'b', 'x.pyo'],
+                     ['addon-dir', 'b', 'other-file']):
+            with open(os.path.join(b_dir, *path), 'w') as f:
+                f.write("content")
+        self.recipe.retrieve_main_software()
+        self.recipe.retrieve_addons()
+
+        for path, expected in (
+                (('server-dir',), True),
+                (('server-dir', 'a', 'x.pyc'), False),
+                (('server-dir', 'a'), False),
+                (('addon-dir',), True),
+                (('addon-dir', 'a', 'x.pyc'), False),
+                (('addon-dir', 'a'), False),
+                (('addon-dir', 'b'), True),
+                (('addon-dir', 'b', 'x.pyo'), False),
+                (('addon-dir', 'b', 'other-file'), True)):
+            self.assertEquals(os.path.exists(os.path.join(b_dir, *path)),
+                                             expected)
+
     def test_freeze_vcs_source_dirty(self):
         self.make_recipe(version='6.1-1')
         b_dir = self.recipe.buildout_dir

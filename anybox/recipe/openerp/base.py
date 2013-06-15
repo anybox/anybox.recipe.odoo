@@ -100,6 +100,7 @@ class BaseRecipe(object):
         # (later) the standard way for all booleans is to use
         # options.query_bool() or get_bool(), but it doesn't lower() at all
         self.offline = self.b_options['offline'] == 'true'
+        self.clean = options.get('clean') == 'true'
         clear_locks = options.get('vcs-clear-locks', '').lower()
         self.vcs_clear_locks = clear_locks == 'true'
         clear_retry = options.get('vcs-clear-retry', '').lower()
@@ -488,6 +489,8 @@ class BaseRecipe(object):
 
             loc_type, loc_spec, addons_options = source_spec
             local_dir = self.make_absolute(local_dir)
+            if self.clean:
+                utils.clean_object_files(local_dir)
             options = dict(offline=self.offline,
                            clear_locks=self.vcs_clear_locks)
 
@@ -588,28 +591,16 @@ class BaseRecipe(object):
 
         logger.info("No need to re-download %s", self.archive_path)
 
-    def install(self):
-        os.chdir(self.parts)
+    def retrieve_main_software(self):
+        """install server, webclient or gtkclient."""
 
-        freeze_to = self.options.get('freeze-to')
-        extract_downloads_to = self.options.get('extract-downloads-to')
-
-        if ((freeze_to is not None or extract_downloads_to is not None)
-                and not self.offline):
-            raise ValueError("To freeze a part, you must run offline "
-                             "so that there's no modification from what "
-                             "you just tested. Please rerun with -o.")
-
-        if extract_downloads_to is not None and freeze_to is None:
-            freeze_to = os.path.join(extract_downloads_to,
-                                     'extracted_from.cfg')
-
-        # install server, webclient or gtkclient
         source = self.sources[main_software]
         type_spec = source[0]
         logger.info('Selected install type: %s', type_spec)
         if type_spec == 'local':
             logger.info('Local directory chosen, nothing to do')
+            if self.clean:
+                utils.clean_object_files(self.openerp_dir)
         elif type_spec == 'downloadable':
             # download if needed
             if ((self.archive_path and not os.path.exists(self.archive_path))
@@ -640,9 +631,29 @@ class BaseRecipe(object):
             url, rev = source[1]
             options = dict((k, v) for k, v in self.options.iteritems()
                            if k.startswith(type_spec + '-'))
+            if self.clean:
+                utils.clean_object_files(self.openerp_dir)
             vcs.get_update(type_spec, self.openerp_dir, url, rev,
                            offline=self.offline,
                            clear_retry=self.clear_retry, **options)
+
+    def install(self):
+        os.chdir(self.parts)
+
+        freeze_to = self.options.get('freeze-to')
+        extract_downloads_to = self.options.get('extract-downloads-to')
+
+        if ((freeze_to is not None or extract_downloads_to is not None)
+                and not self.offline):
+            raise ValueError("To freeze a part, you must run offline "
+                             "so that there's no modification from what "
+                             "you just tested. Please rerun with -o.")
+
+        if extract_downloads_to is not None and freeze_to is None:
+            freeze_to = os.path.join(extract_downloads_to,
+                                     'extracted_from.cfg')
+
+        self.retrieve_main_software()
 
         addons_paths = self.retrieve_addons()
         for path in addons_paths:
@@ -652,11 +663,14 @@ class BaseRecipe(object):
         self.install_recipe_requirements()
         os.chdir(self.openerp_dir)  # GR probably not needed any more
         self.read_openerp_setup()
-        if type_spec == 'downloadable' and self.version_wanted == 'latest':
+
+        if (self.sources[main_software][0] == 'downloadable'
+                and self.version_wanted == 'latest'):
             self.nightly_version = self.version_detected.split('-', 1)[1]
             logger.warn("Detected 'nightly latest version', you may want to "
                         "fix it in your config file for replayability: \n    "
                         "version = " + self.dump_nightly_latest_version())
+
         is_60 = self.major_version == (6, 0)
         # configure addons_path option
         if addons_paths:

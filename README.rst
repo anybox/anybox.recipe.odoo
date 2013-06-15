@@ -202,6 +202,14 @@ Some interesting use-cases:
 * freezing satisfactory revisions in a release process (the recipe can
   do that automatically for you, see ``freeze-to`` option below).
 
+clean
+-----
+
+If set to true, this option will clean remove python object files from
+the main server part and addons before any update or install.
+
+Note that tarball downloads get re-extracted afresh in any case.
+
 script_name
 -----------
 

@@ -1,6 +1,8 @@
 import os
 import re
 from contextlib import contextmanager
+import logging
+logger = logging.getLogger(__name__)
 
 
 class WorkingDirectoryKeeper(object):
@@ -63,3 +65,33 @@ def mkdirp(path):
         parent, name = os.path.split(path)
         mkdirp(parent)
         os.mkdir(path)
+
+
+def is_object_file(filename):
+    """True if given filename is a python object file."""
+    return filename.endswith('.pyc') or filename.endswith('.pyo')
+
+
+def clean_object_files(directory):
+    """Recursively remove object files in given directory.
+
+    Also remove resulting empty directories.
+    """
+    dirs_to_remove = []
+    for dirpath, dirnames, filenames in os.walk(directory, topdown=False):
+        to_delete = [os.path.join(dirpath, f)
+                     for f in filenames if is_object_file(f)]
+        if not dirnames and len(to_delete) == len(filenames):
+            dirs_to_remove.append(dirpath)
+        for p in to_delete:
+            try:
+                os.unlink(p)
+            except:
+                logger.exception("Error attempting to unlink %r. "
+                                 "Proceeding anyway.", p)
+    for d in dirs_to_remove:
+        try:
+            os.rmdir(d)
+        except:
+            logger.exception("Error attempting to rmdir %r",
+                             "Proceeding anyway.", p)
