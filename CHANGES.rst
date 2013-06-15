@@ -4,7 +4,8 @@ Changes
 1.6.2 (unreleased)
 ------------------
 - launchpad #1189402: order of the addons_path is now deterministic
-
+- launchpad #1189162: registry helping avoid double evaluaton of
+  custom addons models (helps launching unittest2 tests directly)
 
 1.6.1 (2013-06-06)
 ------------------
