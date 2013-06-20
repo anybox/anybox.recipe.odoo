@@ -489,10 +489,9 @@ class BaseRecipe(object):
 
             loc_type, loc_spec, addons_options = source_spec
             local_dir = self.make_absolute(local_dir)
-            if self.clean:
-                utils.clean_object_files(local_dir)
             options = dict(offline=self.offline,
-                           clear_locks=self.vcs_clear_locks)
+                           clear_locks=self.vcs_clear_locks,
+                           clean=self.clean)
 
             if loc_type != 'local':
                 for k, v in self.options.items():
@@ -503,6 +502,8 @@ class BaseRecipe(object):
                 vcs.get_update(loc_type, local_dir, repo_url, repo_rev,
                                clear_retry=self.clear_retry,
                                **options)
+            elif self.clean:
+                utils.clean_object_files(local_dir)
 
             subdir = addons_options.get('subdir')
             addons_dir = join(local_dir, subdir) if subdir else local_dir
@@ -632,7 +633,7 @@ class BaseRecipe(object):
             options = dict((k, v) for k, v in self.options.iteritems()
                            if k.startswith(type_spec + '-'))
             if self.clean:
-                utils.clean_object_files(self.openerp_dir)
+                options['clean'] = True
             vcs.get_update(type_spec, self.openerp_dir, url, rev,
                            offline=self.offline,
                            clear_retry=self.clear_retry, **options)

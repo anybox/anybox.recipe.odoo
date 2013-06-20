@@ -54,7 +54,7 @@ class TestServer(RecipeTestCase):
         self.assertEquals(
             get_vcs_log(), [
                 (addons_dir, 'http://trunk.example', 'rev',
-                 dict(offline=False, clear_locks=False)
+                 dict(offline=False, clear_locks=False, clean=False)
                  )])
         self.assertEquals(paths, [addons_dir])
 
@@ -71,9 +71,9 @@ class TestServer(RecipeTestCase):
         self.assertEquals(
             get_vcs_log(), [
                 (addons_dir, 'http://trunk.example', 'rev',
-                 dict(offline=False, clear_locks=False)),
+                 dict(offline=False, clear_locks=False, clean=False)),
                 (other_dir, 'http://other.example', '76',
-                 dict(offline=False, clear_locks=False)),
+                 dict(offline=False, clear_locks=False, clean=False)),
             ])
         self.assertEquals(paths, [addons_dir, other_dir])
 
@@ -103,7 +103,7 @@ class TestServer(RecipeTestCase):
         paths = self.recipe.retrieve_addons()
         self.assertEquals(get_vcs_log(), [
                           (web_dir, 'lp:openerp-web', 'last:1',
-                           dict(offline=False, clear_locks=False))
+                           dict(offline=False, clear_locks=False, clean=False))
                           ])
         self.assertEquals(paths, [web_addons_dir])
 
@@ -155,7 +155,7 @@ class TestServer(RecipeTestCase):
         self.recipe.retrieve_addons()
         self.assertEquals(get_vcs_log(), [
                           (addons_dir, 'lp:my-addons', '-1',
-                           dict(offline=False, clear_locks=True))
+                           dict(offline=False, clear_locks=True, clean=False))
                           ])
 
     def test_merge_requirements(self):

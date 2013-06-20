@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+from .. import utils
 
 SUBPROCESS_ENV = os.environ.copy()
 SUBPROCESS_ENV['PYTHONPATH'] = SUBPROCESS_ENV.pop(
@@ -37,7 +38,23 @@ class BaseRepo(object):
     def clear_target(self):
         shutil.rmtree(self.target_dir)
 
+    def clean(self):
+        """Remove unwanted untracked files.
+
+        The default implementation removes Python object files and
+        (resulting) empty directories.
+        Subclasses are supposed to implement better vcs-specific behaviours.
+        It is important for release-related options that this cleaning does not
+        appear as a local modification.
+        """
+        utils.clean_object_files(self.target_dir)
+
     def __call__(self, revision):
+        """Create if needed from remote source, and put it at wanted revision.
+        """
+        if self.options.get('clean'):
+            self.clean()
+
         try:
             self.get_update(revision)
         except UpdateError:

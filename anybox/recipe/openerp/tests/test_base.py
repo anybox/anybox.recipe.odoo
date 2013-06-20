@@ -180,17 +180,29 @@ class TestBaseRecipe(RecipeTestCase):
         self.assertEquals(out, '', 'Extracted revision shows some diff')
 
     def test_clean(self):
-        self.make_recipe(version='local server-dir', addons='local addon-dir',
-                         clean='true')
+        """Test clean for local server & addons and base class vcs addons.
+        """
+        self.make_recipe(
+            version='local server-dir',
+            addons=os.linesep.join((
+                'local addon-dir',
+                'fakevcs http://some/repo vcs-addons revspec')),
+            clean='true')
+
         b_dir = self.recipe.buildout_dir
         for d in (['server-dir'], ['server-dir', 'a'],
                   ['addon-dir'],
-                  ['addon-dir', 'a'], ['addon-dir', 'b']):
+                  ['addon-dir', 'a'], ['addon-dir', 'b'],
+                  ['vcs-addons'],
+                  ['vcs-addons', 'a']):
             os.mkdir(os.path.join(b_dir, *d))
         for path in (['server-dir', 'a', 'x.pyc'],
                      ['addon-dir', 'a', 'x.pyc'],
                      ['addon-dir', 'b', 'x.pyo'],
-                     ['addon-dir', 'b', 'other-file']):
+                     ['addon-dir', 'b', 'other-file'],
+                     ['vcs-addons', 'a', 'x.pyc'],
+                     ['vcs-addons', 'a', 'x.py'],
+                     ):
             with open(os.path.join(b_dir, *path), 'w') as f:
                 f.write("content")
         self.recipe.retrieve_main_software()
@@ -200,6 +212,8 @@ class TestBaseRecipe(RecipeTestCase):
                 (('server-dir',), True),
                 (('server-dir', 'a', 'x.pyc'), False),
                 (('server-dir', 'a'), False),
+                (('vcs-addons', 'a', 'x.py'), True),
+                (('vcs-addons', 'a', 'x.pyc'), False),
                 (('addon-dir',), True),
                 (('addon-dir', 'a', 'x.pyc'), False),
                 (('addon-dir', 'a'), False),
@@ -207,6 +221,30 @@ class TestBaseRecipe(RecipeTestCase):
                 (('addon-dir', 'b', 'x.pyo'), False),
                 (('addon-dir', 'b', 'other-file'), True)):
             self.assertEquals(os.path.exists(os.path.join(b_dir, *path)),
+                              expected)
+
+    def test_clean_vcs_server(self):
+        """Test clean for base class vcs server."""
+        self.make_recipe(
+            version='fakevcs http://some/where server-dir somerev',
+            clean='true')
+
+        b_dir = self.recipe.buildout_dir
+        server_path = os.path.join(b_dir, 'parts', 'server-dir')
+        os.makedirs(os.path.join(server_path, 'a'))
+        for path in (['a', 'x.pyc'],
+                     ['a', 'x.py'],
+                     ):
+            with open(os.path.join(server_path, *path), 'w') as f:
+                f.write("content")
+        self.recipe.retrieve_main_software()
+        self.recipe.retrieve_addons()
+
+        for path, expected in (
+                (('a',), True),
+                (('a', 'x.pyc'), False),
+                (('a', 'x.py'), True)):
+            self.assertEquals(os.path.exists(os.path.join(server_path, *path)),
                               expected)
 
     def test_freeze_vcs_source_dirty(self):
