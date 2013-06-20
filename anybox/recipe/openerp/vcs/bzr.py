@@ -112,6 +112,9 @@ class BzrBranch(BaseRepo):
         return [p.communicate()[0].strip()]
 
     def clean(self):
+        if not os.path.exists(self.target_dir):
+            # not branched yet, there's nothing to clean
+            return
         with working_directory_keeper:
             os.chdir(self.target_dir)
             subprocess.check_call(['bzr', 'clean-tree', '--ignored', '--force'])

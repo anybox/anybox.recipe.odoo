@@ -118,6 +118,7 @@ class BzrTestCase(BzrBaseTestCase):
             subprocess.check_call(['bzr', 'commit', '-m', "bidule"])
         target_dir = os.path.join(self.dst_dir, "clone to clean")
         branch = BzrBranch(target_dir, self.src_repo)
+        branch.clean()
         branch('last:1')
         untracked = os.path.join(branch.target_dir, 'subdir', 'untracked.pyc')
         with open(untracked, 'w') as f:
