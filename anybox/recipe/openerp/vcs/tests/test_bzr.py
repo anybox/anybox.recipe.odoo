@@ -105,6 +105,36 @@ class BzrTestCase(BzrBaseTestCase):
         branch('2')
         self.assertRevision2(branch)
 
+    def test_clean(self):
+        """Test clean method, and esp. that no local mod occurs.
+
+        See launchpad: #1192973, bzr tracks empty directories. We must not
+        remove them.
+        """
+        with working_directory_keeper:
+            os.chdir(self.src_repo)
+            os.mkdir('subdir')
+            subprocess.check_call(['bzr', 'add'])
+            subprocess.check_call(['bzr', 'commit', '-m', "bidule"])
+        target_dir = os.path.join(self.dst_dir, "clone to clean")
+        branch = BzrBranch(target_dir, self.src_repo)
+        branch('last:1')
+        untracked = os.path.join(branch.target_dir, 'subdir', 'untracked.pyc')
+        with open(untracked, 'w') as f:
+            f.write('untracked content')
+        branch.clean()
+        self.assertFalse(os.path.exists(untracked))
+        with working_directory_keeper:
+            os.chdir(branch.target_dir)
+            bzr_status = subprocess.Popen(['bzr', 'status'],
+                                          stdout=subprocess.PIPE)
+            out = bzr_status.communicate()[0]
+
+        self.assertEquals(bzr_status.returncode, 0)
+        # output of 'bzr status' should be empty : neither unknown file nor
+        # any local modification, including removal of 'subdir'
+        self.assertEquals(out.strip(), '')
+
     def test_archive(self):
         target_dir = os.path.join(self.dst_dir, "clone to archive")
         branch = BzrBranch(target_dir, self.src_repo)

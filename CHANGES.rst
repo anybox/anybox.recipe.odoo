@@ -3,6 +3,9 @@ Changes
 
 1.6.3 (unreleased)
 ------------------
+- launchpad #1192973: 'clean' option now based on bzr clean-tree (more 
+  powerful, and avoids in particular removing empty dirs, which is a local
+  modification that prevents later on freezing)
 
 1.6.2 (2013-06-15)
 ------------------
