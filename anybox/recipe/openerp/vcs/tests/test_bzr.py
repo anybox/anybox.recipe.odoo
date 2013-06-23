@@ -99,10 +99,21 @@ class BzrTestCase(BzrBaseTestCase):
         """Update to a revision that needs to be pulled from target."""
         target_dir = os.path.join(self.dst_dir, "clone to update")
         branch = BzrBranch(target_dir, self.src_repo)('1')
+        # We really don't have rev 2 in branch
+        self.assertRaises(LookupError, branch.get_revid, '2')
 
-        # Testing starts here
-        branch = BzrBranch(target_dir, self.src_repo)
         branch('2')
+        self.assertRevision2(branch)
+
+    def test_update_revid_needs_pull(self):
+        """Update to a rev that needs to be pulled from source, by revid."""
+        target_dir = os.path.join(self.dst_dir, "clone to update")
+        branch = BzrBranch(target_dir, self.src_repo)('1')
+        # We really don't have rev 2 in branch
+        self.assertRaises(LookupError, branch.get_revid, '2')
+
+        revid = BzrBranch(self.src_repo, self.src_repo).get_revid('2')
+        branch('revid:' + revid)
         self.assertRevision2(branch)
 
     def test_clean(self):
