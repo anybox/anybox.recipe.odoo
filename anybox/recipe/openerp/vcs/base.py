@@ -62,6 +62,7 @@ class BaseRepo(object):
                 raise
             self.clear_target()
             self.get_update(revision)
+        return self  # nicer in particular for tests
 
     @classmethod
     def is_versioned(cls, path):
