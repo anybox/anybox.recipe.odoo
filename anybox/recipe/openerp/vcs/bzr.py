@@ -138,7 +138,7 @@ class BzrBranch(BaseRepo):
             for line in log:
                 if line.startswith(prefix):
                     return line[len(prefix):].strip()
-            raise RuntimeError("could not find revision id for %r" % revision)
+            raise LookupError("could not find revision id for %r" % revision)
 
     def is_fixed_revision(self, revstr):
         """True iff the given revision string is for a fixed revision."""
