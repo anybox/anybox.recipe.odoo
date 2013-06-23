@@ -1,6 +1,9 @@
 Changes
 ~~~~~~~
 
+1.6.4 (unreleased)
+------------------
+
 1.6.3 (2013-06-23)
 ------------------
 - launchpad #1192973: 'clean' option now based on bzr clean-tree (more 
