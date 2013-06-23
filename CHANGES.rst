@@ -1,7 +1,7 @@
 Changes
 ~~~~~~~
 
-1.6.3 (unreleased)
+1.6.3 (2013-06-23)
 ------------------
 - launchpad #1192973: 'clean' option now based on bzr clean-tree (more 
   powerful, and avoids in particular removing empty dirs, which is a local
