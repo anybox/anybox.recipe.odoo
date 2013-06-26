@@ -80,6 +80,17 @@ class HgRepo(BaseRepo):
 
         return True
 
+    def clean(self):
+        try:
+            subprocess.check_call(['hg', 'purge', '--cwd', self.target_dir])
+        except subprocess.CalledProcessError as exc:
+            if exc.returncode == 255:
+                # fallback to default implementation
+                logger.warn("The 'purge' Mercurial extension is not activated. "
+                            "Do 'hg help purge' for more details "
+                            "Falling back to default cleaning implementation")
+                super(HgRepo, self).clean()
+
     def get_update(self, revision):
         """Ensure that target_dir is a clone of url at specified revision.
 

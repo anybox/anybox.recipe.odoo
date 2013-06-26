@@ -2,7 +2,7 @@
 
 import os
 import subprocess
-from ConfigParser import ConfigParser
+from ConfigParser import ConfigParser, RawConfigParser
 from ..testing import COMMIT_USER_FULL
 from ..testing import VcsTestCase
 from ..hg import HgRepo
@@ -72,6 +72,64 @@ class HgTestCase(HgBaseTestCase):
         """Directly clone and update to given revision."""
         repo = self.make_clone("My clone", 'future')
         self.assertFutureBranch(repo)
+
+    def test_clean(self):
+        repo = self.make_clone("clone to clean", 'default')
+        rc_path = os.path.join(repo.target_dir, '.hg', 'hgrc')
+
+        # make sure that 'purge' extension is activated
+        # we expect it to be installed on the system this test runs
+        # note that that's the case with Debian and Red Hat families of
+        # distributions
+        parser = RawConfigParser()
+        parser.read(rc_path)
+        parser.add_section('extensions')
+        parser.set('extensions', 'hgext.purge', '')
+        with open(rc_path, 'w') as rc:
+            parser.write(rc)
+
+        dirty_dir = os.path.join(repo.target_dir, 'dirty')
+        os.mkdir(dirty_dir)
+        dirty_files = (os.path.join(repo.target_dir, 'untracked'),
+                       os.path.join(dirty_dir, 'untracked2'))
+        for path in dirty_files:
+            with open(path, 'w') as f:
+                f.write('content')
+        repo.clean()
+        for path in dirty_files:
+            self.failIf(os.path.exists(path),
+                        "Untracked file should have been removed")
+        self.failIf(os.path.exists(dirty_dir),
+                    "Untracked dir should have been removed")
+
+    def test_clean_no_extension(self):
+        repo = self.make_clone("clone to clean", 'default')
+        rc_path = os.path.join(repo.target_dir, '.hg', 'hgrc')
+
+        # make sure that 'purge' extension is activated
+        # we expect it to be installed on the system this test runs
+        # note that that's the case with Debian and Red Hat families of
+        # distributions
+        parser = RawConfigParser()
+        parser.read(rc_path)
+        parser.add_section('extensions')
+        parser.set('extensions', 'hgext.purge', '!')
+        with open(rc_path, 'w') as rc:
+            parser.write(rc)
+
+        dirty_dir = os.path.join(repo.target_dir, 'dirty')
+        os.mkdir(dirty_dir)
+        dirty_files = (os.path.join(repo.target_dir, 'untracked.pyc'),
+                       os.path.join(dirty_dir, 'untracked2.pyo'))
+        for path in dirty_files:
+            with open(path, 'w') as f:
+                f.write('content')
+        repo.clean()
+        for path in dirty_files:
+            self.failIf(os.path.exists(path),
+                        "Untracked file %r should have been removed" % path)
+        self.failIf(os.path.exists(dirty_dir),
+                    "Untracked dir should have been removed")
 
     def test_update(self):
         repo = self.make_clone("clone to update", 'default')
