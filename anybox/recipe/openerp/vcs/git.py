@@ -14,6 +14,11 @@ class GitRepo(BaseRepo):
 
     vcs_control_dir = '.git'
 
+    def clean(self):
+        with working_directory_keeper:
+            os.chdir(self.target_dir)
+            subprocess.check_call(['git', 'clean', '-fdqx'])
+
     def parents(self):
         """Return full hash of parent nodes. """
         with working_directory_keeper:

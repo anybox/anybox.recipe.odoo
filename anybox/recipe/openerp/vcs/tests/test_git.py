@@ -40,6 +40,25 @@ class GitTestCase(VcsTestCase):
         f.close()
         self.assertEquals(lines[0].strip(), 'last')
 
+    def test_clean(self):
+        target_dir = os.path.join(self.dst_dir, "My clone")
+        repo = GitRepo(target_dir, self.src_repo)
+        repo('master')
+
+        dirty_dir = os.path.join(repo.target_dir, 'dirty')
+        os.mkdir(dirty_dir)
+        dirty_files = (os.path.join(repo.target_dir, 'untracked'),
+                       os.path.join(dirty_dir, 'untracked2'))
+        for path in dirty_files:
+            with open(path, 'w') as f:
+                f.write('content')
+        repo.clean()
+        for path in dirty_files:
+            self.failIf(os.path.exists(path),
+                        "Untracked file should have been removed")
+        self.failIf(os.path.exists(dirty_dir),
+                    "Untracked dir should have been removed")
+
     def test_clone_on_sha(self):
         """Git clone."""
         target_dir = os.path.join(self.dst_dir, "My clone")
