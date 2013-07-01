@@ -74,7 +74,16 @@ class HgTestCase(HgBaseTestCase):
         self.assertFutureBranch(repo)
 
     def test_clean(self):
-        repo = self.make_clone("clone to clean", 'default')
+        target_dir = os.path.join(self.dst_dir, 'default')
+        repo = HgRepo(target_dir, self.src_repo)
+
+        try:
+            repo.clean()
+        except:
+            self.fail("clean() should not fail if "
+                      "clone not already done")
+
+        repo('default')
         rc_path = os.path.join(repo.target_dir, '.hg', 'hgrc')
 
         # make sure that 'purge' extension is activated
@@ -106,7 +115,7 @@ class HgTestCase(HgBaseTestCase):
         repo = self.make_clone("clone to clean", 'default')
         rc_path = os.path.join(repo.target_dir, '.hg', 'hgrc')
 
-        # make sure that 'purge' extension is activated
+        # make sure that 'purge' extension is NOT activated
         # we expect it to be installed on the system this test runs
         # note that that's the case with Debian and Red Hat families of
         # distributions

@@ -81,6 +81,9 @@ class HgRepo(BaseRepo):
         return True
 
     def clean(self):
+        if not os.path.isdir(self.target_dir):
+            return
+
         try:
             subprocess.check_call(['hg', 'purge', '--cwd', self.target_dir])
         except subprocess.CalledProcessError as exc:

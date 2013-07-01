@@ -43,6 +43,12 @@ class GitTestCase(VcsTestCase):
     def test_clean(self):
         target_dir = os.path.join(self.dst_dir, "My clone")
         repo = GitRepo(target_dir, self.src_repo)
+        try:
+            repo.clean()
+        except:
+            self.fail("clean() should not fail if "
+                      "clone not already done")
+
         repo('master')
 
         dirty_dir = os.path.join(repo.target_dir, 'dirty')

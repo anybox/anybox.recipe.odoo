@@ -15,6 +15,8 @@ class GitRepo(BaseRepo):
     vcs_control_dir = '.git'
 
     def clean(self):
+        if not os.path.isdir(self.target_dir):
+            return
         with working_directory_keeper:
             os.chdir(self.target_dir)
             subprocess.check_call(['git', 'clean', '-fdqx'])
