@@ -56,29 +56,63 @@ class HgRepo(BaseRepo):
     def have_fixed_revision(self, revstr):
         """True if revstr is a fixed revision that we already have.
 
-        Fixed in this case means that revstr is not an active branch
+        Check is done for known tags (except tip) and known nodes identified
+        by a long enough (12 char) prefix of their hexadecimal hash.
+
+        Summary of collision cases for hg up:
+
+        - a revision number has precedence over a tag identically named
+        - a tag that is a strict prefix of a full hexadecimal node hash wins
+          over that node.
+        - a full hexadecimal node hash wins over a tag that would be
+          identically named (someone would need to be really disturbed to do
+          that in real life).
+        - a hexadecimal node that coincides with a decimal revision number is
+          not something I can test :-)
+
+        In theory, a 12 char hexadecimal node hash could be shadowed by an
+        incoming tag. But also, any tag could be overridden. These are
+        considered to be fixed anyway for convenience in sensible use-cases.
+
+        People having CI robots involving tags that do get overridden by a
+        third party upstream should complain to upstream for utterly bad
+        practices.
         """
         revstr = revstr.strip()
         if revstr == 'tip' or not revstr:
             return False
-        try:
-            subprocess.check_call(['hg', '--cwd', self.target_dir, 'log',
-                                   '-r', revstr,
-                                   '--template=[hg] found {rev}:{node}\n'],
-                                  env=SUBPROCESS_ENV)
-        except subprocess.CalledProcessError:
+
+        log = subprocess.Popen(['hg', '--cwd', self.target_dir, 'log',
+                                '-r', revstr,
+                                '--template={node}\n{tags}\n{rev}'],
+                               env=SUBPROCESS_ENV, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+        out = log.communicate()[0].strip()
+        if log.returncode != 0:
             return False
+        node, tags, rev = out.split(os.linesep)
 
-        # eliminate active branches
-        p = subprocess.Popen(
-            ['hg', '--cwd', self.target_dir, 'branches', '--active'],
-            stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
-        branches = p.communicate()[0]
-        for branch in branches.split(os.linesep):
-            if branch and branch.split()[0] == revstr:
-                return False
+        if node.startswith(revstr):
+            # if too short, can be superseded by an incoming tag
+            if len(revstr) >= 12:
+                logger.info("[hg] Found requested revision %r in %s",
+                            revstr, self.target_dir)
+                return True
 
-        return True
+        if revstr == rev:
+            logger.warn("[hg] In repo %s, you should not pinpoint revision "
+                        "by a local revision number such as %r",
+                        self.target_dir, revstr)
+            # but indeed, nothing can change it (unless one day a node has
+            # exactly that hash code, chances are...)
+            return True
+
+        if revstr in tags.split():
+            logger.info("[hg] In repo %s, found tag %r as %s",
+                        self.target_dir, revstr, node)
+            return True
+
+        return False
 
     def clean(self):
         if not os.path.isdir(self.target_dir):

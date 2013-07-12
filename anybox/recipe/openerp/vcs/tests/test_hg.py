@@ -12,6 +12,16 @@ from ..base import UpdateError
 class HgBaseTestCase(VcsTestCase):
     """Common utilities for Mercurial test cases."""
 
+    def get_parent_node(self, repo):
+        """Assert parent to be unique and return its hash code."""
+        p = subprocess.Popen(['hg', '--cwd', repo,
+                              'parents', '--template={node} '],
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        nodes = p.communicate()[0].split()
+        self.assertEquals(len(nodes), 1, msg="Expected only one parent")
+        return nodes[0]
+
     def create_src(self):
         os.chdir(self.src_dir)
         subprocess.call(['hg', 'init', 'src-repo'])
@@ -22,12 +32,15 @@ class HgBaseTestCase(VcsTestCase):
         f.close()
         subprocess.call(['hg', 'commit', '-A', '-m', 'initial commit',
                          '-u', COMMIT_USER_FULL])
+
+        self.rev0 = self.get_parent_node(self.src_repo)
         subprocess.call(['hg', 'branch', 'future'])
         f = open('tracked', 'w')
         f.write("future" + os.linesep)
         f.close()
         subprocess.call(['hg', 'commit', '-m', 'in branch',
                          '-u', COMMIT_USER_FULL])
+        self.rev1 = self.get_parent_node(self.src_repo)
 
     def make_clone(self, path, initial_rev):
         """Make a clone of the source at initial_rev.
@@ -171,14 +184,24 @@ class HgTestCase(HgBaseTestCase):
     def test_update_fixed_rev(self):
         """Test update on a fixed rev that we already have."""
         repo = self.make_clone("clone to update", 'default')
-        repo('0')
+        repo(self.rev0)
         self.assertRevision(repo, 0)
 
     def test_update_missing_fixed_rev(self):
         """Test update on a fixed rev that we don't have."""
         repo = self.make_clone("clone to update", 'default')
-        repo('1')
+        repo(self.rev1)
         self.assertRevision(repo, 1)
+
+    def test_have_fixed_revision(self):
+        """Test some corner cases of have_fixed_revision."""
+        repo = self.make_clone("clone to update", 'default')
+        repo(self.rev0)
+        self.assertFalse(repo.have_fixed_revision('tip'))
+        self.assertFalse(repo.have_fixed_revision(''))
+        self.assertTrue(repo.have_fixed_revision('0'))
+        self.assertTrue(repo.have_fixed_revision(self.rev0[:12]))
+        self.assertFalse(repo.have_fixed_revision(self.rev0[:2]))
 
     def test_hgrc_paths_update(self):
         """Method to update hgrc paths updates them and stores old values"""
@@ -251,16 +274,34 @@ class HgOfflineTestCase(HgBaseTestCase):
         repo._pull = _pull
         return repo
 
-    def test_update_fixed_rev(self):
+    def test_update_fixed_rev_by_node(self):
         """[offline mode] test update on a fixed rev that we already have."""
         repo = self.make_clone("clone to update", 'default')
-        repo('0')
+        repo(self.rev0)
+        self.assertRevision(repo, 0)
+
+    def test_update_fixed_rev_by_tag(self):
+        """[offline mode] test update on a tag that we already have."""
+        repo = self.make_clone("clone to update", 'default')
+        subprocess.check_call(['hg', '--cwd', repo.target_dir,
+                               'tag', '-r', self.rev0, 'first'])
+        repo('first')
         self.assertRevision(repo, 0)
 
     def test_update_missing_fixed_rev(self):
-        """[offline mode] update on a fixed rev that we don't have raises."""
+        """[offline mode] update on a rev that we don't have raises."""
         repo = self.make_clone("clone to update", 'default')
+        self.assertRaises(UpdateError, repo, self.rev1)
+        # must also fail as branch
         self.assertRaises(UpdateError, repo, 'future')
+
+    def test_update_missing_tag(self):
+        """[offline mode] update on a tag that we don't have raises."""
+        repo = self.make_clone("clone to update", 'default')
+        subprocess.check_call(['hg', '--cwd', self.src_repo,
+                               'tag', '-r', self.rev0, 'in-src-only'])
+        repo(self.rev0)
+        self.assertRaises(UpdateError, repo, 'in-src-only')
 
     def test_update_branch_head(self):
         """[offline mode] update on branch head should not pull"""
