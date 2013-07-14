@@ -1,7 +1,7 @@
 Changes
 ~~~~~~~
 
-1.6.4 (unreleased)
+1.6.4 (2013-07-14)
 ------------------
 - launchpad #1200198: hg: determination whether rev spec is fixed could be wrong
 - launchpad #1194887: 'clean' option for git and hg now use the native solution
