@@ -123,8 +123,8 @@ class HgRepo(BaseRepo):
         except subprocess.CalledProcessError as exc:
             if exc.returncode == 255:
                 # fallback to default implementation
-                logger.warn("The 'purge' Mercurial extension is not activated. "
-                            "Do 'hg help purge' for more details "
+                logger.warn("The 'purge' Mercurial extension is not "
+                            "activated. Do 'hg help purge' for more details "
                             "Falling back to default cleaning implementation")
                 super(HgRepo, self).clean()
 

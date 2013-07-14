@@ -117,7 +117,8 @@ class BzrBranch(BaseRepo):
             return
         with working_directory_keeper:
             os.chdir(self.target_dir)
-            subprocess.check_call(['bzr', 'clean-tree', '--ignored', '--force'])
+            subprocess.check_call(['bzr', 'clean-tree',
+                                   '--ignored', '--force'])
 
     def _update(self, revision):
         """Update existing branch at target dir to given revision.
