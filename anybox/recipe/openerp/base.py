@@ -246,7 +246,7 @@ class BaseRecipe(object):
             missing = None
             eggs = zc.recipe.egg.Scripts(self.buildout, '', self.options)
             try:
-                ws = eggs.install()
+                eggs.install()
             except MissingDistribution, exc:
                 missing = exc.data[0].project_name
             except UserError, exc:  # zc.buildout >= 2.0
@@ -268,8 +268,8 @@ class BaseRecipe(object):
             else:
                 break
 
-        _, ws = eggs.working_set()
-        self.ws = ws
+        self.eggs_reqs, self.eggs_ws = eggs.working_set()
+        self.ws = self.eggs_ws
 
     def apply_version_dependent_decisions(self):
         """Store some booleans depending on detected version.

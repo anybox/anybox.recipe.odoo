@@ -336,26 +336,33 @@ conf = openerp.tools.config
         elif int_name is None:
             int_name = 'python_' + self.name
 
-        options = self.options.copy()
-        options['initialization'] = os.linesep.join((
+        initialization = os.linesep.join((
             "",
             "from anybox.recipe.openerp.startup import Session",
             "session = Session(%r)" % self.config_path,
-            "print('To start the OpenERP working session, just do:')",
-            "print('    session.open(db=DATABASE_NAME)')",
-            "print('or, to use the database from the buildout part config:')",
-            "print('    session.open()')",
-            "print('All other options from buildout part config do apply.')",
+            "if len(sys.argv) <= 1:",
+            "    print('To start the OpenERP working session, just do:')",
+            "    print('    session.open(db=DATABASE_NAME)')",
+            "    print('or, to use the database from the buildout part config:')",
+            "    print('    session.open()')",
+            "    print('All other options from buildout part config do apply.')",
             ""
-            "print('Then you can issue commands such as')",
-            "print(\"    "
-            "session.registry('res.users').browse(session.cr, 1, 1)\")"
+            "    print('Then you can issue commands such as')",
+            "    print(\"    "
+            "    session.registry('res.users').browse(session.cr, 1, 1)\")"
             ""))
-        options['interpreter'] = int_name
-        options['scripts'] = None
-        options['dependent-scripts'] = 'false'
-        options.pop('arguments', None)
-        zc.recipe.egg.Scripts(self.buildout, '', options).install()
+
+        reqs, ws = self.eggs_reqs, self.eggs_ws
+        return zc.buildout.easy_install.scripts(
+            reqs, ws, sys.executable, self.options['bin-directory'],
+            scripts={},
+            interpreter=int_name,
+            initialization=initialization,
+            arguments=self.options.get('arguments', ''),
+            # TODO investigate these options:
+            # extra_paths=self.extra_paths,
+            # relative_paths=self._relative_paths,
+        )
 
     def _install_test_script(self):
         """Install the main startup script, usually called ``start_openerp``.
