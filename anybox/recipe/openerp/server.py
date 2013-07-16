@@ -353,9 +353,24 @@ conf = openerp.tools.config
             ""))
 
         reqs, ws = self.eggs_reqs, self.eggs_ws
+
+        scripts_opt = self.options.get('openerp_scripts')
+        scripts = {}
+        if scripts_opt is not None:
+            for line in scripts_opt.split(os.linesep):
+                line = line.strip()
+                if not line:
+                    continue
+                split = line.split()
+                spec = split[0].split('=')
+                if len(spec) == 1:
+                    scripts[spec[0]] = '_'.join((spec[0], self.name))
+                else:
+                    scripts[spec[0]] = spec[1]
+
         return zc.buildout.easy_install.scripts(
             reqs, ws, sys.executable, self.options['bin-directory'],
-            scripts={},
+            scripts=scripts,
             interpreter=int_name,
             initialization=initialization,
             arguments=self.options.get('arguments', ''),
