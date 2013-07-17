@@ -812,6 +812,7 @@ Contributors:
  * Jean-Sébastien Suzanne
  * Yannick Vaucher
  * Jacques-Etienne Baudoux
+ * Laurent Mignon
 
 The primary branch is on the launchpad:
 

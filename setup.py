@@ -44,4 +44,6 @@ setup(
         'webclient = anybox.recipe.openerp.webclient:WebClientRecipe',
         'gtkclient = anybox.recipe.openerp.gtkclient:GtkClientRecipe',
     ]},
+    extras_require = {
+      'bzr' : ['bzr'] },
 )
