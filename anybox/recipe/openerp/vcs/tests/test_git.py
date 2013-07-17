@@ -91,3 +91,56 @@ class GitTestCase(VcsTestCase):
         f.close()
 
         self.assertTrue(repo.uncommitted_changes())
+    
+    def test_update_branch(self):
+        """Update to an avalailable rev, identified by branch.
+        """
+        os.chdir(self.src_repo)
+        subprocess.check_call(['git', 'branch', 'somebranch'])
+
+        # Testing starts here
+        target_dir = os.path.join(self.dst_dir, "to_branch")
+        branch = GitRepo(target_dir, self.src_repo)
+        #remove file from master after branching
+        branch("master")
+        os.chdir(target_dir)
+        f = open('tracked', 'w')
+        f.write("last after branch" + os.linesep)
+        f.close()
+        subprocess.call(['git', 'add', 'tracked'])
+        subprocess.call(['git', 'commit', '-m', 'last version'])
+        
+        # check that no changes exists when switching from one to other
+        branch('somebranch')
+        self.assertFalse(branch.uncommitted_changes())
+        branch('master')
+        self.assertFalse(branch.uncommitted_changes())
+     
+        #modify the branch
+        branch('somebranch')
+        self.assertFalse(branch.uncommitted_changes())
+        self.assertFalse(branch.uncommitted_changes())
+        f = open(os.path.join(target_dir, 'tracked'))
+        lines = f.readlines()
+        f.close()
+        self.assertEquals(lines[0].strip(), 'last')
+        f = open('tracked', 'w')
+        f.write("last from branch" + os.linesep)
+        f.close()
+        subprocess.call(['git', 'add', 'tracked'])
+        subprocess.call(['git', 'commit', '-m', 'last version'])
+        
+        f = open(os.path.join(target_dir, 'tracked'))
+        lines = f.readlines()
+        f.close()
+        self.assertEquals(lines[0].strip(), 'last from branch')
+        
+        #swith to master 
+        branch('master')
+        self.assertFalse(branch.uncommitted_changes())
+        f = open(os.path.join(target_dir, 'tracked'))
+        lines = f.readlines()
+        f.close()
+        self.assertEquals(lines[0].strip(), 'last after branch')
+        self.assertFalse(branch.uncommitted_changes())
+

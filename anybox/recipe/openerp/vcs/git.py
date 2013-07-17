@@ -49,7 +49,8 @@ class GitRepo(BaseRepo):
         rev_str = revision
 
         with working_directory_keeper:
-            if not os.path.exists(target_dir):
+            is_target_dir_exists = os.path.exists(target_dir)
+            if not is_target_dir_exists:
                 # TODO case of local url ?
                 if offline:
                     raise IOError(
@@ -59,19 +60,19 @@ class GitRepo(BaseRepo):
                 os.chdir(os.path.split(target_dir)[0])
                 logger.info("Cloning %s ...", url)
                 subprocess.check_call(['git', 'clone', url, target_dir])
-                os.chdir(target_dir)
-            else:
-                os.chdir(target_dir)
+            os.chdir(target_dir)
+            if revision and self._needToSwitchRevision(revision):
+                # checkout to the expected revision before pull (if update) since the pull
+                # must be done for the expected revision (branch)
+                logger.info("Checkout %s to revision %s",
+                            target_dir, revision)
+                subprocess.check_call(['git', 'checkout', rev_str])
+            if is_target_dir_exists:
                 # TODO what if remote repo is actually local fs ?
                 if not offline:
                     logger.info("Pull for git repo %s (rev %s)...",
                                 target_dir, rev_str)
-                    subprocess.check_call(['git', 'pull', url])
-
-            if revision:
-                logger.info("Checkout %s to revision %s",
-                            target_dir, revision)
-                subprocess.check_call(['git', 'checkout', rev_str])
+                    subprocess.check_call(['git', 'pull'])
 
     def archive(self, target_path):
         revision = self.parents()[0]
@@ -84,3 +85,12 @@ class GitRepo(BaseRepo):
             subprocess.check_call(['tar', '-x', '-f', target_tar,
                                    '-C', target_path])
             subprocess.check_call(['rm', target_tar])
+
+    def _needToSwitchRevision(self, revision):
+        """ Check if we need to checkout to an other branch
+        """
+        p = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
+        rev = p.split()[0] # remove \n
+        logger.info("Current revision '%s' - Expected revision '%s'"%(rev, revision))
+        return rev != revision
+
