@@ -7,6 +7,7 @@ from StringIO import StringIO
 
 from ..utils import use_or_open
 from ..utils import working_directory_keeper
+from ..utils import check_output
 from .base import SUBPROCESS_ENV
 from .base import BaseRepo
 from .base import update_check_call
@@ -96,9 +97,8 @@ class BzrBranch(BaseRepo):
 
     def uncommitted_changes(self):
         """True if we have uncommitted changes."""
-        p = subprocess.Popen(['bzr', 'status', self.target_dir],
-                             stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
-        return bool(p.communicate()[0])
+        return bool(check_output(['bzr', 'status', self.target_dir],
+                                 env=SUBPROCESS_ENV))
 
     def parents(self):
         """Return current revision.
@@ -107,9 +107,8 @@ class BzrBranch(BaseRepo):
         that we are indeed on this revision
         """
 
-        p = subprocess.Popen(['bzr', 'revno', '--tree', self.target_dir],
-                             stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
-        return [p.communicate()[0].strip()]
+        return [check_output(['bzr', 'revno', '--tree', self.target_dir],
+                             env=SUBPROCESS_ENV).strip()]
 
     def clean(self):
         if not os.path.exists(self.target_dir):
@@ -132,11 +131,18 @@ class BzrBranch(BaseRepo):
     def get_revid(self, revision):
         with working_directory_keeper:
             os.chdir(self.target_dir)
-            p = subprocess.Popen(['bzr', 'log', '--show-ids', '-r', revision],
-                                 stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
-            log = p.communicate()[0].split(os.linesep)
+            try:
+                log = check_output(
+                    ['bzr', 'log', '--show-ids', '-r', revision],
+                    env=SUBPROCESS_ENV)
+            except subprocess.CalledProcessError as exc:
+                if exc.returncode != 3:
+                    raise
+                raise LookupError(
+                    "could not find revision id for %r" % revision)
+
             prefix = 'revision-id:'
-            for line in log:
+            for line in log.split(os.linesep):
                 if line.startswith(prefix):
                     return line[len(prefix):].strip()
             raise LookupError("could not find revision id for %r" % revision)
