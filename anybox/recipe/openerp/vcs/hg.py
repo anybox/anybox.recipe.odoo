@@ -6,6 +6,7 @@ from ConfigParser import NoOptionError
 from .base import BaseRepo
 from .base import SUBPROCESS_ENV
 from .base import update_check_call
+from ..utils import check_output
 
 logger = logging.getLogger(__name__)
 
@@ -42,16 +43,14 @@ class HgRepo(BaseRepo):
 
     def uncommitted_changes(self):
         """True if we have uncommitted changes."""
-        p = subprocess.Popen(['hg', '--cwd', self.target_dir, 'status'],
-                             stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
-        return bool(p.communicate()[0])
+        return bool(check_output(['hg', '--cwd', self.target_dir, 'status'],
+                                 env=SUBPROCESS_ENV))
 
     def parents(self):
         """Return full hash of parent nodes. """
-        p = subprocess.Popen(['hg', '--cwd', self.target_dir, 'parents',
-                              '--template={node}'],
-                             stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
-        return p.communicate()[0].split()
+        return check_output(['hg', '--cwd', self.target_dir, 'parents',
+                             '--template={node}'],
+                            env=SUBPROCESS_ENV).split()
 
     def have_fixed_revision(self, revstr):
         """True if revstr is a fixed revision that we already have.
@@ -82,14 +81,14 @@ class HgRepo(BaseRepo):
         if revstr == 'tip' or not revstr:
             return False
 
-        log = subprocess.Popen(['hg', '--cwd', self.target_dir, 'log',
+        try:
+            out = check_output(['hg', '--cwd', self.target_dir, 'log',
                                 '-r', revstr,
                                 '--template={node}\n{tags}\n{rev}'],
-                               env=SUBPROCESS_ENV, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
-        out = log.communicate()[0].strip()
-        if log.returncode != 0:
+                               env=SUBPROCESS_ENV)
+        except subprocess.CalledProcessError:
             return False
+
         node, tags, rev = out.split(os.linesep)
 
         if node.startswith(revstr):

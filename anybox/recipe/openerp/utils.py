@@ -1,5 +1,7 @@
 import os
+import sys
 import re
+import subprocess
 from contextlib import contextmanager
 import logging
 logger = logging.getLogger(__name__)
@@ -95,3 +97,41 @@ def clean_object_files(directory):
         except:
             logger.exception("Error attempting to rmdir %r",
                              "Proceeding anyway.", p)
+
+
+def check_output(*popenargs, **kwargs):
+    r"""Backport of subprocess.check_output from python 2.7.
+
+    Example (this doctest would be more readable with ELLIPSIS, but
+    that's good enough for today):
+    >>> out = check_output(["ls", "-l", "/dev/null"])
+    >>> out.startswith('crw-rw-rw- 1 root root 1')
+    True
+
+    The stdout argument is not allowed as it is used internally.
+    To capture standard error in the result, use stderr=STDOUT.
+
+    >>> err = check_output(["/bin/sh", "-c",
+    ...               "ls -l non_existent_file ; exit 0"],
+    ...              stderr=subprocess.STDOUT)
+    >>> err.strip().endswith("No such file or directory")
+    True
+    """
+
+    if sys.version >= (2, 7):
+        return subprocess.check_output(*popenargs, **kwargs)
+    if 'stdout' in kwargs:
+        raise ValueError('stdout argument not allowed, it will be overridden.')
+
+    process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+    output, unused_err = process.communicate()
+    retcode = process.poll()
+    if retcode:
+        cmd = kwargs.get("args")
+        if cmd is None:
+            cmd = popenargs[0]
+        # in python 2.6, CalledProcessError.__init__ does not have output kwarg
+        exc = subprocess.CalledProcessError(retcode, cmd)
+        exc.output = output
+        raise exc
+    return output
