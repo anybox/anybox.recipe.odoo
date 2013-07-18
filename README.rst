@@ -162,7 +162,7 @@ For remote repositories, the syntax is:
 * *URL* is any URL scheme supported by the versionning tool
 * *DESTINATION* is the local directory that will be created (relative or absolute)
 * *REVISION* is any version specification supported (revision, tag, etc.)
-* *OPTIONS* take the form ``name=value``. Currently, only the ``subdir``
+* *OPTIONS* take the form ``name=value``. Currently the ``subdir``
   option is recognized. If used, the given subdirectory of the
   repository is registered as an addons directory.
 
@@ -172,6 +172,20 @@ revision. You must be careful with the revision specification.
 Buildout offline mode is supported. In that case, update to the
 specified revision is performed, if the VCS allows it (Subversion does
 not).
+
+.. note:: An additional option is supported for bzr. **'bzr-init'** define the way the bzr branch 
+         is initialized for addons declared with a bzr repository path.
+         
+         Possible values:
+         
+         branch
+           Working copy initialized with the command ``bzr branch url ...`` (default)
+           
+         stacked-branch
+           Working copy initialized with the command ``bzr branch --stacked url ...``
+           
+         ligthweight-checkout
+           Working copy initialized with the command ``bzr checkout --lightweight url ...``
 
 revisions
 ---------
@@ -512,6 +526,7 @@ This implication of ``freeze-to`` also has the side effect to enforce the
 same rules with respect to uncommitted changes.
 
 Python distributions managed with ``gp.vcsdevelop`` are taken into account.
+
 
 OpenERP options
 ---------------
