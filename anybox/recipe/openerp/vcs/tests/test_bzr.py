@@ -56,14 +56,14 @@ class BzrTestCase(BzrBaseTestCase):
         branch = BzrBranch(target_dir, self.src_repo)
         branch('last:1')
         self.assertRevision2(branch)
-    
+
     def test_branch_options_conflict(self):
         target_dir = os.path.join(self.dst_dir, "My branch")
         branch = BzrBranch(target_dir, self.src_repo,
                            **{'bzr-init': 'branch',
                               'bzr-stacked-branches': 'True'})
         self.assertRaises(Exception, branch, "last:1")
-    
+
     def test_branch_bzr_init(self):
         target_dir = os.path.join(self.dst_dir, "My branch")
         branch = BzrBranch(target_dir, self.src_repo,
@@ -84,7 +84,7 @@ class BzrTestCase(BzrBaseTestCase):
                            **{'bzr-init': 'stacked-branch'})
         branch('last:1')
         self.assertRevision2(branch)
-        
+
     def test_checkout_ligthweight(self):
         target_dir = os.path.join(self.dst_dir, "My branch")
         branch = BzrBranch(target_dir, self.src_repo,

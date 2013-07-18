@@ -162,12 +162,11 @@ class BzrBranch(BaseRepo):
         In all cases, an attempt to update is performed before any pull
         """
         target_dir = self.target_dir
-        url = self.url
         offline = self.offline
         clear_locks = self.clear_locks
 
         if not os.path.exists(target_dir):
-           self._branch(revision)
+            self._branch(revision)
         else:
             # TODO what if bzr source is actually local fs ?
             if clear_locks:
@@ -200,7 +199,6 @@ class BzrBranch(BaseRepo):
                 self._pull()
             self._update(revision)
 
-            
     def _branch(self, revision):
         """ Branch or checkout remote repository
         """
@@ -213,16 +211,20 @@ class BzrBranch(BaseRepo):
                 "bzr branch %s does not exist; cannot branch it from "
                 "%s (offline mode)" % (target_dir, url))
 
-        if self.options.has_key("bzr-init") and \
-                self.options.has_key("bzr-stacked-branches"):
-            raise Exception("Both options 'bzr-init' and 'bzr-stacked-branches' are mutually exclusive. Prefer 'bzr-init'.")
-        
+        options = self.options
+        if "bzr-init" in options and "bzr-stacked-branches" in options:
+            raise Exception(
+                "Both options 'bzr-init' and "
+                "'bzr-stacked-branches' are mutually exclusive. "
+                "Prefer 'bzr-init'.")
         default = "branch"
-        if self.options.has_key("bzr-stacked-branches"):
-            logger.warning("'bzr-stacked-branches' option is deprecated. Replace by bzr-init=stacked-branch")
+
+        if "bzr-stacked-branches" in options:
+            logger.warning("'bzr-stacked-branches' option is deprecated. "
+                           "Replace by bzr-init=stacked-branch")
             default = "stacked-branch"
-            
-        bzr_opt = self.options.get("bzr-init", default)
+
+        bzr_opt = options.get("bzr-init", default)
         branch_cmd = ['bzr']
         if bzr_opt == "branch":
             branch_cmd.append("branch")
@@ -231,15 +233,14 @@ class BzrBranch(BaseRepo):
         elif bzr_opt == "ligthweight-checkout":
             branch_cmd.extend(["checkout", "--lightweight"])
         else:
-           raise Exception("Unsupported option %s"%bzr_opt)
+            raise Exception("Unsupported option %r" % bzr_opt)
         if revision:
             branch_cmd.extend(['-r', revision])
-        
+
         logger.info("Branching %s ...", url)
-        
+
         branch_cmd.extend([url, target_dir])
         subprocess.check_call(branch_cmd, env=SUBPROCESS_ENV)
-        
 
     def _pull(self):
         logger.info("Pull for branch %s ...", self.target_dir)

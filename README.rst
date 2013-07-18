@@ -173,19 +173,23 @@ Buildout offline mode is supported. In that case, update to the
 specified revision is performed, if the VCS allows it (Subversion does
 not).
 
-.. note:: An additional option is supported for bzr. **'bzr-init'** define the way the bzr branch 
-         is initialized for addons declared with a bzr repository path.
-         
-         Possible values:
-         
-         branch
-           Working copy initialized with the command ``bzr branch url ...`` (default)
-           
-         stacked-branch
-           Working copy initialized with the command ``bzr branch --stacked url ...``
-           
-         ligthweight-checkout
-           Working copy initialized with the command ``bzr checkout --lightweight url ...``
+.. note:: An additional option is supported for bzr. **'bzr-init'**
+          defines the way the bzr branch
+          is initialized for addons or server declared with a bzr
+          repository path.
+
+          Possible values:
+
+          branch (default)
+            Working copy initialized with the command
+            ``bzr branch url ...``
+          stacked-branch
+           Working copy initialized with the command
+           ``bzr branch --stacked url ...``
+
+          ligthweight-checkout
+            Working copy initialized with the command
+            ``bzr checkout --lightweight url ...``
 
 revisions
 ---------
