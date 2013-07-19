@@ -93,8 +93,7 @@ class GitRepo(BaseRepo):
     def _needToSwitchRevision(self, revision):
         """ Check if we need to checkout to an other branch
         """
-        p = subprocess.check_output(['git', 'rev-parse',
-                                     '--abbrev-ref', 'HEAD'])
+        p = utils.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
         rev = p.split()[0]  # remove \n
         logger.info("Current revision '%s' - Expected revision '%s'",
                     rev, revision)
