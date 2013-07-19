@@ -95,7 +95,7 @@ class TestServer(RecipeTestCase):
 
     def test_retrieve_addons_subdir(self):
         self.make_recipe(version='6.1', addons='fakevcs lp:openerp-web web '
-                         'last:1 subdir=addons')
+                         'last:1 subdir=addons bzrinit=branch')
         # manual creation because fakevcs does nothing but retrieve_addons
         # has assertions on existence of target directories
         web_dir = os.path.join(self.buildout_dir, 'web')
@@ -103,7 +103,8 @@ class TestServer(RecipeTestCase):
         paths = self.recipe.retrieve_addons()
         self.assertEquals(get_vcs_log(), [
                           (web_dir, 'lp:openerp-web', 'last:1',
-                           dict(offline=False, clear_locks=False, clean=False))
+                           dict(offline=False, clear_locks=False, clean=False,
+                                    subdir="addons", bzrinit="branch"))
                           ])
         self.assertEquals(paths, [web_addons_dir])
 

@@ -234,16 +234,17 @@ class BzrBranch(BaseRepo):
         branch_cmd = ['bzr']
         if bzr_opt == "branch":
             branch_cmd.append("branch")
+            logger.info("Branching %s ...", url)
         elif bzr_opt == "stacked-branch":
             branch_cmd.extend(["branch", "--stacked"])
+            logger.info("Stacked branching %s ...", url)
         elif bzr_opt == "ligthweight-checkout":
             branch_cmd.extend(["checkout", "--lightweight"])
+            logger.info("Ligthweight checkout %s ...", url)
         else:
             raise Exception("Unsupported option %r" % bzr_opt)
         if revision:
             branch_cmd.extend(['-r', revision])
-
-        logger.info("Branching %s ...", url)
 
         branch_cmd.extend([url, target_dir])
         subprocess.check_call(branch_cmd, env=SUBPROCESS_ENV)

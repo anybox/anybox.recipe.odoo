@@ -97,12 +97,14 @@ class TestBaseRecipe(RecipeTestCase):
 
     def test_parse_addons_revisions(self):
         """Test both parse_addons and parse_revisions."""
-        self.make_recipe(version='bzr lp:openobject-server server last:1')
+        self.make_recipe(version='bzr lp:openobject-server server last:1'
+                         ' option=option')
         recipe = self.recipe
 
         recipe.parse_revisions(dict(revisions='1234'))
         self.assertEquals(recipe.sources[main_software],
-                          ('bzr', ('lp:openobject-server', '1234')))
+                          ('bzr', ('lp:openobject-server', '1234'),
+                           dict(option='option')))
 
         recipe.parse_addons(
             dict(addons='hg http://some/repo addons-specific default opt=spam')

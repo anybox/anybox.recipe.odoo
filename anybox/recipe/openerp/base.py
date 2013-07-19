@@ -201,16 +201,11 @@ class BaseRecipe(object):
                 ('/'.join((base_url.strip('/'), self.archive_filename)), None))
         else:
             # VCS types
-            if len(version_split) != 4:
-                raise ValueError("Unrecognized version specification: %r "
-                                 "(expecting type, url, target, revision for "
-                                 "remote repository or explicit download) " % (
-                                 version_split))
-
-            type_spec, url, repo_dir, self.version_wanted = version_split
+            type_spec, url, repo_dir, self.version_wanted = version_split[0:4]
+            options = dict(opt.split('=') for opt in version_split[4:])
             self.openerp_dir = join(self.parts, repo_dir)
             self.sources[main_software] = (type_spec,
-                                           (url, self.version_wanted))
+                                           (url, self.version_wanted), options)
 
     def preinstall_version_check(self):
         """Perform version checks before any attempt to install.
@@ -492,6 +487,7 @@ class BaseRecipe(object):
             options = dict(offline=self.offline,
                            clear_locks=self.vcs_clear_locks,
                            clean=self.clean)
+            options.update(addons_options)
 
             if loc_type != 'local':
                 for k, v in self.options.items():
@@ -632,6 +628,7 @@ class BaseRecipe(object):
             url, rev = source[1]
             options = dict((k, v) for k, v in self.options.iteritems()
                            if k.startswith(type_spec + '-'))
+            options.update(source[2])
             if self.clean:
                 options['clean'] = True
             vcs.get_update(type_spec, self.openerp_dir, url, rev,
