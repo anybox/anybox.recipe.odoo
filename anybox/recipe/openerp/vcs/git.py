@@ -5,6 +5,8 @@ import logging
 from ..utils import working_directory_keeper
 from .base import BaseRepo
 from .base import SUBPROCESS_ENV
+from anybox.recipe.openerp import utils
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +51,8 @@ class GitRepo(BaseRepo):
         rev_str = revision
 
         with working_directory_keeper:
-            if not os.path.exists(target_dir):
+            is_target_dir_exists = os.path.exists(target_dir)
+            if not is_target_dir_exists:
                 # TODO case of local url ?
                 if offline:
                     raise IOError(
@@ -59,19 +62,21 @@ class GitRepo(BaseRepo):
                 os.chdir(os.path.split(target_dir)[0])
                 logger.info("Cloning %s ...", url)
                 subprocess.check_call(['git', 'clone', url, target_dir])
-                os.chdir(target_dir)
-            else:
-                os.chdir(target_dir)
+            os.chdir(target_dir)
+            
+            if is_target_dir_exists:
                 # TODO what if remote repo is actually local fs ?
                 if not offline:
                     logger.info("Pull for git repo %s (rev %s)...",
                                 target_dir, rev_str)
-                    subprocess.check_call(['git', 'pull', url])
-
-            if revision:
+                    subprocess.check_call(['git', 'pull'])
+            
+            if revision and self._needToSwitchRevision(revision):
+                # switch to the expected revision
                 logger.info("Checkout %s to revision %s",
                             target_dir, revision)
-                subprocess.check_call(['git', 'checkout', rev_str])
+                self._switch(revision)
+            
 
     def archive(self, target_path):
         revision = self.parents()[0]
@@ -84,3 +89,72 @@ class GitRepo(BaseRepo):
             subprocess.check_call(['tar', '-x', '-f', target_tar,
                                    '-C', target_path])
             subprocess.check_call(['rm', target_tar])
+
+    def _needToSwitchRevision(self, revision):
+        """ Check if we need to checkout to an other branch
+        """
+        p = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
+        rev = p.split()[0] # remove \n
+        logger.info("Current revision '%s' - Expected revision '%s'"%(rev, revision))
+        return rev != revision
+
+    def _switch(self, revision):
+        rbp = self._remote_branch_prefix
+        branches = utils.check_output(["git", "branch", "-a"])
+        branch = revision
+        if re.search("^(\*| ) %s$" % re.escape(branch), branches, re.M):
+            # the branch is local, normal checkout will work
+            logger.info("The branch is local; normal checkout ")
+            argv = ["checkout", branch]
+        elif re.search("^  " + re.escape(rbp) + "\/" + re.escape(branch)
+                + "$", branches, re.M):
+            # the branch is not local, normal checkout won't work here
+            logger.info("The branch is not local; checkout remote branch ")
+            argv = ["checkout", "-b", branch, "%s/%s" % (rbp, branch)]
+        else:
+            # A tag or revision was specified instead of a branch
+            logger.info("Checkout tag or revision")
+            argv = ["checkout", revision]
+        # runs the checkout with predetermined arguments
+        argv.insert(0, "git")
+        subprocess.check_call(argv)
+        
+    @property
+    def _remote_branch_prefix(self):
+        version = self._git_version
+        if version < (1, 6, 3):
+            return "origin"
+        else:
+            return "remotes/origin"
+    @property
+    def _git_version(self):
+        m = utils.check_output(["git", "--version"])
+        m = re.search("git version (\d+)\.(\d+)(\.\d+)?(\.\d+)?", m)
+        if m is None:
+            logger.error("Unable to parse git version output")
+            logger.error("'git --version' output was:\n%s\n%s" % (stdout, stderr))
+            sys.exit(1)
+        version = m.groups()
+
+        if version[3] is not None:
+            version = (
+                int(version[0]),
+                int(version[1]),
+                int(version[2][1:]),
+                int(version[3][1:])
+            )
+        elif version[2] is not None:
+            version = (
+                int(version[0]),
+                int(version[1]),
+                int(version[2][1:])
+            )
+        else:
+            version = (int(version[0]), int(version[1]))
+        if version < (1, 5):
+            logger.error(
+                "Git version %s is unsupported, please upgrade",
+                ".".join([str(v) for v in version]))
+            sys.exit(1)
+        return version
+    

@@ -6,6 +6,7 @@ Changes
 - launchpad #1201715: allow easily working in a virtualenv with extra-requires
   on bzr (allows easily to work with zc.buildout 2.2 on systems providing 
   setuptools < 0.7 / distribute) 
+- launchpad #1202150: [git] proper support for remote branches
 - launchpad #1203005: vcs options not passed through (addons and main software)
 - [bzr] support for lightweight checkout, with uniform 'bzr-init' option
 
