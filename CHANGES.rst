@@ -1,7 +1,7 @@
 Changes
 ~~~~~~~
 
-1.6.5 (unreleased)
+1.7.0 (unreleased)
 ------------------
 - launchpad #1201715: allow easily working in a virtualenv with extra-requires
   on bzr (allows easily to work with zc.buildout 2.2 on systems providing 
