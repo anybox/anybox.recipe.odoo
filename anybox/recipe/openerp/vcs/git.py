@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 import logging
 
@@ -63,20 +64,19 @@ class GitRepo(BaseRepo):
                 logger.info("Cloning %s ...", url)
                 subprocess.check_call(['git', 'clone', url, target_dir])
             os.chdir(target_dir)
-            
+
             if is_target_dir_exists:
                 # TODO what if remote repo is actually local fs ?
                 if not offline:
                     logger.info("Pull for git repo %s (rev %s)...",
                                 target_dir, rev_str)
                     subprocess.check_call(['git', 'pull'])
-            
+
             if revision and self._needToSwitchRevision(revision):
                 # switch to the expected revision
                 logger.info("Checkout %s to revision %s",
                             target_dir, revision)
                 self._switch(revision)
-            
 
     def archive(self, target_path):
         revision = self.parents()[0]
@@ -93,9 +93,11 @@ class GitRepo(BaseRepo):
     def _needToSwitchRevision(self, revision):
         """ Check if we need to checkout to an other branch
         """
-        p = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
-        rev = p.split()[0] # remove \n
-        logger.info("Current revision '%s' - Expected revision '%s'"%(rev, revision))
+        p = subprocess.check_output(['git', 'rev-parse',
+                                     '--abbrev-ref', 'HEAD'])
+        rev = p.split()[0]  # remove \n
+        logger.info("Current revision '%s' - Expected revision '%s'",
+                    rev, revision)
         return rev != revision
 
     def _switch(self, revision):
@@ -106,8 +108,9 @@ class GitRepo(BaseRepo):
             # the branch is local, normal checkout will work
             logger.info("The branch is local; normal checkout ")
             argv = ["checkout", branch]
-        elif re.search("^  " + re.escape(rbp) + "\/" + re.escape(branch)
-                + "$", branches, re.M):
+        elif re.search(
+            "^  " + re.escape(rbp) + "\/" + re.escape(branch) + "$", branches,
+                re.M):
             # the branch is not local, normal checkout won't work here
             logger.info("The branch is not local; checkout remote branch ")
             argv = ["checkout", "-b", branch, "%s/%s" % (rbp, branch)]
@@ -118,7 +121,7 @@ class GitRepo(BaseRepo):
         # runs the checkout with predetermined arguments
         argv.insert(0, "git")
         subprocess.check_call(argv)
-        
+
     @property
     def _remote_branch_prefix(self):
         version = self._git_version
@@ -126,13 +129,14 @@ class GitRepo(BaseRepo):
             return "origin"
         else:
             return "remotes/origin"
+
     @property
     def _git_version(self):
-        m = utils.check_output(["git", "--version"])
-        m = re.search("git version (\d+)\.(\d+)(\.\d+)?(\.\d+)?", m)
+        out = utils.check_output(["git", "--version"])
+        m = re.search("git version (\d+)\.(\d+)(\.\d+)?(\.\d+)?", out)
         if m is None:
             logger.error("Unable to parse git version output")
-            logger.error("'git --version' output was:\n%s\n%s" % (stdout, stderr))
+            logger.error("'git --version' output was:\n%s\n%s", out)
             sys.exit(1)
         version = m.groups()
 
@@ -157,4 +161,3 @@ class GitRepo(BaseRepo):
                 ".".join([str(v) for v in version]))
             sys.exit(1)
         return version
-    

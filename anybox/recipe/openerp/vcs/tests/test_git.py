@@ -11,7 +11,7 @@ from ...utils import working_directory_keeper
 
 class GitBaseTestCase(VcsTestCase):
     """Common utilities for Git test cases."""
-     
+
     def create_src(self):
         os.chdir(self.src_dir)
         subprocess.call(['git', 'init', 'src-branch'])
@@ -99,19 +99,21 @@ class GitTestCase(GitBaseTestCase):
 
 
 class GitBranchTestCase(GitBaseTestCase):
-    
+
     def create_src(self):
         GitBaseTestCase.create_src(self)
         os.chdir(self.src_repo)
         self.make_branch(self.src_repo, 'somebranch')
-    
+
     def make_branch(self, src_dir, name):
         """create a branch
         """
         subprocess.check_call(['git', 'branch', name], cwd=src_dir)
-    
+
     def test_switch_local_branch(self):
-        """Switch to a branch created before the clone (branch already exists in local repo)
+        """Switch to a branch created before the clone.
+
+        In this case, the branch already exists in local repo
         """
 
         # Testing starts here
@@ -126,13 +128,13 @@ class GitBranchTestCase(GitBaseTestCase):
             f.close()
             subprocess.call(['git', 'add', 'tracked'])
             subprocess.call(['git', 'commit', '-m', 'last version'])
-        
+
         # check that no changes exists when switching from one to other
         branch('somebranch')
         self.assertFalse(branch.uncommitted_changes())
         branch('master')
         self.assertFalse(branch.uncommitted_changes())
-     
+
         #modify the branch
         branch('somebranch')
         self.assertFalse(branch.uncommitted_changes())
@@ -152,8 +154,8 @@ class GitBranchTestCase(GitBaseTestCase):
             lines = f.readlines()
             f.close()
             self.assertEquals(lines[0].strip(), 'last from branch')
-        
-        #swith to master 
+
+        # switch to master
         branch('master')
         self.assertFalse(branch.uncommitted_changes())
         f = open(os.path.join(target_dir, 'tracked'))
@@ -161,10 +163,11 @@ class GitBranchTestCase(GitBaseTestCase):
         f.close()
         self.assertEquals(lines[0].strip(), 'last after branch')
         self.assertFalse(branch.uncommitted_changes())
-        
 
     def test_switch_remote_branch(self):
-        """Switch to a branch created after the clone (branch doesn't exist in local repo)
+        """Switch to a branch created after the clone.
+
+        In this case, the branch doesn't exist in local repo
         """
         # init the local clone
         # Testing starts here
@@ -172,7 +175,7 @@ class GitBranchTestCase(GitBaseTestCase):
         branch = GitRepo(target_dir, self.src_repo)
         #update file from master after branching
         branch("master")
-        
+
         # create the remote branch with some modifications
         self.make_branch(self.src_repo, 'remotebranch')
         with working_directory_keeper:
@@ -183,13 +186,13 @@ class GitBranchTestCase(GitBaseTestCase):
             f.close()
             subprocess.call(['git', 'add', 'tracked'])
             subprocess.call(['git', 'commit', '-m', 'last version'])
-        
+
         # switch to the remote branch and check tracked file
         branch("remotebranch")
-        
+
         with working_directory_keeper:
             os.chdir(target_dir)
             f = open('tracked')
             lines = f.readlines()
             f.close()
-            self.assertEquals(lines[0].strip(), "last after remote branch" )
+            self.assertEquals(lines[0].strip(), "last after remote branch")
