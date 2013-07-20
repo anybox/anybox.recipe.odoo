@@ -217,6 +217,46 @@ conf = openerp.tools.config
                         "Invalid token for script %r: %r" % (name, token))
                 script['options'].extend(token[len(opt_prefix):].split(','))
 
+
+    def _register_main_startup_script(self, qualified_name):
+        """Register main startup script, usually ``start_openerp`` for install.
+        """
+        desc = self.openerp_scripts[qualified_name] = dict(
+            entry='openerp_starter',
+            arguments='%r, %r' % (self.openerp_server_cmd, self.config_path),
+        )
+
+        startup_delay = float(self.options.get('startup_delay', 0))
+
+        initialization = ['']
+        if self.with_devtools:
+            initialization.extend((
+                'from anybox.recipe.openerp import devtools',
+                'devtools.load(for_tests=False)',
+                ''))
+
+        if startup_delay:
+            initialization.extend(
+                ('print("sleeping %s seconds...")' % startup_delay,
+                 'import time',
+                 'time.sleep(%f)' % startup_delay))
+
+        desc['initialization'] = os.linesep.join((initialization))
+
+    def _register_test_script(self, qualified_name):
+        """Register the main test script for installation.
+        """
+        self.openerp_scripts[qualified_name] = dict(
+            entry='openerp_tester',
+            initialization=os.linesep.join((
+                "from anybox.recipe.openerp import devtools",
+                "devtools.load(for_tests=True)",
+                "")),
+            arguments='%r, %r, %r' % (self.openerp_server_cmd,
+                                      self.config_path,
+                                      self.version_detected),
+        )
+
     def _register_gunicorn_startup_script(self, qualified_name):
         """Install a gunicorn foreground start script.
 
@@ -305,31 +345,6 @@ conf = openerp.tools.config
             initialization='',
         )
 
-    def _register_main_startup_script(self, qualified_name):
-        """Register main startup script, usually ``start_openerp`` for install.
-        """
-        desc = self.openerp_scripts[qualified_name] = dict(
-            entry='openerp_starter',
-            arguments='%r, %r' % (self.openerp_server_cmd, self.config_path),
-        )
-
-        startup_delay = float(self.options.get('startup_delay', 0))
-
-        initialization = ['']
-        if self.with_devtools:
-            initialization.extend((
-                'from anybox.recipe.openerp import devtools',
-                'devtools.load(for_tests=False)',
-                ''))
-
-        if startup_delay:
-            initialization.extend(
-                ('print("sleeping %s seconds...")' % startup_delay,
-                 'import time',
-                 'time.sleep(%f)' % startup_delay))
-
-        desc['initialization'] = os.linesep.join((initialization))
-
     def _install_interpreter(self):
         """Derivation to insulate initialization from the scripts."""
         int_name = self.options.get('interpreter_name', None)
@@ -416,20 +431,6 @@ conf = openerp.tools.config
                 # relative_paths=self._relative_paths,
             )
             self.openerp_installed.append(join(self.bin_dir, script_name))
-
-    def _register_test_script(self, qualified_name):
-        """Register the main test script for installation.
-        """
-        self.openerp_scripts[qualified_name] = dict(
-            entry='openerp_tester',
-            initialization=os.linesep.join((
-                "from anybox.recipe.openerp import devtools",
-                "devtools.load(for_tests=True)",
-                "")),
-            arguments='%r, %r, %r' % (self.openerp_server_cmd,
-                                      self.config_path,
-                                      self.version_detected),
-        )
 
     def _install_startup_scripts(self):
         """install startup and control scripts.
