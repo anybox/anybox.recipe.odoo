@@ -68,13 +68,6 @@ class ServerRecipe(BaseRecipe):
         self.with_openerp_command = (self.with_devtools
                                      and self.major_version >= (6, 2))
 
-        # main server command
-        if self.major_version == (6, 0):
-            server_cmd = join('bin', 'openerp-server.py')
-        else:
-            server_cmd = 'openerp-server'
-        self.openerp_server_cmd = join(self.openerp_dir, server_cmd)
-
     def merge_requirements(self):
         """Prepare for installation by zc.recipe.egg
 
@@ -192,6 +185,14 @@ conf = openerp.tools.config
         f.write(conf)
         f.close()
 
+    def _get_server_command(self):
+        """Return a full path to the main OpenERP server command."""
+        if self.major_version == (6, 0):
+            server_cmd = join('bin', 'openerp-server.py')
+        else:
+            server_cmd = 'openerp-server'
+        return join(self.openerp_dir, server_cmd)
+
     def _parse_openerp_scripts(self):
         """Parse required scripts from conf."""
 
@@ -208,21 +209,24 @@ conf = openerp.tools.config
                 name = '_'.join((naming[0], self.name))
             else:
                 name = naming[1]
-            script = scripts[name] = dict(entry=naming[0], options=[])
+            cl_options = []
+            scripts[name] = dict(entry=naming[0],
+                                 options=cl_options)
 
             opt_prefix = 'options='
             for token in line[1:]:
                 if not token.startswith(opt_prefix):
                     raise ValueError(
                         "Invalid token for script %r: %r" % (name, token))
-                script['options'].extend(token[len(opt_prefix):].split(','))
+                cl_options.extend(token[len(opt_prefix):].split(','))
 
     def _register_main_startup_script(self, qualified_name):
         """Register main startup script, usually ``start_openerp`` for install.
         """
         desc = self.openerp_scripts[qualified_name] = dict(
             entry='openerp_starter',
-            arguments='%r, %r' % (self.openerp_server_cmd, self.config_path),
+            arguments='%r, %r' % (self._get_server_command(),
+                                  self.config_path),
         )
 
         startup_delay = float(self.options.get('startup_delay', 0))
@@ -251,7 +255,7 @@ conf = openerp.tools.config
                 "from anybox.recipe.openerp import devtools",
                 "devtools.load(for_tests=True)",
                 "")),
-            arguments='%r, %r, %r' % (self.openerp_server_cmd,
+            arguments='%r, %r, %r' % (self._get_server_command(),
                                       self.config_path,
                                       self.version_detected),
         )
@@ -417,7 +421,7 @@ conf = openerp.tools.config
             if options:
                 initialization = common_init + os.linesep.join((
                     "",
-                    "session.handle_command_line_options(%r)" % options))
+                    "session.handle_options(%r)" % options))
 
             zc.buildout.easy_install.scripts(
                 reqs, ws, sys.executable, self.bin_dir,
@@ -444,8 +448,9 @@ conf = openerp.tools.config
 
         self._install_interpreter()
 
-        self._register_main_startup_script(
-            self.options.get('script_name', 'start_' + self.name))
+        main_script = self.options.get('script_name', 'start_' + self.name)
+        self._register_main_startup_script(main_script)
+        self.script_path = join(self.bin_dir, main_script)
 
         if self.with_openerp_command:
             self._register_openerp_command(
