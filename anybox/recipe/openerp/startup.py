@@ -1,5 +1,7 @@
 """Utilities to start a server process."""
 import warnings
+import sys
+import logging
 try:
     import openerp
 except ImportError:
@@ -8,6 +10,9 @@ except ImportError:
 else:
     from openerp.cli import server as startup
     from openerp.tools import config
+from optparse import OptionParser  # we support python >= 2.6
+
+logger = logging.getLogger(__name__)
 
 
 class Session(object):
@@ -51,6 +56,31 @@ class Session(object):
 
     def close(self):
         self.cr.close()
+
+    def handle_command_line_options(self, to_handle):
+        """Handle prescribed command line options and eat them.
+
+        Anything before first occurrence of '--' is ours and removed from
+        sys.argv
+        """
+        try:
+            sep = sys.argv.index('--')
+        except ValueError:
+            return
+
+        our_argv = sys.argv[1:sep]
+        parser = OptionParser()
+        # TODO add more
+        if '-d' in to_handle:
+            parser.add_option('-d', '--db-name',
+                              help='Name of the database to work on.')
+
+        options, args = parser.parse_args(our_argv)
+        del sys.argv[1:sep+1]
+
+        if options.db_name:
+            logger.info("Opening database %r", options.db_name)
+            self.open(db=options.db_name)
 
 _imported_addons = set()
 

@@ -38,7 +38,7 @@ class ServerRecipe(BaseRecipe):
         # discarding, because we have a special behaviour with custom
         # interpreters
         opt.pop('interpreter', None)
-
+        self.openerp_scripts = {}
         self.missing_deps_instructions.update({
             'openerp-command': ("Please provide it with 'develop' or "
                                 "'gp.vcsdevelop'. "
@@ -184,6 +184,31 @@ conf = openerp.tools.config
             conf += 'conf[%r] = %r' % (opt, val) + os.linesep
         f.write(conf)
         f.close()
+
+    def _parse_openerp_scripts(self):
+        """Parse required scripts from conf."""
+
+        scripts = self.openerp_scripts
+        if not 'openerp_scripts' in self.options:
+            return
+        for line in self.options.get('openerp_scripts').split(os.linesep):
+            line = line.split()
+
+            naming = line[0].split('=')
+            if not naming or len(naming) > 2:
+                raise ValueError("Invalid script specification %r" % line[0])
+            elif len(naming) == 1:
+                name = '_'.join((naming[0], self.name))
+            else:
+                name = naming[1]
+            script = scripts[name] = dict(entry=naming[0], options=[])
+
+            opt_prefix = 'options='
+            for token in line[1:]:
+                if not token.startswith(opt_prefix):
+                    raise ValueError(
+                        "Invalid token for script %r: %r" % (name, token))
+                script['options'].extend(token[len(opt_prefix):].split(','))
 
     def _install_gunicorn_startup_script(self, qualified_name):
         """Install a gunicorn foreground start script.
@@ -379,6 +404,33 @@ conf = openerp.tools.config
             # relative_paths=self._relative_paths,
         )
 
+    def _install_openerp_scripts(self):
+        reqs, ws = self.eggs_reqs, self.eggs_ws
+
+        common_init = os.linesep.join((
+            "",
+            "from anybox.recipe.openerp.startup import Session",
+            "session = Session(%r)" % self.config_path,
+        ))
+
+        for name, desc in self.openerp_scripts.items():
+            options = desc['options']
+            if options:
+                initialization = common_init + os.linesep.join((
+                    "",
+                    "session.handle_command_line_options(%r)" % options))
+
+            zc.buildout.easy_install.scripts(
+                reqs, ws, sys.executable, self.options['bin-directory'],
+                scripts={desc['entry']: name},
+                interpreter='',
+                initialization=initialization,
+                arguments=self.options.get('arguments', ''),
+                # TODO investigate these options:
+                # extra_paths=self.extra_paths,
+                # relative_paths=self._relative_paths,
+            )
+
     def _install_test_script(self):
         """Install the main startup script, usually called ``start_openerp``.
 
@@ -416,6 +468,7 @@ conf = openerp.tools.config
     def _install_startup_scripts(self):
         """install startup and control scripts.
         """
+        self._parse_openerp_scripts()
 
         self._install_main_startup_script()
         self._install_interpreter()
@@ -437,6 +490,7 @@ conf = openerp.tools.config
             qualified_name = self.options.get('cron_worker_script_name',
                                               'cron_worker_%s' % self.name)
             self._install_cron_worker_startup_script(qualified_name)
+        self._install_openerp_scripts()
 
     def _60_fix_root_path(self):
         """Correction of root path for OpenERP 6.0 pure python install"""
