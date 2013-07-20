@@ -217,7 +217,6 @@ conf = openerp.tools.config
                         "Invalid token for script %r: %r" % (name, token))
                 script['options'].extend(token[len(opt_prefix):].split(','))
 
-
     def _register_main_startup_script(self, qualified_name):
         """Register main startup script, usually ``start_openerp`` for install.
         """
@@ -258,12 +257,10 @@ conf = openerp.tools.config
         )
 
     def _register_gunicorn_startup_script(self, qualified_name):
-        """Install a gunicorn foreground start script.
+        """Register a gunicorn foreground start script for installation.
 
         The produced script is suitable for external process management, such
         as provided by supervisor.
-        The script installation works by a tweaked call to a dedicated
-        instance of zc.recipe.eggs:scripts.
         """
         desc = self.openerp_scripts[qualified_name] = dict(entry='gunicorn')
 
@@ -319,7 +316,6 @@ conf = openerp.tools.config
         These changes appeared in nightly build 6.1-20120530-233414.
         The worker script itself does not appear in nightly builds.
         """
-
         script_src = join(self.openerp_dir, 'openerp-cron-worker')
         if not os.path.isfile(script_src):
             version = self.version_detected
@@ -346,7 +342,7 @@ conf = openerp.tools.config
         )
 
     def _install_interpreter(self):
-        """Derivation to insulate initialization from the scripts."""
+        """Install a python interpreter with a ready-made session object."""
         int_name = self.options.get('interpreter_name', None)
         if int_name == '':  # conf requires not to build an interpreter
             return
@@ -360,9 +356,11 @@ conf = openerp.tools.config
             "if len(sys.argv) <= 1:",
             "    print('To start the OpenERP working session, just do:')",
             "    print('    session.open(db=DATABASE_NAME)')",
-            "    print('or, to use the database from the buildout part config:')",
+            "    print('or, to use the database from the buildout "
+            "part config:')",
             "    print('    session.open()')",
-            "    print('All other options from buildout part config do apply.')",
+            "    print('All other options from buildout part config "
+            "do apply.')",
             ""
             "    print('Then you can issue commands such as')",
             "    print(\"    "
@@ -397,6 +395,14 @@ conf = openerp.tools.config
         )
 
     def _install_openerp_scripts(self):
+        """Install scripts registered in self.openerp_scripts.
+
+        If initialization string is not passed, one will be cooked for
+          - session initialization
+          - treatment of OpenERP options specific to this script, as required
+            in the 'options' key of the scripts descrition (typically to
+            add a database opening option to the provided script).
+        """
         reqs, ws = self.eggs_reqs, self.eggs_ws
 
         common_init = os.linesep.join((
@@ -404,13 +410,6 @@ conf = openerp.tools.config
             "from anybox.recipe.openerp.startup import Session",
             "session = Session(%r)" % self.config_path,
         ))
-
-        # what the entry-points option of zc.recipe.egg does
-        # TODO move that way upper in processing
-        reqs.append(('openerp_starter', 'anybox.recipe.openerp.start_openerp',
-                     'main'))
-        reqs.append(('openerp_tester', 'anybox.recipe.openerp.test_openerp',
-                     'main'))
 
         for script_name, desc in self.openerp_scripts.items():
             initialization = desc.get('initialization', common_init)
@@ -437,10 +436,16 @@ conf = openerp.tools.config
         """
         self._parse_openerp_scripts()
 
-        self._register_main_startup_script(
-            self.options.get('script_name', 'start_' + self.name))
+        # provide additional needed entry points for main start/test scripts
+        self.eggs_reqs.extend((
+            ('openerp_starter', 'anybox.recipe.openerp.start_openerp', 'main'),
+            ('openerp_tester', 'anybox.recipe.openerp.test_openerp', 'main'),
+        ))
 
         self._install_interpreter()
+
+        self._register_main_startup_script(
+            self.options.get('script_name', 'start_' + self.name))
 
         if self.with_openerp_command:
             self._register_openerp_command(
