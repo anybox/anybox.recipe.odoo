@@ -211,9 +211,9 @@ conf = openerp.tools.config
                 name = naming[1]
             cl_options = []
             scripts[name] = dict(entry=naming[0],
-                                 options=cl_options)
+                                 command_line_options=cl_options)
 
-            opt_prefix = 'options='
+            opt_prefix = 'command-line-options='
             for token in line[1:]:
                 if not token.startswith(opt_prefix):
                     raise ValueError(
@@ -417,11 +417,11 @@ conf = openerp.tools.config
 
         for script_name, desc in self.openerp_scripts.items():
             initialization = desc.get('initialization', common_init)
-            options = desc.get('options')
+            options = desc.get('command_line_options')
             if options:
                 initialization = common_init + os.linesep.join((
                     "",
-                    "session.handle_options(%r)" % options))
+                    "session.handle_command_line_options(%r)" % options))
 
             zc.buildout.easy_install.scripts(
                 reqs, ws, sys.executable, self.bin_dir,

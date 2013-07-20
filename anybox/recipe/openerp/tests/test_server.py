@@ -341,13 +341,16 @@ class TestServer(RecipeTestCase):
             version='local %s' % os.path.join(TEST_DIR, 'oerp70'),
             openerp_scripts=os.linesep.join((
                 'myentry=script_name',
-                'nosetests options=-d',
-                'myentry=script_name_opt options=-d,-f')),
+                'nosetests command-line-options=-d',
+                'myentry=script_name_opt command-line-options=-d,-f')),
         )
 
         self.recipe._parse_openerp_scripts()
         self.assertEqual(
             self.recipe.openerp_scripts,
-            dict(script_name=dict(entry='myentry', options=[]),
-                 script_name_opt=dict(entry='myentry', options=['-d', '-f']),
-                 nosetests_openerp=dict(entry='nosetests', options=['-d'])))
+            dict(script_name=dict(entry='myentry',
+                                  command_line_options=[]),
+                 script_name_opt=dict(entry='myentry',
+                                      command_line_options=['-d', '-f']),
+                 nosetests_openerp=dict(entry='nosetests',
+                                        command_line_options=['-d'])))
