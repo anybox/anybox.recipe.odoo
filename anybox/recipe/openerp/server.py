@@ -220,14 +220,29 @@ conf = openerp.tools.config
                         "Invalid token for script %r: %r" % (name, token))
                 cl_options.extend(token[len(opt_prefix):].split(','))
 
+    def _get_or_create_script(self, entry, name=None):
+        """Retrieve or create a registered script by its entry point.
+
+        If create_name is not given, no creation will occur, will return
+        None if not found.
+        In all other cases, return return (script_name, desc).
+        """
+        for script_name, desc in self.openerp_scripts.iteritems():
+            if desc['entry'] == entry:
+                return script_name, desc
+
+        if name is not None:
+            desc = self.openerp_scripts[name] = dict(entry=entry)
+            return name, desc
+
     def _register_main_startup_script(self, qualified_name):
         """Register main startup script, usually ``start_openerp`` for install.
         """
-        desc = self.openerp_scripts[qualified_name] = dict(
-            entry='openerp_starter',
-            arguments='%r, %r' % (self._get_server_command(),
-                                  self.config_path),
-        )
+        desc = self._get_or_create_script('openerp_starter',
+                                          name=qualified_name)[1]
+        desc.update(arguments='%r, %r' % (self._get_server_command(),
+                                          self.config_path),
+                    )
 
         startup_delay = float(self.options.get('startup_delay', 0))
 
@@ -249,7 +264,9 @@ conf = openerp.tools.config
     def _register_test_script(self, qualified_name):
         """Register the main test script for installation.
         """
-        self.openerp_scripts[qualified_name] = dict(
+        desc = self._get_or_create_script('openerp_tester',
+                                          name=qualified_name)[1]
+        desc.update(
             entry='openerp_tester',
             initialization=os.linesep.join((
                 "from anybox.recipe.openerp import devtools",
@@ -266,7 +283,8 @@ conf = openerp.tools.config
         The produced script is suitable for external process management, such
         as provided by supervisor.
         """
-        desc = self.openerp_scripts[qualified_name] = dict(entry='gunicorn')
+        desc = self._get_or_create_script('gunicorn',
+                                          name=qualified_name)[1]
 
         gunicorn_options = {}
         gunicorn_prefix = 'gunicorn.'
@@ -296,7 +314,7 @@ conf = openerp.tools.config
         logger.warn("Installing openerp-command as %r. This is useful for "
                     "development operations, but not ready to launch "
                     "production instances yet.", qualified_name)
-        desc = self.openerp_scripts[qualified_name] = dict(entry='oe')
+        desc = self._get_or_create_script('oe', name=qualified_name)[1]
 
         # can't reuse self.addons here, because the true addons path maybe
         # different depending on addons options, such as subdir
@@ -339,11 +357,12 @@ conf = openerp.tools.config
             script_src = join(os.path.split(__file__)[0],
                               'openerp-cron-worker')
 
-        self.openerp_scripts[qualified_name] = dict(
-            entry='openerp_starter',
-            arguments='%r, %r' % (script_src, self.config_path),
-            initialization='',
-        )
+        desc = self._get_or_create_script('openerp_cron_worker',
+                                          name=qualified_name)[1]
+        desc.update(entry='openerp_cron_worker',
+                    arguments='%r, %r' % (script_src, self.config_path),
+                    initialization='',
+                    )
 
     def _install_interpreter(self):
         """Install a python interpreter with a ready-made session object."""
@@ -372,24 +391,9 @@ conf = openerp.tools.config
             ""))
 
         reqs, ws = self.eggs_reqs, self.eggs_ws
-
-        scripts_opt = self.options.get('openerp_scripts')
-        scripts = {}
-        if scripts_opt is not None:
-            for line in scripts_opt.split(os.linesep):
-                line = line.strip()
-                if not line:
-                    continue
-                split = line.split()
-                spec = split[0].split('=')
-                if len(spec) == 1:
-                    scripts[spec[0]] = '_'.join((spec[0], self.name))
-                else:
-                    scripts[spec[0]] = spec[1]
-
         return zc.buildout.easy_install.scripts(
             reqs, ws, sys.executable, self.options['bin-directory'],
-            scripts=scripts,
+            scripts={},
             interpreter=int_name,
             initialization=initialization,
             arguments=self.options.get('arguments', ''),
@@ -443,6 +447,8 @@ conf = openerp.tools.config
         # provide additional needed entry points for main start/test scripts
         self.eggs_reqs.extend((
             ('openerp_starter', 'anybox.recipe.openerp.start_openerp', 'main'),
+            ('openerp_cron_worker', 'anybox.recipe.openerp.start_openerp',
+             'main'),
             ('openerp_tester', 'anybox.recipe.openerp.test_openerp', 'main'),
         ))
 
