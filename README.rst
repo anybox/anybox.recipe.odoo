@@ -59,6 +59,9 @@ or just useful ones::
 
 scripts
 -------
+.. note:: for scripts needing to call OpenERP internal API or to load
+          an OpenERP database prior to execution, check
+          ``openerp_scripts`` below.
 
 The behaviour of this option is slightly modified :
 by default, no script other than those directly related to OpenERP are
@@ -210,8 +213,140 @@ the main server part and addons before any update or install.
 
 Note that tarball downloads get re-extracted afresh in any case.
 
+openerp_scripts
+---------------
+
+Introduction and use-cases
+``````````````````````````
+This option lets you install console scripts provided by any of the loaded eggs,
+so that they can access to OpenERP internals and load databases.
+Some interesting use-cases:
+
+* specific batch jobs
+* introspection tools
+* general-purposes test launchers that don't have any knowledge of
+  OpenERP specifics
+* actually, the main startup scripts themselves (with a default
+  configuration, of course)
+
+Usage
+`````
+This multiline option is similar to the classical ``scripts`` options
+of ``zc.recipe.eggs:scripts``. It lets you ask for installation of
+console scripts provided by the various Python distribution involved
+in the buildout part (including OpenERP itself).
+
+The built console scripts can import all the involved Python
+distributions, and have access to a ``session`` object, to issue
+OpenERP native calls (see
+``interpreter_name`` option below for details on how to use it).
+
+One has to register exactly one console script per line.
+
+As it is the case with ``scripts``, one actually specifies the name of the
+entry point to use (we are all used to that entry point being the name
+of the resulting script, because that's what ``setup.py install`` does).
+
+Suppose there is a distribution ``my.package`` with the following lines in
+its ``setup.py``::
+
+      entry_points="""
+
+      [console_scripts]
+      my = my.package.main:run
+      """
+
+Now the following configuration extract builds a script called
+``my_openerp1``, that can access ``session``::
+
+  [openerp1]
+  (...)
+  openerp_scripts = my
+
+To control the script name, just do, e.g,::
+
+  [openerp1]
+  (...)
+  openerp_scripts = my=my_script
+
+This will build it as ``bin/my_script``.
+
+Command-line options and test launchers
+```````````````````````````````````````
+
+If ``my.package`` is meant to do OpenERP heavy-lifting, then surely it
+will provide a powerful command-line parsing. e.g., to let the end user chose
+the database on which to work, etc.
+
+Sometimes, however, the script itself has no knowledge of OpenERP at
+all, but still must run after a database has been fully initialized.
+The main use case for this is test launchers, such as
+`nose <https://nose.readthedocs.org/en/latest/>`_ or simply ``unit2``.
+For these, the recipe has a facility to rewrap the script and add some further
+command-line options.
+
+In this example, we build ``unit2``, the launcher that comes with
+``unittest2``, and wrap it to add the database option::
+
+  [openerp]
+  (...)
+  openerp_scripts = unit2 command-line-options=-d
+
+You may then run it this way::
+
+   bin/unit2_openerp -d unit-tests-db -- discover some/addon
+
+Notice how ``--`` is used to separate the ``-d`` or
+any recipe-related options from the options expected by the script itself.
+
+If one wishes to run the tests with ``nose``, one has further to
+require it. In the following example, we also ask for the ``coverage``
+package::
+
+  [openerp]
+  (...)
+  eggs = nose
+         coverage
+  openerp_scripts = nosetests command-line-options=-d
+
+Here's our test run with coverage and pdb post-mortem::
+
+  bin/nosetests-openerp -d unit-tests-db -- --nologcapture \
+           --with-coverage --pdb \
+           some/addon/tests/test_one.py
+
+Main startup scripts
+````````````````````
+The recipe will in all cases build OpenERP startup scripts, according to other
+configuration options (gunicorn, tests etc.). These are
+actually special cases of the scripts controlled via ``openerp_scripts``.
+
+This allows you (for now) to control the names. For instance, to
+replace ``bin/start_openerp`` with ``bin/oerp``, just do::
+
+  [openerp]
+  (...)
+  openerp_scripts = openerp_starter=oerp
+
+Here's the list of currently available internal entry points. For
+these, the ``command-line-options`` modifier has no effect.
+
+:openerp_starter: main OpenERP startup script (dynamically added
+                  behing the scenes by the recipe)
+:openerp_tester: uniform script to start OpenERP, launch all tests and
+                 exit. This can be achieved with the main startup
+                 scripts, but options differ among OpenERP versions.
+                 (also dynamically added behind the scenes).
+:openerp_cron_worker: entry point for the cron worker script that gets
+                      built for gunicorn setups.
+:oe: entry point declared by ``openerp-command`` and used by the recipe.
+:gunicorn: entry point declared ``gunicorn`` and used by the recipe.
+
 script_name
 -----------
+
+.. warning:: as of version 1.7.0, this option is deprecated because of its
+             redundancy with ``openerp_scripts``.
 
 OpenERP startup scripts are created in the `bin` directory. By default the name is:
 start_<part_name>, so you can have several startup scripts for each part if you
@@ -291,6 +426,9 @@ cheat with system time).
 
 test_script_name
 ----------------
+.. warning:: as of version 1.7.0, this option is deprecated because of its
+             redundancy with ``openerp_scripts``.
+
 If the ``with_devtools`` is set to True, the recipe will create a
 test script, which is named by default ``test_<part_name>``. You may
 override the name in the configuration as in the following example::
@@ -385,6 +523,8 @@ accordingly.
 
 openerp_command_name
 --------------------
+.. warning:: as of version 1.7.0, this option is deprecated, check
+   ``openerp_scripts`` for more details.
 
 OpenERP Command Line Tools (openerp-command for short) is an
 alternative set of command-line tools that may someday subsede the
