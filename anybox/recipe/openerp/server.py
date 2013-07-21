@@ -38,7 +38,7 @@ class ServerRecipe(BaseRecipe):
         # discarding, because we have a special behaviour with custom
         # interpreters
         opt.pop('interpreter', None)
-
+        self.openerp_scripts = {}
         self.missing_deps_instructions.update({
             'openerp-command': ("Please provide it with 'develop' or "
                                 "'gp.vcsdevelop'. "
@@ -185,17 +185,106 @@ conf = openerp.tools.config
         f.write(conf)
         f.close()
 
-    def _install_gunicorn_startup_script(self, qualified_name):
-        """Install a gunicorn foreground start script.
+    def _get_server_command(self):
+        """Return a full path to the main OpenERP server command."""
+        if self.major_version == (6, 0):
+            server_cmd = join('bin', 'openerp-server.py')
+        else:
+            server_cmd = 'openerp-server'
+        return join(self.openerp_dir, server_cmd)
+
+    def _parse_openerp_scripts(self):
+        """Parse required scripts from conf."""
+
+        scripts = self.openerp_scripts
+        if not 'openerp_scripts' in self.options:
+            return
+        for line in self.options.get('openerp_scripts').split(os.linesep):
+            line = line.split()
+
+            naming = line[0].split('=')
+            if not naming or len(naming) > 2:
+                raise ValueError("Invalid script specification %r" % line[0])
+            elif len(naming) == 1:
+                name = '_'.join((naming[0], self.name))
+            else:
+                name = naming[1]
+            cl_options = []
+            scripts[name] = dict(entry=naming[0],
+                                 command_line_options=cl_options)
+
+            opt_prefix = 'command-line-options='
+            for token in line[1:]:
+                if not token.startswith(opt_prefix):
+                    raise ValueError(
+                        "Invalid token for script %r: %r" % (name, token))
+                cl_options.extend(token[len(opt_prefix):].split(','))
+
+    def _get_or_create_script(self, entry, name=None):
+        """Retrieve or create a registered script by its entry point.
+
+        If create_name is not given, no creation will occur, will return
+        None if not found.
+        In all other cases, return return (script_name, desc).
+        """
+        for script_name, desc in self.openerp_scripts.iteritems():
+            if desc['entry'] == entry:
+                return script_name, desc
+
+        if name is not None:
+            desc = self.openerp_scripts[name] = dict(entry=entry)
+            return name, desc
+
+    def _register_main_startup_script(self, qualified_name):
+        """Register main startup script, usually ``start_openerp`` for install.
+        """
+        desc = self._get_or_create_script('openerp_starter',
+                                          name=qualified_name)[1]
+        desc.update(arguments='%r, %r' % (self._get_server_command(),
+                                          self.config_path),
+                    )
+
+        startup_delay = float(self.options.get('startup_delay', 0))
+
+        initialization = ['']
+        if self.with_devtools:
+            initialization.extend((
+                'from anybox.recipe.openerp import devtools',
+                'devtools.load(for_tests=False)',
+                ''))
+
+        if startup_delay:
+            initialization.extend(
+                ('print("sleeping %s seconds...")' % startup_delay,
+                 'import time',
+                 'time.sleep(%f)' % startup_delay))
+
+        desc['initialization'] = os.linesep.join((initialization))
+
+    def _register_test_script(self, qualified_name):
+        """Register the main test script for installation.
+        """
+        desc = self._get_or_create_script('openerp_tester',
+                                          name=qualified_name)[1]
+        desc.update(
+            entry='openerp_tester',
+            initialization=os.linesep.join((
+                "from anybox.recipe.openerp import devtools",
+                "devtools.load(for_tests=True)",
+                "")),
+            arguments='%r, %r, %r' % (self._get_server_command(),
+                                      self.config_path,
+                                      self.version_detected),
+        )
+
+    def _register_gunicorn_startup_script(self, qualified_name):
+        """Register a gunicorn foreground start script for installation.
 
         The produced script is suitable for external process management, such
         as provided by supervisor.
-        The script installation works by a tweaked call to a dedicated
-        instance of zc.recipe.eggs:scripts.
         """
-        options = self.options.copy()
-        options['scripts'] = 'gunicorn=' + qualified_name
-        options['dependent-scripts'] = 'false'
+        desc = self._get_or_create_script('gunicorn',
+                                          name=qualified_name)[1]
 
         gunicorn_options = {}
         gunicorn_prefix = 'gunicorn.'
@@ -215,24 +304,18 @@ conf = openerp.tools.config
 
         # gunicorn's main() does not take arguments, that's why we have
         # to resort on hacking sys.argv
-        options['initialization'] = (
-            "from sys import argv; "
-            "argv[1:] = ['%s', "
-            "            '-c', '%s.conf.py']") % (
-                gunicorn_entry_point, join(self.etc, qualified_name))
+        desc['initialization'] = (
+            "from sys import argv; argv[1:] = ['%s', '-c', '%s.conf.py']" % (
+                gunicorn_entry_point, join(self.etc, qualified_name)))
 
-        zc.recipe.egg.Scripts(self.buildout, '', options).install()
-        self.openerp_installed.append(join(self.bin_dir, qualified_name))
-
-    def _install_openerp_command(self, qualified_name):
-        """Install https://launchpad.net/openerp-command)
+    def _register_openerp_command(self, qualified_name):
+        """Register https://launchpad.net/openerp-command for install.
         """
         logger.warn("Installing openerp-command as %r. This is useful for "
                     "development operations, but not ready to launch "
                     "production instances yet.", qualified_name)
+        desc = self._get_or_create_script('oe', name=qualified_name)[1]
 
-        options = self.options.copy()
-        options['scripts'] = 'oe=' + qualified_name
         # can't reuse self.addons here, because the true addons path maybe
         # different depending on addons options, such as subdir
         addons = self.options['options.addons_path'].replace(',', ':')
@@ -245,20 +328,16 @@ conf = openerp.tools.config
                 'from anybox.recipe.openerp import devtools',
                 'devtools.load(for_tests=True)',
                 ''))
-        options['initialization'] = os.linesep.join(initialization)
+        desc['initialization'] = os.linesep.join(initialization)
 
-        zc.recipe.egg.Scripts(self.buildout, '', options).install()
-        self.openerp_installed.append(join(self.bin_dir, qualified_name))
-
-    def _install_cron_worker_startup_script(self, qualified_name):
-        """Install the cron worker script.
+    def _register_cron_worker_startup_script(self, qualified_name):
+        """Register the cron worker script for installation.
 
         This worker script has been introduced in openobject-server, rev 4184
         together with changes in the main code that it requires.
         These changes appeared in nightly build 6.1-20120530-233414.
         The worker script itself does not appear in nightly builds.
         """
-
         script_src = join(self.openerp_dir, 'openerp-cron-worker')
         if not os.path.isfile(script_src):
             version = self.version_detected
@@ -278,143 +357,127 @@ conf = openerp.tools.config
             script_src = join(os.path.split(__file__)[0],
                               'openerp-cron-worker')
 
-        options = self.options.copy()
-        options['entry-points'] = ('openerp_starter=anybox.recipe.'
-                                   'openerp.start_openerp:main')
-        options['scripts'] = 'openerp_starter=' + qualified_name
-        options['arguments'] = '%r, %r' % (script_src, self.config_path)
-        options['dependent-scripts'] = 'false'
-        zc.recipe.egg.Scripts(self.buildout, '', options).install()
-
-    def _install_main_startup_script(self):
-        """Install the main startup script, usually called ``start_openerp``.
-
-        Uses a derivation to a console script provided by the recipe and
-        a tweaked call to a dedicated instance of zc.recipe.eggs:scripts.
-        """
-        script_name = self.options.get('script_name', 'start_' + self.name)
-        startup_delay = float(self.options.get('startup_delay', 0))
-
-        options = self.options.copy()
-        options['entry-points'] = ('openerp_starter=anybox.recipe.'
-                                   'openerp.start_openerp:main')
-        options['scripts'] = 'openerp_starter=' + script_name
-
-        initialization = ['']
-        if self.with_devtools:
-            initialization.extend((
-                'from anybox.recipe.openerp import devtools',
-                'devtools.load(for_tests=False)',
-                ''))
-
-        if startup_delay:
-            initialization.extend(
-                ('print("sleeping %s seconds...")' % startup_delay,
-                 'import time',
-                 'time.sleep(%f)' % startup_delay))
-
-        options['initialization'] = os.linesep.join((initialization))
-
-        if self.major_version == (6, 0):
-            server_cmd = join('bin', 'openerp-server.py')
-        else:
-            server_cmd = 'openerp-server'
-
-        options['arguments'] = '%r, %r' % (
-            join(self.openerp_dir, server_cmd), self.config_path)
-        options['dependent-scripts'] = 'false'
-        zc.recipe.egg.Scripts(self.buildout, '', options).install()
-
-        self.script_path = join(self.bin_dir, script_name)
-        self.openerp_installed.append(self.script_path)
+        desc = self._get_or_create_script('openerp_cron_worker',
+                                          name=qualified_name)[1]
+        desc.update(entry='openerp_cron_worker',
+                    arguments='%r, %r' % (script_src, self.config_path),
+                    initialization='',
+                    )
 
     def _install_interpreter(self):
-        """Derivation to insulate initialization from the scripts."""
+        """Install a python interpreter with a ready-made session object."""
         int_name = self.options.get('interpreter_name', None)
         if int_name == '':  # conf requires not to build an interpreter
             return
         elif int_name is None:
             int_name = 'python_' + self.name
 
-        options = self.options.copy()
-        options['initialization'] = os.linesep.join((
+        initialization = os.linesep.join((
             "",
             "from anybox.recipe.openerp.startup import Session",
             "session = Session(%r)" % self.config_path,
-            "print('To start the OpenERP working session, just do:')",
-            "print('    session.open(db=DATABASE_NAME)')",
-            "print('or, to use the database from the buildout part config:')",
-            "print('    session.open()')",
-            "print('All other options from buildout part config do apply.')",
+            "if len(sys.argv) <= 1:",
+            "    print('To start the OpenERP working session, just do:')",
+            "    print('    session.open(db=DATABASE_NAME)')",
+            "    print('or, to use the database from the buildout "
+            "part config:')",
+            "    print('    session.open()')",
+            "    print('All other options from buildout part config "
+            "do apply.')",
             ""
-            "print('Then you can issue commands such as')",
-            "print(\"    "
-            "session.registry('res.users').browse(session.cr, 1, 1)\")"
+            "    print('Then you can issue commands such as')",
+            "    print(\"    "
+            "    session.registry('res.users').browse(session.cr, 1, 1)\")"
             ""))
-        options['interpreter'] = int_name
-        options['scripts'] = None
-        options['dependent-scripts'] = 'false'
-        options.pop('arguments', None)
-        zc.recipe.egg.Scripts(self.buildout, '', options).install()
 
-    def _install_test_script(self):
-        """Install the main startup script, usually called ``start_openerp``.
+        reqs, ws = self.eggs_reqs, self.eggs_ws
+        return zc.buildout.easy_install.scripts(
+            reqs, ws, sys.executable, self.options['bin-directory'],
+            scripts={},
+            interpreter=int_name,
+            initialization=initialization,
+            arguments=self.options.get('arguments', ''),
+            # TODO investigate these options:
+            # extra_paths=self.extra_paths,
+            # relative_paths=self._relative_paths,
+        )
 
-        Uses a derivation to a console script provided by the recipe and
-        a tweaked call to a dedicated instance of zc.recipe.eggs:scripts.
+    def _install_openerp_scripts(self):
+        """Install scripts registered in self.openerp_scripts.
+
+        If initialization string is not passed, one will be cooked for
+          - session initialization
+          - treatment of OpenERP options specific to this script, as required
+            in the 'options' key of the scripts descrition (typically to
+            add a database opening option to the provided script).
         """
+        reqs, ws = self.eggs_reqs, self.eggs_ws
 
-        script_name = self.options.get('test_script_name', 'test_' + self.name)
+        common_init = os.linesep.join((
+            "",
+            "from anybox.recipe.openerp.startup import Session",
+            "session = Session(%r)" % self.config_path,
+        ))
 
-        options = self.options.copy()
-        options['entry-points'] = ('openerp_tester=anybox.recipe.'
-                                   'openerp.test_openerp:main')
-        options['scripts'] = 'openerp_tester=' + script_name
+        for script_name, desc in self.openerp_scripts.items():
+            initialization = desc.get('initialization', common_init)
+            options = desc.get('command_line_options')
+            if options:
+                initialization = common_init + os.linesep.join((
+                    "",
+                    "session.handle_command_line_options(%r)" % options))
 
-        initialization = ['']
-        initialization.extend(('from anybox.recipe.openerp import devtools',
-                               'devtools.load(for_tests=True)', ''))
-
-        options['initialization'] = os.linesep.join((initialization))
-
-        if self.major_version == (6, 0):
-            server_cmd = join('bin', 'openerp-server.py')
-        else:
-            server_cmd = 'openerp-server'
-
-        options['arguments'] = '%r, %r, %r' % (
-            join(self.openerp_dir, server_cmd), self.config_path,
-            self.version_detected)
-        options['dependent-scripts'] = 'false'
-        zc.recipe.egg.Scripts(self.buildout, '', options).install()
-
-        self.script_path = join(self.bin_dir, script_name)
-        self.openerp_installed.append(self.script_path)
+            zc.buildout.easy_install.scripts(
+                reqs, ws, sys.executable, self.bin_dir,
+                scripts={desc['entry']: script_name},
+                interpreter='',
+                initialization=initialization,
+                arguments=desc.get('arguments', ''),
+                # TODO investigate these options:
+                # extra_paths=self.extra_paths,
+                # relative_paths=self._relative_paths,
+            )
+            self.openerp_installed.append(join(self.bin_dir, script_name))
 
     def _install_startup_scripts(self):
         """install startup and control scripts.
         """
+        self._parse_openerp_scripts()
 
-        self._install_main_startup_script()
+        # provide additional needed entry points for main start/test scripts
+        self.eggs_reqs.extend((
+            ('openerp_starter', 'anybox.recipe.openerp.start_openerp', 'main'),
+            ('openerp_cron_worker', 'anybox.recipe.openerp.start_openerp',
+             'main'),
+            ('openerp_tester', 'anybox.recipe.openerp.test_openerp', 'main'),
+        ))
+
         self._install_interpreter()
 
+        main_script = self.options.get('script_name', 'start_' + self.name)
+        self._register_main_startup_script(main_script)
+        self.script_path = join(self.bin_dir, main_script)
+
         if self.with_openerp_command:
-            self._install_openerp_command(
+            self._register_openerp_command(
                 self.options.get('openerp_command_name',
                                  '%s_command' % self.name))
 
         if self.with_devtools:
-            self._install_test_script()
+            self._register_test_script(
+                self.options.get('test_script_name', 'test_' + self.name))
 
         if self.with_gunicorn:
             qualified_name = self.options.get('gunicorn_script_name',
                                               'gunicorn_%s' % self.name)
             self._create_gunicorn_conf(qualified_name)
-            self._install_gunicorn_startup_script(qualified_name)
+            self._register_gunicorn_startup_script(qualified_name)
 
             qualified_name = self.options.get('cron_worker_script_name',
                                               'cron_worker_%s' % self.name)
-            self._install_cron_worker_startup_script(qualified_name)
+            self._register_cron_worker_startup_script(qualified_name)
+
+        self._install_openerp_scripts()
 
     def _60_fix_root_path(self):
         """Correction of root path for OpenERP 6.0 pure python install"""

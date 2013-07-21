@@ -336,3 +336,22 @@ class TestServer(RecipeTestCase):
                             'gunicorn_openerp',
                             'cron_worker_openerp',
                             ))
+
+    def test_parse_openerp_scripts(self):
+        self.make_recipe(
+            version='local %s' % os.path.join(TEST_DIR, 'oerp70'),
+            openerp_scripts=os.linesep.join((
+                'myentry=script_name',
+                'nosetests command-line-options=-d',
+                'myentry=script_name_opt command-line-options=-d,-f')),
+        )
+
+        self.recipe._parse_openerp_scripts()
+        self.assertEqual(
+            self.recipe.openerp_scripts,
+            dict(script_name=dict(entry='myentry',
+                                  command_line_options=[]),
+                 script_name_opt=dict(entry='myentry',
+                                      command_line_options=['-d', '-f']),
+                 nosetests_openerp=dict(entry='nosetests',
+                                        command_line_options=['-d'])))
