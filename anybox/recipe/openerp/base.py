@@ -106,6 +106,14 @@ class BaseRecipe(object):
         clear_retry = options.get('vcs-clear-retry', '').lower()
         self.clear_retry = clear_retry == 'true'
 
+        # same as in zc.recipe.eggs
+        self.extra_paths = [
+            join(self.buildout_dir, p.strip())
+            for p in self.options.get('extra-paths', '').split(os.linesep)
+            if p.strip()
+        ]
+        self.options['extra-paths'] = os.linesep.join(self.extra_paths)
+
         self.downloads_dir = self.make_absolute(
             self.b_options.get('openerp-downloads-directory', 'downloads'))
         self.version_wanted = None  # from the buildout
@@ -635,6 +643,19 @@ class BaseRecipe(object):
                            offline=self.offline,
                            clear_retry=self.clear_retry, **options)
 
+    def _register_extra_paths(self):
+        """Add openerp paths into the extra-paths (used in scripts' sys.path).
+        """
+        extra = self.extra_paths
+        if self.major_version >= (6, 2):
+            # TODO still necessary ?
+            extra.extend((self.openerp_dir,
+                         join(self.openerp_dir, 'addons')))
+        else:
+            extra.extend((join(self.openerp_dir, 'bin'),
+                          join(self.openerp_dir, 'bin', 'addons')))
+        self.options['extra-paths'] = os.linesep.join(extra)
+
     def install(self):
         os.chdir(self.parts)
 
@@ -688,15 +709,7 @@ class BaseRecipe(object):
         if is_60:
             self._60_fix_root_path()
 
-        # add openerp paths into the extra-paths
-        if self.major_version >= (6, 2):
-            paths = [self.openerp_dir,
-                     join(self.openerp_dir, 'addons')]  # TODO necessary ?
-        else:
-            paths = [join(self.openerp_dir, 'bin'),
-                     join(self.openerp_dir, 'bin', 'addons')]
-        paths.append(self.options.get('extra-paths', ''))
-        self.options['extra-paths'] = os.linesep.join(paths)
+        self._register_extra_paths()
 
         if self.version_detected is None:
             raise EnvironmentError('Version of OpenERP could not be detected')

@@ -256,6 +256,7 @@ class TestServer(RecipeTestCase):
         bindir = os.path.join(self.buildout_dir, 'bin')
         os.mkdir(bindir)
 
+        self.recipe._register_extra_paths()
         self.recipe._install_startup_scripts()
 
     def test_install_scripts_61(self):
@@ -277,6 +278,17 @@ class TestServer(RecipeTestCase):
                                'gunicorn_openerp.conf.py')) as gconf:
             s = gconf.read()
             self.assertTrue("[':INFO', 'werkzeug:WARNING']" in s)
+
+    def test_install_scripts_60(self):
+        self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'oerp60'),
+                         with_devtools='true')
+        self.recipe.options['options.log_level'] = "WARNING"
+        self.recipe.version_detected = "6.0.4"
+
+        self.install_scripts()
+        self.assertScripts(('start_openerp',
+                            'test_openerp',
+                            ))
 
     def test_install_scripts_soft_deps(self):
         """If a soft requirement is missing, the scripts are still generated.
