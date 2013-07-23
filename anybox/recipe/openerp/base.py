@@ -70,13 +70,14 @@ class BaseRecipe(object):
 
     """
 
-    default_dl_url = {'6.0': 'http://www.openerp.com/download/stable/source/',
+    default_dl_url = {'6.0': 'http://nightly.openerp.com/6.0/6.0/',
                       '6.1': 'http://nightly.openerp.com/6.1/releases/',
                       '7.0': 'http://nightly.openerp.com/7.0/releases/',
-                      '5.0': 'http://v6.openerp.com/download/stable/source/',
+                      '5.0': 'http://nightly.openerp.com/old/openerp-5/',
                       }
 
-    nightly_dl_url = {'6.1': 'http://nightly.openerp.com/6.1/nightly/src/',
+    nightly_dl_url = {'6.0': 'http://nightly.openerp.com/6.0/6.0/',
+                      '6.1': 'http://nightly.openerp.com/6.1/nightly/src/',
                       '7.0': 'http://nightly.openerp.com/7.0/nightly/src/',
                       'trunk': 'http://nightly.openerp.com/trunk/nightly/src/',
                       }
