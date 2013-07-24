@@ -37,6 +37,8 @@ class Session(object):
     def open(self, db=None):
         if db is None:
             db = config['db_name']
+        if not db:
+            db = ''  # default to OpenERP/psycopg2/lipbq default behaviour
         startup.check_root_user()
         startup.check_postgres_user()
         openerp.netsvc.init_logger()
@@ -61,25 +63,60 @@ class Session(object):
         """Handle prescribed command line options and eat them.
 
         Anything before first occurrence of '--' is ours and removed from
-        sys.argv
+        sys.argv.
+
+        Help messages:
+
+        If -h or --help is specified  and -- is not, the help for the wrapper
+        will be printed, and the -h/--help option kept in sys.argv.
+
+        If -h or --help is specified before --, the help for this wrapper will
+        be printed and options after -- will be kept in sys.argv.
+
+        if -h or --help is specified after --, it will be ignored at this
+        stage, and kept in sys.argv (in most cases triggering help print for
+        the wrapped script).
         """
+
+        parser = OptionParser(
+            usage="%(prog)s [OpenERP options] -- other arguments",
+            description="This is a script rewrapped by OpenERP buildout "
+                        "recipe to add OpenERP-related options on the command "
+                        "line prior to other arguments.")
+
+        if '-d' in to_handle:
+            parser.add_option('-d', '--db-name',
+                              help="Name of the database to work on. "
+                              "If not specified, the database from "
+                              "configuration files will be used")
+
         try:
             sep = sys.argv.index('--')
         except ValueError:
-            return
-
-        our_argv = sys.argv[1:sep]
-        parser = OptionParser()
-        # TODO add more
-        if '-d' in to_handle:
-            parser.add_option('-d', '--db-name',
-                              help='Name of the database to work on.')
+            if '-h' in sys.argv or '--help' in sys.argv:
+                # in case of call myscript -h --, only the wrapper help
+                # will be printed
+                parser.epilog = ("Help message from the wrapped script, "
+                                 "if any, will follow.")
+                parser.print_help()
+                print
+                return
+            our_argv = []
+            sep = None
+        else:
+            our_argv = sys.argv[1:sep]
 
         options, args = parser.parse_args(our_argv)
-        del sys.argv[1:sep+1]
 
-        if options.db_name:
-            logger.info("Opening database %r", options.db_name)
+        if sep is not None:
+            del sys.argv[1:sep+1]
+
+        if '-d' in to_handle:
+            if options.db_name:
+                logger.info("Opening database %r", options.db_name)
+            else:
+                logger.info("No database specified, using the one specified "
+                            "in buildout configuration.")
             self.open(db=options.db_name)
 
 _imported_addons = set()
