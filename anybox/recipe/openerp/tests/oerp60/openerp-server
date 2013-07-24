@@ -1,0 +1,5 @@
+#!/bin/sh
+echo "Error: the content of this file should have been replaced during "
+echo "installation
+"
+exit 1
