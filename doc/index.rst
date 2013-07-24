@@ -6,8 +6,8 @@
 OpenERP buildout recipe
 =======================
 
-This recipe for `zc.buildout` is a fully featured tool allowing you to
-define and deploy quickly
+This recipe for `zc.buildout <https://github.com/buildout/buildout>`_
+is a fully featured tool allowing you to define and deploy quickly
 OpenERP installations of any kinds, ranging from development setups to
 fully automated production deployments or continuous integration.
 
@@ -37,7 +37,10 @@ Contents
    :maxdepth: 2
    :glob:
 
-   *
+   first_steps
+   reference
+   dev_prod_workflow
+   contributing
 
 Code documentation
 ==================
