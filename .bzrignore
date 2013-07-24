@@ -4,3 +4,5 @@ dist/
 build/
 .coverage/
 COVERAGE
+.noseids
+doc/sphinx_build
