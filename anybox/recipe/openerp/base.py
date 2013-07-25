@@ -289,6 +289,17 @@ class BaseRecipe(object):
             return None
         return utils.major_version(detected)
 
+    def read_release(self):
+        """Try and read the release.py file directly.
+
+        Should be used only if reading setup.py failed, which happens
+        with OpenERP 5.0
+        """
+        with open(join(self.openerp_dir, 'bin', 'release.py'), 'rb') as f:
+            mod = imp.load_module('release', f, 'release.py',
+                                  ('.py', 'r', imp.PY_SOURCE))
+        self.version_detected = mod.version
+
     def read_openerp_setup(self):
         """Ugly method to extract requirements & version from ugly setup.py.
 
@@ -309,13 +320,18 @@ class BaseRecipe(object):
             try:
                 imp.load_module('setup', f, 'setup.py',
                                 ('.py', 'r', imp.PY_SOURCE))
-            except SystemExit, exception:
-                if 'dsextras' in exception.message:
+            except SystemExit as exception:
+                msg = exception.message
+                if not isinstance(msg, int) and 'dsextras' in msg:
                     raise EnvironmentError(
                         'Please first install PyGObject and PyGTK !')
                 else:
-                    raise EnvironmentError('Problem while reading OpenERP '
-                                           'setup.py: ' + exception.message)
+                    try:
+                        self.read_release()
+                    except Exception as exc:
+                        raise EnvironmentError(
+                            'Problem while reading OpenERP release.py: '
+                            + exc.message)
             except ImportError, exception:
                 if 'babel' in exception.message:
                     raise EnvironmentError(
@@ -691,7 +707,7 @@ class BaseRecipe(object):
                         "fix it in your config file for replayability: \n    "
                         "version = " + self.dump_nightly_latest_version())
 
-        is_60 = self.major_version == (6, 0)
+        is_60 = self.major_version <= (6, 0)
         # configure addons_path option
         if addons_paths:
             if 'options.addons_path' not in self.options:

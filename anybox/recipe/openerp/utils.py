@@ -104,6 +104,7 @@ def check_output(*popenargs, **kwargs):
 
     Example (this doctest would be more readable with ELLIPSIS, but
     that's good enough for today):
+
     >>> out = check_output(["ls", "-l", "/dev/null"])
     >>> out.startswith('crw-rw-rw- 1 root root 1')
     True

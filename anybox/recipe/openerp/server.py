@@ -16,8 +16,11 @@ SERVER_COMMA_LIST_OPTIONS = ('log_handler', )
 class ServerRecipe(BaseRecipe):
     """Recipe for server install and config
     """
-    archive_filenames = {'6.0': 'openerp-server-%s.tar.gz',
-                         '6.1': 'openerp-%s.tar.gz'}
+    archive_filenames = {
+        '5.0': 'openerp-server-%s.tar.gz',
+        '6.0': 'openerp-server-%s.tar.gz',
+        '6.1': 'openerp-%s.tar.gz',
+    }
     archive_nightly_filenames = {
         '6.1': 'openerp-6.1-%s.tar.gz',
         '7.0': 'openerp-7.0-%s.tar.gz',
@@ -85,6 +88,10 @@ class ServerRecipe(BaseRecipe):
         Once 'openerp' is required, zc.recipe.egg will take it into account
         and put it in needed scripts, interpreters etc.
         """
+        if self.major_version < (6, 0):
+            self.requirements.extend(
+                self.archeo_requirements.get(self.major_version))
+
         setup_has_pil = False
         if not 'PIL' in self.options.get('eggs', '').split():
             if 'PIL' in self.requirements:
@@ -112,7 +119,7 @@ class ServerRecipe(BaseRecipe):
         """Have OpenERP generate its default config file.
         """
         self.options.setdefault('options.admin_passwd', '')
-        if self.major_version == (6, 0):
+        if self.major_version <= (6, 0):
             # root-path not available as command-line option
             os.chdir(join(self.openerp_dir, 'bin'))
             subprocess.check_call([self.script_path, '--stop-after-init', '-s',
@@ -187,7 +194,7 @@ conf = openerp.tools.config
 
     def _get_server_command(self):
         """Return a full path to the main OpenERP server command."""
-        if self.major_version == (6, 0):
+        if self.major_version <= (6, 0):
             server_cmd = join('bin', 'openerp-server.py')
         else:
             server_cmd = 'openerp-server'
@@ -489,3 +496,6 @@ conf = openerp.tools.config
         """Set the correct default addons path for OpenERP 6.0."""
         self.options['options.addons_path'] = join(self.openerp_dir,
                                                    'bin', 'addons')
+
+    archeo_requirements = {
+        (5, 0): ['psycopg2', 'pytz']}
