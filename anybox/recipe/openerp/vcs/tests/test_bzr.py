@@ -203,6 +203,22 @@ class BzrTestCase(BzrBaseTestCase):
         # any local modification, including removal of 'subdir'
         self.assertEquals(out.strip(), '')
 
+    def test_uncommitted_changes_tracked(self):
+        target_dir = os.path.join(self.dst_dir, "clone to dirty")
+        branch = BzrBranch(target_dir, self.src_repo)('last:1')
+        self.assertFalse(branch.uncommitted_changes())
+        with open(os.path.join(target_dir, 'tracked'), 'w') as f:
+            f.write('some change')
+        self.assertTrue(branch.uncommitted_changes())
+
+    def test_uncommitted_changes_untracked(self):
+        target_dir = os.path.join(self.dst_dir, "clone to dirty")
+        branch = BzrBranch(target_dir, self.src_repo)('last:1')
+        self.assertFalse(branch.uncommitted_changes())
+        with open(os.path.join(target_dir, 'unknownfile'), 'w') as f:
+            f.write('some change')
+        self.assertTrue(branch.uncommitted_changes())
+
     def test_archive(self):
         target_dir = os.path.join(self.dst_dir, "clone to archive")
         branch = BzrBranch(target_dir, self.src_repo)
