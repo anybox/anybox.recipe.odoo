@@ -625,6 +625,21 @@ while ``client.cfg`` will have the ``gtkclient`` part only.
              with the ``gp.vcsdevelop`` extension but cannot currently
              protect against local modifications of these.
 
+.. warning:: currently ``freeze-to`` cannot fix eggs versions related
+             to non-openerp parts.
+
+freeze-allow-picked-versions
+----------------------------
+
+This option is to be used in conjunction with ``freeze-to``. If set to
+``False``, it will add ``allow-picked-versions = false``
+for ``zc.buildout`` versions that support this flag.
+
+.. warning:: in the current state of things, this can cause problems
+             if you have non-openerp parts (see warning in ``freeze-to``
+             documentation).
+
+
 extract-downloads-to
 --------------------
 

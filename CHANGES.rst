@@ -12,6 +12,8 @@ Changes
   script generation code.
 - launchpad #1203005: vcs options not passed through (addons and main software)
 - [bzr] support for lightweight checkout, with uniform 'bzr-init' option
+- launchpad #1128146: new option in ``freeze-to`` to disallow picked
+  versions, stopping not freezing of distribute.
 
 
 1.6.4 (2013-07-14)

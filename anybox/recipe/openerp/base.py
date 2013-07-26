@@ -884,6 +884,14 @@ class BaseRecipe(object):
         for name, version in versions.items():
             conf.set(section, name, version)
 
+        # forbidding picked versions if this zc.buildout supports it right away
+        # i.e. we are on zc.buildout >= 2.0
+        allow_picked = self.options.get('freeze-allow-picked-versions', '')
+        if allow_picked.strip() == 'false':
+            pick_opt = 'allow-picked-versions'
+            if pick_opt in self.b_options:
+                conf.set('buildout', pick_opt, 'false')
+
     def _freeze_vcs_source(self, vcs_type, abspath,
                            allow_local_modification=False):
         """Return the current revision for that VCS source."""
