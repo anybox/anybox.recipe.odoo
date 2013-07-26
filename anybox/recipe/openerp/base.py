@@ -873,12 +873,8 @@ class BaseRecipe(object):
         if self.version_wanted == 'latest':
             conf.set(self.name, 'version', self.dump_nightly_latest_version())
 
-    def _freeze_egg_versions(self, conf, section, exclude=('distribute')):
+    def _freeze_egg_versions(self, conf, section, exclude=()):
         """Update a ConfigParser section with current working set egg versions.
-
-        distribute is excluded by default because at the time of this writing
-        freezing its version produces bootstrap failures each time a new one
-        gets available on PyPI.
         """
         versions = dict((name, conf.get(section, name))
                         for name in conf.options(section))
