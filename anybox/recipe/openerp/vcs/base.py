@@ -13,12 +13,30 @@ class UpdateError(subprocess.CalledProcessError):
     """
 
 
-def update_check_call(*args, **kwargs):
-    """Variant on subprocess.check_call that raises UpdateError."""
-    try:
-        subprocess.check_call(*args, **kwargs)
-    except subprocess.CalledProcessError, e:
-        raise UpdateError(e.returncode, e.cmd)
+class CloneError(subprocess.CalledProcessError):
+    """Class to easily signal errors in initial cloning.
+    """
+
+
+def wrap_check_call(exc_cls, call_fn):
+
+    def wrapped_check_call(*args, **kwargs):
+        """Variant on subprocess.check_* that raises %s.""" % exc_cls
+        try:
+            return call_fn(*args, **kwargs)
+        except subprocess.CalledProcessError, e:
+            up_exc = exc_cls(e.returncode, e.cmd)
+            output = getattr(e, 'output', None)
+            if output is not None:
+                up_exc.output = output
+            raise up_exc
+
+    return wrapped_check_call
+
+update_check_call = wrap_check_call(UpdateError, subprocess.check_call)
+clone_check_call = wrap_check_call(CloneError, subprocess.check_call)
+update_check_output = wrap_check_call(UpdateError, utils.check_output)
+clone_check_output = wrap_check_call(CloneError, utils.check_output)
 
 
 class BaseRepo(object):

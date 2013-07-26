@@ -11,7 +11,9 @@ from ..utils import check_output
 from .base import SUBPROCESS_ENV
 from .base import BaseRepo
 from .base import update_check_call
+from .base import clone_check_call
 from .base import UpdateError
+from .base import CloneError
 
 logger = logging.getLogger(__name__)
 
@@ -172,7 +174,19 @@ class BzrBranch(BaseRepo):
         clear_locks = self.clear_locks
 
         if not os.path.exists(target_dir):
-            self._branch(revision)
+            try:
+                self._branch(revision)
+            except CloneError:
+                if not revision:
+                    raise
+                logger.warning("First attempt of branching to %s at revision "
+                               "%r failed. Retrying in two steps.", target_dir,
+                               revision)
+                # it really happens, see
+                # https://bugs.launchpad.net/anybox.recipe.openerp/+bug/1204573
+                self._branch(None)
+                self._update(revision)
+
         else:
             # TODO what if bzr source is actually local fs ?
             if clear_locks:
@@ -243,11 +257,12 @@ class BzrBranch(BaseRepo):
             logger.info("Ligthweight checkout %s ...", url)
         else:
             raise Exception("Unsupported option %r" % bzr_opt)
+
         if revision:
             branch_cmd.extend(['-r', revision])
 
         branch_cmd.extend([url, target_dir])
-        subprocess.check_call(branch_cmd, env=SUBPROCESS_ENV)
+        clone_check_call(branch_cmd, env=SUBPROCESS_ENV)
 
     def _pull(self):
         logger.info("Pull for branch %s ...", self.target_dir)

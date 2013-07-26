@@ -12,9 +12,12 @@ Changes
   script generation code.
 - launchpad #1203005: vcs options not passed through (addons and main software)
 - [bzr] support for lightweight checkout, with uniform 'bzr-init' option
+- launchpad #1204573: [bzr] retry in two steps for some bzr branching
+  cases where it fails to branch directly to wished revision.
 - launchpad #1128146: new option in ``freeze-to`` to disallow picked
   versions, stopping not freezing of distribute.
-
+- introduced ``vcs.base.CloneError`` with wrappers for ``check_call``
+  and ``check_output``.
 
 1.6.4 (2013-07-14)
 ------------------

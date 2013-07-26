@@ -7,6 +7,7 @@ from ..testing import VcsTestCase
 from ..bzr import BzrBranch
 from ..bzr import working_directory_keeper
 from ..base import UpdateError
+from ..base import CloneError
 
 
 class BzrBaseTestCase(VcsTestCase):
@@ -56,6 +57,28 @@ class BzrTestCase(BzrBaseTestCase):
         branch = BzrBranch(target_dir, self.src_repo)
         branch('last:1')
         self.assertRevision2(branch)
+
+    def test_branch_on_revision_retry(self):
+        """Test retry system if direct branching to revison fails."""
+        target_dir = os.path.join(self.dst_dir, "My branch")
+        branch = BzrBranch(target_dir, self.src_repo)
+
+        normal_method = branch._branch
+        monkey_called = []
+
+        def branch_no_rev(revision):
+            """Monkey patch to simulate the error."""
+            monkey_called.append(revision)
+            if revision:
+                raise CloneError("fake branch cmd", 3)
+            return normal_method(revision)
+
+        branch._branch = branch_no_rev
+        branch('last:1')
+
+        # ensures that we actually did test something:
+        self.assertEqual(monkey_called, ['last:1', None])
+        self.assertRevision2(branch)  # branching worked
 
     def test_branch_options_conflict(self):
         target_dir = os.path.join(self.dst_dir, "My branch")
