@@ -141,6 +141,8 @@ class GitBranchTestCase(GitBaseTestCase):
         self.assertFalse(branch.uncommitted_changes())
         with working_directory_keeper:
             os.chdir(target_dir)
+            subprocess.call(['git', 'config', 'user.email', COMMIT_USER_EMAIL])
+            subprocess.call(['git', 'config', 'user.name', COMMIT_USER_NAME])
             f = open('tracked')
             lines = f.readlines()
             f.close()
