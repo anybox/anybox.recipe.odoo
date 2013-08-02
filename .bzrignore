@@ -4,3 +4,4 @@ dist/
 build/
 .coverage/
 COVERAGE
+.noseids
