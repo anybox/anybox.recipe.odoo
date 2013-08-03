@@ -17,6 +17,7 @@ except ImportError:  # Python < 2.7
     from ordereddict import OrderedDict  # noqa
 from zc.buildout.easy_install import MissingDistribution
 from zc.buildout import UserError
+from zc.buildout.easy_install import VersionConflict
 import zc.recipe.egg
 
 import httplib
@@ -253,6 +254,8 @@ class BaseRecipe(object):
                 eggs.install()
             except MissingDistribution, exc:
                 missing = exc.data[0].project_name
+            except VersionConflict:
+                raise
             except UserError, exc:  # zc.buildout >= 2.0
                 missing = exc.message.split(os.linesep)[0].split()[-1]
 

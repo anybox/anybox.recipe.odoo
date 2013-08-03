@@ -3,7 +3,8 @@ Changes
 
 1.7.1 (unreleased)
 ------------------
-- 
+- launchpad #1208028: wrong error message in case of distribution
+  version conflict
 
 1.7.0 (2013-07-26)
 ------------------
