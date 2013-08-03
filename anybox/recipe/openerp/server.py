@@ -325,12 +325,12 @@ conf = openerp.tools.config
 
         # can't reuse self.addons here, because the true addons path maybe
         # different depending on addons options, such as subdir
-        addons = self.options.get('options.addons_path')
+        addons = ':'.join(self.addons_paths)
         initialization = []
         if addons is not None:
             initialization.extend((
                 "import os",
-                "os.environ['OPENERP_ADDONS'] = %r" % addons.replace(',', ':'),
+                "os.environ['OPENERP_ADDONS'] = %r" % addons,
                 ''))
 
         if self.with_devtools:
@@ -497,12 +497,3 @@ conf = openerp.tools.config
 
         if 'options.root_path' not in self.options:
             self.options['options.root_path'] = join(self.openerp_dir, 'bin')
-
-    def _60_default_addons_path(self):
-        """Set the correct default addons path for OpenERP 6.0."""
-        self.options['options.addons_path'] = join(self.openerp_dir,
-                                                   'bin', 'addons')
-
-    def _default_addons_path(self):
-        self.options['options.addons_path'] = join(self.openerp_dir,
-                                                   'openerp', 'addons')

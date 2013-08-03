@@ -87,6 +87,7 @@ class BaseRecipe(object):
     recipe_requirements_paths = ()  # a default value is useful in unit tests
     requirements = ()  # requirements for what the recipe installs to run
     soft_requirements = ()  # subset of requirements that's not necessary
+    addons_paths = ()
 
     # Caching logic for the main OpenERP part (e.g, without addons)
     # Can be 'filename' or 'http-head'
@@ -484,13 +485,8 @@ class BaseRecipe(object):
               or an absolute or relative path
         options are themselves in the key=value form
         """
-        sources = self.sources.items()
-        if not sources:
-            return []
-
-        addons_paths = []
-
-        for local_dir, source_spec in sources:
+        self.addons_paths = []
+        for local_dir, source_spec in self.sources.items():
             if local_dir is main_software:
                 continue
 
@@ -536,8 +532,7 @@ class BaseRecipe(object):
                 os.mkdir(addons_dir)
                 new_dir = join(addons_dir, name)
                 os.rename(tmp, new_dir)
-            addons_paths.append(addons_dir)
-        return addons_paths
+            self.addons_paths.append(addons_dir)
 
     def main_download(self):
         """HTTP download for main part of the software to self.archive_path.
@@ -677,11 +672,7 @@ class BaseRecipe(object):
                                      'extracted_from.cfg')
 
         self.retrieve_main_software()
-
-        addons_paths = self.retrieve_addons()
-        for path in addons_paths:
-            assert os.path.isdir(path), (
-                "Not a directory: %r (aborting)" % path)
+        self.retrieve_addons()
 
         self.install_recipe_requirements()
         os.chdir(self.openerp_dir)  # GR probably not needed any more
@@ -694,29 +685,7 @@ class BaseRecipe(object):
                         "fix it in your config file for replayability: \n    "
                         "version = " + self.dump_nightly_latest_version())
 
-        is_60 = self.major_version == (6, 0)
-        # configure addons_path option
-        if addons_paths:
-            if 'options.addons_path' not in self.options:
-                self.options['options.addons_path'] = ''
-            if is_60:
-                self.options['options.addons_path'] += join(
-                    self.openerp_dir, 'bin', 'addons') + ','
-            else:
-                self.options['options.addons_path'] += join(
-                    self.openerp_dir, 'openerp', 'addons') + ','
-
-            self.options['options.addons_path'] += ','.join(addons_paths)
-        elif is_60:
-            self._60_default_addons_path()
-        else:
-            # would be written in cfg file anyway, but we'll need it
-            # TODO refactor all this, we should use the clean list we now have
-            self._default_addons_path()
-
-        if is_60:
-            self._60_fix_root_path()
-
+        self.finalize_addons_paths()
         self._register_extra_paths()
 
         if self.version_detected is None:
@@ -1117,6 +1086,33 @@ class BaseRecipe(object):
 
         Actual implementation is up to subclasses
         """
+
+    def finalize_addons_paths(self, check_existence=True):
+        """Add implicit paths and serialize in the addons_path option.
+
+        if check_existence is True, all the paths will be checked for
+        existence.
+        """
+        opt_key = 'options.addons_path'
+        if opt_key in self.options:
+            raise UserError("In part %r, direct use of %s is prohibited. "
+                            "please use addons lines with type 'local' "
+                            "instead." % (self.name, opt_key))
+
+        if self.major_version <= (6, 0):
+            base_addons = join(self.openerp_dir, 'bin', 'addons')
+        else:
+            base_addons = join(self.openerp_dir, 'openerp', 'addons')
+        self.addons_paths.append(base_addons)
+
+        if check_existence:
+            for path in self.addons_paths:
+                assert os.path.isdir(path), (
+                    "Not a directory: %r (aborting)" % path)
+
+        self.options['options.addons_path'] = ','.join(self.addons_paths)
+        if self.major_version <= (6, 0):
+            self._60_fix_root_path()
 
     def cleanup_openerp_dir(self):
         """Revert local modifications that have been made during installation.

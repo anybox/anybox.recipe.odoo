@@ -7,6 +7,7 @@ import os
 from anybox.recipe.openerp.server import ServerRecipe
 from anybox.recipe.openerp.testing import get_vcs_log
 from anybox.recipe.openerp.testing import RecipeTestCase
+from zc.buildout import UserError
 
 TEST_DIR = os.path.split(__file__)[0]
 
@@ -20,7 +21,9 @@ class TestServer(RecipeTestCase):
         """Setting up a local addons line."""
         addons_dir = os.path.join(self.buildout_dir, 'addons-custom')
         self.make_recipe(version='6.1', addons='local addons-custom')
-        paths = self.recipe.retrieve_addons()
+
+        self.recipe.retrieve_addons()
+        paths = self.recipe.addons_paths
         self.assertEquals(get_vcs_log(), [])
         self.assertEquals(paths, [addons_dir])
 
@@ -39,7 +42,9 @@ class TestServer(RecipeTestCase):
         custom_dir = os.path.join(self.buildout_dir, 'custom')
         addons_dir = os.path.join(custom_dir, 'addons')
         self.make_recipe(version='6.1', addons='local custom subdir=addons')
-        paths = self.recipe.retrieve_addons()
+
+        self.recipe.retrieve_addons()
+        paths = self.recipe.addons_paths
         self.assertEquals(get_vcs_log(), [])
         self.assertEquals(paths, [addons_dir])
 
@@ -50,7 +55,9 @@ class TestServer(RecipeTestCase):
         # manual creation because fakevcs does nothing but retrieve_addons
         # has assertions on existence of target directories
         addons_dir = os.path.join(self.buildout_dir, 'addons-trunk')
-        paths = self.recipe.retrieve_addons()
+
+        self.recipe.retrieve_addons()
+        paths = self.recipe.addons_paths
         self.assertEquals(
             get_vcs_log(), [
                 (addons_dir, 'http://trunk.example', 'rev',
@@ -67,7 +74,9 @@ class TestServer(RecipeTestCase):
         # has assertions on existence of target directories
         addons_dir = os.path.join(self.buildout_dir, 'addons-trunk')
         other_dir = os.path.join(self.buildout_dir, 'addons-other')
-        paths = self.recipe.retrieve_addons()
+
+        self.recipe.retrieve_addons()
+        paths = self.recipe.addons_paths
         self.assertEquals(
             get_vcs_log(), [
                 (addons_dir, 'http://trunk.example', 'rev',
@@ -85,13 +94,14 @@ class TestServer(RecipeTestCase):
                 ['fakevcs http://trunk.example addons-%d rev' % d
                  for d in range(10)]))
 
-        paths = self.recipe.retrieve_addons()
+        self.recipe.retrieve_addons()
+        paths = self.recipe.addons_paths
         expected = [os.path.join(self.buildout_dir, 'addons-%d') % d
                     for d in range(10)]
 
         # fail only for ordering issues
         if set(paths) == set(expected):
-            self.assertEquals(paths, expected)
+            self.assertEqual(paths, expected)
 
     def test_retrieve_addons_subdir(self):
         self.make_recipe(version='6.1', addons='fakevcs lp:openerp-web web '
@@ -100,7 +110,9 @@ class TestServer(RecipeTestCase):
         # has assertions on existence of target directories
         web_dir = os.path.join(self.buildout_dir, 'web')
         web_addons_dir = os.path.join(web_dir, 'addons')
-        paths = self.recipe.retrieve_addons()
+
+        self.recipe.retrieve_addons()
+        paths = self.recipe.addons_paths
         self.assertEquals(get_vcs_log(), [
                           (web_dir, 'lp:openerp-web', 'last:1',
                            dict(offline=False, clear_locks=False, clean=False,
@@ -117,7 +129,9 @@ class TestServer(RecipeTestCase):
         addon_dir = os.path.join(self.buildout_dir, dirname)
         os.mkdir(addon_dir)
         open(os.path.join(addon_dir, '__openerp__.py'), 'w').close()
-        paths = self.recipe.retrieve_addons()
+
+        self.recipe.retrieve_addons()
+        paths = self.recipe.addons_paths
         self.assertEquals(paths, [addon_dir])
         self.assertEquals(os.listdir(addon_dir), [dirname])
         moved_addon = os.path.join(addon_dir, dirname)
@@ -141,7 +155,9 @@ class TestServer(RecipeTestCase):
         addon_dir = os.path.join(self.buildout_dir, 'addon')
         os.mkdir(addon_dir)
         open(os.path.join(addon_dir, '__openerp__.py'), 'w').close()
-        paths = self.recipe.retrieve_addons()
+
+        self.recipe.retrieve_addons()
+        paths = self.recipe.addons_paths
         self.assertEquals(paths, [addon_dir])
         self.assertEquals(os.listdir(addon_dir), ['addon'])
         self.assertTrue(
@@ -223,6 +239,60 @@ class TestServer(RecipeTestCase):
         for script in wanted:
             if not script in binlist:
                 self.fail("Script %r missing in bin directory." % script)
+
+    def test_retrieve_fixup_addons_local_61(self):
+        addons_dir = os.path.join(self.buildout_dir, 'addons-custom')
+        oerp_dir = os.path.join(TEST_DIR, 'oerp61')
+        self.make_recipe(version='local %s' % oerp_dir,
+                         addons='local addons-custom')
+
+        self.recipe.version_detected = "6.1-20121003-233130"
+        self.assertEquals(self.recipe.major_version, (6, 1))
+        self.recipe.retrieve_addons()
+        paths = self.recipe.addons_paths
+        self.recipe.finalize_addons_paths(check_existence=False)
+        self.assertEquals(paths, [addons_dir,
+                                  os.path.join(oerp_dir, 'openerp', 'addons')])
+
+    def test_retrieve_fixup_addons_local_60_check_ok(self):
+        oerp_dir = os.path.join(TEST_DIR, 'oerp60')
+        self.make_recipe(version='local %s' % oerp_dir,
+                         addons='local addons-custom',
+                         )
+
+        self.recipe.version_detected = "6.0.4"
+        self.recipe.retrieve_addons()
+
+        addons_dir = os.path.join(self.buildout_dir, 'addons-custom')
+        root_dir = os.path.join(oerp_dir, 'bin', 'addons')
+        os.mkdir(addons_dir)
+        self.recipe.finalize_addons_paths()
+        paths = self.recipe.addons_paths
+        self.assertEqual(paths, [addons_dir, root_dir])
+        self.assertEqual(self.recipe.options['options.root_path'],
+                         os.path.join(oerp_dir, 'bin'))
+
+    def test_retrieve_fixup_addons_check(self):
+        """Test that existence check of addons paths is done."""
+        oerp_dir = os.path.join(TEST_DIR, 'oerp60')
+        self.make_recipe(version='local %s' % oerp_dir,
+                         addons='local addons-custom',
+                         )
+
+        self.recipe.version_detected = "6.0.4"
+        self.recipe.retrieve_addons()
+        self.assertRaises(AssertionError, self.recipe.finalize_addons_paths)
+
+    def test_forbid_addons_paths_option(self):
+        oerp_dir = os.path.join(TEST_DIR, 'oerp60')
+        self.make_recipe(version='local %s' % oerp_dir,
+                         addons='local addons-custom',
+                         )
+        self.recipe.options['options.addons_path'] = '/tmp/some/addon'
+        self.recipe.version_detected = "6.0.4"
+        self.assertRaises(UserError, self.recipe.finalize_addons_paths,
+                          check_existence=False)
+
 
     def install_scripts(self, extra_develop=None, setup_has_pil=False,
                         extra_requirements=()):
@@ -320,9 +390,6 @@ class TestServer(RecipeTestCase):
                          with_devtools='true')
         self.recipe.version_detected = "7.0alpha"
         self.recipe.options['options.log_handler'] = ":INFO,werkzeug:WARNING"
-
-        # necessary for openerp-command, will be part of post-release refactor
-        self.recipe.options['options.addons_path'] = ''
 
         self.install_scripts(extra_develop={
             'openerp-command': 'fake_openerp-command'})
