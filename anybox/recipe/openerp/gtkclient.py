@@ -53,8 +53,8 @@ class GtkClientRecipe(BaseRecipe):
                   'export PYTHONPATH=%s\n'
                   'cd "%s"\n'
                   'exec %s openerp-client.py -c %s $@') % (
-                      ':'.join(paths),
-                      join(self.openerp_dir, 'bin'),
-                      self.buildout['buildout']['executable'],
-                      self.config_path)
+            ':'.join(paths),
+            join(self.openerp_dir, 'bin'),
+            self.buildout['buildout']['executable'],
+            self.config_path)
         return script

@@ -58,9 +58,9 @@ class WebClientRecipe(BaseRecipe):
                   'export PYTHONPATH=%s\n'
                   'cd "%s"\n'
                   'exec %s openerp-web%s %s $@') % (
-                      ':'.join(paths),
-                      self.openerp_dir,
-                      self.buildout['buildout']['executable'],
-                      ext,
-                      config)
+            ':'.join(paths),
+            self.openerp_dir,
+            self.buildout['buildout']['executable'],
+            ext,
+            config)
         return script
