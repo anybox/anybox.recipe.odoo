@@ -1,6 +1,10 @@
 Changes
 ~~~~~~~
 
+1.7.1 (unreleased)
+------------------
+- 
+
 1.7.0 (2013-07-26)
 ------------------
 - launchpad #1189160: easy integration of general purpose unit test launchers
