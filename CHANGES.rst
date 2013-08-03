@@ -1,7 +1,7 @@
 Changes
 ~~~~~~~
 
-1.7.0 (unreleased)
+1.7.0 (2013-07-26)
 ------------------
 - launchpad #1189160: easy integration of general purpose unit test launchers
 - launchpad #1201715: allow easily working in a virtualenv with extra-requires

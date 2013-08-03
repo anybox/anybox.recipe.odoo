@@ -2,7 +2,7 @@ import os
 import sys
 from setuptools import setup, find_packages
 
-version = '1.7.0dev'
+version = '1.7.0'
 
 if sys.version_info < (2, 6):
     sys.stderr.write("This package requires Python 2.6 or newer. "
