@@ -709,6 +709,10 @@ class BaseRecipe(object):
             self.options['options.addons_path'] += ','.join(addons_paths)
         elif is_60:
             self._60_default_addons_path()
+        else:
+            # would be written in cfg file anyway, but we'll need it
+            # TODO refactor all this, we should use the clean list we now have
+            self._default_addons_path()
 
         if is_60:
             self._60_fix_root_path()
@@ -1103,7 +1107,13 @@ class BaseRecipe(object):
         """
 
     def _60_default_addons_path(self):
-        """Set the default addons patth for OpenERP 6.0 pure python install
+        """Set the default addons path for OpenERP 6.0 pure python install
+
+        Actual implementation is up to subclasses
+        """
+
+    def _default_addons_path(self):
+        """Set the default addons path for OpenERP > 6.0 pure python install
 
         Actual implementation is up to subclasses
         """

@@ -65,8 +65,9 @@ class ServerRecipe(BaseRecipe):
             logger.warn("'gunicorn = proxied' now superseded in this OpenERP "
                         "version by the 'proxy_mode' OpenERP server option ")
 
-        self.with_openerp_command = (self.with_devtools
-                                     and self.major_version >= (6, 2))
+        self.with_openerp_command = (
+            (self.with_devtools and self.major_version >= (6, 2)
+             or self.major_version >= (8, 0)))
 
     def merge_requirements(self):
         """Prepare for installation by zc.recipe.egg
@@ -103,7 +104,7 @@ class ServerRecipe(BaseRecipe):
         if self.with_devtools:
             self.requirements.extend(devtools.requirements)
 
-        if self.with_openerp_command:
+        if self.with_openerp_command and self.major_version < (8, 0):
             self.requirements.append('openerp-command')
 
         BaseRecipe.merge_requirements(self)
@@ -311,17 +312,26 @@ conf = openerp.tools.config
     def _register_openerp_command(self, qualified_name):
         """Register https://launchpad.net/openerp-command for install.
         """
-        logger.warn("Installing openerp-command as %r. This is useful for "
-                    "development operations, but not ready to launch "
-                    "production instances yet.", qualified_name)
+        if self.major_version < (8, 0):
+            logger.warn("Installing separate openerp-command as %r. "
+                        "In OpenERP 7, openerp-command used to be "
+                        "an independent python distribution, ready for "
+                        "development operations, but not ready for "
+                        "production operation. You are supposed to make "
+                        "this distribution available in some way (alternate "
+                        "PyPI server, develop, gp.vcs_develop...)",
+                        qualified_name)
         desc = self._get_or_create_script('oe', name=qualified_name)[1]
 
         # can't reuse self.addons here, because the true addons path maybe
         # different depending on addons options, such as subdir
-        addons = self.options['options.addons_path'].replace(',', ':')
-        initialization = ["import os",
-                          "os.environ['OPENERP_ADDONS'] = %r" % addons,
-                          '']
+        addons = self.options.get('options.addons_path')
+        initialization = []
+        if addons is not None:
+            initialization.extend((
+                "import os",
+                "os.environ['OPENERP_ADDONS'] = %r" % addons.replace(',', ':'),
+                ''))
 
         if self.with_devtools:
             initialization.extend((
@@ -452,6 +462,9 @@ conf = openerp.tools.config
             ('openerp_tester', 'anybox.recipe.openerp.test_openerp', 'main'),
         ))
 
+        if self.major_version >= (8, 0):
+            self.eggs_reqs.append(('oe', 'openerpcommand.main', 'run'))
+
         self._install_interpreter()
 
         main_script = self.options.get('script_name', 'start_' + self.name)
@@ -489,3 +502,7 @@ conf = openerp.tools.config
         """Set the correct default addons path for OpenERP 6.0."""
         self.options['options.addons_path'] = join(self.openerp_dir,
                                                    'bin', 'addons')
+
+    def _default_addons_path(self):
+        self.options['options.addons_path'] = join(self.openerp_dir,
+                                                   'openerp', 'addons')
