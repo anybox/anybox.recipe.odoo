@@ -293,7 +293,6 @@ class TestServer(RecipeTestCase):
         self.assertRaises(UserError, self.recipe.finalize_addons_paths,
                           check_existence=False)
 
-
     def install_scripts(self, extra_develop=None, setup_has_pil=False,
                         extra_requirements=()):
         """Helper for full integration tests again a typical OpenERP setup.py
