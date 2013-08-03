@@ -3,8 +3,13 @@ Changes
 
 1.7.1 (unreleased)
 ------------------
+- launchpad #1203550: v8: using the openerpcommand that comes now bundled
+  with openobject-server
 - launchpad #1208028: wrong error message in case of distribution
   version conflict
+- launchpad #1205063: no more error if no addons are specified (might
+  lead to problems with the default config, though, because of server
+  wide modules, but that's supposed to be overridable)
 
 1.7.0 (2013-07-26)
 ------------------
