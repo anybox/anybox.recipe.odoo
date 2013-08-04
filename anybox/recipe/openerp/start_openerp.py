@@ -1,5 +1,6 @@
 import sys
 import os
+from . import patch_openerp_v5
 
 
 def insert_args(arguments):
@@ -21,7 +22,7 @@ def main(starter, conf, version=None, just_test=False):
     insert_args(arguments)
 
     if version == (5, 0):
-        from . import patch_openerp_v5  # noqa
+        patch_openerp_v5.do_patch()
 
     os.chdir(os.path.split(starter)[0])
     glob = globals()
