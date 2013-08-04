@@ -8,7 +8,11 @@ def insert_args(arguments):
 
 
 def main(starter, conf, version=()):
-    arguments = ['-c', conf, '--log-level=test', '--stop-after-init']
+    if version >= (6, 0):
+        log_level = 'test'
+    else:
+        log_level = 'info'
+    arguments = ['-c', conf, '--log-level', log_level, '--stop-after-init']
     if version >= (7, 0):
         arguments.append('--test-enable')
 
