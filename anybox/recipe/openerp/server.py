@@ -247,9 +247,11 @@ conf = openerp.tools.config
         """
         desc = self._get_or_create_script('openerp_starter',
                                           name=qualified_name)[1]
-        desc.update(arguments='%r, %r' % (self._get_server_command(),
-                                          self.config_path),
-                    )
+        desc.update(
+            arguments='%r, %r, version=%r' % (self._get_server_command(),
+                                              self.config_path,
+                                              self.major_version),
+        )
 
         startup_delay = float(self.options.get('startup_delay', 0))
 
@@ -279,9 +281,9 @@ conf = openerp.tools.config
                 "from anybox.recipe.openerp import devtools",
                 "devtools.load(for_tests=True)",
                 "")),
-            arguments='%r, %r, %r' % (self._get_server_command(),
-                                      self.config_path,
-                                      self.version_detected),
+            arguments='%r, %r, version=%r' % (self._get_server_command(),
+                                              self.config_path,
+                                              self.major_version),
         )
 
     def _register_gunicorn_startup_script(self, qualified_name):
