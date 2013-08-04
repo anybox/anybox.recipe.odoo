@@ -277,14 +277,15 @@ conf = openerp.tools.config
         desc = self._get_or_create_script('openerp_tester',
                                           name=qualified_name)[1]
         desc.update(
-            entry='openerp_tester',
+            entry='openerp_starter',
             initialization=os.linesep.join((
                 "from anybox.recipe.openerp import devtools",
                 "devtools.load(for_tests=True)",
                 "")),
-            arguments='%r, %r, version=%r' % (self._get_server_command(),
-                                              self.config_path,
-                                              self.major_version),
+            arguments='%r, %r, version=%r, just_test=True' % (
+                self._get_server_command(),
+                self.config_path,
+                self.major_version),
         )
 
     def _register_gunicorn_startup_script(self, qualified_name):
@@ -468,7 +469,6 @@ conf = openerp.tools.config
             ('openerp_starter', 'anybox.recipe.openerp.start_openerp', 'main'),
             ('openerp_cron_worker', 'anybox.recipe.openerp.start_openerp',
              'main'),
-            ('openerp_tester', 'anybox.recipe.openerp.test_openerp', 'main'),
         ))
 
         if self.major_version >= (8, 0):
