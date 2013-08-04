@@ -508,4 +508,7 @@ conf = openerp.tools.config
             self.options['options.root_path'] = join(self.openerp_dir, 'bin')
 
     archeo_requirements = {
-        (5, 0): ['psycopg2', 'pytz']}
+        (5, 0): ['psycopg2', 'pytz', 'lxml', 'egenix-mx-base',
+                 'reportlab', 'pydot',
+                 ],
+        }
