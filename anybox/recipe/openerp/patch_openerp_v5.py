@@ -126,8 +126,8 @@ def do_patch():
         addons_path and root_path) to correct from here.
 
         The original one does try and replace subpaths by zip files if
-        some are found. We simply call it back to avoid duplicating this (in the
-        same way it's already doing after subdir related resolutions).
+        some are found. We simply call it back to avoid duplicating this
+        (in the same way it's already doing after subdir related resolutions).
         """
 
         if name.replace(os.path.sep, '/').startswith('addons/'):
