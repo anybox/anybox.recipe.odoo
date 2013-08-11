@@ -529,7 +529,8 @@ class BaseRecipe(object):
             addons_dir = join(local_dir, subdir) if subdir else local_dir
 
             manifest = os.path.join(addons_dir, '__openerp__.py')
-            if os.path.isfile(manifest):
+            manifest_pre_v6 = os.path.join(addons_dir, '__terp__.py')
+            if os.path.isfile(manifest) or os.path.isfile(manifest_pre_v6):
                 if loc_type == 'local':
                     raise ValueError(
                         "Local addons line %r should refer to a directory "
