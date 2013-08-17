@@ -101,7 +101,10 @@ class BaseRepo(object):
             name = os.path.split(target_dir)[-1]
             new_target = os.path.join(target_dir, name)
             manifest = os.path.join(new_target, '__openerp__.py')
-            if cls.is_versioned(new_target) and os.path.exists(manifest):
+            manifest2 = os.path.join(new_target, '__terp__.py')
+            exists = os.path.exists(manifest)
+            exists = exists or os.path.exists(manifest2)
+            if cls.is_versioned(new_target) and exists:
                 return new_target
         return target_dir
 
