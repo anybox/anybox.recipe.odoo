@@ -218,15 +218,19 @@ conf = openerp.tools.config
             else:
                 name = naming[1]
             cl_options = []
-            scripts[name] = dict(entry=naming[0],
-                                 command_line_options=cl_options)
+            desc = scripts[name] = dict(entry=naming[0],
+                                        command_line_options=cl_options)
 
             opt_prefix = 'command-line-options='
+            arg_prefix = 'arguments='
             for token in line[1:]:
-                if not token.startswith(opt_prefix):
+                if token.startswith(opt_prefix):
+                    cl_options.extend(token[len(opt_prefix):].split(','))
+                elif token.startswith(arg_prefix):
+                    desc['arguments'] = token[len(arg_prefix):]
+                else:
                     raise ValueError(
                         "Invalid token for script %r: %r" % (name, token))
-                cl_options.extend(token[len(opt_prefix):].split(','))
 
     def _get_or_create_script(self, entry, name=None):
         """Retrieve or create a registered script by its entry point.

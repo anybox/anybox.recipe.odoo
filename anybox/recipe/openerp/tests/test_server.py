@@ -421,6 +421,7 @@ class TestServer(RecipeTestCase):
             openerp_scripts=os.linesep.join((
                 'myentry=script_name',
                 'nosetests command-line-options=-d',
+                'withargs=withargs arguments=session',
                 'myentry=script_name_opt command-line-options=-d,-f')),
         )
 
@@ -429,6 +430,8 @@ class TestServer(RecipeTestCase):
             self.recipe.openerp_scripts,
             dict(script_name=dict(entry='myentry',
                                   command_line_options=[]),
+                 withargs=dict(entry="withargs", arguments="session",
+                               command_line_options=[]),
                  script_name_opt=dict(entry='myentry',
                                       command_line_options=['-d', '-f']),
                  nosetests_openerp=dict(entry='nosetests',
