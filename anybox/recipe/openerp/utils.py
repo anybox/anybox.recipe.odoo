@@ -106,12 +106,13 @@ def check_output(*popenargs, **kwargs):
     that's good enough for today):
 
     >>> out = check_output(["ls", "-l", "/dev/null"])
-    >>> out.startswith('crw-rw-rw- 1 root root 1')
+    >>> out.startswith('crw-rw-rw')
     True
 
     The stdout argument is not allowed as it is used internally.
     To capture standard error in the result, use stderr=STDOUT.
 
+    >>> os.environ['LANG'] = 'C'  # for uniformity of error msg
     >>> err = check_output(["/bin/sh", "-c",
     ...               "ls -l non_existent_file ; exit 0"],
     ...              stderr=subprocess.STDOUT)
