@@ -38,7 +38,8 @@ class GitRepo(BaseRepo):
             os.chdir(self.target_dir)
             p = subprocess.Popen(['git', 'status', '--short'],
                                  stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
-            return bool(p.communicate()[0])
+            out = p.communicate()[0]
+            return bool(out.strip())
 
     def get_update(self, revision):
         """Ensure that target_dir is a branch of url at specified revision.

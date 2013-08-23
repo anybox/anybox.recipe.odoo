@@ -127,6 +127,11 @@ class GitBranchTestCase(GitBaseTestCase):
             f.write("last after branch" + os.linesep)
             f.close()
             subprocess.call(['git', 'add', 'tracked'])
+            # repo configuration is local by default
+            # setting this ensures uniformity of test (does not depend on system user running
+            # the test and/or environment variables.
+            subprocess.call(['git', 'config', 'user.email', COMMIT_USER_EMAIL])
+            subprocess.call(['git', 'config', 'user.name', COMMIT_USER_NAME])
             subprocess.call(['git', 'commit', '-m', 'last version'])
 
         # check that no changes exists when switching from one to other
@@ -187,6 +192,8 @@ class GitBranchTestCase(GitBaseTestCase):
             f.write("last after remote branch" + os.linesep)
             f.close()
             subprocess.call(['git', 'add', 'tracked'])
+            subprocess.call(['git', 'config', 'user.email', COMMIT_USER_EMAIL])
+            subprocess.call(['git', 'config', 'user.name', COMMIT_USER_NAME])
             subprocess.call(['git', 'commit', '-m', 'last version'])
 
         # switch to the remote branch and check tracked file
