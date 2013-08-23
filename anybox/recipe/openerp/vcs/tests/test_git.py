@@ -128,8 +128,8 @@ class GitBranchTestCase(GitBaseTestCase):
             f.close()
             subprocess.call(['git', 'add', 'tracked'])
             # repo configuration is local by default
-            # setting this ensures uniformity of test (does not depend on system user running
-            # the test and/or environment variables.
+            # setting this ensures uniformity of test (does not depend on
+            # system user running the test and/or environment variables.
             subprocess.call(['git', 'config', 'user.email', COMMIT_USER_EMAIL])
             subprocess.call(['git', 'config', 'user.name', COMMIT_USER_NAME])
             subprocess.call(['git', 'commit', '-m', 'last version'])
