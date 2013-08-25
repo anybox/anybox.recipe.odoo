@@ -3,8 +3,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='babel',
-    version='-2.0.0',
+    name='Babel',
+    version='0.123',  # unlikely to exist ever
     description='Fake Babel',
     long_description='Fake babel',
     author='',

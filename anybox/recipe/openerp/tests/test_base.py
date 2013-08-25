@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 import shutil
 import tempfile
@@ -8,6 +9,8 @@ from anybox.recipe.openerp.base import main_software
 from anybox.recipe.openerp.base import GP_VCS_EXTEND_DEVELOP
 from anybox.recipe.openerp.testing import RecipeTestCase
 from ..testing import COMMIT_USER_FULL
+
+TEST_DIR = os.path.dirname(__file__)
 
 
 class TestingRecipe(BaseRecipe):
@@ -123,24 +126,39 @@ class TestBaseRecipe(RecipeTestCase):
                                     '\naddons-specific 1.0'))
         self.assertEquals(recipe.sources[main_software][1][1], '1112')
 
+    def build_babel_egg(self):
+        """build an egg for fake babel in buildout's eggs directory."""
+        subprocess.check_call(
+            [sys.executable,
+             os.path.join(TEST_DIR, 'fake_babel', 'setup.py'),
+             'bdist_egg',
+             '-d', self.recipe.b_options['eggs-directory'],
+             '-b', os.path.join(self.buildout_dir, 'build')])
+
+    def develop_babel(self):
+        """Develop fake babel in buildout's directory"""
+        subprocess.check_call(
+            [sys.executable,
+             os.path.join(TEST_DIR, 'fake_babel', 'setup.py'),
+             'develop',
+             '-d', self.recipe.b_options['develop-eggs-directory'],
+             '-b', os.path.join(self.buildout_dir, 'build')])
+
     def test_freeze_egg_versions(self):
         """Test that an egg requirement is properly dumped with its version.
-
-        Since nose is our test launcher, we use it as an example, because it
-        must be available without downloading anything."""
+        """
         conf = ConfigParser()
         conf.add_section('freeze')
         self.make_recipe(version='6.1-1')
-        self.recipe.options['eggs'] = 'nose'
+        self.build_babel_egg()
+        self.recipe.options['eggs'] = 'Babel'
         self.recipe.install_requirements()  # to get 'ws' attribute
         self.recipe._freeze_egg_versions(conf, 'freeze')
         try:
-            nose_version = conf.get('freeze', 'nose')
+            version = conf.get('freeze', 'Babel')
         except NoOptionError:
-            self.fail("Expected version of nose egg not dumped !")
-        import nose
-        # GR: maybe that'll turn out to be frail
-        self.assertEquals(nose_version, nose.__version__)
+            self.fail("Expected version of Babel egg not dumped !")
+        self.assertEquals(version, '0.123')
 
     def test_freeze_egg_versions_merge(self):
         """Test that freezing of egg versions keeps eggs already dumped.
@@ -151,7 +169,8 @@ class TestBaseRecipe(RecipeTestCase):
         conf.add_section('freeze')
         conf.set('freeze', 'some.distribution', '1.0alpha')
         self.make_recipe(version='6.1-1')
-        self.recipe.options['eggs'] = 'nose'
+        self.build_babel_egg()
+        self.recipe.options['eggs'] = 'Babel'
         self.recipe.install_requirements()  # to get 'ws' attribute
         self.recipe._freeze_egg_versions(conf, 'freeze')
         try:
@@ -159,6 +178,18 @@ class TestBaseRecipe(RecipeTestCase):
         except NoOptionError:
             self.fail("Expected version of 'some.distribution' not kept !")
         self.assertEquals(version, '1.0alpha')
+
+    def test_freeze_egg_versions_develop(self):
+        """Test that a developped requirement is not dumped in [versions].
+        """
+        conf = ConfigParser()
+        conf.add_section('freeze')
+        self.make_recipe(version='6.1-1')
+        self.recipe.develop(os.path.join(TEST_DIR, 'fake_babel'))
+        self.recipe.options['eggs'] = 'Babel'
+        self.recipe.install_requirements()  # to get 'ws' attribute
+        self.recipe._freeze_egg_versions(conf, 'freeze')
+        self.assertRaises(NoOptionError, conf.get, 'freeze', 'Babel')
 
     def test_freeze_vcs_source(self):
         self.make_recipe(version='6.1-1')

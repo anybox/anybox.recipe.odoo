@@ -11,6 +11,7 @@ import imp
 import shutil
 import ConfigParser
 import distutils.core
+import pkg_resources
 try:
     from collections import OrderedDict
 except ImportError:  # Python < 2.7
@@ -873,7 +874,9 @@ class BaseRecipe(object):
                         for name in conf.options(section))
         versions.update((name, egg.version)
                         for name, egg in self.ws.by_key.items()
-                        if name not in exclude)
+                        if name not in exclude
+                        and egg.precedence != pkg_resources.DEVELOP_DIST
+                        )
         for name, version in versions.items():
             conf.set(section, name, version)
 

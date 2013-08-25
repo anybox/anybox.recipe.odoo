@@ -3,6 +3,7 @@ Changes
 
 1.7.1 (unreleased)
 ------------------
+- launchpad #1215838: don't freeze develop / gp.vcsdevelop distributions
 - launchpad #1203550: v8: using the openerpcommand that comes now bundled
   with openobject-server
 - launchpad #1208028: wrong error message in case of distribution

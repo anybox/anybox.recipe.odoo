@@ -217,7 +217,9 @@ class BzrBranch(BaseRepo):
                 logger.info("Offline mode, no pull for revision %r", revision)
             else:
                 self._pull()
-            self._update(revision)
+            if not (offline and
+                    self.options.get('bzr-init') == 'stacked-branch'):
+                self._update(revision)
 
     def _branch(self, revision):
         """ Branch or checkout remote repository

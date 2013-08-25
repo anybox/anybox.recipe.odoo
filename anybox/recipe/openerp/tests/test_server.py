@@ -9,7 +9,7 @@ from anybox.recipe.openerp.testing import get_vcs_log
 from anybox.recipe.openerp.testing import RecipeTestCase
 from zc.buildout import UserError
 
-TEST_DIR = os.path.split(__file__)[0]
+TEST_DIR = os.path.dirname(__file__)
 
 
 class TestServer(RecipeTestCase):
