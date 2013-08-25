@@ -4,6 +4,9 @@ Changes
 1.7.1 (unreleased)
 ------------------
 - launchpad #1215838: don't freeze develop / gp.vcsdevelop distributions
+- launchpad #1213469: openerp scripts: support for entry point
+  arguments
+- launchpad #1215833: preserve regular develops in extract-downloads-to
 - launchpad #1203550: v8: using the openerpcommand that comes now bundled
   with openobject-server
 - launchpad #1208028: wrong error message in case of distribution
@@ -11,7 +14,7 @@ Changes
 - launchpad #1205063: no more error if no addons are specified (might
   lead to problems with the default config, though, because of server
   wide modules, but that's supposed to be overridable)
-- launchpad #1213469: openerp scripts: support for entry point arguments
+
 
 1.7.0 (2013-07-26)
 ------------------

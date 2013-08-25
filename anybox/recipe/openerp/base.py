@@ -1040,33 +1040,41 @@ class BaseRecipe(object):
         return local_path
 
     def _prepare_extracted_buildout(self, conf, target_dir):
-        """Create the 'buildout' section in conf."""
+        """Create the 'buildout' section in ``conf``.
+
+        Also takes care of gp.vcsdevelop driven distributions.
+
+        In most cases, at this stage, gp.vcsdevelop and regular develop
+        distributions are expressed with absolute paths. This method will make
+        them local in the destination ``conf``
+
+        Regular develop distributions pointing outside of buildout directory
+        are kept as is, assuming this has been specified in absolute form
+        in the config file, hence to some resources that are outside of
+        the recipe control, that are therefore expected to be deployed before
+        hand on target systems.
+        """
         conf.add_section('buildout')
         conf.set('buildout', 'extends', self.buildout_cfg_name())
         conf.add_section('versions')
         conf.set('buildout', 'versions', 'versions')
 
-        # extraction for gp.vcsdevelop driven distributions
-
-        # reading the general 'develop' options. Right now, it'll have
-        # absolute paths to all vcs-extend-develop
-        # controlled distributions. We'll replace them one after the other
-        # by a relative path from buildouts dir in the extracted conf
         develops = set(self.b_options.get('develop', '').split(os.linesep))
 
-        extracted = set()  # no need to track, this is done just once
+        extracted = set()
         for raw, parsed in self._get_gp_vcs_develops():
             local_path = parsed[0]
+            abs_path = self.make_absolute(local_path)
             vcs_type = raw.split('+', 1)[0]
-            self._extract_vcs_source(
-                vcs_type, self.make_absolute(local_path),
-                target_dir, local_path, extracted)
+            self._extract_vcs_source(vcs_type, abs_path,
+                                     target_dir, local_path, extracted)
+            develops.add(abs_path)  # looks silly, but better for uniformity
 
-            develops.discard(self.make_absolute(local_path))
-            develops.add(local_path)
-
+        bdir = os.path.join(self.buildout_dir, '')
+        conf.set('buildout', 'develop',
+                 os.linesep.join(d[len(bdir):] if d.startswith(bdir) else d
+                                 for d in develops))
         conf.set('buildout', GP_VCS_EXTEND_DEVELOP, '')
-        conf.set('buildout', 'develop', os.linesep.join(develops))
 
     def _install_script(self, name, content):
         """Install and register a script with prescribed name and content.

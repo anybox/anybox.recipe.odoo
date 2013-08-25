@@ -419,6 +419,8 @@ class TestExtraction(RecipeTestCase):
         self.make_recipe(version='6.1-1')
         self.recipe.b_options[GP_VCS_EXTEND_DEVELOP] = (
             "fakevcs+http://example.com/aeroolib#egg=aeroolib")
+        self.recipe.b_options['develop'] = os.path.join(
+            self.recipe.buildout_dir, 'simple_develop')
 
         conf = ConfigParser()
         self.recipe._prepare_extracted_buildout(conf, self.extract_target_dir)
@@ -426,7 +428,7 @@ class TestExtraction(RecipeTestCase):
         self.assertEquals(extends_develop.strip(), '')
         develop = conf.get('buildout', 'develop').split(os.linesep)
         self.assertEquals(set(d for d in develop if d),
-                          set(['aeroolib']))
+                          set(['aeroolib', 'simple_develop']))
 
         # extraction has been done
         target = os.path.join(self.extract_target_dir, 'aeroolib')
