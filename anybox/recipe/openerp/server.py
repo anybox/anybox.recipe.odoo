@@ -421,7 +421,7 @@ conf = openerp.tools.config
             interpreter=int_name,
             initialization=initialization,
             arguments=self.options.get('arguments', ''),
-            extra_paths=self.options['extra-paths'],
+            extra_paths=self.extra_paths,
             # TODO investigate these options:
             # relative_paths=self._relative_paths,
         )
@@ -458,7 +458,7 @@ conf = openerp.tools.config
                 initialization=initialization,
                 arguments=desc.get('arguments', ''),
                 # TODO investigate these options:
-                extra_paths=self.extra_paths
+                extra_paths=self.extra_paths,
                 # relative_paths=self._relative_paths,
             )
             self.openerp_installed.append(join(self.bin_dir, script_name))
