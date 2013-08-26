@@ -44,8 +44,8 @@ class GitRepo(BaseRepo):
     def get_update(self, revision):
         """Ensure that target_dir is a branch of url at specified revision.
 
-        If target_dir already exists, does a simple pull.
-        Offline-mode: no branch nor pull, but update.
+        If target_dir already exists, does a simple fetch.
+        Offline-mode: no branch nor fetch, but checkout.
         """
         target_dir = self.target_dir
         url = self.url
@@ -69,9 +69,9 @@ class GitRepo(BaseRepo):
             if is_target_dir_exists:
                 # TODO what if remote repo is actually local fs ?
                 if not offline:
-                    logger.info("Pull for git repo %s (rev %s)...",
+                    logger.info("Fetch for git repo %s (rev %s)...",
                                 target_dir, rev_str)
-                    subprocess.check_call(['git', 'pull'])
+                    subprocess.check_call(['git', 'fetch'])
 
             if revision and self._needToSwitchRevision(revision):
                 # switch to the expected revision

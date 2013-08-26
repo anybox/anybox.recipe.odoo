@@ -7,6 +7,7 @@ from ..testing import COMMIT_USER_NAME
 from ..testing import VcsTestCase
 from ..git import GitRepo
 from ...utils import working_directory_keeper
+from ...utils import check_output
 
 
 class GitBaseTestCase(VcsTestCase):
@@ -25,11 +26,16 @@ class GitBaseTestCase(VcsTestCase):
         f.close()
         subprocess.call(['git', 'add', 'tracked'])
         subprocess.call(['git', 'commit', '-m', 'initial commit'])
+        self.commit_1_sha = check_output(['git', 'rev-parse',
+                                          '--verify', 'HEAD']).strip()
+
         f = open('tracked', 'w')
         f.write("last" + os.linesep)
         f.close()
         subprocess.call(['git', 'add', 'tracked'])
         subprocess.call(['git', 'commit', '-m', 'last version'])
+        self.commit_2_sha = check_output(['git', 'rev-parse',
+                                          '--verify', 'HEAD']).strip()
 
 
 class GitTestCase(GitBaseTestCase):
@@ -80,7 +86,32 @@ class GitTestCase(GitBaseTestCase):
         repo = GitRepo(target_dir, self.src_repo)
         repo(sha)
         sha2 = repo.parents()[0]
-        self.assert_(sha == sha2, 'Bad clone on SHA')
+        self.assertEqual(sha, sha2, 'Bad clone on SHA')
+
+        # next call of get_update()
+        repo(sha)
+
+    def test_clone_on_sha_update(self):
+        """Git clone."""
+        target_dir = os.path.join(self.dst_dir, "My clone")
+        repo = GitRepo(target_dir, self.src_repo)
+        repo(self.commit_1_sha)
+        self.assertEqual(repo.parents(), [self.commit_1_sha])
+        repo(self.commit_2_sha)
+        self.assertEqual(repo.parents(), [self.commit_2_sha])
+
+        # new commit in origin
+        with working_directory_keeper:
+            os.chdir(self.src_repo)
+            with open('tracked', 'w') as f:
+                f.write("New change")
+            subprocess.call(['git', 'add', 'tracked'])
+            subprocess.call(['git', 'commit', '-m', 'new version'])
+            new_sha = check_output(['git', 'rev-parse',
+                                    '--verify', 'HEAD']).strip()
+        # get_update on new commit works
+        repo(new_sha)
+        self.assertEqual(repo.parents(), [new_sha])
 
     def test_uncommitted_changes(self):
         """GitRepo can detect uncommitted changes."""

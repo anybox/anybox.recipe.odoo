@@ -7,6 +7,7 @@ Changes
 - launchpad #1213469: openerp scripts: support for entry point
   arguments
 - launchpad #1215833: preserve regular develops in extract-downloads-to
+- launchpad #1215873: git: re-buildout with revision fixed versions crashes
 - launchpad #1203550: v8: using the openerpcommand that comes now bundled
   with openobject-server
 - launchpad #1208028: wrong error message in case of distribution
