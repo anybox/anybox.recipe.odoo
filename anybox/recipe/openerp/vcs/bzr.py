@@ -254,9 +254,9 @@ class BzrBranch(BaseRepo):
         elif bzr_opt == "stacked-branch":
             branch_cmd.extend(["branch", "--stacked"])
             logger.info("Stacked branching %s ...", url)
-        elif bzr_opt == "ligthweight-checkout":
+        elif bzr_opt == "lightweight-checkout":
             branch_cmd.extend(["checkout", "--lightweight"])
-            logger.info("Ligthweight checkout %s ...", url)
+            logger.info("Lightweight checkout %s ...", url)
         else:
             raise Exception("Unsupported option %r" % bzr_opt)
 

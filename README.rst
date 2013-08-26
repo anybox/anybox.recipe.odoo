@@ -190,7 +190,7 @@ not).
            Working copy initialized with the command
            ``bzr branch --stacked url ...``
 
-          ligthweight-checkout
+          lightweight-checkout
             Working copy initialized with the command
             ``bzr checkout --lightweight url ...``
 

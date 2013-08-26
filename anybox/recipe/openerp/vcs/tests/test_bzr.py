@@ -108,10 +108,10 @@ class BzrTestCase(BzrBaseTestCase):
         branch('last:1')
         self.assertRevision2(branch)
 
-    def test_checkout_ligthweight(self):
+    def test_checkout_lightweight(self):
         target_dir = os.path.join(self.dst_dir, "My branch")
         branch = BzrBranch(target_dir, self.src_repo,
-                           **{'bzr-init': 'ligthweight-checkout'})
+                           **{'bzr-init': 'lightweight-checkout'})
         branch('last:1')
         self.assertRevision2(branch)
 
