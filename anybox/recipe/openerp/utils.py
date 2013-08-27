@@ -8,7 +8,11 @@ logger = logging.getLogger(__name__)
 
 
 class WorkingDirectoryKeeper(object):
-    """A context manager to get back the working directory as it was before."""
+    """A context manager to get back the working directory as it was before.
+
+    If you want to stack working directory keepers, you need a new instance
+    for each stage.
+    """
 
     active = False
 
