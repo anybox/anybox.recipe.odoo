@@ -141,7 +141,7 @@ class BaseRecipe(object):
 
         self.openerp_installed = []
 
-        self.etc = self.make_absolute('etc')
+        self.etc = self.make_absolute(options.get('etc-directory', 'etc'))
         self.bin_dir = self.buildout['buildout']['bin-directory']
         self.config_path = join(self.etc, self.name + '.cfg')
         for d in self.downloads_dir, self.etc:
@@ -717,7 +717,7 @@ class BaseRecipe(object):
         if os.path.exists(self.config_path):
             os.remove(self.config_path)
         logger.info('Creating config file: %s',
-                    join(basename(self.etc), basename(self.config_path)))
+                    os.path.relpath(self.config_path, self.buildout_dir))
         self._create_default_config()
 
         # modify the config file according to recipe options
