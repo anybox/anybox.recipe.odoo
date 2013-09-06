@@ -8,6 +8,7 @@ Changes
   arguments
 - launchpad #1215833: preserve regular develops in extract-downloads-to
 - launchpad #1215873: git: re-buildout with revision fixed versions crashes
+- launchpad #1217816: bzr: proper update of lightweight checkouts
 - launchpad #1203550: v8: using the openerpcommand that comes now bundled
   with openobject-server
 - launchpad MP #182002: new 'etc-directory' option (default behaviour

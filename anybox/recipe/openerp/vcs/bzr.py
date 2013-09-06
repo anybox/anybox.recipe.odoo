@@ -32,6 +32,14 @@ class BzrBranch(BaseRepo):
 
     def __init__(self, *a, **kw):
         super(BzrBranch, self).__init__(*a, **kw)
+        if self.options.get('bzr-init') == "ligthweight-checkout":
+            logger.warn("The 'ligthweight-checkout' *misspelling* is "
+                        "deprecated as of version 1.7.1 of this buildout "
+                        "recipe. "
+                        "Please fix it as 'lightweight-checkout', as it will "
+                        "probably disappear in version 1.8.")
+            self.options['bzr-init'] = 'lightweight-checkout'
+
         if self.url.startswith('lp:'):
             if LPDIR is None:
                 raise RuntimeError(
@@ -254,14 +262,6 @@ class BzrBranch(BaseRepo):
         elif bzr_opt == "stacked-branch":
             branch_cmd.extend(["branch", "--stacked"])
             logger.info("Stacked branching %s ...", url)
-        elif bzr_opt == "ligthweight-checkout":
-            branch_cmd.extend(["checkout", "--lightweight"])
-            logger.warn("The 'ligthweight-checkout' *misspelling* is "
-                        "deprecated as of version 1.7.1 of this buildout "
-                        "recipe. "
-                        "Please fix it as 'lightweight-checkout', as it will "
-                        "probably disappear in version 1.8.")
-            logger.info("Lightweight checkout %s ...", url)
         elif bzr_opt == "lightweight-checkout":
             branch_cmd.extend(["checkout", "--lightweight"])
             logger.info("Lightweight checkout %s ...", url)
@@ -275,9 +275,15 @@ class BzrBranch(BaseRepo):
         clone_check_call(branch_cmd, env=SUBPROCESS_ENV)
 
     def _pull(self):
-        logger.info("Pull for branch %s ...", self.target_dir)
-        update_check_call(['bzr', 'pull', '-d', self.target_dir],
-                          env=SUBPROCESS_ENV)
+        if self.options.get('bzr-init') == 'lightweight-checkout':
+            logger.info("Update lightweight checkout at %s ...",
+                        self.target_dir)
+            update_check_call(['bzr', 'update', self.target_dir],
+                              env=SUBPROCESS_ENV)
+        else:
+            logger.info("Pull for branch %s ...", self.target_dir)
+            update_check_call(['bzr', 'pull', '-d', self.target_dir],
+                              env=SUBPROCESS_ENV)
 
     def archive(self, target_path):
         with working_directory_keeper:

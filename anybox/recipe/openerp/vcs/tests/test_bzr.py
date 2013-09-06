@@ -112,6 +112,9 @@ class BzrTestCase(BzrBaseTestCase):
         target_dir = os.path.join(self.dst_dir, "My branch")
         branch = BzrBranch(target_dir, self.src_repo,
                            **{'bzr-init': 'lightweight-checkout'})
+        branch('1')
+        self.assertRevision1(branch)
+
         branch('last:1')
         self.assertRevision2(branch)
 
