@@ -10,6 +10,8 @@ Changes
 - launchpad #1215873: git: re-buildout with revision fixed versions crashes
 - launchpad #1203550: v8: using the openerpcommand that comes now bundled
   with openobject-server
+- launchpad MP #182002: new 'etc-directory' option (default behaviour
+                        unchanged).
 - launchpad #1208028: wrong error message in case of distribution
   version conflict
 - launchpad #1216498: fixed python interpreter extra paths
