@@ -55,6 +55,16 @@ class GitTestCase(GitBaseTestCase):
         with open(os.path.join(target_dir, 'tracked')) as f:
             self.assertEquals(f.read().strip(), 'last')
 
+    def test_archive(self):
+        """Git clone, then archive"""
+        repo = GitRepo(os.path.join(self.dst_dir, "My clone"), self.src_repo)
+        repo('master')
+
+        archive_dir = os.path.join(self.dst_dir, "archive directory")
+        repo.archive(archive_dir)
+        with open(os.path.join(archive_dir, 'tracked')) as f:
+            self.assertEquals(f.readlines()[0].strip(), 'last')
+
     def test_clean(self):
         target_dir = os.path.join(self.dst_dir, "My clone")
         repo = GitRepo(target_dir, self.src_repo)

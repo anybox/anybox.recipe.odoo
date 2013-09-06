@@ -2,6 +2,7 @@ import os
 import sys
 import subprocess
 import logging
+import tempfile
 
 from ..utils import working_directory_keeper
 from .base import BaseRepo
@@ -81,15 +82,17 @@ class GitRepo(BaseRepo):
 
     def archive(self, target_path):
         revision = self.parents()[0]
+        os.makedirs(target_path)
         with working_directory_keeper:
             os.chdir(self.target_dir)
-            target_tar = os.path.split(self.target_dir)[1] + '.tar'
-            target_tar = os.path.join('/', 'tmp', target_tar)
+            target_tar = tempfile.NamedTemporaryFile(
+                prefix=os.path.split(self.target_dir)[1] + '.tar')
+            target_tar.file.close()
             subprocess.check_call(['git', 'archive', revision,
-                                   '-o', target_tar])
-            subprocess.check_call(['tar', '-x', '-f', target_tar,
+                                   '-o', target_tar.name])
+            subprocess.check_call(['tar', '-x', '-f', target_tar.name,
                                    '-C', target_path])
-            subprocess.check_call(['rm', target_tar])
+            os.unlink(target_tar.name)
 
     def _needToSwitchRevision(self, revision):
         """ Check if we need to checkout to an other branch
