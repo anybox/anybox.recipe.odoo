@@ -190,7 +190,7 @@ not).
            Working copy initialized with the command
            ``bzr branch --stacked url ...``
 
-          ligthweight-checkout
+          lightweight-checkout
             Working copy initialized with the command
             ``bzr checkout --lightweight url ...``
 
@@ -989,6 +989,7 @@ Contributors:
  * Yannick Vaucher
  * Jacques-Etienne Baudoux
  * Laurent Mignon
+ * Leonardo Pistone
 
 The primary branch is on the launchpad:
 

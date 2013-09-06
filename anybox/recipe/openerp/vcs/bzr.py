@@ -256,7 +256,15 @@ class BzrBranch(BaseRepo):
             logger.info("Stacked branching %s ...", url)
         elif bzr_opt == "ligthweight-checkout":
             branch_cmd.extend(["checkout", "--lightweight"])
-            logger.info("Ligthweight checkout %s ...", url)
+            logger.warn("The 'ligthweight-checkout' *misspelling* is "
+                        "deprecated as of version 1.7.1 of this buildout "
+                        "recipe. "
+                        "Please fix it as 'lightweight-checkout', as it will "
+                        "probably disappear in version 1.8.")
+            logger.info("Lightweight checkout %s ...", url)
+        elif bzr_opt == "lightweight-checkout":
+            branch_cmd.extend(["checkout", "--lightweight"])
+            logger.info("Lightweight checkout %s ...", url)
         else:
             raise Exception("Unsupported option %r" % bzr_opt)
 

@@ -13,6 +13,7 @@ Changes
 - launchpad #1208028: wrong error message in case of distribution
   version conflict
 - launchpad #1216498: fixed python interpreter extra paths
+- launchpad #1216835: bzr: mispelling in 'lightweight-checkout' option
 - launchpad #1205063: no more error if no addons are specified (might
   lead to problems with the default config, though, because of server
   wide modules, but that's supposed to be overridable)
