@@ -190,6 +190,25 @@ conf = openerp.tools.config
                 val = [i.strip() for i in val.split(',')]
 
             conf += 'conf[%r] = %r' % (opt, val) + os.linesep
+
+        preload_dbs = self.options.get('gunicorn.preload_databases',
+                                       '').split()
+        if preload_dbs:
+            conf += os.linesep.join((
+                "",
+                "def post_fork(server, worker):",
+                "    '''Preload databases specified in buildout conf.'''",
+                "    from openerp.modules.registry import RegistryManager",
+                "    preload_dbs = %r" % preload_dbs,
+                "    for db_name in preload_dbs:",
+                "        server.log.info('Worker loading database %r',",
+                "                        db_name)",
+                "        RegistryManager.get(db_name)",
+                "    server.log.info('OpenERP databases %r loaded, '",
+                "                    'worker ready '",
+                "                    'to serve requests', preload_dbs)",
+            ))
+
         f.write(conf)
         f.close()
 

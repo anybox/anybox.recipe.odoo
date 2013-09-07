@@ -3,7 +3,7 @@ Changes
 
 1.8.0 (unreleased)
 ------------------
-
+- launchpad #1222116: [Gunicorn] option to preload databases
 
 1.7.2 (unreleased)
 ------------------

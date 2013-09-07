@@ -358,7 +358,7 @@ these, the ``command-line-options`` modifier has no effect.
 :openerp_cron_worker: entry point for the cron worker script that gets
                       built for gunicorn setups.
 :oe: entry point declared by ``openerp-command`` and used by the recipe.
-:gunicorn: entry point declared ``gunicorn`` and used by the recipe.
+:gunicorn: entry point declared by ``gunicorn`` and used by the recipe.
 
 script_name
 -----------
@@ -524,7 +524,9 @@ If you don't specify ``gunicorn.bind``, then a value is constructed
 from the relevant options for the OpenERP script (currently
 ``options.xmlrpc_port`` and ``options.xmlrpc_interface``).
 
-Other supported options and their default values are::
+Other simple supported options and their default values are (See also
+the `Gunicorn configuration documentation
+<http://docs.gunicorn.org/en/latest/configure.html>`) ::
 
   gunicorn.workers = 4
   gunicorn.timeout = 240
@@ -535,9 +537,20 @@ version, you may manually override that with an option::
 
   gunicorn.entry_point = mypackage:wsgi.app
 
-Finally, you can specify the Gunicorn script name with the
+You may specify the Gunicorn script name with the
 ``gunicorn_script_name`` option. The configuration file will be named
 accordingly.
+
+The ``gunicorn.preload_databases`` option (one database per line) lets
+you specify databases to load in a `post_fork
+<http://docs.gunicorn.org/en/latest/configure.html#post-fork>` hook.
+With this setting, the worker processes will be ready for requests on these
+databases right after their startup. Moreover, Gunicorn does not handle any
+request to a worker until it is ready. Therefore, in workloads where
+one or a few databases are actually used, this setting keeps the user
+experience snappy even in the event of frequent worker restarts, and
+allows for graceful restarts (use this for minor changes only).
+
 
 openerp_command_name
 --------------------
