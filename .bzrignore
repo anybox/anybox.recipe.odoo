@@ -5,3 +5,9 @@ build/
 .coverage/
 COVERAGE
 .noseids
+
+buildbot/.installed.cfg
+buildbot/bin/
+buildbot/develop-eggs/
+buildbot/etc/
+buildbot/parts/
