@@ -1,6 +1,6 @@
 import os
 import sys
-import re
+import string
 import subprocess
 from contextlib import contextmanager
 import logging
@@ -43,11 +43,6 @@ def use_or_open(provided, path, *open_args):
             yield f
 
 
-NIGHTLY_VERSION_RE = re.compile(r'(\d+)[.](\d+)-(\d+-\d+)$')
-
-MAJOR_VERSION_RE = re.compile(r'(\d+)[.](\d+)')
-
-
 def major_version(version_string):
     """The least common denominator of OpenERP versions : two numbers.
 
@@ -58,11 +53,25 @@ def major_version(version_string):
     Beware, the packaging script does funny things, such as labeling current
     nightlies as 6.2-date-time whereas version_info is (7, 0, 0, ALPHA)
     We can in recipe code check for >= (6, 2), that's not a big issue.
+
+    Regarding OpenERP saas releases (e.g. 7.saas~1) that are short-lived stable
+    versions between two "X.0" LTS releases, the second version number does not
+    contain a numeric value. The value X.5 will be returned (e.g. 7.5).
     """
 
-    m = MAJOR_VERSION_RE.match(version_string)
-    if m is not None:
-        return tuple(int(m.group(i)) for i in (1, 2))
+    version = version_string.split('.', 3)
+    assert len(version) >= 2, ('Version string must have a major and minor '
+        'number: "%s".' % version_string)
+    major = version[0]
+    minor = version[1]
+    if not all(ch in set(string.digits) for ch in major):
+        raise ValueError('Cannot decode version number "%s". Major is not a '
+                         'number.' % version_string)
+    if all(ch in set(string.digits) for ch in minor):
+        return (int(major), int(minor))
+    elif minor.startswith('saas'):
+        return (int(major), 5)
+    raise ValueError('Cannot decode version number "%s".' % version_string)
 
 
 def mkdirp(path):
