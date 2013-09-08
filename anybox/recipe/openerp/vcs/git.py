@@ -82,7 +82,8 @@ class GitRepo(BaseRepo):
 
     def archive(self, target_path):
         revision = self.parents()[0]
-        os.makedirs(target_path)
+        if not os.path.exists(target_path):
+            os.makedirs(target_path)
         with working_directory_keeper:
             os.chdir(self.target_dir)
             target_tar = tempfile.NamedTemporaryFile(

@@ -7,7 +7,7 @@ Changes
 
 1.7.2 (unreleased)
 ------------------
-
+- launchpad #1222562: [git] error in extract-downloads-to
 
 1.7.1 (2013-09-07)
 ------------------
