@@ -10,6 +10,7 @@ except ImportError:
 else:
     from openerp.cli import server as startup
     from openerp.tools import config
+    from openerp import SUPERUSER_ID
 from optparse import OptionParser  # we support python >= 2.6
 
 logger = logging.getLogger(__name__)
@@ -45,6 +46,14 @@ class Session(object):
         self._registry = openerp.modules.registry.RegistryManager.get(
             db, update_module=False)
         self.init_cursor()
+        self.uid = SUPERUSER_ID
+
+    def update_modules_list(self):
+        """Update the list of available OpenERP modules, like the UI allows to.
+
+        This is necessary prior to install of any new module.
+        """
+        self.registry('ir.module.module').update_list(self.cr, self.uid)
 
     def init_cursor(self):
         self.cr = self._registry.db.cursor()
