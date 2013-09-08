@@ -1,7 +1,11 @@
 Changes
 ~~~~~~~
 
-1.7.1 (unreleased)
+1.7.2 (unreleased)
+------------------
+
+
+1.7.1 (2013-09-07)
 ------------------
 - launchpad #1215838: don't freeze develop / gp.vcsdevelop distributions
 - launchpad #1213469: openerp scripts: support for entry point
