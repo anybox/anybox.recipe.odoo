@@ -1,5 +1,5 @@
-anybox.recipe.openerp
-=====================
+Reference documentation
+=======================
 
 This is a `Buildout <https://github.com/buildout/buildout>`_ recipe that can
 download, install and configure one or several OpenERP servers, web clients,
@@ -7,8 +7,6 @@ gtk clients and addons modules, from official or custom sources, or any bzr,
 hg, git or svn repositories.  It currently supports versions 6.0, 6.1 and 7.0,
 with gunicorn deployment and an additional cron worker. It works under Linux
 and MacOs. It might work under Windows but it is untested.
-
-For a **quickstart** you can jump to the howto_ section.
 
 A "Buildout recipe" is the engine behind a Buildout "part". A "buildout part"
 is a part of a larger application built with the Buildout sandbox build system.

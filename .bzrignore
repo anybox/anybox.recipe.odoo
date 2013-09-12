@@ -11,3 +11,4 @@ buildbot/bin/
 buildbot/develop-eggs/
 buildbot/etc/
 buildbot/parts/
+doc/sphinx_build
