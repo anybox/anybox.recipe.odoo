@@ -38,7 +38,7 @@ Contents
    :glob:
 
    first_steps
-   reference
+   old_readme
    dev_prod_workflow
    contributing
 
