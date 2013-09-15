@@ -68,8 +68,8 @@ as many other projects:
   this is mitigated by our `continuous integration`_ practice of
   doing real OpenERP installations.
 
-Launching static analysis and tests
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Launching static analysis and unit tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Install ``nose``, ``flake8`` and, optionally, ``coverage``::
 
@@ -91,8 +91,49 @@ There is also this convenience to run the tests and output a coverage report::
 
     source ./test-cover
 
-.. _continuous integration:
 
+.. _integration tests:
+
+Integration tests
+~~~~~~~~~~~~~~~~~
+
+There is a special category of tests: those that need a real OpenERP
+instance, built with the recipe, to run.
+
+They are located within the ``tests_with_openerp`` subdirectory and
+need to be launched with a launcher script constructed by the recipe.
+
+For example, create a testing buildout like this::
+
+  [openerp]
+  # version as you wish
+  eggs = nose
+  openerp_scripts nosetests command-line-options = -d
+
+Then run ``bin/buildout``, create a database and initialize it. From
+the buildout directory::
+
+  createdb test-recipe
+  bin/start_openerp -d test-recipe -i base --stop-after-init
+
+You can then run the tests::
+
+  bin/nosetests_openerp -d test-recipe -- /path/to/recipe/branch/tests_with_openerp
+
+Currently, these tests are all about the ``Session`` objects, used in
+scripts.
+
+..note:: you may use a different version of the recipe to build that
+         testing buildout. This is anyway what happens if you build
+         with your development version, and hack some changes
+         afterwards.
+
+         Using a very different version of the recipe could give
+         funky results, but you're supposed to know what you're doing
+         at this point.
+
+
+.. _continuous integration:
 
 Continuous integration
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -118,7 +159,10 @@ a buildbot configurator for OpenERP installations based on the recipe.
 
 This is used in turn to run high-level integration tests, having the
 latest bzr version of the recipe actually install several combinations
-of OpenObject server and addons.
+of OpenObject server and addons, and run their unit tests.
+
+.. note:: the `integration tests`_ mentioned above are not yet
+          executed in this process. Of course, this is planned.
 
 The configuration is stored in the ``buildbot`` subdirectory of the
 recipe trunk branch. It is made of a high level configuration file

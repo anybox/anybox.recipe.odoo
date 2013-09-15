@@ -418,7 +418,7 @@ conf = openerp.tools.config
         initialization = os.linesep.join((
             "",
             "from anybox.recipe.openerp.startup import Session",
-            "session = Session(%r)" % self.config_path,
+            "session = Session(%r, %r)" % (self.config_path, self.buildout_dir),
             "if len(sys.argv) <= 1:",
             "    print('To start the OpenERP working session, just do:')",
             "    print('    session.open(db=DATABASE_NAME)')",
@@ -459,7 +459,7 @@ conf = openerp.tools.config
         common_init = os.linesep.join((
             "",
             "from anybox.recipe.openerp.startup import Session",
-            "session = Session(%r)" % self.config_path,
+            "session = Session(%r, %r)" % (self.config_path, self.buildout_dir),
         ))
 
         for script_name, desc in self.openerp_scripts.items():
