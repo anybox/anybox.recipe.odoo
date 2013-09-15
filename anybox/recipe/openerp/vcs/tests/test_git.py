@@ -120,6 +120,9 @@ class GitTestCase(GitBaseTestCase):
         repo(new_sha)
         self.assertEqual(repo.parents(), [new_sha])
 
+        # see launchpad #1215873
+        repo(new_sha)
+
     def test_uncommitted_changes(self):
         """GitRepo can detect uncommitted changes."""
         # initial cloning
