@@ -161,9 +161,6 @@ This is used in turn to run high-level integration tests, having the
 latest bzr version of the recipe actually install several combinations
 of OpenObject server and addons, and run their unit tests.
 
-.. note:: the `integration tests`_ mentioned above are not yet
-          executed in this process. Of course, this is planned.
-
 The configuration is stored in the ``buildbot`` subdirectory of the
 recipe trunk branch. It is made of a high level configuration file
 (``MANIFEST.cfg``) and buildout configuration files. This buildbot
@@ -172,6 +169,10 @@ instance actually aggregates several such configurations.
 The corresponding builders are those whose name starts with
 ``recipe-`` or ``stable-recipe-`` in the `builders list
 <http://buildbot.anybox.fr/builders>`_.
+
+.. note:: the `integration tests`_ mentioned above are executed in
+          particular during this process, currently in the
+          ``recipe-7.0-postgresql-9.2`` builder.
 
 Some builds may appear to be broken because of tests failures been
 pushed by upstream in OpenERP itself or in the tested addons, but it's
