@@ -32,9 +32,13 @@ class OpenERPVersion(Version):
     distutils Version classes.
     """
 
-    def parse(self, vstring):
-        self.vstring = vstring
-        self.components = parse_version(vstring)
+    def parse(self, incoming):
+        if isinstance(incoming, OpenERPVersion):
+            self.vstring = incoming.vstring
+            self.components = incoming.components
+        else:
+            self.vstring = incoming
+            self.components = parse_version(incoming)
 
     def __str__(self):
         return self.vstring
@@ -126,7 +130,11 @@ class Session(object):
 
         db_version = self.registry('ir.config_parameter').get_param(
             self.cr, self.uid, self._version_parameter_name())
-        if db_version is not None:
+        if not db_version:
+            # as usual OpenERP thinks its simpler to use False as None
+            # restoring sanity ASAP
+            db_version = None
+        else:
             db_version = OpenERPVersion(db_version)
         self._db_version = db_version
         return db_version
@@ -174,7 +182,35 @@ class Session(object):
         self.cr.rollback()
 
     def close(self):
+        dbname = self.cr.dbname
         self.cr.close()
+        openerp.modules.registry.RegistryManager.delete(dbname)
+
+    def install_modules(self, modules_list):
+        """TODO"""
+
+    def update_modules(self, modules, db=None):
+        """Update the modules in the database.
+
+        If the database is not specified, it is assumed to have already
+        been opened with ``open()``, for instance to check versions.
+
+        If it is specified, then the session in particular opens that db and
+        will use it afterwards whether another one was already opened or not.
+        """
+        if db is None:
+            if self.cr is None:
+                raise ValueError("update_modules needs either the session to "
+                                 "be opened or an explicit database name")
+            db = self.cr.dbname
+
+        if self.cr is not None:
+            self.close()
+        for module in modules:
+            config['update'][module] = 1
+        self._registry = openerp.modules.registry.RegistryManager.get(
+            db, update_module=True)
+        self.init_cursor()
 
     def handle_command_line_options(self, to_handle):
         """Handle prescribed command line options and eat them.

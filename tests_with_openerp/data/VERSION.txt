@@ -1,0 +1,5 @@
+# comments are allowed
+0.1.2-dev   # also inline
+
+# only the first version line is taken into account
+6.6.6
