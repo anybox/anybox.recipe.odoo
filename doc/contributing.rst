@@ -123,14 +123,14 @@ You can then run the tests::
 Currently, these tests are all about the ``Session`` objects, used in
 scripts.
 
-..note:: you may use a different version of the recipe to build that
-         testing buildout. This is anyway what happens if you build
-         with your development version, and hack some changes
-         afterwards.
+.. note:: you may use a different version of the recipe to build that
+          testing buildout. This is anyway what happens if you build
+          with your development version, and hack some changes
+          afterwards.
 
-         Using a very different version of the recipe could give
-         funky results, but you're supposed to know what you're doing
-         at this point.
+          Using a very different version of the recipe could give
+          funky results, but you're supposed to know what you're doing
+          at this point.
 
 
 .. _continuous integration:
