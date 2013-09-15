@@ -186,9 +186,6 @@ class Session(object):
         self.cr.close()
         openerp.modules.registry.RegistryManager.delete(dbname)
 
-    def install_modules(self, modules_list):
-        """TODO"""
-
     def update_modules(self, modules, db=None):
         """Update the modules in the database.
 
@@ -210,6 +207,32 @@ class Session(object):
             config['update'][module] = 1
         self._registry = openerp.modules.registry.RegistryManager.get(
             db, update_module=True)
+        config['update'].clear()
+        self.init_cursor()
+
+    def install_modules(self, modules, db=None, with_demo=False):
+        """Install the modules in the database.
+
+        If the database is not specified, it is assumed to have already
+        been opened with ``open()``, for instance to check versions.
+
+        If it is specified, then the session in particular opens that db and
+        will use it afterwards whether another one was already opened or not.
+        """
+        if db is None:
+            if self.cr is None:
+                raise ValueError("install_modules needs either the session to "
+                                 "be opened or an explicit database name")
+            db = self.cr.dbname
+
+        if self.cr is not None:
+            self.close()
+        config['without_demo'] = not with_demo
+        for module in modules:
+            config['init'][module] = 1
+        self._registry = openerp.modules.registry.RegistryManager.get(
+            db, update_module=True, force_demo=with_demo)
+        config['init'].clear()
         self.init_cursor()
 
     def handle_command_line_options(self, to_handle):
