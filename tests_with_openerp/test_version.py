@@ -30,8 +30,19 @@ class VersionTestCase(TransactionCase):
         self.assertTrue(session.db_version < (1, 2, 3))
         self.assertTrue(session.db_version > (1, 2, 2))
 
+    def test_db_version_missing(self):
+        self.assertTrue(self.session.db_version is None)
+
     def test_pkg_version(self):
         pkg_version = self.session.package_version
         self.assertEqual(pkg_version, '0.1.2-dev')
         self.assertTrue(pkg_version > (0, 1, 1))
         self.assertTrue(pkg_version < (0, 1, 2))
+
+        # The assertRaises context manager appears in Python 2.7
+        try:
+            self.session.package_version = '1.2.3'
+        except AttributeError:
+            pass
+        else:
+            self.fail("package_version should be readonly")
