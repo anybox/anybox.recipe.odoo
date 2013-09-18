@@ -65,7 +65,7 @@ class Session(object):
     Then you have useful attributes/methods behaving like unit test classes:
 
     :``cr``: a cursor
-    :``uid`:` user id
+    :``uid``: user id
     :``db_version``: version of this installation stored in database (settable,
                      meant for upgrade logic)
     :``package_version``: version of this installation read from VERSION file.
