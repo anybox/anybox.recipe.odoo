@@ -17,14 +17,13 @@ anybox.recipe.openerp Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`server` Module
---------------------
+:mod:`devtools` Module
+----------------------
 
-.. automodule:: anybox.recipe.openerp.server
+.. automodule:: anybox.recipe.openerp.devtools
     :members:
     :undoc-members:
     :show-inheritance:
-
 
 :mod:`gtkclient` Module
 -----------------------
@@ -34,53 +33,10 @@ anybox.recipe.openerp Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`server` Module
+--------------------
 
-:mod:`webclient` Module
------------------------
-
-.. automodule:: anybox.recipe.openerp.webclient
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-:mod:`utils` Module
--------------------
-
-.. automodule:: anybox.recipe.openerp.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-:mod:`devtools` Module
-----------------------
-
-.. automodule:: anybox.recipe.openerp.devtools
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`start_openerp` Module
----------------------------
-
-.. automodule:: anybox.recipe.openerp.start_openerp
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`startup` Module
----------------------
-
-.. automodule:: anybox.recipe.openerp.startup
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`test_openerp` Module
---------------------------
-
-.. automodule:: anybox.recipe.openerp.test_openerp
+.. automodule:: anybox.recipe.openerp.server
     :members:
     :undoc-members:
     :show-inheritance:
@@ -93,11 +49,27 @@ anybox.recipe.openerp Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`utils` Module
+-------------------
+
+.. automodule:: anybox.recipe.openerp.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`webclient` Module
+-----------------------
+
+.. automodule:: anybox.recipe.openerp.webclient
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Subpackages
 -----------
 
 .. toctree::
 
-    anybox.recipe.openerp.tests
+    anybox.recipe.openerp.runtime
     anybox.recipe.openerp.vcs
 

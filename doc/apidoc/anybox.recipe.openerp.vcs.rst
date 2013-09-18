@@ -1,5 +1,5 @@
-vcs Package
-===========
+vcs Subpackage
+==============
 
 :mod:`vcs` Package
 ------------------
@@ -56,11 +56,4 @@ vcs Package
     :members:
     :undoc-members:
     :show-inheritance:
-
-Subpackages
------------
-
-.. toctree::
-
-    anybox.recipe.openerp.vcs.tests
 
