@@ -491,8 +491,11 @@ conf = openerp.tools.config
 
         # provide additional needed entry points for main start/test scripts
         self.eggs_reqs.extend((
-            ('openerp_starter', 'anybox.recipe.openerp.start_openerp', 'main'),
-            ('openerp_cron_worker', 'anybox.recipe.openerp.start_openerp',
+            ('openerp_starter',
+             'anybox.recipe.openerp.runtime.start_openerp',
+             'main'),
+            ('openerp_cron_worker',
+             'anybox.recipe.openerp.runtime.start_openerp',
              'main'),
         ))
 

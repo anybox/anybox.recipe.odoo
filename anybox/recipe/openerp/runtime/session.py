@@ -115,6 +115,16 @@ class Session(object):
         # A latter version may read the buildout configuration.
         return os.path.join(self.buildout_dir, DEFAULT_VERSION_FILE)
 
+    def parse_version_string(self, vstring):
+        """Stable method for downstream code needing to instantiate a version.
+
+        This method returns an appropriate version instance, without
+        any dependency on where to import the class from. Especially useful
+        for applications whose life started before this set of utilities has
+        been used : this helps building an usable default.
+        """
+        return OpenERPVersion(vstring)
+
     @property
     def db_version(self):
         """Return the version number stored in DB for the whole buildout.

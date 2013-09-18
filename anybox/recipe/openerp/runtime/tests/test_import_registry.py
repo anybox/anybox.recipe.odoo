@@ -1,5 +1,5 @@
 from unittest import TestCase
-from ..startup import already_imported, clear_import_registry
+from .. import already_imported, clear_import_registry
 
 
 class TestImportRegistry(TestCase):
