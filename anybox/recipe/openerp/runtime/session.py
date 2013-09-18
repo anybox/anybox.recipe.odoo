@@ -304,17 +304,3 @@ class Session(object):
                 logger.info("No database specified, using the one specified "
                             "in buildout configuration.")
             self.open(db=options.db_name)
-
-_imported_addons = set()
-
-
-def already_imported(module_name):
-    name = module_name.rsplit('.', 1)[-1]
-    if name in _imported_addons:
-        return True
-    _imported_addons.add(name)
-    return False
-
-
-def clear_import_registry():
-    _imported_addons.clear()
