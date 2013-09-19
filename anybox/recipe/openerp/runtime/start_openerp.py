@@ -14,23 +14,24 @@ from . import patch_openerp_v5
 
 
 def insert_args(arguments):
-    """Insert ``arguments`` in ``sys.argv`` (direct impact on child script).
+    """Insert `arguments` in ``sys.argv`` (direct impact on child script).
     """
     for i, a in enumerate(arguments):
         sys.argv.insert(i+1, a)
 
 
 def main(starter, conf, version=None, just_test=False):
-    """Call the ``starter`` script, dispatching configuration.
+    """Call the `starter` script, dispatching configuration.
 
     All arguments are set in the standalone script produced by buildout through
     entry point options.
 
-    * ``starter``: path to the main script source file (currently
+    :param starter: path to the main script source file (currently
       ``openerp-server``)
-    * ``conf``: path to the OpenERP configuration file (managed by the recipe)
-    * ``version``: OpenERP major version
-    * ``just_test``: only run unit tests
+    :param conf: path to the OpenERP configuration file (managed by the recipe)
+    :param version: OpenERP major version
+    :type version: tuple of integers
+    :param just_test: if True, only run unit tests
     """
     arguments = ['-c', conf]
 
