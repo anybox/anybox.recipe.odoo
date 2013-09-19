@@ -31,8 +31,8 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
 
       It must accept the two following positional arguments, in that order:
 
-        - a Session instance (as in standard "OpenERP scripts")
-        - a logger (standard object from the ``logging`` module)
+        - a :class:`.Session` instance (as in standard "OpenERP scripts")
+        - a logger (standard object from the :mod:`logging` module)
 
       and may return a non zero status code to indicate an error.
       Both ``None`` and 0 are interpreted as success.

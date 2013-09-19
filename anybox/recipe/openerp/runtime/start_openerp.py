@@ -1,6 +1,6 @@
 """This module bridges the classical ``openerp-server`` as a console script.
 
-The ``main()`` method gets registered on the fly by the server recipe as
+The :func:`main` function gets registered on the fly by the server recipe as
 a console script entry point and used in particular for ``start_openerp`` and
 ``test_openerp``.
 

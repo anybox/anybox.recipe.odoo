@@ -57,21 +57,43 @@ class OpenERPVersion(Version):
 
 
 class Session(object):
-    """A class to represent the server object.
+    """A class to give server-level access to one database.
 
-    you should have exactly one per process.
+    There should be exactly one instance of this class per process.
+    It can be used for any kind of script involving OpenERP API, and provides
+    facilities for upgrade scripts (see also
+    :mod:anybox.recipe.openerp.runtime.upgrade)
 
-    Before actual use, call the ``bootstrap`` method.
-    Then you have useful attributes/methods behaving like unit test classes:
+    Before actual use, call :meth:`open`.
+    Then you'll have useful attributes and methods reminiscent of the unit test
+    classes:
 
-    :``cr``: a cursor
-    :``uid``: user id
-    :``db_version``: version of this installation stored in database (settable,
-                     meant for upgrade logic)
-    :``package_version``: version of this installation read from VERSION file.
+    * :attr:`cr`: a cursor
+    * :attr:`uid`: user id
+    * :attr:`registry`: access to model objects
+
+    Example application code::
+
+       session.open(db_name="my_db")
+       admin = session.registry('res_users').browse(session.cr, session.uid, 1)
+       (...)
+       session.cr.commit()
+       session.close()
+
+    Transaction management is up to user code
+
+    Upgrade scripts writers should check the version handling properties:
+
+    * :meth:`db_version`
+    * :meth:`package_version`
 
     Instantiation is done by passing the path to OpenERP main
     configuration file and the path of the buildout directory.
+
+    Usually, instantiation code is written by the recipe in the body of the
+    executable "OpenERP scripts" it produces.
+    Real users then simply provide a callable that takes a
+    :class:Session object argument as a console script entry point.
 
     Later versions of the recipe may find a way to pass the whole buildout
     configuration (recall that this is to be used in a separate process in
@@ -127,7 +149,7 @@ class Session(object):
 
     @property
     def db_version(self):
-        """Return the version number stored in DB for the whole buildout.
+        """Settable property for version stored in DB of the whole buildout.
 
         This can be thought as the latest version to which the DB has been
         upgraded to.
@@ -189,22 +211,27 @@ class Session(object):
         self.cr = self._registry.db.cursor()
 
     def registry(self, model):
-        """Return the model object."""
+        """Lookup model by name and return a ready-to-work instance."""
         return self._registry.get(model)
 
     def rollback(self):
         self.cr.rollback()
 
     def close(self):
+        """Close the cursor and forget about the current database.
+
+        The session is thus ready to open another database.
+        """
         dbname = self.cr.dbname
         self.cr.close()
         openerp.modules.registry.RegistryManager.delete(dbname)
 
     def update_modules(self, modules, db=None):
-        """Update the modules in the database.
+        """Update the prescribed modules in the database.
 
         If the database is not specified, it is assumed to have already
-        been opened with ``open()``, for instance to check versions.
+        been opened with :meth:`open`, e.g, for a prior read of
+        :meth:`db_version`.
 
         If it is specified, then the session in particular opens that db and
         will use it afterwards whether another one was already opened or not.
@@ -252,8 +279,8 @@ class Session(object):
     def handle_command_line_options(self, to_handle):
         """Handle prescribed command line options and eat them.
 
-        Anything before first occurrence of '--' is ours and removed from
-        sys.argv.
+        Anything before first occurrence of ``--`` on the command-line is taken
+        into account and removed from ``sys.argv``.
 
         Help messages:
 
