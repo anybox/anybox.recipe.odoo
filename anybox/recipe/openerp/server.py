@@ -31,6 +31,7 @@ class ServerRecipe(BaseRecipe):
     soft_requirements = ('openerp-command',)
     with_openerp_command = False
     with_gunicorn = False
+    with_upgrade = True
     ws = None
 
     def __init__(self, *a, **kw):
@@ -38,6 +39,7 @@ class ServerRecipe(BaseRecipe):
         opt = self.options
         self.with_devtools = (
             opt.get('with_devtools', 'false').lower() == 'true')
+        self.with_upgrade = self.options.get('upgrade_script_name') != ''
         # discarding, because we have a special behaviour with custom
         # interpreters
         opt.pop('interpreter', None)
@@ -311,6 +313,23 @@ conf = openerp.tools.config
                 self.major_version),
         )
 
+    def _register_upgrade_script(self, qualified_name):
+        desc = self._get_or_create_script('openerp_upgrader',
+                                          name=qualified_name)[1]
+        script_opt = self.options.get('upgrade_script', 'upgrade.py run')
+        script = script_opt.split()
+        if len(script) != 2:
+            # TODO add console script entry point support
+            raise zc.buildout.UserError(
+                ("upgrade_script option must take the form "
+                 "SOURCE_FILE CALLABLE (got '%r')" % script))
+        desc.update(
+            entry='openerp_upgrader',
+            arguments='%r, %r, %r, %r' % (
+                self.make_absolute(script[0]), script[1],
+                self.config_path, self.buildout_dir),
+        )
+
     def _register_gunicorn_startup_script(self, qualified_name):
         """Register a gunicorn foreground start script for installation.
 
@@ -417,7 +436,7 @@ conf = openerp.tools.config
 
         initialization = os.linesep.join((
             "",
-            "from anybox.recipe.openerp.startup import Session",
+            "from anybox.recipe.openerp.runtime.session import Session",
             "session = Session(%r, %r)" % (self.config_path,
                                            self.buildout_dir),
             "if len(sys.argv) <= 1:",
@@ -459,7 +478,7 @@ conf = openerp.tools.config
 
         common_init = os.linesep.join((
             "",
-            "from anybox.recipe.openerp.startup import Session",
+            "from anybox.recipe.openerp.runtime.session import Session",
             "session = Session(%r, %r)" % (self.config_path,
                                            self.buildout_dir),
         ))
@@ -497,6 +516,9 @@ conf = openerp.tools.config
             ('openerp_cron_worker',
              'anybox.recipe.openerp.runtime.start_openerp',
              'main'),
+            ('openerp_upgrader',
+             'anybox.recipe.openerp.runtime.upgrade',
+             'upgrade'),
         ))
 
         if self.major_version >= (8, 0):
@@ -526,6 +548,11 @@ conf = openerp.tools.config
             qualified_name = self.options.get('cron_worker_script_name',
                                               'cron_worker_%s' % self.name)
             self._register_cron_worker_startup_script(qualified_name)
+
+        if self.with_upgrade:
+            qualified_name = self.options.get('upgrade_script_name',
+                                              'upgrade_%s' % self.name)
+            self._register_upgrade_script(qualified_name)
 
         self._install_openerp_scripts()
 

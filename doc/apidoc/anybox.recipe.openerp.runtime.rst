@@ -9,18 +9,26 @@ runtime Subpackage
     :undoc-members:
     :show-inheritance:
 
-:mod:`patch_openerp_v5` Module
-------------------------------
-
-.. automodule:: anybox.recipe.openerp.runtime.patch_openerp_v5
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 :mod:`session` Module
 ---------------------
 
 .. automodule:: anybox.recipe.openerp.runtime.session
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`upgrade` Module
+---------------------
+
+.. automodule:: anybox.recipe.openerp.runtime.upgrade
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`patch_openerp_v5` Module
+------------------------------
+
+.. automodule:: anybox.recipe.openerp.runtime.patch_openerp_v5
     :members:
     :undoc-members:
     :show-inheritance:

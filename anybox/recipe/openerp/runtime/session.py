@@ -157,7 +157,7 @@ class Session(object):
 
     @property
     def package_version(self):
-        """Read the version file from buildout directory.
+        """Property reading the version file from buildout directory.
 
         Comments introduced with a hash are accepted.
         Only the first significant line is taken into account.
@@ -166,13 +166,17 @@ class Session(object):
         if pkg_version is not None:
             return pkg_version
 
-        with open(self._version_file_path()) as f:
-            for line in f:
-                line = line.split('#', 1)[0].strip()
-                if not line:
-                    continue
-                self._pkg_version = OpenERPVersion(line)
-                return self._pkg_version
+        try:
+            with open(self._version_file_path()) as f:
+                for line in f:
+                    line = line.split('#', 1)[0].strip()
+                    if not line:
+                        continue
+                    self._pkg_version = OpenERPVersion(line)
+                    return self._pkg_version
+        except IOError:
+            logger.info("No version file could be read, "
+                        "package version considered to be None")
 
     def update_modules_list(self):
         """Update the list of available OpenERP modules, like the UI allows to.

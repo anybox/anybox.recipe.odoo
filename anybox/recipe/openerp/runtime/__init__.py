@@ -11,8 +11,8 @@ itself:
   the main startup scripts.
 
 This architecture is meant in particular to provide stability and uniformity
-accross OpenERP major versions, so that the recipe can be leveraged by automated
-deploymnent tools and continuous integration systems.
+accross OpenERP major versions, so that the recipe can be leveraged by
+automated deploymnent tools and continuous integration systems.
 """
 
 _imported_addons = set()

@@ -372,7 +372,44 @@ arguments to the server via the startup script, such as -i or -u options.
 You can choose another name for the script by using the *script_name*
 option ::
 
-    script_name = start_erp  
+    script_name = start_erp
+
+upgrade_script_name
+-------------------
+
+This option lets you specify the wished name for the upgrade script.
+The default value is ``upgrade_<part_name>``.
+
+upgrade_script
+--------------
+
+This option lets you specify a source (``.py``) file and a callable
+defined in that file to perform database upgrades. The 
+
+Example source file::
+
+   def run(session, logger):
+       db_version = session.db_version
+       if db_version < '1.0':
+          session.update_modules('account_account')
+       else:
+          logger.warn("Not upgrading account_account, as we know it "
+                      "to be a problem with our setup. ")
+       session.update_modules(['crm', 'sales'])
+
+The idea is that such scripts only take very wide decisions, most of
+the upgrade logic residing actually in modules, within the ``migrate``
+hierarchy.
+
+The ``session`` argument of the specified callable is as in "openerp
+scripts".
+
+The resulting actual upgrade script takes care of command-line parsing
+and sets the version number as read in ``VERSION.txt`` in database,
+for further runs to use it.
+
+.. note:: new in version 1.8.0
+
 
 interpreter_name
 ----------------
