@@ -13,6 +13,7 @@ requires = ['setuptools', 'zc.recipe.egg', 'zc.buildout']
 
 if sys.version_info < (2, 7):
     requires.append('ordereddict')
+    requires.append('argparse')
 
 setup(
     name="anybox.recipe.openerp",
