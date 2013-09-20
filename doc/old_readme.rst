@@ -384,11 +384,13 @@ upgrade_script
 --------------
 
 This option lets you specify a source (``.py``) file and a callable
-defined in that file to perform database upgrades. The 
+defined in that file to perform database upgrades. Example::
+
+  upgrade_script = upgrade.py do_run
 
 Example source file::
 
-   def run(session, logger):
+   def do_run(session, logger):
        db_version = session.db_version
        if db_version < '1.0':
           session.update_modules('account_account')
