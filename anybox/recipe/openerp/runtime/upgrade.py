@@ -112,6 +112,7 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
         if pkg_version is not None:
             logger.info("setting version %s in database" % pkg_version)
             session.db_version = pkg_version
+        session.cr.commit()
 
         logger.info("Upgrade finished. Total time: %d seconds." % (
             ceil((datetime.utcnow() - start_time).total_seconds())
