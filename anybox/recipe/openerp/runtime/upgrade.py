@@ -89,8 +89,7 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
                   log_path, log_level.upper(), console_level.upper()))
 
     db_name = getattr(arguments, 'db_name', None)
-    if db_name is not None:
-        session.open(db_name)
+    session.open(db=db_name)
 
     logger = logging.getLogger('openerp.upgrade')
 

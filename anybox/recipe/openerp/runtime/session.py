@@ -29,7 +29,19 @@ class OpenERPVersion(Version):
     """OpenERP idea of version, wrapped in a class.
 
     Provides straight-ahead comparison with tuples of integers, or
-    distutils Version classes.
+    distutils Version classes::
+
+        >>> import pdb; pdb.set_trace(); version = OpenERPVersion('1.2.3')
+        >>> version < '1.2.4'
+        True
+        >>> version < (1, 2, 5)
+        True
+        >>> version < '1.2.4-dev'
+        True
+        >>> version < '1.2.3a1-2'
+        False
+        >>> version < '1.2.4a1-2'
+        True
     """
 
     def parse(self, incoming):
