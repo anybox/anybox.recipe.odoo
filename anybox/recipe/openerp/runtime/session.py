@@ -28,20 +28,9 @@ DEFAULT_VERSION_FILE = 'VERSION.txt'
 class OpenERPVersion(Version):
     """OpenERP idea of version, wrapped in a class.
 
+    This is based on :meth:`openerp.tools.parse_version`, and
     Provides straight-ahead comparison with tuples of integers, or
-    distutils Version classes::
-
-        >>> import pdb; pdb.set_trace(); version = OpenERPVersion('1.2.3')
-        >>> version < '1.2.4'
-        True
-        >>> version < (1, 2, 5)
-        True
-        >>> version < '1.2.4-dev'
-        True
-        >>> version < '1.2.3a1-2'
-        False
-        >>> version < '1.2.4a1-2'
-        True
+    distutils Version classes.
     """
 
     def parse(self, incoming):
@@ -104,8 +93,15 @@ class Session(object):
 
     Usually, instantiation code is written by the recipe in the body of the
     executable "OpenERP scripts" it produces.
-    Real users then simply provide a callable that takes a
-    :class:Session object argument as a console script entry point.
+    Script writers provide a callable that takes a
+    :class:`.Session` object argument and declare it as a console script entry
+    point in their distribution.
+    End users can reference such entry points in their buildout configurations
+    to have buildout produce the actual executable.
+
+    Upgrade scripts are a special case of that process, in which the entry
+    point is actually provided by the recipe and rewraps a user-level
+    source script.
 
     Later versions of the recipe may find a way to pass the whole buildout
     configuration (recall that this is to be used in a separate process in

@@ -1,6 +1,6 @@
 import os
 from openerp.tests.common import TransactionCase
-from anybox.recipe.openerp.startup import Session
+from anybox.recipe.openerp.runtime.session import Session
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -18,6 +18,17 @@ class VersionTestCase(TransactionCase):
         session.uid = self.uid
         session.buildout_dir = TEST_DATA_DIR
         return session
+
+    def test_version_class(self):
+        """Test the version class itself.
+
+        This does not need a database, but still needs to import Openerp"""
+        version = self.session.parse_version_string('1.2.3')
+        self.assertFalse(version < '1.2.2')
+        self.assertTrue(version < (1, 2, 5))
+        self.assertTrue(version < '1.2.4-dev')
+        self.assertFalse(version < '1.2.3a1-2')
+        self.assertTrue(version < '1.2.4a1-2')
 
     def test_db_version(self):
         session = self.session
