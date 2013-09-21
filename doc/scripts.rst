@@ -134,7 +134,8 @@ high-level methods of
 example::
 
    def run_upgrade(session, logger):
-       db_version = session.db_version
+       db_version = session.db_version  # this is the state after
+                                        # latest upgrade
        if db_version < '1.0':
           session.update_modules(['account_account'])
        else:
