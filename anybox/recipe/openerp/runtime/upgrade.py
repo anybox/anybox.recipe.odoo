@@ -87,6 +87,7 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
         print("Starting upgrade, logging details to %s at level %s, "
               "and major steps to console at level %s" % (
                   log_path, log_level.upper(), console_level.upper()))
+        print('')
 
     db_name = getattr(arguments, 'db_name', None)
     session.open(db=db_name)
@@ -101,19 +102,29 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
     if not arguments.quiet:
         logger.addHandler(console_handler)
 
+    pkg_version = session.package_version
+    if pkg_version is None:
+        logger.warn("Expected package version file %r does not exist. "
+                    "version won't be set in database at the end of upgrade. "
+                    "Consider including such a version file in your project "
+                    "*before* version dependent logic is actually needed.",
+                    session.version_file_path)
+    else:
+        logger.info("Read package version: %s from %s", pkg_version,
+                    session.version_file_path)
+
     logger.info("Database %r loaded. Actual upgrade begins.", db_name)
 
     upgrade_module = imp.load_source('anybox.recipe.openerp.upgrade_openerp',
                                      upgrade_script)
     statuscode = getattr(upgrade_module, upgrade_callable)(session, logger)
     if statuscode is None or statuscode == 0:
-        pkg_version = session.package_version
         if pkg_version is not None:
             logger.info("setting version %s in database" % pkg_version)
             session.db_version = pkg_version
         session.cr.commit()
 
-        logger.info("Upgrade finished. Total time: %d seconds." % (
+        logger.info("Upgrade successful. Total time: %d seconds." % (
             ceil((datetime.utcnow() - start_time).total_seconds())
         ))
     else:

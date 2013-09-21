@@ -2,6 +2,7 @@
 import os
 from os.path import join
 import sys
+import shutil
 import logging
 import subprocess
 import zc.buildout
@@ -33,6 +34,8 @@ class ServerRecipe(BaseRecipe):
     with_gunicorn = False
     with_upgrade = True
     ws = None
+    template_upgrade_script = os.path.join(os.path.dirname(__file__),
+                                           'upgrade.py.tmpl')
 
     def __init__(self, *a, **kw):
         super(ServerRecipe, self).__init__(*a, **kw)
@@ -323,12 +326,18 @@ conf = openerp.tools.config
             raise zc.buildout.UserError(
                 ("upgrade_script option must take the form "
                  "SOURCE_FILE CALLABLE (got '%r')" % script))
+        script_source_path = self.make_absolute(script[0])
         desc.update(
             entry='openerp_upgrader',
             arguments='%r, %r, %r, %r' % (
-                self.make_absolute(script[0]), script[1],
+                script_source_path, script[1],
                 self.config_path, self.buildout_dir),
         )
+
+        if not os.path.exists(script_source_path):
+            logger.warning("Ugrade script source %s does not exist."
+                           "Initializing it for you", script_source_path)
+            shutil.copy(self.template_upgrade_script, script_source_path)
 
     def _register_gunicorn_startup_script(self, qualified_name):
         """Register a gunicorn foreground start script for installation.

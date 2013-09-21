@@ -138,12 +138,16 @@ class Session(object):
         self.init_cursor()
         self.uid = SUPERUSER_ID
 
-    def _version_parameter_name(self):
-        # A latter version may read the buildout configuration.
-        return DEFAULT_VERSION_PARAMETER
+    # A later version might read that from buildout configuration.
+    _version_parameter_name = DEFAULT_VERSION_PARAMETER
 
-    def _version_file_path(self):
-        # A latter version may read the buildout configuration.
+    @property
+    def version_file_path(self):
+        """Absolute path of the flat file storing the package version.
+
+        For now this is not configurable, a later version might read it
+        from buildout configuration.
+        """
         return os.path.join(self.buildout_dir, DEFAULT_VERSION_FILE)
 
     def parse_version_string(self, vstring):
@@ -170,7 +174,7 @@ class Session(object):
             return db_version
 
         db_version = self.registry('ir.config_parameter').get_param(
-            self.cr, self.uid, self._version_parameter_name())
+            self.cr, self.uid, self._version_parameter_name)
         if not db_version:
             # as usual OpenERP thinks its simpler to use False as None
             # restoring sanity ASAP
@@ -183,7 +187,7 @@ class Session(object):
     @db_version.setter
     def db_version(self, version):
         self.registry('ir.config_parameter').set_param(
-            self.cr, self.uid, self._version_parameter_name(), str(version))
+            self.cr, self.uid, self._version_parameter_name, str(version))
         self._db_version = OpenERPVersion(version)
 
     @property
@@ -198,7 +202,7 @@ class Session(object):
             return pkg_version
 
         try:
-            with open(self._version_file_path()) as f:
+            with open(self.version_file_path) as f:
                 for line in f:
                     line = line.split('#', 1)[0].strip()
                     if not line:
