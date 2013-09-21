@@ -97,7 +97,8 @@ class Session(object):
     :class:`.Session` object argument and declare it as a console script entry
     point in their distribution.
     End users can reference such entry points in their buildout configurations
-    to have buildout produce the actual executable.
+    to have buildout produce the actual executable. See :doc:`/scripts`
+    for details.
 
     Upgrade scripts are a special case of that process, in which the entry
     point is actually provided by the recipe and rewraps a user-level

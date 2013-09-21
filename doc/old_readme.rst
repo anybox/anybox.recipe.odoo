@@ -399,7 +399,7 @@ Example source file::
                       "to be a problem with our setup. ")
        session.update_modules(['crm', 'sales'])
 
-The idea is that such scripts only take very wide decisions, most of
+The idea is that such scripts only take very high-level decisions, most of
 the upgrade logic residing actually in modules, within the ``migrate``
 hierarchy.
 

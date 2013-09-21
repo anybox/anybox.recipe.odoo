@@ -38,6 +38,7 @@ Contents
    :glob:
 
    first_steps
+   scripts
    old_readme
    dev_prod_workflow
    contributing
