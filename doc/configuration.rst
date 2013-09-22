@@ -1,4 +1,4 @@
-Reference documentation
+Configuration reference
 =======================
 
 This is a `Buildout <https://github.com/buildout/buildout>`_ recipe that can
@@ -14,6 +14,9 @@ Using Buildout is harmless for your system because it is entirely
 self-contained in a single directory: just delete the directory and the
 buildout is gone. You never have to use administrative rights, except for
 build dependencies.
+
+.. contents::
+
 
 .. _buildout_conf_parts:
 
@@ -88,8 +91,6 @@ Finally, you may also use :ref:`extends <extends>` in ``default.cfg`` to point
 to a system-wide configuration file (useful to enforce
 policies at the organization or physical site level, such as local
 index servers, mirrors, etc.).
-
-.. contents::
 
 OpenERP recipes
 ~~~~~~~~~~~~~~~
@@ -828,246 +829,6 @@ It will modify the corresponding web client config::
     you may either explicitely set that password in the buildout part
     configuration or even set it temporarily in the
     ``etc/openerp.conf`` file. 
-
-
-.. _howto:
-
-How to create and bootstrap a buildout
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To create a buildout and run the build, you just need **1 file** and **2 commands**:
-
-- Create a single ``buildout.cfg`` file.
-- Be sure you installed all your build dependencies
-- Bootstrap the buildout with: ``python bootstrap.py``
-- Run the build with: ``bin/buildout``
-
-The same with more details below :
-
-Creating the buildout
----------------------
-
-Create a ``buildout.cfg`` file in an empty directory, containing the
-configuration of the `example 6.1`_ section.
-
-.. _dependencies:
-
-Installing build dependencies
------------------------------
-
-You basically need typical development tools needed to build all the Python
-dependency eggs of OpenERP. You can do this by yourself with your system or
-Linux distribution.
-
-Or if you're using a Debian based distribution, we provide a single
-dependency package you can use to install all dependencies in one shot:
-
-Add the following line in your ``/etc/apt/sources.list``::
-
-  deb http://apt.anybox.fr/openerp common main
-
-Install the dependency package::
-
-  $ sudo aptitude update
-  $ sudo aptitude install openerp-server-system-build-deps
-
-You can uninstall this package with ``aptitude`` after the build to
-automatically remove all un-needed dependencies, but you need to
-install *run dependencies* before that ::
-
-  $ sudo aptitude install openerp-server-system-run-deps
-  $ sudo aptitude remove openerp-server-system-build-deps
-
-Please note that these package will have your system install the
-*client* part of PostgreSQL software only. If you want a
-PostgreSQL server on the same host, that's not in the recipe scope,
-just install it as well.
-
-Bootstrapping the buildout
---------------------------
-
-Bootstrapping the buildout consists in creating the basic structure of the buildout, and installing buildout itself in the directory.
-
-The easiest and recommended way to bootstrap is to use a ``bootstrap.py`` script::
-
-  $ wget https://raw.github.com/buildout/buildout/master/bootstrap/bootstrap.py
-  $ python bootstrap.py
-
-As an alternative and more complicated solution, you may also bootstrap by
-creating a virtualenv, installing zc.buildout, then run the bootstrap::
-
-  $ virtualenv sandbox
-  $ sandbox/bin/pip install zc.buildout
-  $ sandbox/bin/buildout bootstrap
-
-Running the build
------------------
-
-Just run ::
-
-  $ bin/buildout
-
-Starting OpenERP
-----------------
-
-Just run ::
-
-  $ bin/start_openerp
-
-
-.. _example 6.1:
-
-Example OpenERP 6.1 buildout
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Here is a very simple example for a latest OpenERP 6.1 nightly and a
-custom addon hosted on Bitbucket:
-
-::
-
-    [buildout]
-    parts = openerp 
-    versions = versions
-    find-links = http://download.gna.org/pychart/
-    
-    [openerp]
-    recipe = anybox.recipe.openerp:server
-    # replace '6.1' with 'trunk' to get a 7.0 current nightly:
-    version = nightly 6.1 latest
-    addons = hg https://bitbucket.org/anybox/anytracker addons-at default
-
-    [versions]
-    MarkupSafe = 0.15
-    Pillow = 1.7.7
-    PyXML = 0.8.4
-    babel = 0.9.6
-    feedparser = 5.1.1
-    gdata = 2.0.16
-    lxml = 2.3.3
-    mako = 0.6.2
-    psycopg2 = 2.4.4
-    pychart = 1.39
-    pydot = 1.0.28
-    pyparsing = 1.5.6
-    python-dateutil = 1.5
-    python-ldap = 2.4.9
-    python-openid = 2.2.5
-    pytz = 2012b
-    pywebdav = 0.9.4.1
-    pyyaml = 3.10
-    reportlab = 2.5
-    simplejson = 2.4.0
-    vatnumber = 1.0
-    vobject = 0.8.1c
-    werkzeug = 0.8.3
-    xlwt = 0.7.3
-    zc.buildout = 1.5.2
-    zc.recipe.egg = 1.3.2
-    zsi = 2.0-rc3
-
-
-.. note:: with OpenERP 6.1 the web client is natively included in the server as a
-    simple module. In that case you don't need to write a separate part for the web
-    client, unless that's what you really want to do.
-
-
-Example OpenERP 6.0 buildout
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Here is a sample buildout with version specification, 2 OpenERP servers (with
-one using the latest 6.0 branch on the launchpad) using only NETRPC and
-listening on 2 different ports, and 2 web clients::
-
-    [buildout]
-    parts = openerp1 web1 openerp2 web2
-    #allow-picked-versions = false
-    versions = versions
-    find-links = http://download.gna.org/pychart/
-    
-    [openerp1]
-    recipe = anybox.recipe.openerp:server
-    version = 6.0.3
-    options.xmlrpc = False
-    options.xmlrpcs = False
-    
-    [web1]
-    recipe = anybox.recipe.openerp:webclient
-    version = 6.0.3
-    
-    [openerp2]
-    recipe = anybox.recipe.openerp:server
-    version = bzr lp:openobject-server/6.0 openobject-server-6.x last:1
-
-    options.xmlrpc = False
-    options.xmlrpcs = False
-    options.netrpc_port = 8170
-    
-    [web2]
-    recipe = anybox.recipe.openerp:webclient
-    version = 6.0.3
-    global.openerp.server.port = '8170'
-    global.server.socket_port = 8180
-    
-    [versions]
-    MarkupSafe = 0.15
-    Pillow = 1.7.7
-    anybox.recipe.openerp = 0.9
-    caldav = 0.1.10
-    collective.recipe.cmd = 0.5
-    coverage = 3.5
-    distribute = 0.6.25
-    feedparser = 5.0.1
-    lxml = 2.1.5
-    mako = 0.4.2
-    nose = 1.1.2
-    psycopg2 = 2.4.2
-    pychart = 1.39
-    pydot = 1.0.25
-    pyparsing = 1.5.6
-    python-dateutil = 1.5
-    pytz = 2012b
-    pywebdav = 0.9.4.1
-    pyyaml = 3.10
-    reportlab = 2.5
-    vobject = 0.8.1c
-    z3c.recipe.scripts = 1.0.1
-    zc.buildout = 1.5.2
-    zc.recipe.egg = 1.3.2
-    Babel = 0.9.6
-    FormEncode = 1.2.4
-    simplejson = 2.1.6
-
-
-Other sample buildouts
-~~~~~~~~~~~~~~~~~~~~~~
-
-Here are a few ready-to-use buildouts:
-
-(Be sure to install system dependencies_ first)
-
-OpenERP with the development branches of the Magento connector addons::
-
-  $ hg clone https://bitbucket.org/anybox/openerp_connect_magento_buildout
-  $ cd openerp_connect_magento_buildout
-  $ python bootstrap.py
-  $ bin/buildout
-  $ bin/start_openerp
-
-OpenERP with the development branches of the Prestashop connector addons::
-
-  $ hg clone https://bitbucket.org/anybox/openerp_connect_prestashop_buildout
-  $ cd openerp_connect_prestashop_buildout
-  $ python bootstrap.py
-  $ bin/buildout
-  $ bin/start_openerp
-
-Other examples are available in the ``buildbot`` subdirectory of the
-source distribution archive of this recipe (the ``tar.gz`` file that
-can be downloaded `from the PyPI
-<http://pypi.python.org/pypi/anybox.recipe.openerp>`_), and are
-continuously tested in the
-`anybox buildbot <http://buildbot.anybox.fr/>`_ which is powered by
-`anybox.buildbot.openerp <http://pypi.python.org/pypi/anybox.buildbot.openerp>`_.
 
 
 Contribute

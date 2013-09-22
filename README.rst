@@ -1,17 +1,36 @@
 OpenERP buildout recipe
 =======================
+This recipe for `Buildout <https://github.com/buildout/buildout>`_ is
+a fully featured tool allowing you to define and deploy quickly
+OpenERP installations of any kinds, ranging from development setups to
+fully automated production deployments or continuous integration.
 
-The recipe documentation is currently being reworked with Sphinx in
-the ``doc`` subdirectory of this project.
+Some of its main features include:
 
-It is built continuously and uploaded to
-http://docs.anybox.fr/anybox.recipe.openerp/trunk by Anybox' public
+* uniformity across OpenERP versions (from 5.0 onwards)
+* installation of OpenERP server and, if meaningful, GTK and web clients.
+* retrieval of main software and addons from various sources,
+  including the major version control systems
+* ability to pinpoint everything for replayability
+* management of OpenERP configuration
+* dedicated scripts creation for easy integration of external tools,
+  such as test launchers
+* packaging: creation of self-contained equivalents for easy
+  deployment in tightly controlled hosting environmenents.
+
+All these to be considered together with zc.buildout‘s general
+properties, such as an extensible configuration file format for easy
+variation or separation of concerns, native Python distributions
+installation, and of course the huge ecosystem of other recipes.
+
+The full documentation is written with `Sphinx
+<http://sphinx-doc.org>`_, built continuously and
+uploaded to http://docs.anybox.fr/anybox.recipe.openerp/trunk by Anybox' public
 buildbot.
+The Sphinx source tree is to be found under the ``doc`` subdirectory
+of this project.
 
-We plan to upload that http://pythonhosted.org
-
-The previous single-file ``README.rst`` has been kept as
-`doc/old_readme.rst <http://docs.anybox.fr/anybox.recipe.openerp/trunk/doc/old_readme.html>`_.
+We plan to upload released versions of the doc to http://pythonhosted.org
 
 Bug reports and Feedback
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -22,9 +41,9 @@ https://bugs.launchpad.net/anybox.recipe.openerp/+bugs
 Useful links
 ~~~~~~~~~~~~
 
- * Code repository and bug tracker: https://launchpad.net/anybox.recipe.openerp
- * PyPI page: http://pypi.python.org/pypi/anybox.recipe.openerp
- * Main documentation: http://docs.anybox.fr/anybox.recipe.openerp
+* Code repository and bug tracker: https://launchpad.net/anybox.recipe.openerp
+* PyPI page: http://pypi.python.org/pypi/anybox.recipe.openerp
+* Main documentation: http://docs.anybox.fr/anybox.recipe.openerp
 
 
 Contributors information
@@ -49,3 +68,4 @@ Contributors:
  * Jacques-Etienne Baudoux
  * Laurent Mignon
  * Leonardo Pistone
+

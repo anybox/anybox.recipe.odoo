@@ -65,8 +65,9 @@ as many other projects:
   and `pyflakes <https://pypi.python.org/pypi/pyflakes>`_).
 * Unit tests : we try and test as much as possible. It is hard to achieve a
   real 100% with a tool that calls so many external processes, but
-  this is mitigated by our `continuous integration`_ practice of
-  doing real OpenERP installations.
+  this is mitigated by our
+  :ref:`continuous integration <continuous_integration>` practice of
+  doing real OpenERP installations with the latest revision of the recipe.
 
 Launching static analysis and unit tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -133,7 +134,7 @@ scripts.
           at this point.
 
 
-.. _continuous integration:
+.. _continuous_integration:
 
 Continuous integration
 ~~~~~~~~~~~~~~~~~~~~~~
