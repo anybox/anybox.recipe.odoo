@@ -15,12 +15,88 @@ self-contained in a single directory: just delete the directory and the
 buildout is gone. You never have to use administrative rights, except for
 build dependencies.
 
+.. _buildout_conf_parts:
+
+The buildout configuration file and parts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The intents of this seciton is to highlights a few facts that we've
+found especially useful. People should refer to the reference zc.buildout
+documentation available online.
+
+Buildout configuration files are written almost in INI format, and
+always start with a ``buildout`` section::
+
+  [buildout]
+  parts = openerp
+
+The ``parts`` option specifies which parts to install by default if
+one runs ``bin/buildout`` with no explicit ``install`` directive.
+
+Parts directly correspond to sections of the configuration file, and
+must specify the recipe that's to be used::
+
+  [openerp]
+  recipe = anybox.recipe.openerp:server
+
+Command line
+------------
+The configuration file can be specified from the command line::
+
+  bin/buildout -c buildout.local.cfg
+
+Recipe options can be overridden from the command-line::
+
+  bin/buildout -c buildout.local.cfg openerp:clean=True openerp:xmlrpc_port=8169
+
+Parts that are not listed in the ``buildout`` configuration section
+can be explicitely installed::
+
+  bin/buildout install openerp funkload static-analysis
+
+.. _extends:
+
+Inheritance
+-----------
+
+A buildout configuration file can reference another one and change
+some options (note the ``+=`` notation that's not part of the INI format)::
+
+  [buildout]
+  extends = buildout.base.cfg
+
+  [openerp]
+  eggs += nose
+          coverage
+  with_devtools = True
+
+These extensions can be chained. This allows in particular project maintainers
+to separate the configuration options that are considered to be part
+of the project from those that depend on the server environment
+(ports, database hosts…)
+
+Default configuration
+---------------------
+
+If available, the settings from ``$HOME/.buildout/default.cfg`` always
+apply, as if it where the default value of the :ref:`extends <extends>` option.
+
+This is commonly used with the ``eggs-directory`` and
+:ref:`openerp-downloads-directory` options, because these amount to create a
+user-level cache.
+
+Finally, you may also use :ref:`extends <extends>` in ``default.cfg`` to point
+to a system-wide configuration file (useful to enforce
+policies at the organization or physical site level, such as local
+index servers, mirrors, etc.).
+
 .. contents::
 
-Recipes
-~~~~~~~
+OpenERP recipes
+~~~~~~~~~~~~~~~
 
-You get 3 recipes at once. The recipe to use is the following:
+There are three different recipes bundled with
+``anybox.recipe.openerp``. The option line to put in your part (see
+:ref:`buildout_conf_parts`) is the following.
 
 For the server::
 
@@ -34,11 +110,15 @@ For the gtk client::
 
     recipe = anybox.recipe.openerp:gtkclient
 
+.. note:: from OpenERP 7.0 onwards, the web and gtk clients aren't
+          that useful anymore.
+
 Default options from zc.recipe.egg
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This recipe reuses the *zc.recipe.egg:scripts* recipe, so the options
-are the same (*eggs*, *interpreter*, etc.), and some changes, documented below.
+are the same (*eggs*, *interpreter*, etc.), with some important
+changes.
 
 Consult the documentation here http://pypi.python.org/pypi/zc.recipe.egg
 
@@ -48,18 +128,20 @@ eggs
 ----
 
 Starting from version 0.16 of the recipe, you don't need to put anything in
-this option by default. But you may specify additional eggs needed by addons,
-or just useful ones::
+this option by default : the recipe is supposed to add all needed
+dependencies for OpenERP by itself, but you have to specify additional
+eggs needed by addons, or just useful ones::
 
-    eggs = 
+    eggs =
         ipython
+        python-ldap
         openobject-library
 
 scripts
 -------
-.. note:: for scripts needing to call OpenERP internal API or to load
-          an OpenERP database prior to execution, check
-          ``openerp_scripts`` below.
+.. note:: This option is useful for general purpose scripts
+          only. For scripts related to OpenERP, see
+          :doc:`/scripts`, and the :ref:`openerp_scripts` option.
 
 The behaviour of this option is slightly modified :
 by default, no script other than those directly related to OpenERP are
@@ -77,7 +159,7 @@ details.
 
 interpreter
 -----------
-With the ``gtklcient`` and ``webclient`` recipes,
+With the ``gtkclient`` and ``webclient`` recipes,
 this is the default `interpreter` option of `zc.recipe.egg` that
 specifies the name of the Python interpreter that shoud be included in
 the``bin`` directory of the buildout::
@@ -85,15 +167,16 @@ the``bin`` directory of the buildout::
     interpreter = erp_python
 
 With the ``server`` recipe, the ``interpreter`` option will be ignored,
-because it always creates an interpreter with preloaded objects to
-bootstrap openerp. Check the ``interpreter_name`` option below for
-more details.
+because this recipe always creates an interpreter with preloaded objects to
+bootstrap openerp. Check :ref:`interpreter_name` for more details.
 
 
 Specific options
 ~~~~~~~~~~~~~~~~
 
 The recipe also adds a few specific options:
+
+.. _version:
 
 version
 -------
@@ -113,7 +196,7 @@ An absolute or a relative **path**::
   version = path /my/path/to/a/custom/openerp
 
 A custom **bzr, hg, git or svn** branch or repository. The syntax is the same
-as the `addons` option (see below)::
+as the :ref:`addons` option::
 
   version = bzr lp:openobject-server/6.1 openerp61 last:1
 
@@ -129,6 +212,7 @@ or even more dangerous::
 
   version = nightly trunk latest
 
+.. _addons:
 
 addons
 ------
@@ -157,15 +241,17 @@ placed one directory below.
 
 For remote repositories, the syntax is:
 
-``TYPE  URL  DESTINATION  REVISION  [OPTIONS]``
+    ``TYPE  URL  DESTINATION  REVISION  [OPTIONS]``
 
-* *TYPE* can be ``bzr``, ``hg``, ``git`` or ``svn``
-* *URL* is any URL scheme supported by the versionning tool
-* *DESTINATION* is the local directory that will be created (relative or absolute)
-* *REVISION* is any version specification supported (revision, tag, etc.)
-* *OPTIONS* take the form ``name=value``. Currently the ``subdir``
-  option is recognized. If used, the given subdirectory of the
-  repository is registered as an addons directory.
+with the following semantics:
+
+:TYPE: one of ``bzr``, ``hg``, ``git`` or ``svn``
+:URL: is any URL scheme supported by the versionning tool
+:DESTINATION: is the local directory that will be created (relative or absolute)
+:REVISION: is any version specification supported (revision, tag, etc.)
+:OPTIONS: each one takes the form ``name=value``. No whitespace is
+          allowed inside an option, and no escaping is
+          implemented.
 
 Repositories are updated on each build according to the specified
 revision. You must be careful with the revision specification.
@@ -174,32 +260,42 @@ Buildout offline mode is supported. In that case, update to the
 specified revision is performed, if the VCS allows it (Subversion does
 not).
 
-.. note:: An additional option is supported for bzr. **'bzr-init'**
-          defines the way the bzr branch
-          is initialized for addons or server declared with a bzr
-          repository path.
+The ``subdir`` addons option
+````````````````````````````
 
-          Possible values:
+The ``subdir`` option, if used, makes the recipe use the given
+subdirectory of the repository as the addons directory.
+A very common example is the line for standard web addons from bzr::
 
-          branch (default)
-            Working copy initialized with the command
-            ``bzr branch url ...``
-          stacked-branch
-           Working copy initialized with the command
-           ``bzr branch --stacked url ...``
+   bzr lp:openerp-web/7.0 openerp-web last:1 subdir=addons
 
-          lightweight-checkout
-            Working copy initialized with the command
-            ``bzr checkout --lightweight url ...``
+The ``bzr-init`` addons option
+``````````````````````````````
+
+**'bzr-init'** defines the way the bzr branch
+is initialized for addons or server declared with a bzr
+repository path.
+
+Possible values:
+
+:branch (default):  Working copy initialized with the command
+                    ``bzr branch url ...``
+
+:stacked-branch:  Working copy initialized with the command
+                  ``bzr branch --stacked url ...``
+:lightweight-checkout: Working copy initialized with the command
+                       ``bzr checkout --lightweight url ...``
+
+.. _revisions:
 
 revisions
 ---------
 
 This option allows to further precise what has been specified through
-the  ``addons`` and ``version`` options by fixing VCS revisions.
+the  :ref:`addons` and :ref:`version` options by fixing VCS revisions.
 
-The main use-case it to apply it in an extension buildout
-configuration file::
+The main use-case it to apply it in an :ref:`extension buildout
+configuration file <extends>`::
 
    [buildout]
    extends = base.cfg
@@ -209,7 +305,7 @@ configuration file::
                addons-openerp 7109
 
 As you can see in that example, the first token is the target
-filesystem path, as in the ``addons`` option, the second one is the
+filesystem path, as in the :ref:`addons` option, the second one is the
 revision, except in the case of the main software (if VCS based), for
 which there's no filesystem path.
 
@@ -221,148 +317,63 @@ Some interesting use-cases:
 * freezing satisfactory revisions in a release process (the recipe can
   do that automatically for you, see ``freeze-to`` option below).
 
+.. _clean:
+
 clean
 -----
 
 If set to true, this option will clean remove python object files from
-the main server part and addons before any update or install.
+the main server part and addons before any update or install, and
+perform relevant VCS idea of "clean, purge".
+
+.. warning:: developers can lose their uncommitted work with this option.
+
+             This option is not meant for developer setups, rather for
+             deployment and continuous integration. To avoid making a
+             dedicated buildout configuration for you CI bot, just add
+             it on the command-line.
 
 Note that tarball downloads get re-extracted afresh in any case.
+
+.. _openerp_scripts:
 
 openerp_scripts
 ---------------
 
-Introduction and use-cases
-``````````````````````````
 This option lets you install console scripts provided by any of the loaded eggs,
 so that they can access to OpenERP internals and load databases.
-Some interesting use-cases:
 
-* specific batch jobs
-* introspection tools
-* general-purposes test launchers that don't have any knowledge of
-  OpenERP specifics
-* actually, the main startup scripts themselves (with a default
-  configuration, of course)
+Here we describe the format of the option only.
+For explanation about what it means and how to use it, please refer to
+:doc:`/scripts`.
 
-Usage
-`````
-This multiline option is similar to the classical ``scripts`` options
-of ``zc.recipe.eggs:scripts``. It lets you ask for installation of
-console scripts provided by the various Python distribution involved
-in the buildout part (including OpenERP itself).
+The option is multiline. Each line specifies exactly one
+script, and must respect the following format:
 
-The built console scripts can import all the involved Python
-distributions, and have access to a ``session`` object, to issue
-OpenERP native calls (see
-``interpreter_name`` option below for details on how to use it).
+  ``ENTRY_POINT_NAME[=WISHED_SCRIPT_NAME] [MODIFIER [MODIFIER […]]]``
 
-One has to register exactly one console script per line.
+Each modifier takes the ``MODIFIER_NAME=MODIFIER_VALUE`` form.
+No whitespace is allowed in modifiers, entry point, nor produced script names.
 
-As it is the case with ``scripts``, one actually specifies the name of the
-entry point to use (we are all used to that entry point being the name
-of the resulting script, because that's what ``setup.py install`` does).
+Here's the list of currently available modifiers, with links inside :doc:`the
+dedicated chapter about OpenERP scripts </scripts>`).
 
-Suppose there is a distribution ``my.package`` with the following lines in
-its ``setup.py``::
+:command-line-options: :ref:`command_line_options`
+:arguments: :ref:`arguments_session`
 
-      entry_points="""
+Full example::
 
-      [console_scripts]
-      my = my.package.main:run
-      """
+  openerp_scripts = my_script arguments=session
+                    my_other_script=actual-script-name arguments=3,session
+                    nosetests=nosetests command-line-options=-d
 
-Now the following configuration extract builds a script called
-``my_openerp1``, that can access ``session``::
-
-  [openerp1]
-  (...)
-  openerp_scripts = my
-
-To control the script name, just do, e.g,::
-
-  [openerp1]
-  (...)
-  openerp_scripts = my=my_script
-
-This will build it as ``bin/my_script``.
-
-Command-line options and test launchers
-```````````````````````````````````````
-
-If ``my.package`` is meant to do OpenERP heavy-lifting, then surely it
-will provide a powerful command-line parsing. e.g., to let the end user chose
-the database on which to work, etc.
-
-Sometimes, however, the script itself has no knowledge of OpenERP at
-all, but still must run after a database has been fully initialized.
-The main use case for this is test launchers, such as
-`nose <https://nose.readthedocs.org/en/latest/>`_ or simply ``unit2``.
-For these, the recipe has a facility to rewrap the script and add some further
-command-line options.
-
-In this example, we build ``unit2``, the launcher that comes with
-``unittest2``, and wrap it to add the database option::
-
-  [openerp]
-  (...)
-  openerp_scripts = unit2 command-line-options=-d
-
-You may then run it this way::
-
-   bin/unit2_openerp -d unit-tests-db -- discover some/addon
-
-Notice how ``--`` is used to separate the ``-d`` or
-any recipe-related options from the options expected by the script itself.
-
-If one wishes to run the tests with ``nose``, one has further to
-require it. In the following example, we also ask for the ``coverage``
-package::
-
-  [openerp]
-  (...)
-  eggs = nose
-         coverage
-  openerp_scripts = nosetests command-line-options=-d
-
-Here's our test run with coverage and pdb post-mortem::
-
-  bin/nosetests-openerp -d unit-tests-db -- --nologcapture \
-           --with-coverage --pdb \
-           some/addon/tests/test_one.py
-
-Main startup scripts
-````````````````````
-The recipe will in all cases build OpenERP startup scripts, according to other
-configuration options (gunicorn, tests etc.). These are
-actually special cases of the scripts controlled via ``openerp_scripts``.
-
-This allows you (for now) to control the names. For instance, to
-replace ``bin/start_openerp`` with ``bin/oerp``, just do::
-
-  [openerp]
-  (...)
-  openerp_scripts = openerp_starter=oerp
-
-Here's the list of currently available internal entry points. For
-these, the ``command-line-options`` modifier has no effect.
-
-:openerp_starter: main OpenERP startup script (dynamically added
-                  behing the scenes by the recipe)
-:openerp_tester: uniform script to start OpenERP, launch all tests and
-                 exit. This can be achieved with the main startup
-                 scripts, but options differ among OpenERP versions.
-                 (also dynamically added behind the scenes).
-:openerp_cron_worker: entry point for the cron worker script that gets
-                      built for gunicorn setups.
-:oe: entry point declared by ``openerp-command`` and used by the recipe.
-:gunicorn: entry point declared by ``gunicorn`` and used by the recipe.
+.. _script_name:
 
 script_name
 -----------
 
 .. warning:: as of version 1.7.0, this option is deprecated because of its
-             redundancy with ``openerp_scripts``.
+             redundancy with :ref:`openerp_scripts`.
 
 OpenERP startup scripts are created in the `bin` directory. By default the name is:
 start_<part_name>, so you can have several startup scripts for each part if you
@@ -374,44 +385,45 @@ option ::
 
     script_name = start_erp
 
+.. _upgrade_script_name:
+
 upgrade_script_name
 -------------------
 
 This option lets you specify the wished name for the upgrade script.
 The default value is ``upgrade_<part_name>``.
 
+.. note:: new in version 1.8.0.
+
+          We are actually not sure to keep that option, since it's
+          redundant with :ref:`openerp_scripts`.
+
+.. _upgrade_script:
+
 upgrade_script
 --------------
 
 This option lets you specify a source (``.py``) file and a callable
-defined in that file to perform database upgrades. Example::
+defined in that file to perform database upgrades. The default value
+is::
 
-  upgrade_script = upgrade.py do_run
+  upgrade_script = upgrade.py run
 
-Example source file::
+If the specified source file doest not exist, the recipe will
+initialize it with a simple and meaningful sample content, consistent
+with the default value above.
 
-   def do_run(session, logger):
-       db_version = session.db_version
-       if db_version < '1.0':
-          session.update_modules('account_account')
-       else:
-          logger.warn("Not upgrading account_account, as we know it "
-                      "to be a problem with our setup. ")
-       session.update_modules(['crm', 'sales'])
+If you want *not* to have an upgrade script, just override this option
+with a blank value::
 
-The idea is that such scripts only take very high-level decisions, most of
-the upgrade logic residing actually in modules, within the ``migrate``
-hierarchy.
+  upgrade_script =
 
-The ``session`` argument of the specified callable is as in "openerp
-scripts".
-
-The resulting actual upgrade script takes care of command-line parsing
-and sets the version number as read in ``VERSION.txt`` in database,
-for further runs to use it.
+See the full :ref:`upgrade_scripts` documentation to learn more
+about upgrade scripts.
 
 .. note:: new in version 1.8.0
 
+.. _interpreter_name:
 
 interpreter_name
 ----------------
@@ -439,15 +451,14 @@ If you want *not* to have the interpreter, juste do
 
     interpreter_name =
 
-The bootstrapping facility may also be used within a script installed
-by an egg; just insert this in your code to get the session object as
-if you were in the interpreter::
-
-    from anybox.recipe.openerp.startup import Session
-    session = Session()
+If you want to wrap a python script with such session objects, read
+:doc:`/scripts` and especially :ref:`arguments_session`.
+See also :ref:`openerp_scripts`.
 
 .. note:: this facility is new in version 1.6.0, and tested with
           OpenERP 7 only for now.
+
+.. _startup_delay:
 
 startup_delay
 -------------
@@ -458,6 +469,8 @@ instance.  The Gunicorn startup script (see below) itself is not affected by
 this setting ::
 
     startup_delay = 3
+
+.. _with_devtools:
 
 with_devtools
 -------------
@@ -479,10 +492,12 @@ needed helpers, such as `anybox.testing.datetime
 <http://pypi.python.org/pypi/anybox.testing.datetime>`_ (allows to
 cheat with system time).
 
+.. _test_script_name:
+
 test_script_name
 ----------------
 .. warning:: as of version 1.7.0, this option is deprecated because of its
-             redundancy with ``openerp_scripts``.
+             redundancy with :ref:`openerp_scripts`.
 
 If the ``with_devtools`` is set to True, the recipe will create a
 test script, which is named by default ``test_<part_name>``. You may
@@ -500,6 +515,8 @@ At the time of this writing, all this script does compared to the
 regular startup script is to bring uniformity across OpenERP versions
 by tweaking options internally.
 
+.. _base_url:
+
 base_url
 --------
 
@@ -508,6 +525,8 @@ URL from which to download official and nightly versions
 OpenERP download server). This is a basic mirroring capability::
 
     base_url = http://download.example.com/openerp/
+
+.. _openerp-downloads-directory:
 
 openerp-downloads-directory
 ---------------------------
@@ -521,6 +540,8 @@ Example::
 
     [buildout]
     openerp-downloads-directory = /home/user/.buildout/openerp-downloads
+
+.. _gunicorn:
 
 gunicorn
 --------
@@ -588,26 +609,24 @@ one or a few databases are actually used, this setting keeps the user
 experience snappy even in the event of frequent worker restarts, and
 allows for graceful restarts (use this for minor changes only).
 
+.. _openerp_command_name:
 
 openerp_command_name
 --------------------
-.. warning:: as of version 1.7.0, this option is deprecated, check
-   ``openerp_scripts`` for more details.
+.. warning:: as of version 1.7.0, this option is deprecated because of
+             its redundancy with :ref:`openerp_scripts`.
 
 OpenERP Command Line Tools (openerp-command for short) is an
 alternative set of command-line tools that may someday subsede the
 current monolithic startup script. Currently experimental, but
 already very useful in development mode.
 
-It is currently enabled if the ``with_devtools`` option is on.
+It is currently enabled if the :ref:`with_devtools` option is on.
 
 This works by requiring the ``openerp-command`` python
-distribution, which is not on PyPI as of this writting. You may want
-to use the ``vcsdevelop`` extension to get it from Launchpad::
-
-  [buildout]
-  extensions = gp.vcsdevelop
-  vcs-extend-develop = bzr+http://bazaar.launchpad.net/openerp/openerp-command#egg=openerp-command
+distribution, which is not on PyPI as of this writting, but comes
+bundled with the current OpenERP trunk (believed to be the future
+OpenERP 8).
 
 As for other scripts, you can control its name of the produced script, e.g::
 
@@ -617,11 +636,27 @@ the name defaults otherwise to ``<part_name>_command``. Note that
 ``oe`` is the classical name for this script outside of the realm of
 this buildout recipe.
 
+.. note:: ``openerp-command`` has first been introduced as a separate
+          project while OpenERP 7.0 was in development stage. People
+          wanting to use it with OpenERP 7.0 can still grab it from
+          Launchpad with the ``gp.vcsdevelop`` extension::
+
+            [buildout]
+            extensions = gp.vcsdevelop
+            vcs-extend-develop = bzr+http://bazaar.launchpad.net/openerp/openerp-command@419#egg=openerp-command
+
+          The latest Launchpad revision is actually the final removal,
+          done at the time where it's been included in
+          ``lp:openobject-server``.
+
+
 .. warning::
 
-  Do not use to launch production servers, especially in an automatic
-  way, openerp-command is really unstable and that may damage your
-  installation.
+  On OpenERP 7, do not use to launch production servers, especially in
+  an automatic way, ``openerp-command`` is really unstable and that
+  may damage your installation.
+
+.. _freeze-to:
 
 freeze-to
 ---------
@@ -650,7 +685,7 @@ part is called ``openerp-server-1``::
     bin/buildout -o openerp-server-1:freeze-to=frozen.cfg
 
 This produces a buildout configuration file named ``frozen.cfg``,
-with notably an ``openerp-server-1`` part having a ``revisions`` option that
+with notably an ``openerp-server-1`` part having a :ref:`revisions` option that
 freezes everything.
 
 For configurations with several openerp related parts, you can freeze
@@ -678,22 +713,25 @@ while ``client.cfg`` will have the ``gtkclient`` part only.
 .. warning:: currently ``freeze-to`` cannot fix eggs versions related
              to non-openerp parts.
 
+.. _freeze-allow-picked-versions:
+
 freeze-allow-picked-versions
 ----------------------------
 
-This option is to be used in conjunction with ``freeze-to``. If set to
+This option is to be used in conjunction with :ref:`freeze-to`. If set to
 ``False``, it will add ``allow-picked-versions = false``
 for ``zc.buildout`` versions that support this flag.
 
 .. warning:: in the current state of things, this can cause problems
-             if you have non-openerp parts (see warning in ``freeze-to``
-             documentation).
+             if you have non-openerp parts (see the various warnings
+             in :ref:`freeze-to`)
 
+.. _extract-downloads-to:
 
 extract-downloads-to
 --------------------
 
-Following the same kind of logic as ``freeze-to``, this option allows
+Following the same kind of logic as :ref:`freeze-to`, this option allows
 to turn a buildout that aggregates from various remote sources
 (tarball downloads, VCSes) into a self-contained buildout archive
 directory that can be packed for easy distribution.
@@ -722,8 +760,8 @@ the buildout can be executed like this::
 or further extended for system-dependent options such as port, db
 connection, etc.
 
-The ``extract-downloads-to`` options can be used for several parts
-with the same target directory (same as ``freeze-to``).
+The ``extract-downloads-to`` option can be used for several parts
+with the same target directory (same as :ref:`freeze-to`).
 
 Furthermore, a default ``freeze-to`` is issued, producing a buildout
 configuration called ``extracted_from.cfg`` in the target directory,
@@ -736,6 +774,7 @@ same rules with respect to uncommitted changes.
 
 Python distributions managed with ``gp.vcsdevelop`` are taken into account.
 
+.. _openerp_options:
 
 OpenERP options
 ---------------
@@ -745,9 +784,11 @@ You can define OpenERP options directly from the buildout file (usually
 The OpenERP configuration files are generated by OpenERP itself in the directory
 specified by ``etc-directory`` which defaults to the `etc` directory under your
 buildout directory.
-The settings of the OpenERP configuration files can be controlled using a
-dotted notation prefixed by the name of the corresponding section of the
-OpenERP config file. The specified options will just overwrite the existing
+
+The settings of the OpenERP configuration files are managed by the
+recipe using a dotted notation prefixed by the name of the
+corresponding section of the OpenERP config file.
+The specified options will just overwrite the existing
 options in the corresponding config files. You don't have to replicate all the
 options in your section of the buildout file.  If a setting or a section does
 not natively exist in the openerp config file, it can be created from there for
@@ -778,11 +819,15 @@ It will modify the corresponding web client config::
   [openerp-web]
   company.url = 'http://anybox.fr'
 
+.. note:: Buildout configuration inheritance (``extends``) is
+          especially useful to manage the separation between a
+          reusable buildout configuration and local settings.
 
 .. note:: Note that for security reason, the superadmin password is not set by
-    default. If you want to create a database you should temporary set it manually
-    in the etc/openerp.conf file
-
+    default. If you want databases to be manageable through the UI,
+    you may either explicitely set that password in the buildout part
+    configuration or even set it temporarily in the
+    ``etc/openerp.conf`` file. 
 
 
 .. _howto:
@@ -814,8 +859,8 @@ You basically need typical development tools needed to build all the Python
 dependency eggs of OpenERP. You can do this by yourself with your system or
 Linux distribution.
 
-Or if you're using a Debian system, we provide a single dependency package you
-can use to install all dependencies in one shot:
+Or if you're using a Debian based distribution, we provide a single
+dependency package you can use to install all dependencies in one shot:
 
 Add the following line in your ``/etc/apt/sources.list``::
 
@@ -823,10 +868,10 @@ Add the following line in your ``/etc/apt/sources.list``::
 
 Install the dependency package::
 
-  $ sudo aptitude update 
+  $ sudo aptitude update
   $ sudo aptitude install openerp-server-system-build-deps
 
-You can uninstall this package with `aptitude` after the build to
+You can uninstall this package with ``aptitude`` after the build to
 automatically remove all un-needed dependencies, but you need to
 install *run dependencies* before that ::
 
