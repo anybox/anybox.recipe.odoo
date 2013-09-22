@@ -841,7 +841,7 @@ It will modify the corresponding web client config::
   [openerp-web]
   company.url = 'http://anybox.fr'
 
-.. note:: Buildout configuration inheritance (``extends``) is
+.. note:: Buildout :ref:`configuration inheritance <extends>` is
           especially useful to manage the separation between a
           reusable buildout configuration and local settings.
 
@@ -849,30 +849,4 @@ It will modify the corresponding web client config::
     default. If you want databases to be manageable through the UI,
     you may either explicitely set that password in the buildout part
     configuration or even set it temporarily in the
-    ``etc/openerp.conf`` file. 
-
-
-Contribute
-~~~~~~~~~~
-
-Authors:
-
- * Christophe Combelles
- * Georges Racinet
-
-Contributors:
-
- * Jean-Sébastien Suzanne
- * Yannick Vaucher
- * Jacques-Etienne Baudoux
- * Laurent Mignon
- * Leonardo Pistone
-
-The primary branch is on the launchpad:
-
- * Code repository and bug tracker: https://launchpad.net/anybox.recipe.openerp
- * PyPI page: http://pypi.python.org/pypi/anybox.recipe.openerp
-
-Please don't hesitate to give feedback and especially report bugs or
-ask for new features through launchpad at this URL: https://bugs.launchpad.net/anybox.recipe.openerp/+bugs
-
+    ``etc/openerp.conf`` file.
