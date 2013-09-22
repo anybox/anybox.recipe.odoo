@@ -42,11 +42,11 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
     """
 
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter,
-                            epilog="If one of the subcommands exits with non "
-                            "zero status code, this script exits with the "
-                            "same status.")
+                            epilog="")
     parser.add_argument('--log-file', default=DEFAULT_LOG_FILE,
-                        help="File to log sub-operations to")
+                        help="File to log sub-operations to, relative to the "
+                        "current working directory, supports homedir "
+                        "expansion ('~' on POSIX systems).")
     parser.add_argument('--log-level', default='info',
                         help="Main OpenERP logging level. Does not affect the "
                         "logging from the main upgrade script itself.")
@@ -60,9 +60,7 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
                              "script (lower level stages can still write)")
     parser.add_argument('-d', '--db-name', default=SUPPRESS,
                         help="Database name. If ommitted, the general default "
-                        "value of this installation will apply. "
-                        "On pre-production and production server, this default"
-                        "is the correct one")
+                        "values from OpenERP config file or libpq will apply.")
 
     arguments = parser.parse_args()  # 'args' would shadow the one of pdb
     log_path = os.path.abspath(os.path.expanduser(arguments.log_file))

@@ -328,6 +328,63 @@ in turn relaying to that user-level callable.
 See :py:mod:`anybox.recipe.openerp.runtime.upgrade` for more details
 on how it works.
 
+Options of the produced executable upgrade script
+-------------------------------------------------
+
+Command-line parsing is done with `argparse
+<http://docs.python.org/2/library/argparse.html>`_. If you have any doubt,
+use ``--help`` with the version you have. Here's the current state::
+
+  $ bin/upgrade_openerp -h
+  usage: upgrade_openerp [-h] [--log-file LOG_FILE] [--log-level LOG_LEVEL]
+                         [--console-log-level CONSOLE_LOG_LEVEL] [-q]
+                         [-d DB_NAME]
+
+  optional arguments:
+    -h, --help            show this help message and exit
+    --log-file LOG_FILE   File to log sub-operations to, relative to the current
+                          working directory, supports homedir expansion ('~' on
+                          POSIX systems). (default: upgrade.log)
+    --log-level LOG_LEVEL
+                          Main OpenERP logging level. Does not affect the
+                          logging from the main upgrade script itself. (default:
+                          info)
+    --console-log-level CONSOLE_LOG_LEVEL
+                          Level for the upgrade process console logging. This is
+                          for the main upgrade script itself meaning that
+                          usually only major steps should be logged (default:
+                          info)
+    -q, --quiet           Suppress console output from the main upgrade script
+                          (lower level stages can still write) (default: False)
+    -d DB_NAME, --db-name DB_NAME
+                          Database name. If ommitted, the general default values
+                          from OpenERP config file or libpq will apply.
+
+
+Sample output
+-------------
+
+Here's the output of a run of the default upgrade script::
+
+  $ bin/upgrade_openerp -d testrecipe
+  Starting upgrade, logging details to /home/gracinet/openerp/recipe/testing-buildouts/upgrade.log at level INFO, and major steps to console at level INFO
+
+  2013-09-21 18:53:23,471 WARNING  Expected package version file '/home/gracinet/openerp/recipe/testing-buildouts/VERSION.txt' does not exist. version won't be set in database at the end of upgrade. Consider including such a version file in your project *before* version dependent logic is actually needed.
+  2013-09-21 18:53:23,471 INFO  Database 'testrecipe' loaded. Actual upgrade begins.
+  2013-09-21 18:53:23,471 INFO  Default upgrade procedure : updating all modules.
+  2013-09-21 18:53:54,029 INFO  Upgrade successful. Total time: 32 seconds.
+
+The same with a version file::
+
+  $ bin/upgrade_openerp -d testrecipe
+  Starting upgrade, logging details to /home/gracinet/openerp/recipe/testing-buildouts/upgrade.log at level INFO, and major steps to console at level INFO
+
+  2013-09-22 19:23:17,908 INFO  Read package version: 6.6.6-final from /home/gracinet/openerp/recipe/testing-buildouts/VERSION.txt
+  2013-09-22 19:23:17,908 INFO  Database 'testrecipe' loaded. Actual upgrade begins.
+  2013-09-22 19:23:17,909 INFO  Default upgrade procedure : updating all modules.
+  2013-09-22 19:23:48,626 INFO  setting version 6.6.6-final in database
+  2013-09-22 19:23:48,635 INFO  Upgrade successful. Total time: 32 seconds.
+
 
 Startup scripts
 ~~~~~~~~~~~~~~~
