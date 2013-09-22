@@ -15,9 +15,6 @@ self-contained in a single directory: just delete the directory and the
 buildout is gone. You never have to use administrative rights, except for
 build dependencies.
 
-.. contents::
-
-
 .. _buildout_conf_parts:
 
 The buildout configuration file and parts
