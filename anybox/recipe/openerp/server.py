@@ -42,7 +42,7 @@ class ServerRecipe(BaseRecipe):
         opt = self.options
         self.with_devtools = (
             opt.get('with_devtools', 'false').lower() == 'true')
-        self.with_upgrade = self.options.get('upgrade_script_name') != ''
+        self.with_upgrade = self.options.get('upgrade_script') != ''
         # discarding, because we have a special behaviour with custom
         # interpreters
         opt.pop('interpreter', None)
