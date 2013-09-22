@@ -135,7 +135,7 @@ and the current recipe versions can be pinned::
   versions = versions
 
   [openerp]
-  recipe = anybox.recipe.openerp:server
+  recipe = anybox.recipe.openerp[bzr]:server
   version = nightly 7.0 latest
   version = bzr lp:openobject-server/7.0 openerp-7.0 last:1
   addons = bzr lp:openobject-addons/7.0 addons-7.0 last:1
@@ -175,7 +175,7 @@ on Launchpad as lightweight checkouts (to avoid hour long downloads).
 We don't repeat the ``buildout`` and ``versions`` sections::
 
   [openerp]
-  recipe = anybox.recipe.openerp:server
+  recipe = anybox.recipe.openerp[bzr]:server
   version = bzr lp:openobject-server/7.0 openerp-7.0 last:1 bzr-init=lightweight-checkout
   addons = bzr lp:openobject-addons/7.0 addons-7.0 last:1 bzr-init=lightweight-checkout
            bzr lp:openerp-web/7.0 addons-web-7.0 last:1 subdir=addons bzr-init=lightweight-checkout
@@ -260,7 +260,7 @@ listening on 2 different ports, and 2 web clients::
     version = 6.0.3
     
     [openerp2]
-    recipe = anybox.recipe.openerp:server
+    recipe = anybox.recipe.openerp[bzr]:server
     version = bzr lp:openobject-server/6.0 openobject-server-6.x last:1
 
     options.xmlrpc = False

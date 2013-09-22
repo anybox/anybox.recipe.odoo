@@ -38,6 +38,10 @@ must specify the recipe that's to be used::
   [openerp]
   recipe = anybox.recipe.openerp:server
 
+An extra dependency of the recipe gets required at runtime like this::
+
+  recipe = anybox.recipe.openerp[bzr]:server
+
 Command line
 ------------
 The configuration file can be specified from the command line::
@@ -96,15 +100,26 @@ There are three different recipes bundled with
 ``anybox.recipe.openerp``. The option line to put in your part (see
 :ref:`buildout_conf_parts`) is the following.
 
-For the server::
+Server
+------
+::
 
     recipe = anybox.recipe.openerp:server
 
-For the web client::
+.. note:: If you plan on using Launchpad's short Bazaar branch notation
+          (``lp:``), then you need to add the ``bzr`` extra-dependency::
+
+            recipe = anybox.recipe.openerp[bzr]:server
+
+Web client
+----------
+::
 
     recipe = anybox.recipe.openerp:webclient
 
-For the gtk client::
+GTK client
+----------
+::
 
     recipe = anybox.recipe.openerp:gtkclient
 
@@ -196,7 +211,11 @@ An absolute or a relative **path**::
 A custom **bzr, hg, git or svn** branch or repository. The syntax is the same
 as the :ref:`addons` option::
 
+  recipe = anybox.recipe.openerp[bzr]:server
   version = bzr lp:openobject-server/6.1 openerp61 last:1
+
+.. note:: the ``[bzr]`` extra dependency declaration is useful for
+          resolution of the ``lp:`` address shortcuts.
 
 A **nightly** build::
 
@@ -219,6 +238,7 @@ Specifies additional OpenERP addons, either a local path or a repository.
 
 Example::
 
+  recipe = anybox.recipe.openerp[bzr]:server
   addons = local ../some/relative/path/for/custom_addons/
            local /some/other/absolute/path/for/custom_addons
            bzr lp:openobject-addons/trunk/    addons0 last:1
@@ -230,6 +250,10 @@ Example::
 When using ``local`` paths you can either specify a directory holding
 addons, or a single addon. In that latter case, it will be actually
 placed one directory below.
+
+.. note:: the ``[bzr]`` extra-dependency declaration as showcased
+          above in the ``recipe`` line is necessary for
+          resolution of ``lp:`` launchpad address shortcuts.
 
 .. warning::
 
