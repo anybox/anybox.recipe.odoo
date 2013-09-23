@@ -28,4 +28,12 @@ def main(starter, conf, version=None, just_test=False):
     glob = globals()
     glob['__name__'] = '__main__'
     glob['__file__'] = starter
-    execfile(starter, globals())
+    try:
+        execfile(starter, globals())
+    except SystemExit as exc:
+        if version == (5, 0):
+            # Without Agent.quit() the Timer threads may go on forever
+            # and the script will never stop
+            import netsvc
+            netsvc.Agent.quit()
+        return exc.code
