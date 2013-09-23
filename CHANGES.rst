@@ -7,6 +7,8 @@ Changes
 
 1.7.2 (unreleased)
 ------------------
+- launchpad #1228997: [v5] in some cases, start_openerp --stop-after-init was 
+  not honoured.
 - launchpad #1222562: [git] error in extract-downloads-to
 
 1.7.1 (2013-09-07)
