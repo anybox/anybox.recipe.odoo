@@ -137,9 +137,6 @@ and the current recipe versions can be pinned::
   [openerp]
   recipe = anybox.recipe.openerp[bzr]:server
   version = nightly 7.0 latest
-  version = bzr lp:openobject-server/7.0 openerp-7.0 last:1
-  addons = bzr lp:openobject-addons/7.0 addons-7.0 last:1
-           bzr lp:openerp-web/7.0 addons-web-7.0 last:1 subdir=addons
 
   [versions]
   setuptools = 1.1.0
@@ -182,6 +179,9 @@ We don't repeat the ``buildout`` and ``versions`` sections::
 
 Now imagine how easily one can switch branches and redistribute a
 ready-to-run buildout on some dedicated support branch, Git mirrors, etc.
+
+The next example is on 6.1 and demonstrates both how to add specific addons
+directories, and how uniform it is.
 
 .. _example 6.1:
 
