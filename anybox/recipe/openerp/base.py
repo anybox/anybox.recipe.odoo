@@ -37,6 +37,13 @@ def rfc822_time(h):
 
 class MainSoftware(object):
     """Placeholder to represent the main software instead of an addon location.
+
+    Should just have a singleton instance: :data:`main_software`,
+    whose meaning depends on the concrete recipe class using it.
+
+    For example, in :class:`anybox.recipe.openerp.server.ServerRecipe`,
+    :data:`main_software` represents the OpenObject server or the OpenERP standard
+    distribution.
     """
 
     def __str__(self):
@@ -51,24 +58,32 @@ class BaseRecipe(object):
     """Base class for other recipes.
 
     It implements notably fetching of the main software part plus addons.
-    The ``sources`` attributes is a dict storing how to fetch the main software
-    part and specified addons. It has the following structure:
 
-        local path -> (type, location_spec, options).
+    The :attr:`sources` attribute is a ``dict`` storing how to fetch the main
+    software part and the specified addons, with the following structure:
 
-        where local path is the ``main_software`` object for the main software
-        part, and otherwise a local path to an addons container.
+       ``local path -> (type, location_spec, options)``, in which:
 
-        type can be
-            - 'local'
-            - 'downloadable'
-            - one of the supported vcs
+       :local path: is either the :data:`main_software` singleton
+                    (see :class:`MainSoftware`) or a local path to an
+                    addons directory.
+       :type: can be either
 
-        location_spec is, depending on the type, a tuple specifying how to
-        fetch : (url, None), or (vcs_url, vcs_revision) or None
+              * ``'local'``
+              * ``'downloadable'``
+              * one of the supported vcs
 
-        addons options are typically used to specify that the addons directory
-        is actually a subdir of the specified one.
+       :location_spec: is, depending on the type, a tuple specifying how
+                       fetch is to be done:
+
+                       ``(url, None)``, or ``(vcs_url, vcs_revision)``
+                       or ``None``
+       :addons options: are typically used to specify that the addons
+                        directory is actually a subdir of the specified one.
+
+                        VCS support classes (see
+                        :mod:`anybox.recipe.openerp.vcs`) can implemented their
+                        dedicated options
 
     """
 
@@ -155,7 +170,7 @@ class BaseRecipe(object):
         self.parse_revisions(options)
 
     def parse_version(self):
-        """Set the main software in ``sources`` and related attributes.
+        """Set the main software in :attr:`sources` and related attributes.
         """
         self.version_wanted = self.options.get('version')
         if self.version_wanted is None:
@@ -429,9 +444,9 @@ class BaseRecipe(object):
             os.putenv('PYTHONPATH', pythonpath_bak)
 
     def parse_addons(self, options):
-        """Parse the addons options into the ``sources`` attribute.
+        """Parse the addons options into :attr:`sources`.
 
-        See ``BaseRecipe`` docstring for details about the ``sources`` dict.
+        See :class:`BaseRecipe` for the structure of :attr:`sources`.
         """
 
         for line in options.get('addons', '').split(os.linesep):
@@ -453,11 +468,13 @@ class BaseRecipe(object):
             self.sources[addons_dir] = (loc_type, location_spec, options)
 
     def parse_revisions(self, options):
-        """Parse revisions options and update the ``sources`` attribute.
+        """Parse revisions options and update :attr:`sources`.
 
-        It is assumed that ``sources`` has already been populated, and
-        notably has a main_software part.
+        It is assumed that :attr:`sources` has already been populated, and
+        notably has a :data:`main_software` entry.
         This allows for easy fixing of revisions in an extension buildout
+
+        See :class:`BaseRecipe` for the structure of :attr:`sources`.
         """
         for line in options.get('revisions', '').split(os.linesep):
             # GR inline comment should have not gone through, but sometimes
@@ -496,11 +513,9 @@ class BaseRecipe(object):
                                         + source[2:])
 
     def retrieve_addons(self):
-        """Parse the addons option line, download and return a list of paths.
+        """Peform all lookup and downloads specified in :attr:`sources`.
 
-        syntax: repo_type repo_url repo_dir repo_rev [options]
-              or an absolute or relative path
-        options are themselves in the key=value form
+        See :class:`BaseRecipe` for the structure of :attr:`sources`.
         """
         self.addons_paths = []
         for local_dir, source_spec in self.sources.items():
@@ -614,7 +629,10 @@ class BaseRecipe(object):
         logger.info("No need to re-download %s", self.archive_path)
 
     def retrieve_main_software(self):
-        """install server, webclient or gtkclient."""
+        """Lookup or fetch the main software.
+
+        See :class:`MainSoftware` and :class:`BaseRecipe` for explanations.
+        """
 
         source = self.sources[main_software]
         type_spec = source[0]
