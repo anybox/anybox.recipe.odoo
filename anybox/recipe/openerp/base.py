@@ -42,8 +42,8 @@ class MainSoftware(object):
     whose meaning depends on the concrete recipe class using it.
 
     For example, in :class:`anybox.recipe.openerp.server.ServerRecipe`,
-    :data:`main_software` represents the OpenObject server or the OpenERP standard
-    distribution.
+    :data:`main_software` represents the OpenObject server or the OpenERP
+    standard distribution.
     """
 
     def __str__(self):
