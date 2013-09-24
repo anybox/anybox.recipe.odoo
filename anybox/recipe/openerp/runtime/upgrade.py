@@ -111,6 +111,15 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
         logger.info("Read package version: %s from %s", pkg_version,
                     session.version_file_path)
 
+    db_version = session.db_version
+    if db_version is None:
+        logger.warn("No version currently set in database (the present "
+                    "upgrade script has never been run). Consider setting "
+                    "database version even for fresh instances, to "
+                    "eliminate any guesswork in the upgrade scripts.")
+    else:
+        logger.info("Database latest upgrade version : %s", db_version)
+
     logger.info("Database %r loaded. Actual upgrade begins.", db_name)
 
     upgrade_module = imp.load_source('anybox.recipe.openerp.upgrade_openerp',

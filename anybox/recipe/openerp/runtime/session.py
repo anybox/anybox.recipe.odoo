@@ -242,12 +242,16 @@ class Session(object):
     def update_modules(self, modules, db=None):
         """Update the prescribed modules in the database.
 
-        If the database is not specified, it is assumed to have already
-        been opened with :meth:`open`, e.g, for a prior read of
-        :meth:`db_version`.
-
-        If it is specified, then the session in particular opens that db and
-        will use it afterwards whether another one was already opened or not.
+        :param db: Database name. If not specified, it is assumed to have
+                   already been opened with :meth:`open`, e.g, for a prior
+                   read of :meth:`db_version`.
+                   If it is specified, then the session in particular opens
+                   that db and will use it afterwards whether another one
+                   was already opened or not.
+        :param modules: any iterable of module names.
+                        Not installed modules will be ignored
+                        The special name ``'all'`` triggers the update of
+                        all installed modules.
         """
         if db is None:
             if self.cr is None:
@@ -267,11 +271,14 @@ class Session(object):
     def install_modules(self, modules, db=None, with_demo=False):
         """Install the modules in the database.
 
-        If the database is not specified, it is assumed to have already
-        been opened with ``open()``, for instance to check versions.
-
-        If it is specified, then the session in particular opens that db and
-        will use it afterwards whether another one was already opened or not.
+        :param db: Database name. If not specified, it is assumed to have
+                   already been opened with :meth:`open`, e.g, for a prior
+                   read of :meth:`db_version`.
+                   If it is specified, then the session in particular opens
+                   that db and will use it afterwards whether another one
+                   was already opened or not.
+        :param modules: any iterable of module names.
+        :param with_demo: if True, modules demo data will be loaded.
         """
         if db is None:
             if self.cr is None:
