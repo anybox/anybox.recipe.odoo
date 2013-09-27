@@ -268,8 +268,12 @@ class Session(object):
         config['update'].clear()
         self.init_cursor()
 
-    def install_modules(self, modules, db=None, with_demo=False):
+    def install_modules(self, modules, db=None, with_demo=False,
+                        update_modules_list=True):
         """Install the modules in the database.
+
+        Has the side effect of closing the current cursor, committing if and
+        only if the list of modules is updated.
 
         :param db: Database name. If not specified, it is assumed to have
                    already been opened with :meth:`open`, e.g, for a prior
@@ -278,6 +282,8 @@ class Session(object):
                    that db and will use it afterwards whether another one
                    was already opened or not.
         :param modules: any iterable of module names.
+        :param update_modules_list: if True, will update the module lists
+                                    *and commit* before the install begins.
         :param with_demo: if True, modules demo data will be loaded.
         """
         if db is None:
@@ -285,6 +291,12 @@ class Session(object):
                 raise ValueError("install_modules needs either the session to "
                                  "be opened or an explicit database name")
             db = self.cr.dbname
+            if update_modules_list:
+                self.open(db=db)
+
+        if update_modules_list:
+            self.update_modules_list()
+            self.cr.commit()
 
         if self.cr is not None:
             self.close()
