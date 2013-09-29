@@ -8,7 +8,10 @@ except ImportError:
     warnings.warn("This must be imported with a buildout openerp recipe "
                   "driven sys.path", RuntimeWarning)
 else:
-    from openerp.cli import server as startup
+    try:
+        from openerp.cli import server as startup
+    except ImportError:
+        from .backports.cli import server as startup
     from openerp.tools import config
 from optparse import OptionParser  # we support python >= 2.6
 

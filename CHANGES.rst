@@ -3,6 +3,8 @@ Changes
 
 1.7.3 (unreleased)
 ------------------
+- launchpad #1232806: custom interpreter and openerp_scripts now work
+  with OpenERP 6.1
 
 1.7.2 (2013-09-29)
 ------------------
