@@ -3,6 +3,8 @@ Changes
 
 1.7.2 (unreleased)
 ------------------
+- launchpad #1232724: [gunicorn] properly switching openerp to
+  multi-process mode
 - SAAS versions now recognized, and treated as X.5
 - launchpad #1228997: [v5] in some cases, start_openerp --stop-after-init was
   not honoured.

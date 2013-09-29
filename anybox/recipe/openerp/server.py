@@ -171,6 +171,7 @@ if openerp.release.major_version == '6.1':
 timeout = %(timeout)s
 max_requests = %(max_requests)s
 
+openerp.multi_process = True  # needed even with only one worker
 openerp.conf.server_wide_modules = ['web']
 conf = openerp.tools.config
 """ % gunicorn_options
