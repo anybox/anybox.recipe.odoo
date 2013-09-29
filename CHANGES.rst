@@ -5,7 +5,12 @@ Changes
 ------------------
 - launchpad #1222116: [Gunicorn] option to preload databases
 
-1.7.2 (unreleased)
+1.7.3 (unreleased)
+------------------
+- launchpad #1232806: custom interpreter and openerp_scripts now work
+  with OpenERP 6.1
+
+1.7.2 (2013-09-29)
 ------------------
 - launchpad #1232724: [gunicorn] properly switching openerp to
   multi-process mode

@@ -11,7 +11,10 @@ except ImportError:
     warnings.warn("This must be imported with a buildout openerp recipe "
                   "driven sys.path", RuntimeWarning)
 else:
-    from openerp.cli import server as startup
+    try:
+        from openerp.cli import server as startup
+    except ImportError:
+        from .backports.cli import server as startup
     from openerp.tools import config
     from openerp import SUPERUSER_ID
     from openerp.tools.parse_version import parse_version
