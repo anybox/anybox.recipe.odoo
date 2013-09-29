@@ -1,7 +1,7 @@
 Changes
 ~~~~~~~
 
-1.7.2 (unreleased)
+1.7.2 (2013-09-29)
 ------------------
 - launchpad #1232724: [gunicorn] properly switching openerp to
   multi-process mode
