@@ -51,7 +51,8 @@ def check_root_user():
     if os.name == 'posix':
         import pwd
         if pwd.getpwuid(os.getuid())[0] == 'root':
-            sys.stderr.write("Running as user 'root' is a security risk, aborting.\n")
+            sys.stderr.write("Running as user 'root' is a security risk, "
+                             "aborting.\n")
             sys.exit(1)
 
 
@@ -62,7 +63,8 @@ def check_postgres_user():
     """
     config = openerp.tools.config
     if config['db_user'] == 'postgres':
-        sys.stderr.write("Using the database user 'postgres' is a security risk, aborting.")
+        sys.stderr.write("Using the database user 'postgres' is a "
+                         "security risk, aborting.")
         sys.exit(1)
 
 
@@ -74,7 +76,8 @@ def report_configuration():
     config = openerp.tools.config
     _logger.info("OpenERP version %s", __version__)
     for name, value in [('addons paths', config['addons_path']),
-                        ('database hostname', config['db_host'] or 'localhost'),
+                        ('database hostname',
+                         config['db_host'] or 'localhost'),
                         ('database port', config['db_port'] or '5432'),
                         ('database user', config['db_user'])]:
         _logger.info("%s: %s", name, value)
