@@ -1,9 +1,10 @@
 Changes
 ~~~~~~~
 
-1.7.2 (2013-09-08)
+1.7.2 (unreleased)
 ------------------
-- launchpad #1228997: [v5] in some cases, start_openerp --stop-after-init was 
+- SAAS versions now recognized, and treated as X.5
+- launchpad #1228997: [v5] in some cases, start_openerp --stop-after-init was
   not honoured.
 - launchpad #1222562: [git] error in extract-downloads-to
 

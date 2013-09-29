@@ -7,6 +7,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+MAJOR_VERSION_RE = re.compile(r'(\d+)[.](\d*)(\w*)')
+
+
 class WorkingDirectoryKeeper(object):
     """A context manager to get back the working directory as it was before.
 
@@ -43,11 +46,6 @@ def use_or_open(provided, path, *open_args):
             yield f
 
 
-NIGHTLY_VERSION_RE = re.compile(r'(\d+)[.](\d+)-(\d+-\d+)$')
-
-MAJOR_VERSION_RE = re.compile(r'(\d+)[.](\d+)')
-
-
 def major_version(version_string):
     """The least common denominator of OpenERP versions : two numbers.
 
@@ -55,14 +53,43 @@ def major_version(version_string):
     releases, bzr versions etc. It's almost impossible to compare them without
     an a priori knowledge of release dates and revisions.
 
+    Here are some examples::
+
+       >>> major_version('1.2.3-foo.bar')
+       (1, 2)
+       >>> major_version('6.1-20121003-233130')
+       (6, 1)
+       >>> major_version('7.0alpha')
+       (7, 0)
+
     Beware, the packaging script does funny things, such as labeling current
     nightlies as 6.2-date-time whereas version_info is (7, 0, 0, ALPHA)
     We can in recipe code check for >= (6, 2), that's not a big issue.
+
+    Regarding OpenERP saas releases (e.g. 7.saas~1) that are short-lived stable
+    versions between two "X.0" LTS releases, the second version number does not
+    contain a numeric value. The value X.5 will be returned (e.g. 7.5)::
+
+       >>> major_version('7.saas~1')
+       (7, 5)
+
     """
 
     m = MAJOR_VERSION_RE.match(version_string)
-    if m is not None:
-        return tuple(int(m.group(i)) for i in (1, 2))
+
+    if m is None:
+        raise ValueError("Unparseable version string: %r" % version_string)
+
+    major = int(m.group(1))
+    minor = m.group(2)
+    if not minor and m.group(3).startswith('saas'):
+        return major, 5
+
+    try:
+        return major, int(minor)
+    except TypeError:
+        raise ValueError(
+            "Unrecognized second version segment in %r" % version_string)
 
 
 def mkdirp(path):
