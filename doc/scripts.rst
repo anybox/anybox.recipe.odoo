@@ -328,6 +328,32 @@ in turn relaying to that user-level callable.
 See :py:mod:`anybox.recipe.openerp.runtime.upgrade` for more details
 on how it works.
 
+.. note:: Instance creation scripts.
+
+          For projects with a fixed number of modules to install at a given
+          point in time, upgrade scripts can be used to install a
+          fresh database::
+
+            def upgrade(session, logger):
+                if session.db_version is None:
+                    logger.info("This is a fresh database")
+                    session.install_modules(['my_module'])
+                    return
+
+                # now upgrade logic
+
+          Not having a command-line argument for modules ot install in
+          the resulting script *is a strength*.
+          It means that CI robots, deployment tools
+          and the like will be able to install it with zero added
+          configuration.
+
+          This approach works only if you can assume that any
+          installed database in the wild has already a
+          ``db_version``, in other words if it has been created this
+          way (the upgrade logic would be skipped for other databases).
+
+
 Options of the produced executable upgrade script
 -------------------------------------------------
 
