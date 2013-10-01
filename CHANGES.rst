@@ -5,6 +5,9 @@ The 1.7 series are stable versions, while the 1.8 are unstable.
 Changes displayed as "unreleased" in th stable series are released
 with any higher released unstable versions.
 
+1.8.1 (unreleased)
+------------------
+
 1.8.0 (2013-10-01)
 ------------------
 - launchpad #1222482: upgrade toolkit and upgrade scripts generation
