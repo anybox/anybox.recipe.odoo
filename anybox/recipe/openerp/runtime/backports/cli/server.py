@@ -33,14 +33,18 @@ import logging
 import os
 import sys
 
-import openerp
+try:
+    import openerp
+except:
+    # this file must stay importable by nose tests
+    pass
+else:
+    __author__ = openerp.release.author
+    __version__ = openerp.release.version
 
-__author__ = openerp.release.author
-__version__ = openerp.release.version
-
-if openerp.release.version_info < (6, 1):
-    raise RuntimeError("Interpreter and scripts not compatible with OpenERP "
-                       " < 6.1")
+    if openerp.release.version_info < (6, 1):
+        raise RuntimeError("Interpreter and scripts not compatible "
+                           "with OpenERP < 6.1")
 
 # Also use the `openerp` logger for the main script.
 _logger = logging.getLogger('openerp')
