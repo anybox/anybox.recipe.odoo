@@ -29,6 +29,9 @@ properties, such as an extensible configuration file format for easy
 variation or separation of concerns, native Python distributions
 installation, and of course the huge ecosystem of other recipes.
 
+About this documentation
+------------------------
+
 The full documentation is written with `Sphinx
 <http://sphinx-doc.org>`_, built continuously and
 uploaded to http://docs.anybox.fr/anybox.recipe.openerp/trunk by Anybox' public
@@ -36,15 +39,16 @@ buildbot.
 The Sphinx source tree is to be found under the ``doc`` subdirectory
 of this project.
 
-We plan to upload released versions of the doc to http://pythonhosted.org
+Although this Sphinx documentation started with version 1.8.0, most of
+its contents applies to the 1.7 series: features introduced with 1.8
+are highlighted, and readers may consult the `changelog on PyPI
+<https://pypi.python.org/pypi/anybox.recipe.openerp#changes>`_.
 
-All these to be considered together with ``zc.buildout``'s general properties,
-such as an extensible configuration file format for easy variation or
-separation of concerns, native Python distributions installation, and
-of course the huge ecosystem of other recipes.
+We plan to upload released versions of the documentation to
+http://pythonhosted.org
 
 Contents
-========
+--------
 
 .. toctree::
    :maxdepth: 2
@@ -57,7 +61,7 @@ Contents
    contributing
 
 Code documentation
-==================
+------------------
 
 .. toctree::
    :maxdepth: 1
@@ -67,7 +71,7 @@ Code documentation
 
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`

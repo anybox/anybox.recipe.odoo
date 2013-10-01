@@ -137,38 +137,38 @@ version
 
 Specifies the OpenERP version to use. It can be:
 
-The **version number** of an official OpenERP (server, web client or gtk client)::
+* The **version number** of an official OpenERP (server, web client or gtk client)::
 
-  version = 6.0.3
+    version = 6.0.3
 
-A **custom download**::
+* A **custom download**::
 
-  version = url http://example.com/openerp.tar.gz
+    version = url http://example.com/openerp.tar.gz
 
-An absolute or a relative **path**::
+* An absolute or a relative **path**::
 
-  version = path /my/path/to/a/custom/openerp
+    version = path /my/path/to/a/custom/openerp
 
-A custom **bzr, hg, git or svn** branch or repository. The syntax is the same
-as the :ref:`addons` option::
+* A custom **bzr, hg, git or svn** branch or repository. The syntax is the same
+  as with the :ref:`addons` option::
 
-  recipe = anybox.recipe.openerp[bzr]:server
-  version = bzr lp:openobject-server/6.1 openerp61 last:1
+    recipe = anybox.recipe.openerp[bzr]:server
+    version = bzr lp:openobject-server/6.1 openerp61 last:1
 
-.. note:: the ``[bzr]`` extra dependency declaration is useful for
-          resolution of the ``lp:`` address shortcuts.
+  .. note:: the ``[bzr]`` extra dependency declaration is useful for
+            resolution of the ``lp:`` address shortcuts.
 
-A **nightly** build::
+* A **nightly** build::
 
-  version = nightly 6.1 20120814-233345
+    version = nightly 6.1 20120814-233345
 
-or (dangerously unpinned version)::
+* or (dangerously unpinned version)::
 
-  version = nightly 6.1 latest
+    version = nightly 6.1 latest
 
-or even more dangerous::
+*  or even more dangerous::
 
-  version = nightly trunk latest
+     version = nightly trunk latest
 
 .. _addons:
 
@@ -234,10 +234,11 @@ A very common example is the line for standard web addons from bzr::
 
 The ``bzr-init`` addons option
 ``````````````````````````````
-
 **'bzr-init'** defines the way the bzr branch
 is initialized for addons or server declared with a bzr
 repository path.
+
+.. note:: new in version 1.7.0
 
 Possible values:
 
@@ -400,9 +401,10 @@ option ::
 
 openerp_scripts
 ---------------
-
 This option lets you install console scripts provided by any of the loaded eggs,
 so that they can access to OpenERP internals and load databases.
+
+.. note:: new in version 1.7.0
 
 Here we describe the format of the option only.
 For explanation about what it means and how to use it, please refer to
@@ -448,6 +450,8 @@ The default value is ``upgrade_<part_name>``.
 upgrade_script
 --------------
 
+.. note:: new in version 1.8.0
+
 This option lets you specify a source (``.py``) file and a callable
 defined in that file to perform database upgrades. The default value
 is::
@@ -474,13 +478,13 @@ about upgrade scripts.
 gunicorn
 --------
 
-Gunicorn integration is only supported on OpenERP >= 6.1.
+Gunicorn integration is only supported on OpenERP ≥ 6.1.
 Any value of this option makes the recipe generate a script to start
 OpenERP with Gunicorn and (*new in version 1.1*) a dedicated script to
 handle cron jobs.
 
 For OpenERP 6.1, the only accepted values are ``direct`` and
-``proxied``. Any value is suitable for OpenERP >= 7
+``proxied``. Any value is suitable for OpenERP ≥ 7
 
 Proxied mode
 ````````````
@@ -489,7 +493,7 @@ used if you plan to run Gunicorn behind a reverse proxy::
 
     gunicorn = proxied
 
-This behaviour has been kept for OpenERP >= 7 to keep
+This behaviour has been kept for OpenERP ≥ 7 to keep
 backwards compatibility, but the option is now superseded by the
 general ``proxy_mode`` option of the server. In the buildout context,
 that'd be::
@@ -703,14 +707,14 @@ If you want to wrap a python script with such session objects, read
 See also :ref:`openerp_scripts`.
 
 .. note:: this facility is new in version 1.6.0, and tested with
-          OpenERP 7 only for now.
+          OpenERP ≥ 6.1 only for now.
 
 
 interpreter
 -----------
 With the ``gtkclient`` and ``webclient`` recipes,
 this behauves like the `interpreter` option of `zc.recipe.egg`: it
-gives you a Python interpreted in the``bin`` directory of the buildout::
+gives you a Python interpreter in the ``bin`` subdirectory of the buildout::
 
     interpreter = erp_python
 

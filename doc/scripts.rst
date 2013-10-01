@@ -12,6 +12,8 @@ practice (setuptools-style console scripts, as in
 We call such scripts *OpenERP scripts* to distinguish them among the
 more general concept of console scripts.
 
+.. warning:: OpenERP scripts are currently supported for OpenERP ≥ 6.1 only.
+
 
 Use cases
 ~~~~~~~~~
@@ -131,6 +133,8 @@ the special ``session`` argument.
 
 Arguments and session
 ---------------------
+.. note:: new in version 1.7.0
+
 An ``arguments`` parameter, similar to the one of
 ``zc.recipe.egg:scripts`` can be specified::
 
@@ -274,6 +278,8 @@ a more general buildout experience.
 
 Upgrade scripts
 ~~~~~~~~~~~~~~~
+.. note:: new in version 1.8.0
+
 The recipe provides a toolkit for database management, including
 upgrade scripts generation, to fulfill two seemingly contradictory goals:
 
@@ -331,10 +337,11 @@ on how it works.
 .. note:: Instance creation scripts.
 
           For projects with a fixed number of modules to install at a given
-          point in time, upgrade scripts can be used to install a
+          point of code history, upgrade scripts can be used to install a
           fresh database::
 
             def upgrade(session, logger):
+                """Create or upgrade an instance or my_project."""
                 if session.db_version is None:
                     logger.info("This is a fresh database")
                     session.install_modules(['my_module'])
@@ -345,7 +352,7 @@ on how it works.
           Not having a command-line argument for modules ot install in
           the resulting script *is a strength*.
           It means that CI robots, deployment tools
-          and the like will be able to install it with zero added
+          and the like will be able to install it with zero additional
           configuration.
 
           This approach works only if you can assume that any
