@@ -23,7 +23,9 @@ properties, such as an extensible configuration file format for easy
 variation or separation of concerns, native Python distributions
 installation, and of course the huge ecosystem of other recipes.
 
-The `full documentation <http://pythonhosted.org>`_ is written with `Sphinx
+The `full documentation
+<http://pythonhosted.org/anybox.recipe.openerp>`_
+is written with `Sphinx
 <http://sphinx-doc.org>`_, built continuously and
 uploaded to http://docs.anybox.fr/anybox.recipe.openerp by Anybox' public
 buildbot.
