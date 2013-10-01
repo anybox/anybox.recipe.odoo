@@ -19,9 +19,14 @@ build dependencies.
 
 The buildout configuration file and parts
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The intents of this seciton is to highlights a few facts that we've
-found especially useful. People should refer to the reference zc.buildout
-documentation available online.
+The intents of this section is to highlights a few facts that we've
+found especially useful. People should refer to the
+`reference zc.buildout documentation
+<https://pypi.python.org/pypi/zc.buildout/2.2.1>`_
+and in particular to the `configuration file syntax
+<https://pypi.python.org/pypi/zc.buildout/2.2.1#configuration-file-syntax>`_
+(these links may have to be adapted for the version in use).
+
 
 Buildout configuration files are written almost in INI format, and
 always start with a ``buildout`` section::
