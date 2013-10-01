@@ -23,14 +23,16 @@ properties, such as an extensible configuration file format for easy
 variation or separation of concerns, native Python distributions
 installation, and of course the huge ecosystem of other recipes.
 
-The full documentation is written with `Sphinx
+The `full documentation <http://pythonhosted.org>`_ is written with `Sphinx
 <http://sphinx-doc.org>`_, built continuously and
-uploaded to http://docs.anybox.fr/anybox.recipe.openerp/trunk by Anybox' public
+uploaded to http://docs.anybox.fr/anybox.recipe.openerp by Anybox' public
 buildbot.
 The Sphinx source tree is to be found under the ``doc`` subdirectory
 of this project.
 
-We plan to upload released versions of the doc to http://pythonhosted.org
+The latest released version of the documentation is uploaded to PyPI
+alongside with the package. See `PyPIDocumentationHosting
+<https://wiki.python.org/moin/PyPiDocumentationHosting>`_ for details.
 
 Bug reports and Feedback
 ~~~~~~~~~~~~~~~~~~~~~~~~
