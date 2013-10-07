@@ -7,6 +7,8 @@ with any higher released unstable versions.
 
 1.8.1 (unreleased)
 ------------------
+- launchpad #1235946 (demo data): consistent behaviour and capability
+  to load them.
 
 1.8.0 (2013-10-01)
 ------------------

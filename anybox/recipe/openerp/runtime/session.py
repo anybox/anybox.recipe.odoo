@@ -123,11 +123,30 @@ class Session(object):
     def ready(self):
         return self._registry is not None
 
-    def open(self, db=None):
+    def open(self, db=None, with_demo=False):
         """Load the database
 
-        if the database is not specified, the same cascading as OpenERP
-        mainstream will be applied: configuration file, psycopg2/lipq defaults.
+        Loading an empty database in OpenERP has the side effect of installing
+        the ``base`` module. Whether to loading demo data or not has therefore
+        to be decided right away.
+
+        :param db: database name. If not specified, the same cascading of
+                   defaults as OpenERP mainstream will be applied:
+                   configuration file, psycopg2/lipq defaults.
+        :param with_demo: controls the loading of demo data for all
+                          module installations triggered by this call to
+                          :meth:`open` and further uses of :meth:`load_modules`
+                          on this :class:`Session` instance:
+
+                          * if ``True``, demo data will uniformly be loaded
+                          * if ``False``, no demo data will be loaded
+                          * if ``None``, demo data will be loaded according to
+                            the value of ``without_demo`` in configuration
+
+                          In all cases, the behaviour will stay consistent
+                          until the next call of ``open()``, but the
+                          implementation does not protect against any race
+                          conditions in OpenERP internals.
         """
         if db is None:
             db = config['db_name']
@@ -136,8 +155,17 @@ class Session(object):
         startup.check_root_user()
         startup.check_postgres_user()
         openerp.netsvc.init_logger()
+
+        saved_without_demo = config['without_demo']
+        if with_demo is None:
+            with_demo = config['without_demo']
+
+        config['without_demo'] = not with_demo
+        self.with_demo = with_demo
+
         self._registry = openerp.modules.registry.RegistryManager.get(
             db, update_module=False)
+        config['without_demo'] = saved_without_demo
         self.init_cursor()
         self.uid = SUPERUSER_ID
 
@@ -271,12 +299,15 @@ class Session(object):
         config['update'].clear()
         self.init_cursor()
 
-    def install_modules(self, modules, db=None, with_demo=False,
-                        update_modules_list=True):
+    def install_modules(self, modules, db=None, update_modules_list=True,
+                        open_with_demo=False):
         """Install the modules in the database.
 
         Has the side effect of closing the current cursor, committing if and
         only if the list of modules is updated.
+
+        Demo data loading is handled consistently with the decision taken
+        by :meth:`open`.
 
         :param db: Database name. If not specified, it is assumed to have
                    already been opened with :meth:`open`, e.g, for a prior
@@ -287,15 +318,18 @@ class Session(object):
         :param modules: any iterable of module names.
         :param update_modules_list: if True, will update the module lists
                                     *and commit* before the install begins.
-        :param with_demo: if True, modules demo data will be loaded.
+        :param open_with_demo: if ``db`` is not None, will be passed to
+                               :meth:`open`.
         """
+        already_open = self.cr is not None
         if db is None:
-            if self.cr is None:
+            if not already_open:
                 raise ValueError("install_modules needs either the session to "
                                  "be opened or an explicit database name")
             db = self.cr.dbname
-            if update_modules_list:
-                self.open(db=db)
+        elif update_modules_list and not (
+                already_open and self.cr.dbname == db):
+            self.open(db=db, with_demo=open_with_demo)
 
         if update_modules_list:
             self.update_modules_list()
@@ -303,12 +337,17 @@ class Session(object):
 
         if self.cr is not None:
             self.close()
-        config['without_demo'] = not with_demo
+        saved_without_demo = config['without_demo']
+
+        # with update_modules_list=False, an explicitely named DB would not
+        # have gone through open() yet.
+        config['without_demo'] = not getattr(self, 'with_demo', open_with_demo)
         for module in modules:
             config['init'][module] = 1
         self._registry = openerp.modules.registry.RegistryManager.get(
-            db, update_module=True, force_demo=with_demo)
+            db, update_module=True, force_demo=self.with_demo)
         config['init'].clear()
+        config['without_demo'] = saved_without_demo
         self.init_cursor()
 
     def handle_command_line_options(self, to_handle):

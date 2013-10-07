@@ -61,6 +61,10 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
     parser.add_argument('-d', '--db-name', default=SUPPRESS,
                         help="Database name. If ommitted, the general default "
                         "values from OpenERP config file or libpq will apply.")
+    parser.add_argument('--init-load-demo-data', action='store_true',
+                        help="Demo data will be loaded with module "
+                        "installations if and only if "
+                        "this modifier is specified")
 
     arguments = parser.parse_args()  # 'args' would shadow the one of pdb
     log_path = os.path.abspath(os.path.expanduser(arguments.log_file))
@@ -88,7 +92,7 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
         print('')
 
     db_name = getattr(arguments, 'db_name', None)
-    session.open(db=db_name)
+    session.open(db=db_name, with_demo=bool(arguments.init_load_demo_data))
 
     logger = logging.getLogger('openerp.upgrade')
 

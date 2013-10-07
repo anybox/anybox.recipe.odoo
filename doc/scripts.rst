@@ -392,6 +392,10 @@ use ``--help`` with the version you have. Here's the current state::
     -d DB_NAME, --db-name DB_NAME
                           Database name. If ommitted, the general default values
                           from OpenERP config file or libpq will apply.
+    --init-load-demo-data
+                          Demo data will be loaded with module installations if
+                          and only if this modifier is specified (default:
+                          False)
 
 
 Sample output
