@@ -9,6 +9,10 @@ with any higher released unstable versions.
 ------------------
 - launchpad #1235946 (demo data): consistent behaviour and capability
   to load them.
+- launchpad #1239721: now session has 'is_initialization' attribute for
+  creation use-cases of upgrade script; using it to improve logging,
+  and in default upgrade script.
+
 
 1.8.0 (2013-10-01)
 ------------------

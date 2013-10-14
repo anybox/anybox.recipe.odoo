@@ -5,6 +5,7 @@ import os
 import logging
 from distutils.version import Version
 
+
 try:
     import openerp
 except ImportError:
@@ -75,6 +76,8 @@ class Session(object):
     * :attr:`cr`: a cursor
     * :attr:`uid`: user id
     * :attr:`registry`: access to model objects
+    * :attr:`is_initialization`: True if and only if the database was not
+      initialized before the call to :meth:`open`
 
     Example application code::
 
@@ -152,6 +155,12 @@ class Session(object):
             db = config['db_name']
         if not db:
             db = ''  # expected value expected by OpenERP to start defaulting.
+
+        cnx = openerp.sql_db.db_connect(db)
+        cr = cnx.cursor()
+        self.is_initialization = not(openerp.modules.db.is_initialized(cr))
+        cr.close()
+
         startup.check_root_user()
         startup.check_postgres_user()
         openerp.netsvc.init_logger()

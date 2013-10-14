@@ -91,12 +91,7 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
                   log_path, log_level.upper(), console_level.upper()))
         print('')
 
-    db_name = getattr(arguments, 'db_name', None)
-    session.open(db=db_name, with_demo=bool(arguments.init_load_demo_data))
-    db_name = session.cr.dbname  # will differ if None on command line
-
     logger = logging.getLogger('openerp.upgrade')
-
     console_handler = logging.StreamHandler()
     console_handler.setLevel(getattr(logging, console_level))
     console_handler.setFormatter(logging.Formatter(
@@ -104,6 +99,18 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
 
     if not arguments.quiet:
         logger.addHandler(console_handler)
+
+    db_name = getattr(arguments, 'db_name', None)
+    logger.info("Opening database %r", db_name)
+    session.open(db=db_name, with_demo=bool(arguments.init_load_demo_data))
+    # actual value after all defaultings have been done
+    db_name = session.cr.dbname
+
+    if session.is_initialization:
+        logger.info("Database %r base initialization done. Proceeding further",
+                    db_name)
+    else:
+        logger.info("Database %r loaded. Actual upgrade begins.", db_name)
 
     pkg_version = session.package_version
     if pkg_version is None:
@@ -118,14 +125,13 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
 
     db_version = session.db_version
     if db_version is None:
-        logger.warn("No version currently set in database (the present "
-                    "upgrade script has never been run). Consider setting "
-                    "database version even for fresh instances, to "
-                    "eliminate any guesswork in the upgrade scripts.")
+        if not session.is_initialization:
+            logger.warn("No version currently set in database (the present "
+                        "upgrade script has never been run). Consider setting "
+                        "database version even for fresh instances, to "
+                        "eliminate any guesswork in the upgrade scripts.")
     else:
         logger.info("Database latest upgrade version : %s", db_version)
-
-    logger.info("Database %r loaded. Actual upgrade begins.", db_name)
 
     upgrade_module = imp.load_source('anybox.recipe.openerp.upgrade_openerp',
                                      upgrade_script)
@@ -136,7 +142,8 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
             session.db_version = pkg_version
         session.cr.commit()
 
-        logger.info("Upgrade successful. Total time: %d seconds." % (
+        logger.info("%s successful. Total time: %d seconds." % (
+            "Initialization" if session.is_initialization else "Upgrade",
             ceil((datetime.utcnow() - start_time).total_seconds())
         ))
     else:

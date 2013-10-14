@@ -334,31 +334,35 @@ in turn relaying to that user-level callable.
 See :py:mod:`anybox.recipe.openerp.runtime.upgrade` for more details
 on how it works.
 
-.. note:: Instance creation scripts.
+Usage for instance creation
+---------------------------
+For projects with a fixed number of modules to install at a given
+point of code history, upgrade scripts can be used to install a
+fresh database::
 
-          For projects with a fixed number of modules to install at a given
-          point of code history, upgrade scripts can be used to install a
-          fresh database::
+  def upgrade(session, logger):
+      """Create or upgrade an instance or my_project."""
+      if session.is_initialization:
+          logger.info("Installing modules on fresh database")
+          session.install_modules(['my_module'])
+          return
 
-            def upgrade(session, logger):
-                """Create or upgrade an instance or my_project."""
-                if session.db_version is None:
-                    logger.info("This is a fresh database")
-                    session.install_modules(['my_module'])
-                    return
+      # now upgrade logic
 
-                # now upgrade logic
+Not having a command-line argument for modules ot install in
+the resulting script *is a strength*.
+It means that CI robots, deployment tools
+and the like will be able to install it with zero additional
+configuration.
 
-          Not having a command-line argument for modules ot install in
-          the resulting script *is a strength*.
-          It means that CI robots, deployment tools
-          and the like will be able to install it with zero additional
-          configuration.
+The default script produced by the recipe also detects initializations
+and logs information on how to customize::
 
-          This approach works only if you can assume that any
-          installed database in the wild has already a
-          ``db_version``, in other words if it has been created this
-          way (the upgrade logic would be skipped for other databases).
+    2013-10-14 17:16:17,785 WARNING  Usage of upgrade script for initialization detected. You should consider customizing the present upgrade script to add modules install commands. The present script is at : /home/gracinet/openerp/recipe/testing-buildouts/upgrade.py (byte-compiled form)
+    2013-10-14 17:16:17,786 INFO  Initialization successful. Total time: 22 seconds.
+
+
+.. note:: the ``is_initialization`` attribute is new in version 1.8.1
 
 
 Options of the produced executable upgrade script
