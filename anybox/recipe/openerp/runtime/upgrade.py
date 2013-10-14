@@ -93,6 +93,7 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
 
     db_name = getattr(arguments, 'db_name', None)
     session.open(db=db_name, with_demo=bool(arguments.init_load_demo_data))
+    db_name = session.cr.dbname  # will differ if None on command line
 
     logger = logging.getLogger('openerp.upgrade')
 
