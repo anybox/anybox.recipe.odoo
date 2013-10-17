@@ -23,6 +23,10 @@ with any higher released unstable versions.
 - launchpad #1222482: upgrade toolkit and upgrade scripts generation
 - launchpad #1222116: [Gunicorn] option to preload databases
 
+1.7.4 (unreleased)
+------------------
+- 
+
 1.7.3 (2013-10-17)
 ------------------
 - launchpad #1232806: custom interpreter and openerp_scripts now work
