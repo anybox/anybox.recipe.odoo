@@ -332,18 +332,20 @@ class BzrTestCase(BzrBaseTestCase):
 
 class BzrOfflineTestCase(BzrBaseTestCase):
 
-    def make_local_branch(self, path, initial_rev):
+    def make_local_branch(self, path, initial_rev, options=None):
         """Make a local branch of the source at initial_rev and forbid pulls.
         """
+        if options is None:
+            options = {}
         target_dir = os.path.join(self.dst_dir, path)
         # initial branching (non offline
         BzrBranch(target_dir, self.src_repo)(initial_rev)
 
         # crippled offline branch
-        branch = BzrBranch(target_dir, self.src_repo, offline=True)
+        branch = BzrBranch(target_dir, self.src_repo, offline=True, **options)
 
         def _pull():
-            raise UpdateError("Should not pull !")
+            self.fail("Should not pull !")
 
         branch._pull = _pull
         return branch
@@ -373,3 +375,31 @@ class BzrOfflineTestCase(BzrBaseTestCase):
         revid = branch.get_revid('1')
         branch('revid:' + revid)
         self.assertRevision1(branch)
+
+    def test_lightweight_checkout_noupdate(self):
+        """[offline mode] lightweight checkouts shall not be updated."""
+        branch = self.make_local_branch(
+            "clone to update", '1',
+            options={'bzr-init': 'lightweight-checkout'})
+
+        def _update(*a, **kw):
+            self.fail("Should not update !")
+
+        branch._update = _update
+
+        branch('last:1')
+        self.assertRevision1(branch)
+
+    def test_lightweight_checkout_noupdate_fixed_rev(self):
+        """[offline mode] lightweight checkouts shall not be updated."""
+        branch = self.make_local_branch(
+            "clone to update", 'last:1',
+            options={'bzr-init': 'lightweight-checkout'})
+
+        def _update(*a, **kw):
+            self.fail("Should not update !")
+
+        branch._update = _update
+
+        branch('1')
+        self.assertRevision2(branch)

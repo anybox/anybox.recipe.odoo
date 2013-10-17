@@ -213,7 +213,13 @@ class BzrBranch(BaseRepo):
 
             self.update_conf()
 
+            init_opt = self.options.get('bzr-init')
             if self.is_fixed_revision(revision):
+                if (offline and init_opt == 'lightweight-checkout'):
+                    logger.warning("Offline mode, no update for lightweight "
+                                   "checkout at %s on revision %r",
+                                   self.target_dir, revision)
+                    return
                 try:
                     self._update(revision)
                     return
@@ -225,8 +231,9 @@ class BzrBranch(BaseRepo):
                 logger.info("Offline mode, no pull for revision %r", revision)
             else:
                 self._pull()
-            if not (offline and
-                    self.options.get('bzr-init') == 'stacked-branch'):
+
+            if not (offline and init_opt in ('stacked-branch',
+                                             'lightweight-checkout')):
                 self._update(revision)
 
     def _branch(self, revision):

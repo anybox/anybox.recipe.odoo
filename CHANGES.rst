@@ -23,6 +23,7 @@ with any higher released unstable versions.
 ------------------
 - launchpad #1232806: custom interpreter and openerp_scripts now work
   with OpenERP 6.1
+- launchpad #1233606: [bzr] lightweight checkout now respects --offline
 
 1.7.2 (2013-09-29)
 ------------------
