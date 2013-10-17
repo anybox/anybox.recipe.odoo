@@ -1,6 +1,10 @@
 Changes
 ~~~~~~~
 
+1.7.4 (unreleased)
+------------------
+- 
+
 1.7.3 (2013-10-17)
 ------------------
 - launchpad #1232806: custom interpreter and openerp_scripts now work
