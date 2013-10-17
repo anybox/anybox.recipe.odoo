@@ -255,6 +255,8 @@ Possible values:
 :lightweight-checkout: Working copy initialized with the command
                        ``bzr checkout --lightweight url ...``
 
+.. _eggs:
+
 eggs
 ----
 This option behaves like the identically named one of the most common
