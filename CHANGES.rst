@@ -5,7 +5,7 @@ The 1.7 series are stable versions, while the 1.8 are unstable.
 Changes displayed as "unreleased" in th stable series are released
 with any higher released unstable versions.
 
-1.8.1 (unreleased)
+1.8.1 (2013-10-17)
 ------------------
 - launchpad #1235946 (demo data): consistent behaviour and capability
   to load them.
@@ -19,7 +19,7 @@ with any higher released unstable versions.
 - launchpad #1222482: upgrade toolkit and upgrade scripts generation
 - launchpad #1222116: [Gunicorn] option to preload databases
 
-1.7.3 (unreleased)
+1.7.3 (2013-10-17)
 ------------------
 - launchpad #1232806: custom interpreter and openerp_scripts now work
   with OpenERP 6.1
