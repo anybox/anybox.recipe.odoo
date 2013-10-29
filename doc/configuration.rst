@@ -680,6 +680,10 @@ At the time of this writing, all this script does compared to the
 regular startup script is to bring uniformity across OpenERP versions
 by tweaking options internally.
 
+*As of version 1.8.2*, the ``--install-all`` additional option will be
+expanded on-the-fly as ``-i`` on all available modules (don't confuse
+with ``-i all``: the latter is equivalent to ``-i base``).
+
 
 .. _interpreter_name:
 

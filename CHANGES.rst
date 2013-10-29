@@ -7,7 +7,8 @@ with any higher released unstable versions.
 
 1.8.2 (unreleased)
 ------------------
--
+- launchpad #1245261: new ``--init-all`` option in ``test_openerp``
+  and ``start_openerp`` scripts.
 
 1.8.1 (2013-10-17)
 ------------------

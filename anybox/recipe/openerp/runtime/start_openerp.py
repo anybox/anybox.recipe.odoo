@@ -43,6 +43,16 @@ def main(starter, conf, version=None, just_test=False):
         if version >= (7, 0):
             arguments.append('--test-enable')
 
+    if '--install-all' in sys.argv:
+        sys.argv.remove('--install-all')
+        from openerp.tools import config
+        # Maybe we should preparse config in all cases and therefore avoid
+        # adding the '-c' on the fly ?
+        # Still, cautious about pre-6.1 versions
+        config.parse_config(['-c', conf])
+        from openerp.modules import get_modules
+        arguments.extend(('-i', ','.join(get_modules())))
+
     insert_args(arguments)
 
     if version == (5, 0):
