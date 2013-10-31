@@ -7,6 +7,10 @@ Changes
 
 1.7.3 (2013-10-17)
 ------------------
+- Fixed the licence in ``setup.py`` and hence on PyPI page. The ZPL
+  indicated was contradictory with what is stated on Launchpad's
+  project page, and plain non applicable, since the recipe *does* import
+  from OpenERP.
 - launchpad #1232806: custom interpreter and openerp_scripts now work
   with OpenERP 6.1
 - launchpad #1233606: [bzr] lightweight checkout now respects --offline

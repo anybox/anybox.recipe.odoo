@@ -20,7 +20,7 @@ setup(
     author="Anybox",
     author_email="contact@anybox.fr",
     description="A buildout recipe to install and configure OpenERP",
-    license="ZPL",
+    license="AGPLv3+",
     long_description='\n'.join((
         open('README.rst').read(),
         open('CHANGES.rst').read())),
@@ -35,7 +35,8 @@ setup(
         'Framework :: Buildout :: Recipe',
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',
-        'License :: OSI Approved :: Zope Public License',
+        'License :: OSI Approved :: GNU Affero General Public License v3 or '
+        'later (AGPLv3+)',
         'Topic :: Software Development :: Build Tools',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
