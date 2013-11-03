@@ -251,8 +251,8 @@ class TestServer(RecipeTestCase):
         self.recipe.retrieve_addons()
         paths = self.recipe.addons_paths
         self.recipe.finalize_addons_paths(check_existence=False)
-        self.assertEquals(paths, [addons_dir,
-                                  os.path.join(oerp_dir, 'openerp', 'addons')])
+        self.assertEquals(paths, [os.path.join(oerp_dir, 'openerp', 'addons'),
+                                  addons_dir])
 
     def test_retrieve_fixup_addons_local_60_check_ok(self):
         oerp_dir = os.path.join(TEST_DIR, 'oerp60')
@@ -268,7 +268,7 @@ class TestServer(RecipeTestCase):
         os.mkdir(addons_dir)
         self.recipe.finalize_addons_paths()
         paths = self.recipe.addons_paths
-        self.assertEqual(paths, [addons_dir, root_dir])
+        self.assertEqual(paths, [root_dir, addons_dir])
         self.assertEqual(self.recipe.options['options.root_path'],
                          os.path.join(oerp_dir, 'bin'))
 

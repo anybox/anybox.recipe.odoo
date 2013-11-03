@@ -1150,7 +1150,7 @@ class BaseRecipe(object):
         else:
             base_addons = join(self.openerp_dir, 'openerp', 'addons')
         if os.path.exists(base_addons):
-            self.addons_paths.append(base_addons)
+            self.addons_paths.insert(0, base_addons)
 
         if check_existence:
             for path in self.addons_paths:
