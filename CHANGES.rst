@@ -3,7 +3,8 @@ Changes
 
 1.7.4 (unreleased)
 ------------------
-- 
+- launchpad #1246822: restored the ordering of addons_path as it was
+  in 1.7.0 (main addons first).
 
 1.7.3 (2013-10-17)
 ------------------
