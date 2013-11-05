@@ -35,6 +35,18 @@ class OpenERPVersion(Version):
     This is based on :meth:`openerp.tools.parse_version`, and
     Provides straight-ahead comparison with tuples of integers, or
     distutils Version classes.
+
+    This object provides straight-ahead comparisons:
+
+        >>> v = OpenERPVersion('1.2.3')
+        >>> v < '1.2.4'
+        True
+        >>> v < (1, 2, 5)
+        True
+        >>> v < '1.2.4-dev'
+        True
+        >>> v < '1.2.3a1-2'
+        False
     """
 
     def parse(self, incoming):
