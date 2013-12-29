@@ -38,6 +38,14 @@ Add the following line in your ``/etc/apt/sources.list``::
 
   deb http://apt.anybox.fr/openerp common main
 
+If you don't want your system to complain about non-signed packages,
+have it accept the signing key, e.g. by issuing::
+
+  sudo apt-key adv --keyserver hkp://subkeys.pgp.net --recv-keys 0xE38CEB07
+
+(sometimes, the key server is too busy, you may need to wait a few
+minutes and try again)
+
 Install the dependency package::
 
   $ sudo aptitude update
