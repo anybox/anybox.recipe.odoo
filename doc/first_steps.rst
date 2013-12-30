@@ -141,6 +141,7 @@ and the current recipe versions can be pinned::
   [buildout]
   parts = openerp
   versions = versions
+  find-links = http://download.gna.org/pychart/
 
   [openerp]
   recipe = anybox.recipe.openerp[bzr]:server
