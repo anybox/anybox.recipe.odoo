@@ -760,7 +760,7 @@ class BaseRecipe(object):
     def dump_nightly_latest_version(self):
         """After download/analysis of 'nightly latest', give equivalent spec.
         """
-        return ' '.join((self.nightly_series, 'nightly', self.nightly_version))
+        return ' '.join(('nightly', self.nightly_series, self.nightly_version))
 
     def freeze_to(self, out_config_path):
         """Create an extension buildout freezing current revisions & versions.
