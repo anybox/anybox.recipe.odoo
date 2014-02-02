@@ -7,6 +7,7 @@ with any higher released unstable versions.
 
 1.8.2 (unreleased)
 ------------------
+- launchpad #1275168: when freeze nightly version was not set correctly
 - launchpad #1245261: new ``--init-all`` option in ``test_openerp``
   and ``start_openerp`` scripts.
 
