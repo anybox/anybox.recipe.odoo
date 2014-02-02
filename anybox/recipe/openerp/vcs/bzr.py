@@ -286,7 +286,6 @@ class BzrBranch(BaseRepo):
         else:
             branch_cmd.extend([url, target_dir])
 
-        branch_cmd.extend([url, target_dir])
         clone_check_call(branch_cmd, env=SUBPROCESS_ENV)
 
     def _pull(self):
