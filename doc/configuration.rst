@@ -255,6 +255,16 @@ Possible values:
 :lightweight-checkout: Working copy initialized with the command
                        ``bzr checkout --lightweight url ...``
 
+.. _merges:
+
+merges
+------
+Specify which VCS branches need to be merged into repositories
+specified under :ref:`addons` or :ref:`version`. The syntax is
+the same as for repositories specified under these directives.
+
+Currently only merges on bzr repositories are supported.
+
 .. _eggs:
 
 eggs
