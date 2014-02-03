@@ -483,8 +483,7 @@ class BaseRecipe(object):
     def parse_merges(self, options):
         """Parse the merge options into :attr:`merges`.
 
-        Merges use the location spec as its key, as there
-        can be multiple merges on the same directory.
+        See :class:`BaseRecipe` for the structure of :attr:`merges`.
         """
 
         for line in options.get('merges', '').split(os.linesep):
@@ -606,7 +605,7 @@ class BaseRecipe(object):
             self.addons_paths.append(addons_dir)
 
     def retrieve_merges(self):
-        """Peform all lookup and downloads specified in :attr:`merges`.
+        """Peform all VCS merges specified in :attr:`merges`.
         """
         for loc_spec, source_spec in self.merges.items():
             loc_type, local_dir, merge_options = source_spec
