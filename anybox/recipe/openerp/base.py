@@ -88,13 +88,12 @@ class BaseRecipe(object):
     The :attr:`merges` attribute is a ``dict`` storing how to fetch additional
     changes to merge into VCS type sources:
 
-       ``location_spec -> (type, local path, options)``
+       ``local path -> [(type, location_spec, options), ... ]``
     
        See :attr:`sources` for the meaning of the various components. Note that
-       in :attr:`merges`, the position of location_spec and local path are
-       switched around so that there can be multiple merges on the same local
-       path (which would not be possible if local path were used as the
-       dictionary key).
+       in :attr:`merges`, values are a list of triples instead of only a single
+       triple as values in :attr:`sources` because there can be multiple merges
+       on the same local path.
     
     """
 
@@ -502,7 +501,8 @@ class BaseRecipe(object):
             location_spec = (repo_url, repo_rev)
 
             local_dir = local_dir.rstrip('/')  # trailing / can be harmful
-            self.merges[location_spec] = (loc_type, local_dir, options)
+            self.merges.setdefault(local_dir, []).append(
+                (loc_type, location_spec, options))
 
     def parse_revisions(self, options):
         """Parse revisions options and update :attr:`sources`.
@@ -607,21 +607,22 @@ class BaseRecipe(object):
     def retrieve_merges(self):
         """Peform all VCS merges specified in :attr:`merges`.
         """
-        for loc_spec, source_spec in self.merges.items():
-            loc_type, local_dir, merge_options = source_spec
-            local_dir = self.make_absolute(local_dir)
-            options = dict(offline=self.offline,
-                           clear_locks=self.vcs_clear_locks)
-            options.update(merge_options)
+        for local_dir, source_specs in self.merges.items():
+            for source_spec in source_specs:
+                loc_type, loc_spec, merge_options = source_spec
+                local_dir = self.make_absolute(local_dir)
+                options = dict(offline=self.offline,
+                               clear_locks=self.vcs_clear_locks)
+                options.update(merge_options)
+                
+                for k, v in self.options.items():
+                    if k.startswith(loc_type + '-'):
+                        options[k] = v
 
-            for k, v in self.options.items():
-                if k.startswith(loc_type + '-'):
-                    options[k] = v
-
-            repo_url, repo_rev = loc_spec
-            vcs.get_update(loc_type, local_dir, repo_url, repo_rev,
-                           clear_retry=self.clear_retry,
-                           **options)
+                repo_url, repo_rev = loc_spec
+                vcs.get_update(loc_type, local_dir, repo_url, repo_rev,
+                               clear_retry=self.clear_retry,
+                               **options)
 
     def main_download(self):
         """HTTP download for main part of the software to self.archive_path.
