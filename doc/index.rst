@@ -32,6 +32,9 @@ installation, and of course the huge ecosystem of other recipes.
 About this documentation
 ------------------------
 
+Released *stable* versions of this documentation are uploaded to `pythonhosted
+<http://pythonhosted.org/anybox.recipe.openerp>`_.
+
 The full documentation is written with `Sphinx
 <http://sphinx-doc.org>`_, built continuously and
 uploaded to http://docs.anybox.fr/anybox.recipe.openerp/trunk by Anybox' public
@@ -43,9 +46,6 @@ Although this Sphinx documentation started with version 1.8.0, most of
 its contents applies to the 1.7 series: features introduced with 1.8
 are highlighted, and readers may consult the `changelog on PyPI
 <https://pypi.python.org/pypi/anybox.recipe.openerp#changes>`_.
-
-We plan to upload released versions of the documentation to
-http://pythonhosted.org
 
 Contents
 --------
