@@ -1,9 +1,13 @@
 Changes
 ~~~~~~~
 
-The 1.7 series are stable versions, while the 1.8 are unstable.
+The 1.8 series are stable versions, while the 1.9 are unstable.
 Changes displayed as "unreleased" in th stable series are released
 with any higher released unstable versions.
+
+1.9.0 (unreleased)
+------------------
+- 
 
 1.8.3 (unreleased)
 ------------------
