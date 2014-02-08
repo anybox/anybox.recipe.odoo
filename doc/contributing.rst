@@ -83,7 +83,7 @@ Install ``nose``, ``flake8`` and, optionally, ``coverage``::
           dependencies are fixed above. In case of doubt, check what
           the buildbot is actually running.
 
-Run ``flake8`` and the tests::
+Run ``flake8`` and the tests (in this example, after virtualenv activation)::
 
     cd anybox.recipe.openerp
     flake8 anybox && nosetests anybox --with-doctest
