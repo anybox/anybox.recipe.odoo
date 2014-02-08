@@ -5,7 +5,11 @@ The 1.7 series are stable versions, while the 1.8 are unstable.
 Changes displayed as "unreleased" in th stable series are released
 with any higher released unstable versions.
 
-1.8.2 (unreleased)
+1.8.3 (unreleased)
+------------------
+- 
+
+1.8.2 (2014-02-08)
 ------------------
 - launchpad #1275168: when freeze nightly version was not set correctly
 - launchpad #1245261: new ``--init-all`` option in ``test_openerp``
