@@ -72,4 +72,4 @@ Contributors:
  * Jacques-Etienne Baudoux
  * Laurent Mignon
  * Leonardo Pistone
-
+ * Stefan Rijnhart

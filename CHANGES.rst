@@ -7,7 +7,8 @@ with any higher released unstable versions.
 
 1.9.0 (unreleased)
 ------------------
-- 
+- launchpad #1274174: new feature for automatic merge of remote VCS sources
+  (bzr only for now)
 
 1.8.3 (unreleased)
 ------------------
