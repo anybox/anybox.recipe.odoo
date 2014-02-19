@@ -85,6 +85,16 @@ class BaseRecipe(object):
                         :mod:`anybox.recipe.openerp.vcs`) can implemented their
                         dedicated options
 
+    The :attr:`merges` attribute is a ``dict`` storing how to fetch additional
+    changes to merge into VCS type sources:
+
+       ``local path -> [(type, location_spec, options), ... ]``
+
+       See :attr:`sources` for the meaning of the various components. Note that
+       in :attr:`merges`, values are a list of triples instead of only a single
+       triple as values in :attr:`sources` because there can be multiple merges
+       on the same local path.
+
     """
 
     default_dl_url = {'6.0': 'http://nightly.openerp.com/6.0/6.0/',
@@ -165,9 +175,11 @@ class BaseRecipe(object):
                 os.mkdir(d)
 
         self.sources = OrderedDict()
+        self.merges = OrderedDict()
         self.parse_addons(options)
         self.parse_version()
         self.parse_revisions(options)
+        self.parse_merges(options)
 
     def parse_version(self):
         """Set the main software in :attr:`sources` and related attributes.
@@ -467,6 +479,31 @@ class BaseRecipe(object):
             addons_dir = addons_dir.rstrip('/')  # trailing / can be harmful
             self.sources[addons_dir] = (loc_type, location_spec, options)
 
+    def parse_merges(self, options):
+        """Parse the merge options into :attr:`merges`.
+
+        See :class:`BaseRecipe` for the structure of :attr:`merges`.
+        """
+
+        for line in options.get('merges', '').split(os.linesep):
+            split = line.split()
+            if not split:
+                return
+            loc_type = split[0]
+            if loc_type != 'bzr':
+                raise UserError("Only merges of type 'bzr' are "
+                                "currently supported.")
+            options = dict(opt.split('=') for opt in split[4:])
+            if loc_type == 'bzr':
+                options['bzr-init'] = 'merge'
+
+            repo_url, local_dir, repo_rev = split[1:4]
+            location_spec = (repo_url, repo_rev)
+
+            local_dir = local_dir.rstrip('/')  # trailing / can be harmful
+            self.merges.setdefault(local_dir, []).append(
+                (loc_type, location_spec, options))
+
     def parse_revisions(self, options):
         """Parse revisions options and update :attr:`sources`.
 
@@ -566,6 +603,26 @@ class BaseRecipe(object):
                 new_dir = join(addons_dir, name)
                 os.rename(tmp, new_dir)
             self.addons_paths.append(addons_dir)
+
+    def retrieve_merges(self):
+        """Peform all VCS merges specified in :attr:`merges`.
+        """
+        for local_dir, source_specs in self.merges.items():
+            for source_spec in source_specs:
+                loc_type, loc_spec, merge_options = source_spec
+                local_dir = self.make_absolute(local_dir)
+                options = dict(offline=self.offline,
+                               clear_locks=self.vcs_clear_locks)
+                options.update(merge_options)
+
+                for k, v in self.options.items():
+                    if k.startswith(loc_type + '-'):
+                        options[k] = v
+
+                repo_url, repo_rev = loc_spec
+                vcs.get_update(loc_type, local_dir, repo_url, repo_rev,
+                               clear_retry=self.clear_retry,
+                               **options)
 
     def main_download(self):
         """HTTP download for main part of the software to self.archive_path.
@@ -709,6 +766,7 @@ class BaseRecipe(object):
 
         self.retrieve_main_software()
         self.retrieve_addons()
+        self.retrieve_merges()
 
         self.install_recipe_requirements()
         os.chdir(self.openerp_dir)  # GR probably not needed any more

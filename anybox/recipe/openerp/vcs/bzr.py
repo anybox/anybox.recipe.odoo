@@ -181,7 +181,8 @@ class BzrBranch(BaseRepo):
         offline = self.offline
         clear_locks = self.clear_locks
 
-        if not os.path.exists(target_dir):
+        if not os.path.exists(target_dir) or \
+                self.options.get("bzr-init") == 'merge':
             try:
                 self._branch(revision)
             except CloneError:
@@ -272,13 +273,19 @@ class BzrBranch(BaseRepo):
         elif bzr_opt == "lightweight-checkout":
             branch_cmd.extend(["checkout", "--lightweight"])
             logger.info("Lightweight checkout %s ...", url)
+        elif bzr_opt == "merge":
+            branch_cmd.extend(["merge", "--force"])
+            logger.info("Merging %s into %s ...", url, self.target_dir)
         else:
             raise Exception("Unsupported option %r" % bzr_opt)
 
         if revision:
             branch_cmd.extend(['-r', revision])
+        if bzr_opt == "merge":
+            branch_cmd.extend([url, '-d', target_dir])
+        else:
+            branch_cmd.extend([url, target_dir])
 
-        branch_cmd.extend([url, target_dir])
         clone_check_call(branch_cmd, env=SUBPROCESS_ENV)
 
     def _pull(self):

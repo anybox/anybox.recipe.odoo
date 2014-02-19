@@ -329,6 +329,24 @@ class BzrTestCase(BzrBaseTestCase):
         self.assertRaises(subprocess.CalledProcessError,
                           branch.get_update, 'default')
 
+    def test_merge(self):
+        current = os.getcwd()
+        to_merge = os.path.join(self.dst_dir, "proposed branch")
+        BzrBranch(to_merge, self.src_repo)('last:1')
+        os.chdir(to_merge)
+        added_file = 'added'
+        f = open(added_file, 'w')
+        f.write("content" + os.linesep)
+        f.close()
+        subprocess.call(['bzr', 'add'])
+        subprocess.call(['bzr', 'commit', '-m', 'poposal commit'])
+        target_dir = os.path.join(self.dst_dir, "branch with merge")
+        BzrBranch(target_dir, self.src_repo)('last:1')
+        BzrBranch(
+            target_dir, to_merge, **{'bzr-init': 'merge'})('last:1')
+        os.chdir(current)
+        self.assertTrue(os.path.exists(os.path.join(target_dir, added_file)))
+
 
 class BzrOfflineTestCase(BzrBaseTestCase):
 
