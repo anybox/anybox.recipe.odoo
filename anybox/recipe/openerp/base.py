@@ -89,12 +89,12 @@ class BaseRecipe(object):
     changes to merge into VCS type sources:
 
        ``local path -> [(type, location_spec, options), ... ]``
-    
+
        See :attr:`sources` for the meaning of the various components. Note that
        in :attr:`merges`, values are a list of triples instead of only a single
        triple as values in :attr:`sources` because there can be multiple merges
        on the same local path.
-    
+
     """
 
     default_dl_url = {'6.0': 'http://nightly.openerp.com/6.0/6.0/',
@@ -614,7 +614,7 @@ class BaseRecipe(object):
                 options = dict(offline=self.offline,
                                clear_locks=self.vcs_clear_locks)
                 options.update(merge_options)
-                
+
                 for k, v in self.options.items():
                     if k.startswith(loc_type + '-'):
                         options[k] = v
