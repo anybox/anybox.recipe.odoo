@@ -9,6 +9,7 @@ with any higher released unstable versions.
 ------------------
 - launchpad #1274174: new feature for automatic merge of remote VCS sources
   (bzr only for now)
+- launchpad #1281262: new ``openerp-log-level`` modifier in ``openerp_scripts``
 
 1.8.3 (unreleased)
 ------------------

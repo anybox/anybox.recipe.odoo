@@ -422,7 +422,8 @@ class TestServer(RecipeTestCase):
                 'myentry=script_name',
                 'nosetests command-line-options=-d',
                 'withargs=withargs arguments=session',
-                'myentry=script_name_opt command-line-options=-d,-f')),
+                'myentry=script_name_opt openerp-log-level=error '
+                'command-line-options=-d,-f')),
         )
 
         self.recipe._parse_openerp_scripts()
@@ -433,6 +434,14 @@ class TestServer(RecipeTestCase):
                  withargs=dict(entry="withargs", arguments="session",
                                command_line_options=[]),
                  script_name_opt=dict(entry='myentry',
+                                      openerp_log_level='ERROR',
                                       command_line_options=['-d', '-f']),
                  nosetests_openerp=dict(entry='nosetests',
                                         command_line_options=['-d'])))
+
+    def test_parse_openerp_scripts_improper_log_level(self):
+        self.make_recipe(
+            version='local %s' % os.path.join(TEST_DIR, 'oerp70'),
+            openerp_scripts=('myentry=script_name_opt openerp-log-level=cool '
+                             'command-line-options=-d,-f'))
+        self.assertRaises(UserError, self.recipe._parse_openerp_scripts)
