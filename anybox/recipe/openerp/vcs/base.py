@@ -43,11 +43,12 @@ class BaseRepo(object):
     """The common interface that all repository classes implement.
 
     :param target_dir: the local directory which will serve as a working tree
-    :param offline: if ``True``, the repository instance will perform no network
-                    operation, and most probably fail if a non available revision
-                    is required.
-    :param clear_locks: Some VCS systems can leave locks after some failures and
-                        provide a separate way to break them. If ``True``, the repo
+    :param offline: if ``True``, the repository instance will perform no
+                    network operation, and will fail instead if a non
+                    available revision is required.
+    :param clear_locks: Some VCS systems can leave locks after some failures
+                        and provide a separate way to break them. If ``True``,
+                        the repo
                         will break any locks prior to operations (mostly useful
                         for automated agents, such as CI robots)
     :param clear_retry: if ``True`` failed updates by calling the instance are
@@ -111,10 +112,13 @@ class BaseRepo(object):
     def get_update(self, revision):
         """Make it so that the target directory is at the prescribed revision.
 
-        The target directory need not to be initialized: this method will "clone"
-        it from the remote source (whatever that means in the considered VCS)
+        The target directory need not to be initialized: this method will
+        "clone" it from the remote source (whatever that means in the
+        considered VCS).
+
         This method can fail under various circumstances, for instance if the
-        wanted revision does not exist locally and offline mode has been selected.
+        wanted revision does not exist locally and offline mode has been
+        selected.
 
         :raises CloneError: if initial cloning fails
         :raises UpdateError: if update of existing repository fails
