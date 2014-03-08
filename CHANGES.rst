@@ -7,7 +7,8 @@ with any higher released unstable versions.
 
 1.8.3 (unreleased)
 ------------------
-- 
+- launchpad #1289761: using the proper ``zc.buildout.UserError`` in
+  lots of places.
 
 1.8.2 (2014-02-08)
 ------------------

@@ -1,9 +1,9 @@
 # coding: utf-8
 from os.path import join
-import sys
 import logging
 import shutil
 import re
+from zc.buildout import UserError
 from anybox.recipe.openerp.base import BaseRecipe
 
 logger = logging.getLogger(__name__)
@@ -28,11 +28,10 @@ class WebClientRecipe(BaseRecipe):
                         "checks", self.version_wanted)
             return
         if version >= (6, 1):
-            logger.error("Aborting: don't use the openerp webclient recipe "
-                         "for versions >= 6.1, as "
-                         "there is no separate web client in these versions."
-                         "Simply use the web part of the OpenERP server.")
-            sys.exit(1)
+            raise UserError("Aborting: don't use the openerp webclient recipe "
+                            "for versions >= 6.1, as "
+                            "there is no separate web client in these versions."
+                            "Simply use the web part of the OpenERP server.")
 
     def _create_default_config(self):
         if self.major_version == (6, 0):
