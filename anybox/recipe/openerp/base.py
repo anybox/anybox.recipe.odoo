@@ -699,8 +699,8 @@ class BaseRecipe(object):
         if ((freeze_to is not None or extract_downloads_to is not None)
                 and not self.offline):
             raise UserError("To freeze a part, you must run offline "
-                             "so that there's no modification from what "
-                             "you just tested. Please rerun with -o.")
+                            "so that there's no modification from what "
+                            "you just tested. Please rerun with -o.")
 
         if extract_downloads_to is not None and freeze_to is None:
             freeze_to = os.path.join(extract_downloads_to,

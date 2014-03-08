@@ -29,8 +29,8 @@ class WebClientRecipe(BaseRecipe):
             return
         if version >= (6, 1):
             raise UserError("Aborting: don't use the openerp webclient recipe "
-                            "for versions >= 6.1, as "
-                            "there is no separate web client in these versions."
+                            "for versions >= 6.1, as there is no separate web "
+                            "client in these versions."
                             "Simply use the web part of the OpenERP server.")
 
     def _create_default_config(self):
