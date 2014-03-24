@@ -238,7 +238,7 @@ conf = openerp.tools.config
 
             naming = line[0].split('=')
             if not naming or len(naming) > 2:
-                raise ValueError("Invalid script specification %r" % line[0])
+                raise UserError("Invalid script specification %r" % line[0])
             elif len(naming) == 1:
                 name = '_'.join((naming[0], self.name))
             else:
@@ -262,7 +262,7 @@ conf = openerp.tools.config
                                         "level %r" % (name, level))
                     desc['openerp_log_level'] = level
                 else:
-                    raise ValueError(
+                    raise UserError(
                         "Invalid token for script %r: %r" % (name, token))
 
     def _get_or_create_script(self, entry, name=None):

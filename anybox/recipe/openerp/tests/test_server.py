@@ -34,7 +34,7 @@ class TestServer(RecipeTestCase):
         with open(os.path.join(addons_dir, '__openerp__.py'), 'w') as f:
             f.write("#Empty python package")
         self.make_recipe(version='6.1', addons='local addons-custom')
-        self.assertRaises(ValueError, self.recipe.retrieve_addons)
+        self.assertRaises(UserError, self.recipe.retrieve_addons)
 
     def test_retrieve_addons_local_options(self):
         """Addons options work for 'local' by testing (useless) subdir option.

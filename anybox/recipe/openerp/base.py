@@ -186,7 +186,7 @@ class BaseRecipe(object):
         """
         self.version_wanted = self.options.get('version')
         if self.version_wanted is None:
-            raise ValueError('You must specify the version')
+            raise UserError('You must specify the version')
 
         self.preinstall_version_check()
 
@@ -197,9 +197,8 @@ class BaseRecipe(object):
             major_wanted = self.version_wanted[:3]
             pattern = self.archive_filenames[major_wanted]
             if pattern is None:
-                raise ValueError(
-                    'OpenERP version %r'
-                    'is not supported' % self.version_wanted)
+                raise UserError('OpenERP version %r'
+                                'is not supported' % self.version_wanted)
 
             self.archive_filename = pattern % self.version_wanted
             self.archive_path = join(self.downloads_dir, self.archive_filename)
@@ -222,7 +221,7 @@ class BaseRecipe(object):
             self.sources[main_software] = ('downloadable', (url, None))
         elif type_spec == 'nightly':
             if len(version_split) != 3:
-                raise ValueError(
+                raise UserError(
                     "Unrecognized nightly version specification: "
                     "%r (expecting series, number) % version_split[1:]")
             self.nightly_series, self.version_wanted = version_split[1:]
@@ -465,16 +464,20 @@ class BaseRecipe(object):
             split = line.split()
             if not split:
                 return
-            loc_type = split[0]
-            spec_len = 2 if loc_type == 'local' else 4
+            try:
+                loc_type = split[0]
+                spec_len = 2 if loc_type == 'local' else 4
 
-            options = dict(opt.split('=') for opt in split[spec_len:])
-            if loc_type == 'local':
-                addons_dir = split[1]
-                location_spec = None
-            else:  # vcs
-                repo_url, addons_dir, repo_rev = split[1:4]
-                location_spec = (repo_url, repo_rev)
+                options = dict(opt.split('=') for opt in split[spec_len:])
+                if loc_type == 'local':
+                    addons_dir = split[1]
+                    location_spec = None
+                else:  # vcs
+                    repo_url, addons_dir, repo_rev = split[1:4]
+                    location_spec = (repo_url, repo_rev)
+            except:
+                raise UserError("Could not parse addons line: %r. "
+                                "Please check format " % line)
 
             addons_dir = addons_dir.rstrip('/')  # trailing / can be harmful
             self.sources[addons_dir] = (loc_type, location_spec, options)
@@ -525,7 +528,7 @@ class BaseRecipe(object):
 
             split = line.split()
             if len(split) > 2:
-                raise ValueError("Invalid revisions line: %r" % line)
+                raise UserError("Invalid revisions line: %r" % line)
 
             # addon or main software
             if len(split) == 2:
@@ -542,8 +545,8 @@ class BaseRecipe(object):
                 continue
 
             if source[0] in ('downloadable', 'local'):
-                raise ValueError("In revision line %r : can't fix a revision "
-                                 "for non-vcs source" % line)
+                raise UserError("In revision line %r : can't fix a revision "
+                                "for non-vcs source" % line)
 
             logger.info("%s will be on revision %r", local_path, revision)
             self.sources[local_path] = ((source[0], (source[1][0], revision))
@@ -585,7 +588,7 @@ class BaseRecipe(object):
             manifest_pre_v6 = os.path.join(addons_dir, '__terp__.py')
             if os.path.isfile(manifest) or os.path.isfile(manifest_pre_v6):
                 if loc_type == 'local':
-                    raise ValueError(
+                    raise UserError(
                         "Local addons line %r should refer to a directory "
                         "containing addons, not to a standalone addon. "
                         "The recipe can perform automatic creation of "
@@ -756,9 +759,9 @@ class BaseRecipe(object):
 
         if ((freeze_to is not None or extract_downloads_to is not None)
                 and not self.offline):
-            raise ValueError("To freeze a part, you must run offline "
-                             "so that there's no modification from what "
-                             "you just tested. Please rerun with -o.")
+            raise UserError("To freeze a part, you must run offline "
+                            "so that there's no modification from what "
+                            "you just tested. Please rerun with -o.")
 
         if extract_downloads_to is not None and freeze_to is None:
             freeze_to = os.path.join(extract_downloads_to,
