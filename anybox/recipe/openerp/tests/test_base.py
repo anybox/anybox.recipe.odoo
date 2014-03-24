@@ -23,6 +23,15 @@ class TestingRecipe(BaseRecipe):
 
 class TestBaseRecipe(RecipeTestCase):
 
+    def tearDown(self):
+        # leftover egg-info at root of the source dir (frequent cwd)
+        # impairs use of this very same source dir for real-life testing
+        # with a 'develop' option.
+        egg_info = 'Babel.egg-info'
+        if os.path.isdir(egg_info):
+            shutil.rmtree(egg_info)
+        super(TestBaseRecipe, self).tearDown()
+
     def make_recipe(self, name='openerp', **options):
         self.recipe = TestingRecipe(self.buildout, name, options)
 
