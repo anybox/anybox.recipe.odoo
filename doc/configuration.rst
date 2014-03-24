@@ -265,6 +265,8 @@ the same as for repositories specified under these directives.
 
 Currently only merges on bzr repositories are supported.
 
+.. note:: new in version 1.9.0
+
 .. _eggs:
 
 eggs
@@ -329,6 +331,22 @@ perform relevant VCS idea of "clean, purge".
              it on the command-line.
 
 Note that tarball downloads get re-extracted afresh in any case.
+
+vcs-revert
+----------
+
+Possible value: ``on-merge`` (more are been thought of)
+
+If this option is used with the ``on-merge`` value, the VCS repositories
+will be reverted, **losing all local modifications** after the
+pull/update, right before the merge.
+
+This is especially useful in unattended executions, to clean up any
+previous failed merges.
+
+Currently only bzr repositories get reverted
+
+.. note:: new in version 1.9.0
 
 .. _openerp_options:
 

@@ -10,6 +10,7 @@ from anybox.recipe.openerp.base import main_software
 from anybox.recipe.openerp.base import GP_VCS_EXTEND_DEVELOP
 from anybox.recipe.openerp.testing import RecipeTestCase
 from ..testing import COMMIT_USER_FULL
+from ..testing import get_vcs_log
 
 TEST_DIR = os.path.dirname(__file__)
 
@@ -306,6 +307,31 @@ class TestBaseRecipe(RecipeTestCase):
                 (('a', 'x.py'), True)):
             self.assertEquals(os.path.exists(os.path.join(server_path, *path)),
                               expected)
+
+    def test_vcs_revert(self):
+        """Test clean forwarding to vcs impl."""
+        self.make_recipe(
+            version='fakevcs http://some/where server-dir mainrev')
+        self.recipe.revert_sources()
+        self.assertEqual(get_vcs_log(), [('revert', 'mainrev')])
+
+    def test_vcs_revert_not_implemented(self):
+        """Revert must not fail if a repo does not implement it."""
+        self.make_recipe(
+            version='fakevcs http://some/where server-dir mainrev')
+        from ..testing import FakeRepo
+        orig_revert = FakeRepo.revert
+
+        def notimp_revert(self, rev):
+            raise NotImplementedError
+
+        FakeRepo.revert = notimp_revert
+        try:
+            self.recipe.revert_sources()
+        finally:
+            FakeRepo.revert = orig_revert
+
+        self.assertEqual(get_vcs_log(), [])
 
     def test_freeze_vcs_source_dirty(self):
         self.make_recipe(version='6.1-1')

@@ -222,6 +222,21 @@ class BzrTestCase(BzrBaseTestCase):
             f.write('some change')
         self.assertTrue(branch.uncommitted_changes())
 
+    def test_revert(self):
+        target_dir = os.path.join(self.dst_dir, "clone to clean")
+        branch = BzrBranch(target_dir, self.src_repo)
+        branch('last:1')
+
+        path = os.path.join(target_dir, 'tracked')
+        with open(path, 'r') as f:
+            original = f.readlines()
+        with open(path, 'w') as f:
+            f.write('a local mod')
+
+        branch.revert('last:1')
+        with open(path, 'r') as f:
+            self.assertEqual(f.readlines(), original)
+
     def test_archive(self):
         target_dir = os.path.join(self.dst_dir, "clone to archive")
         branch = BzrBranch(target_dir, self.src_repo)

@@ -607,9 +607,31 @@ class BaseRecipe(object):
                 os.rename(tmp, new_dir)
             self.addons_paths.append(addons_dir)
 
+    def revert_sources(self):
+        """Revert all sources to the revisions specified in :attr:`sources`.
+        """
+        for target, (vcs_type, vcs_spec, options) in self.sources.iteritems():
+            if vcs_type in ('local', 'downloadable'):
+                continue
+
+            local_dir = self.openerp_dir if target is main_software else target
+            local_dir = self.make_absolute(local_dir)
+            repo = vcs.repo(vcs_type, local_dir, vcs_spec[0], **options)
+            try:
+                repo.revert(vcs_spec[1])
+            except NotImplementedError:
+                logger.warn("vcs-revert: not implemented for %s "
+                            "repository at %s", vcs_type, local_dir)
+            else:
+                logger.info("Reverted %s repository at %s",
+                            vcs_type, local_dir)
+
     def retrieve_merges(self):
         """Peform all VCS merges specified in :attr:`merges`.
         """
+        if self.options.get('vcs-revert', '').strip().lower() == 'on-merge':
+            logger.info("Reverting all sources before merge")
+            self.revert_sources()
         for local_dir, source_specs in self.merges.items():
             for source_spec in source_specs:
                 loc_type, loc_spec, merge_options = source_spec

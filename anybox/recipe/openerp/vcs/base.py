@@ -94,6 +94,10 @@ class BaseRepo(object):
         """
         utils.clean_object_files(self.target_dir)
 
+    def revert(self):
+        """Revert any local changes, including pending merges."""
+        raise NotImplementedError
+
     def __call__(self, revision):
         """Create if needed from remote source, and put it at wanted revision.
         """
