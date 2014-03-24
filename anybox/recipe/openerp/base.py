@@ -452,16 +452,20 @@ class BaseRecipe(object):
             split = line.split()
             if not split:
                 return
-            loc_type = split[0]
-            spec_len = 2 if loc_type == 'local' else 4
+            try:
+                loc_type = split[0]
+                spec_len = 2 if loc_type == 'local' else 4
 
-            options = dict(opt.split('=') for opt in split[spec_len:])
-            if loc_type == 'local':
-                addons_dir = split[1]
-                location_spec = None
-            else:  # vcs
-                repo_url, addons_dir, repo_rev = split[1:4]
-                location_spec = (repo_url, repo_rev)
+                options = dict(opt.split('=') for opt in split[spec_len:])
+                if loc_type == 'local':
+                    addons_dir = split[1]
+                    location_spec = None
+                else:  # vcs
+                    repo_url, addons_dir, repo_rev = split[1:4]
+                    location_spec = (repo_url, repo_rev)
+            except:
+                raise UserError("Could not parse addons line: %r. "
+                                "Please check format " % line)
 
             addons_dir = addons_dir.rstrip('/')  # trailing / can be harmful
             self.sources[addons_dir] = (loc_type, location_spec, options)

@@ -9,6 +9,8 @@ with any higher released unstable versions.
 ------------------
 - launchpad #1289761: using the proper ``zc.buildout.UserError`` in
   lots of places.
+- launchpad #1296178: have unparseable addons lines end up in
+  ``UserError`` as well.
 
 1.8.2 (2014-02-08)
 ------------------
