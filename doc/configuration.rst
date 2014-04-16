@@ -180,7 +180,8 @@ Specifies the OpenERP version to use. It can be:
 addons
 ------
 
-Specifies additional OpenERP addons, either a local path or a repository.
+Specifies additional OpenERP addons, either a local path or a remote
+repository.
 
 Example::
 
@@ -193,9 +194,15 @@ Example::
            svn http://example.com/some_addons addons3 head
            bzr lp:openerp-web/trunk/ openerp-web last:1 subdir=addons
 
-When using ``local`` paths you can either specify a directory holding
-addons, or a single addon. In that latter case, it will be actually
-placed one directory below.
+Remote repositories can either contain addons subdirectories, or
+be a single addon. In that latter case, called a *standalone
+addon*, the retrieved repository will be actually placed one directory
+below the specified target, to match the structure expected by
+OpenERP.
+
+Standalone addons are not supported in the local case (the
+directory is considered under full responsibility of the user).
+
 
 .. note:: the ``[bzr]`` extra-dependency declaration as showcased
           above in the ``recipe`` line is necessary for
