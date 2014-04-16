@@ -12,6 +12,7 @@ with any higher released unstable versions.
   lots of places.
 - launchpad #1296178: have unparseable addons lines end up in
   ``UserError`` as well.
+- launchpad #1229908: fixed tarball download url for the 6.0.x releases
 
 1.8.2 (2014-02-08)
 ------------------
