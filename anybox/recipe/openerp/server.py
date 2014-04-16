@@ -249,11 +249,18 @@ conf = openerp.tools.config
 
             opt_prefix = 'command-line-options='
             arg_prefix = 'arguments='
+            log_prefix = 'openerp-log-level='
             for token in line[1:]:
                 if token.startswith(opt_prefix):
                     cl_options.extend(token[len(opt_prefix):].split(','))
                 elif token.startswith(arg_prefix):
                     desc['arguments'] = token[len(arg_prefix):]
+                elif token.startswith(log_prefix):
+                    level = token[len(log_prefix):].upper()
+                    if not level in dir(logging):
+                        raise UserError("In script %r, improper logging "
+                                        "level %r" % (name, level))
+                    desc['openerp_log_level'] = level
                 else:
                     raise UserError(
                         "Invalid token for script %r: %r" % (name, token))
@@ -496,10 +503,17 @@ conf = openerp.tools.config
 
         for script_name, desc in self.openerp_scripts.items():
             initialization = desc.get('initialization', common_init)
+            log_level = desc.get('openerp_log_level')
+            if log_level:
+                initialization = os.linesep.join((
+                    initialization,
+                    "import logging",
+                    "logging.getLogger('openerp').setLevel"
+                    "(logging.%s)" % log_level))
             options = desc.get('command_line_options')
             if options:
-                initialization = common_init + os.linesep.join((
-                    "",
+                initialization = os.linesep.join((
+                    initialization,
                     "session.handle_command_line_options(%r)" % options))
 
             zc.buildout.easy_install.scripts(

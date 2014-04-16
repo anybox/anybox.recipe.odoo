@@ -192,6 +192,30 @@ Currently available command-line-options:
 
 :-d DB_NAME: preload the specified database
 
+.. _openerp_log_level:
+
+OpenERP log level
+-----------------
+This is mostly meant for scripts with the ``command-line-options=-d``
+modifier.
+
+In some cases, one is not interested in the logs during the OpenERP
+database load. The typical use-case this has been made for is the
+``sphinx-build`` script, where any warning from OpenERP would just
+make it harder to stop actual documentation warnings, or to limit the
+output of test launcher before actual testing begins.
+
+The ``openerp_log_level`` modifier lets you specify the log level for
+the ``openerp`` logger, at the very start of the script, before any
+database loading is performed.
+
+In the case of ``sphinx-build`` this has the advantage of not
+affecting the root logger nor the Sphinx dedicated ones.
+
+Of course, the actual script can override that setting once it really
+starts, in which case the modifier is really only about the loading sequence.
+
+
 Writing OpenERP Scripts
 ~~~~~~~~~~~~~~~~~~~~~~~
 

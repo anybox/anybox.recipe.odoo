@@ -7,6 +7,7 @@ with any higher released unstable versions.
 
 1.8.3 (unreleased)
 ------------------
+- launchpad #1281262: new ``openerp-log-level`` modifier in ``openerp_scripts``
 - launchpad #1289761: using the proper ``zc.buildout.UserError`` in
   lots of places.
 - launchpad #1296178: have unparseable addons lines end up in
