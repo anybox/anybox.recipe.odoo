@@ -403,3 +403,23 @@ class BzrOfflineTestCase(BzrBaseTestCase):
 
         branch('1')
         self.assertRevision2(branch)
+
+    def test_lp_url_offline(self):
+        """[offline mode] lp: locations are not to be resolved.
+
+        See lp:1249566, resolving lp: performs outgoing requests,
+        and resolving the remote URL is irrelevant anyway, since it won't
+        be used.
+        """
+        brdir = os.path.join(self.dst_dir, 'lp_branch')
+        os.makedirs(os.path.join(brdir, '.bzr', 'branch'))
+        branch = BzrBranch(brdir, 'lp:something', offline=True)
+        self.assertEqual(branch.url, 'lp:something')
+
+        # making sure that the unresolved lp: location is not written
+        # to branch.conf
+        parent_loc = 'bzr+ssh://previously/resolved'
+        branch.write_conf(dict(parent_location=parent_loc))
+
+        branch.update_conf()
+        self.assertEqual(branch.parse_conf()['parent_location'], parent_loc)
