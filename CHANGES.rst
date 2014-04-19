@@ -5,6 +5,10 @@ The 1.7 series are stable versions, while the 1.8 are unstable.
 Changes displayed as "unreleased" in th stable series are released
 with any higher released unstable versions.
 
+1.8.4 (unreleased)
+------------------
+- 
+
 1.8.3 (2014-04-19)
 ------------------
 - launchpad #1281262: new ``openerp-log-level`` modifier in ``openerp_scripts``
