@@ -94,7 +94,7 @@ class BaseRepo(object):
         """
         utils.clean_object_files(self.target_dir)
 
-    def revert(self):
+    def revert(self, revision):
         """Revert any local changes, including pending merges."""
         raise NotImplementedError
 
