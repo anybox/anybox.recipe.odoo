@@ -261,7 +261,15 @@ class Session(object):
         self.registry('ir.module.module').update_list(self.cr, self.uid)
 
     def init_cursor(self):
-        self.cr = self._registry.db.cursor()
+        db = getattr(self._registry, 'db', None)
+        if db is None:  # current trunk (future v8)
+            self.cr = self._registry.cursor()
+        else:
+            # In OpenERP < 8, Registry.cursor() object is
+            # a context manager providing auto closing,
+            # but we don't want to control the whole lifespan
+            # of the cursor.
+            self.cr = db.cursor()
 
     def registry(self, model):
         """Lookup model by name and return a ready-to-work instance."""
