@@ -62,6 +62,7 @@ def main(starter, conf, version=None, just_test=False):
     glob = globals()
     glob['__name__'] = '__main__'
     glob['__file__'] = starter
+    sys.argv[0] = starter
     try:
         execfile(starter, globals())
     except SystemExit as exc:
