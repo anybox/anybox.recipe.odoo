@@ -7,6 +7,7 @@ with any higher released unstable versions.
 
 1.8.4 (unreleased)
 ------------------
+- launchpad #1317269: [v8] OpenERP server can't start in a multi workers mode
 - launchpad #1314566: [v8] OpenERP scripts & interpreter can't load db
 
 1.8.3 (2014-04-19)
