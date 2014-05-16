@@ -110,15 +110,36 @@ class BzrBranch(BaseRepo):
         return bool(check_output(['bzr', 'status', self.target_dir],
                                  env=SUBPROCESS_ENV))
 
-    def parents(self):
+    def revision_id(self, revspec):
+        """Convert revision number (revno) to globally unique revision id.
+
+        :param str revspec: any revision specification
+        :returns str: revision id specification (directly usable as -r
+                      argument)
+        """
+        testament = check_output(['bzr', 'testament', '--strict',
+                                  '-r', revspec, self.target_dir])
+        prefix = 'revision-id:'
+        for line in testament.splitlines():
+            if line.startswith(prefix):
+                return 'revid:' + line[len(prefix):].strip()
+
+    def parents(self, as_revno=False):
         """Return current revision.
 
-        Must be used in conjunction with uncommitted_changes to be sure
-        that we are indeed on this revision
+        :param as_revno: if ``True``, the revno will be returned. By default,
+                         a full revision id is issued (see :meth:`revision_id`)
+
+        This will not detect pending merges, but :meth:`uncommitted_changes`
+        will, and that is enough for freeze/extract features.
         """
 
-        return [check_output(['bzr', 'revno', '--tree', self.target_dir],
-                             env=SUBPROCESS_ENV).strip()]
+        revno = check_output(['bzr', 'revno', '--tree', self.target_dir],
+                             env=SUBPROCESS_ENV).strip()
+        if as_revno:
+            return [revno]
+
+        return [self.revision_id(revno)]
 
     def clean(self):
         if not os.path.exists(self.target_dir):

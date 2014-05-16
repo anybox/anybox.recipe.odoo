@@ -7,6 +7,8 @@ with any higher released unstable versions.
 
 1.8.4 (unreleased)
 ------------------
+- launchpad #1320198: [bzr] using revids internally and in particular
+  in freeze/extract features
 - launchpad #1317269: [v8] OpenERP server can't start in a multi workers mode
 - launchpad #1314566: [v8] OpenERP scripts & interpreter can't load db
 

@@ -29,25 +29,30 @@ class BzrBaseTestCase(VcsTestCase):
         f.close()
         subprocess.call(['bzr', 'commit', '-m', 'last version'])
 
-    def assertRevision(self, branch, rev, first_line):
+    def assertRevision(self, branch, rev, first_line, msg=None):
         """Assert that branch is at prescribed revision
+
+        :param branch: instance of :class:`BzrBranch` to work on
+        :param rev: revision number (revno)
+        :param first_line: expected first line of the 'tracked' file
+        :param msg: passed to underlying assertions
 
         Double check with expected first line of 'tracked' file."""
         target_dir = branch.target_dir
-        self.assertTrue(os.path.isdir(target_dir))
+        self.assertTrue(os.path.isdir(target_dir), msg=msg)
         f = open(os.path.join(target_dir, 'tracked'))
         lines = f.readlines()
         f.close()
-        self.assertEquals(lines[0].strip(), first_line)
-        self.assertEquals(branch.parents(), [rev])
+        self.assertEquals(lines[0].strip(), first_line, msg=msg)
+        self.assertEquals(branch.parents(as_revno=True), [rev], msg=msg)
 
-    def assertRevision1(self, branch):
+    def assertRevision1(self, branch, **kw):
         """Assert that branch is at revision 1."""
-        self.assertRevision(branch, '1', 'first')
+        self.assertRevision(branch, '1', 'first', **kw)
 
-    def assertRevision2(self, branch):
+    def assertRevision2(self, branch, **kw):
         """Assert that branch is at revision 2."""
-        self.assertRevision(branch, '2', 'last')
+        self.assertRevision(branch, '2', 'last', **kw)
 
 
 class BzrTestCase(BzrBaseTestCase):
@@ -79,6 +84,17 @@ class BzrTestCase(BzrBaseTestCase):
         # ensures that we actually did test something:
         self.assertEqual(monkey_called, ['last:1', None])
         self.assertRevision2(branch)  # branching worked
+
+    def test_parents_revid(self):
+        target_dir = os.path.join(self.dst_dir, "My branch")
+        branch = BzrBranch(target_dir, self.src_repo)
+        branch('last:1')
+        self.assertRevision2(branch, msg="Test impaired by other problem")
+
+        parents = branch.parents()
+        self.assertEquals(len(parents), 1)
+        self.assertTrue(parents[0].startswith('revid:test@example.org-'),
+                        msg="Result does not look to be a revid")
 
     def test_branch_options_conflict(self):
         target_dir = os.path.join(self.dst_dir, "My branch")
