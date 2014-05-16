@@ -112,9 +112,15 @@ class BaseRepo(object):
         """True if we have uncommitted changes."""
         raise NotImplementedError
 
-    def parents(self):
+    def parents(self, pip_compatible=False):
         """Return universal identifier for parent nodes, aka current revisions.
 
         There might be more than one with some VCSes (ex: pending merge in hg).
+
+        :param pip_compatible: if ``True``, only `pip compatible
+                               <http://pip.readthedocs.org/en/latest/
+                               reference/pip_install.html#vcs-support>`_
+                               revision specifications are returned, depending
+                               on the VCS type.
         """
         raise NotImplementedError

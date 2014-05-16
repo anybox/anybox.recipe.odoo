@@ -871,6 +871,7 @@ class BaseRecipe(object):
             # For now we'll have to allow local modifications.
             revision = self._freeze_vcs_source(vcs_type,
                                                self.make_absolute(local_path),
+                                               pip_compatible=True,
                                                allow_local_modification=True)
             extends.append('%s@%s#%s' % (url, revision, hash_split[1]))
 
@@ -910,8 +911,14 @@ class BaseRecipe(object):
                 conf.set('buildout', pick_opt, 'false')
 
     def _freeze_vcs_source(self, vcs_type, abspath,
+                           pip_compatible=False,
                            allow_local_modification=False):
-        """Return the current revision for that VCS source."""
+
+        """Return the current revision for that VCS source.
+
+        :param pip_compatible: if ``True``, a pip compatible revision number
+                               is issued. This depends on the precise vcs.
+        """
 
         repo_cls = vcs.SUPPORTED[vcs_type]
         abspath = repo_cls.fix_target(abspath)
@@ -920,7 +927,7 @@ class BaseRecipe(object):
         if not allow_local_modification and repo.uncommitted_changes():
             self.local_modifications.append(abspath)
 
-        parents = repo.parents()
+        parents = repo.parents(pip_compatible=pip_compatible)
         if len(parents) > 1:
             self.local_modifications.append(abspath)
 

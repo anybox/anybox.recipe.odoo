@@ -124,18 +124,22 @@ class BzrBranch(BaseRepo):
             if line.startswith(prefix):
                 return 'revid:' + line[len(prefix):].strip()
 
-    def parents(self, as_revno=False):
+    def parents(self, as_revno=False, pip_compatible=False):
         """Return current revision.
 
         :param as_revno: if ``True``, the revno will be returned. By default,
                          a full revision id is issued (see :meth:`revision_id`)
-
+        :param pip_compatible: currently, setting this to ``True`` forces
+                               ``as_revno`` to ``True`` (pip URL syntax for bzr
+                               does not allow revids, because of the ``@`` in
+                               bzr revids)
         This will not detect pending merges, but :meth:`uncommitted_changes`
         will, and that is enough for freeze/extract features.
         """
-
         revno = check_output(['bzr', 'revno', '--tree', self.target_dir],
                              env=SUBPROCESS_ENV).strip()
+        if pip_compatible:
+            as_revno = True
         if as_revno:
             return [revno]
 

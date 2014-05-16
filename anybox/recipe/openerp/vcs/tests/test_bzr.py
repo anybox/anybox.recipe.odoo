@@ -96,6 +96,15 @@ class BzrTestCase(BzrBaseTestCase):
         self.assertTrue(parents[0].startswith('revid:test@example.org-'),
                         msg="Result does not look to be a revid")
 
+    def test_parents_pip(self):
+        target_dir = os.path.join(self.dst_dir, "My branch")
+        branch = BzrBranch(target_dir, self.src_repo)
+        branch('last:1')
+        self.assertRevision2(branch, msg="Test impaired by other problem")
+
+        parents = branch.parents(pip_compatible=True)
+        self.assertEquals(parents, ['2'])
+
     def test_branch_options_conflict(self):
         target_dir = os.path.join(self.dst_dir, "My branch")
         branch = BzrBranch(target_dir, self.src_repo,
