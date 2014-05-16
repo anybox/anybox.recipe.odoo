@@ -182,6 +182,8 @@ class BzrBranch(BaseRepo):
                                    '--ignored', '--force'])
 
     def revert(self, revision):
+        logger.info("Reverting bzr repo at %s to revision %r", self.target_dir,
+                    revision)
         with working_directory_keeper:
             os.chdir(self.target_dir)
             subprocess.check_call(['bzr', 'revert', '-r', revision])
