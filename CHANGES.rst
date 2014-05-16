@@ -9,6 +9,9 @@ with any higher released unstable versions.
 ------------------
 - launchpad #1320198: [bzr] using revids internally and in particular
   in freeze/extract features
+- launchpad #1320198: [bzr] forbidding change of parent location in
+  offline mode unless this is for a fixed revision ID (no ambiguity),
+  and forcing a pull in non offline mode.
 - launchpad #1317269: [v8] OpenERP server can't start in a multi workers mode
 - launchpad #1314566: [v8] OpenERP scripts & interpreter can't load db
 

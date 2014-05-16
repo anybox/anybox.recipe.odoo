@@ -4,7 +4,9 @@ import subprocess
 import urlparse
 import urllib
 from StringIO import StringIO
+from copy import deepcopy
 
+from zc.buildout import UserError
 from ..utils import use_or_open
 from ..utils import working_directory_keeper
 from ..utils import check_output
@@ -75,7 +77,7 @@ class BzrBranch(BaseRepo):
                             if not line.startswith('#') and '=' in line))
 
     def write_conf(self, conf, to_file=None):
-        """Write counterpart to read_conf (see docstring of read_conf)
+        """Write counterpart to :meth:`read_conf`
         """
         lines = ('%s = %s' % (k, v) + os.linesep
                  for k, v in conf.items())
@@ -83,6 +85,10 @@ class BzrBranch(BaseRepo):
             conffile.writelines(lines)
 
     def update_conf(self):
+        """Update branch.conf.
+
+        :return bool: ``True`` if parent URL has changed (see lp:1320198)
+        """
         try:
             conf = self.parse_conf()
         except IOError:
@@ -94,7 +100,9 @@ class BzrBranch(BaseRepo):
 
         old_parent = conf['parent_location']
         if old_parent == self.url:
-            return
+            return False
+
+        self.previous_conf = deepcopy(conf)
         count = 1
         while True:
             save = 'buildout_save_parent_location_%d' % count
@@ -104,6 +112,19 @@ class BzrBranch(BaseRepo):
             count += 1
         conf['parent_location'] = self.url
         self.write_conf(conf)
+        return True
+
+    def rollback_conf(self):
+        """Reset branch.conf to state before latest update_conf changes.
+
+        Only changes done through the same instance are taken into account.
+        """
+        previous_conf = getattr(self, 'previous_conf', None)
+        if previous_conf is None:
+            return
+
+        logger.info("Rollbacking branch.conf for target %r", self.target_dir)
+        self.write_conf(previous_conf)
 
     def uncommitted_changes(self):
         """True if we have uncommitted changes."""
@@ -182,18 +203,42 @@ class BzrBranch(BaseRepo):
                     return line[len(prefix):].strip()
             raise LookupError("could not find revision id for %r" % revision)
 
+    def is_revno(self, revspec, fixed=False):
+        """True iff revspec is a fixed revision number.
+
+        Valid revision numbers are integers separated by dots.
+
+        :param fixed: if ``True``, it is further checked that integers
+                      are positive.
+        """
+
+        revno_prefix = 'revno:'
+        if revspec.startswith(revno_prefix):
+            # GR I checked on Debian's 2.6.0~bzr6526-1, revno:-1
+            # is in practice accepted by bzr, so we have to check
+            return self.is_revno(revspec[len(revno_prefix):])
+
+        for part in revspec.strip().split('.'):
+            try:
+                part = int(part)
+            except ValueError:
+                return False
+            else:
+                if fixed and part <= 0:
+                    return False
+
+        return True
+
     def is_fixed_revision(self, revstr):
         """True iff the given revision string is for a fixed revision."""
 
         revstr = revstr.strip()  # one never knows
+        if revstr.startswith('revid:'):
+            return True
         if not revstr or revstr.startswith('last:'):
             return False
-        try:
-            revno = int(revstr)
-        except ValueError:
-            return True  # a string is either a tag or a revid: spec
-        else:
-            return revno >= 0
+        if self.is_revno(revstr, fixed=True):
+            return True
 
     def get_update(self, revision):
         """Ensure that target_dir is a branch of url at specified revision.
@@ -236,10 +281,13 @@ class BzrBranch(BaseRepo):
                     raise subprocess.CalledProcessError(
                         p.returncode, repr(['bzr', 'break-lock', target_dir]))
 
-            self.update_conf()
+            parent_changed = self.update_conf()
+            unsafe_revno = parent_changed and self.is_revno(revision)
+            fixed_rev = self.is_fixed_revision(revision)
 
             init_opt = self.options.get('bzr-init')
-            if self.is_fixed_revision(revision):
+
+            if fixed_rev and not unsafe_revno:
                 if (offline and init_opt == 'lightweight-checkout'):
                     logger.warning("Offline mode, no update for lightweight "
                                    "checkout at %s on revision %r",
@@ -253,6 +301,15 @@ class BzrBranch(BaseRepo):
                         raise
 
             if offline:
+                if parent_changed and (unsafe_revno or not fixed_rev):
+                    self.rollback_conf()
+                    raise UserError(
+                        "Change of parent URL with live or revno revision "
+                        "specification: %r is forbidden in offline mode. "
+                        "If that revno is common to old and new remote "
+                        "branch, consider using revision IDs "
+                        "instead." % revision)
+
                 logger.info("Offline mode, no pull for revision %r", revision)
             else:
                 self._pull()
