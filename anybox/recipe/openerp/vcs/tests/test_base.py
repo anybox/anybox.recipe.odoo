@@ -6,6 +6,7 @@ These tests depend on system executables, such as 'hg', 'bzr', etc.
 import os
 import subprocess
 
+from zc.buildout import UserError
 from .. import get_update
 from .. import testing
 from .. import SUPPORTED
@@ -31,7 +32,7 @@ class CommonTestCase(testing.VcsTestCase):
                          '-u', testing.COMMIT_USER_FULL])
 
     def test_unknown(self):
-        self.assertRaises(ValueError,
+        self.assertRaises(UserError,
                           get_update, 'unknown', '', '', 'default')
 
     def test_retry(self):

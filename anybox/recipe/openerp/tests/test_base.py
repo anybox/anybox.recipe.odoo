@@ -4,11 +4,13 @@ import subprocess
 import shutil
 import tempfile
 from ConfigParser import ConfigParser, NoOptionError
+from zc.buildout import UserError
 from anybox.recipe.openerp.server import BaseRecipe
 from anybox.recipe.openerp.base import main_software
 from anybox.recipe.openerp.base import GP_VCS_EXTEND_DEVELOP
 from anybox.recipe.openerp.testing import RecipeTestCase
 from ..testing import COMMIT_USER_FULL
+from ..testing import get_vcs_log
 
 TEST_DIR = os.path.dirname(__file__)
 
@@ -21,6 +23,15 @@ class TestingRecipe(BaseRecipe):
 
 
 class TestBaseRecipe(RecipeTestCase):
+
+    def tearDown(self):
+        # leftover egg-info at root of the source dir (frequent cwd)
+        # impairs use of this very same source dir for real-life testing
+        # with a 'develop' option.
+        egg_info = 'Babel.egg-info'
+        if os.path.isdir(egg_info):
+            shutil.rmtree(egg_info)
+        super(TestBaseRecipe, self).tearDown()
 
     def make_recipe(self, name='openerp', **options):
         self.recipe = TestingRecipe(self.buildout, name, options)
@@ -126,6 +137,23 @@ class TestBaseRecipe(RecipeTestCase):
                                     '\naddons-specific 1.0'))
         self.assertEquals(recipe.sources[main_software][1][1], '1112')
 
+    def test_parse_addons_illformed(self):
+        """Test that common mistakes end up as UserError."""
+        self.make_recipe(version='bzr lp:openobject-server server last:1'
+                         ' option=option')
+        recipe = self.recipe
+
+        for illformed in (
+            # bad option
+            'hg http://some/repo addons-specific default opt:spam',
+            # attempt to comment a line
+            """bzr lp:openerp-web web last:1 subdir=addons
+               bzr lp:openobject-addons openerp-addons last:1
+               # bzr lp:openerp-something/8.0 addons-something last:1""",
+                ):
+            self.assertRaises(UserError,
+                              recipe.parse_addons, dict(addons=illformed))
+
     def build_babel_egg(self):
         """build an egg for fake babel in buildout's eggs directory."""
         subprocess.check_call(
@@ -158,7 +186,7 @@ class TestBaseRecipe(RecipeTestCase):
             version = conf.get('freeze', 'Babel')
         except NoOptionError:
             self.fail("Expected version of Babel egg not dumped !")
-        self.assertEquals(version, '0.123')
+        self.assertEquals(version, '0.123-dev')
 
     def test_freeze_egg_versions_merge(self):
         """Test that freezing of egg versions keeps eggs already dumped.
@@ -279,6 +307,31 @@ class TestBaseRecipe(RecipeTestCase):
                 (('a', 'x.py'), True)):
             self.assertEquals(os.path.exists(os.path.join(server_path, *path)),
                               expected)
+
+    def test_vcs_revert(self):
+        """Test clean forwarding to vcs impl."""
+        self.make_recipe(
+            version='fakevcs http://some/where server-dir mainrev')
+        self.recipe.revert_sources()
+        self.assertEqual(get_vcs_log(), [('revert', 'mainrev')])
+
+    def test_vcs_revert_not_implemented(self):
+        """Revert must not fail if a repo does not implement it."""
+        self.make_recipe(
+            version='fakevcs http://some/where server-dir mainrev')
+        from ..testing import FakeRepo
+        orig_revert = FakeRepo.revert
+
+        def notimp_revert(self, rev):
+            raise NotImplementedError
+
+        FakeRepo.revert = notimp_revert
+        try:
+            self.recipe.revert_sources()
+        finally:
+            FakeRepo.revert = orig_revert
+
+        self.assertEqual(get_vcs_log(), [])
 
     def test_freeze_vcs_source_dirty(self):
         self.make_recipe(version='6.1-1')

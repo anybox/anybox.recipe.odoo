@@ -39,6 +39,10 @@ class FakeRepo(vcs.base.BaseRepo):
             options['clear_locks'] = self.clear_locks
         self.log.append((self.target_dir, self.url, revision, options),)
 
+    def revert(self, revision):
+        self.revision = revision
+        self.log.append(('revert', revision))
+
     def parents(self):
         return [self.revision]
 

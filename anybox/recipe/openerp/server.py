@@ -6,6 +6,7 @@ import shutil
 import logging
 import subprocess
 import zc.buildout
+from zc.buildout import UserError
 from anybox.recipe.openerp import devtools
 from anybox.recipe.openerp.base import BaseRecipe
 
@@ -237,7 +238,7 @@ conf = openerp.tools.config
 
             naming = line[0].split('=')
             if not naming or len(naming) > 2:
-                raise ValueError("Invalid script specification %r" % line[0])
+                raise UserError("Invalid script specification %r" % line[0])
             elif len(naming) == 1:
                 name = '_'.join((naming[0], self.name))
             else:
@@ -248,13 +249,20 @@ conf = openerp.tools.config
 
             opt_prefix = 'command-line-options='
             arg_prefix = 'arguments='
+            log_prefix = 'openerp-log-level='
             for token in line[1:]:
                 if token.startswith(opt_prefix):
                     cl_options.extend(token[len(opt_prefix):].split(','))
                 elif token.startswith(arg_prefix):
                     desc['arguments'] = token[len(arg_prefix):]
+                elif token.startswith(log_prefix):
+                    level = token[len(log_prefix):].upper()
+                    if not level in dir(logging):
+                        raise UserError("In script %r, improper logging "
+                                        "level %r" % (name, level))
+                    desc['openerp_log_level'] = level
                 else:
-                    raise ValueError(
+                    raise UserError(
                         "Invalid token for script %r: %r" % (name, token))
 
     def _get_or_create_script(self, entry, name=None):
@@ -495,10 +503,17 @@ conf = openerp.tools.config
 
         for script_name, desc in self.openerp_scripts.items():
             initialization = desc.get('initialization', common_init)
+            log_level = desc.get('openerp_log_level')
+            if log_level:
+                initialization = os.linesep.join((
+                    initialization,
+                    "import logging",
+                    "logging.getLogger('openerp').setLevel"
+                    "(logging.%s)" % log_level))
             options = desc.get('command_line_options')
             if options:
-                initialization = common_init + os.linesep.join((
-                    "",
+                initialization = os.linesep.join((
+                    initialization,
                     "session.handle_command_line_options(%r)" % options))
 
             zc.buildout.easy_install.scripts(

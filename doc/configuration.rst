@@ -180,7 +180,8 @@ Specifies the OpenERP version to use. It can be:
 addons
 ------
 
-Specifies additional OpenERP addons, either a local path or a repository.
+Specifies additional OpenERP addons, either a local path or a remote
+repository.
 
 Example::
 
@@ -193,9 +194,15 @@ Example::
            svn http://example.com/some_addons addons3 head
            bzr lp:openerp-web/trunk/ openerp-web last:1 subdir=addons
 
-When using ``local`` paths you can either specify a directory holding
-addons, or a single addon. In that latter case, it will be actually
-placed one directory below.
+Remote repositories can either contain addons subdirectories, or
+be a single addon. In that latter case, called a *standalone
+addon*, the retrieved repository will be actually placed one directory
+below the specified target, to match the structure expected by
+OpenERP.
+
+Standalone addons are not supported in the local case (the
+directory is considered under full responsibility of the user).
+
 
 .. note:: the ``[bzr]`` extra-dependency declaration as showcased
           above in the ``recipe`` line is necessary for
@@ -265,6 +272,8 @@ the same as for repositories specified under these directives.
 
 Currently only merges on bzr repositories are supported.
 
+.. note:: new in version 1.9.0
+
 .. _eggs:
 
 eggs
@@ -329,6 +338,22 @@ perform relevant VCS idea of "clean, purge".
              it on the command-line.
 
 Note that tarball downloads get re-extracted afresh in any case.
+
+vcs-revert
+----------
+
+Possible value: ``on-merge`` (more are been thought of)
+
+If this option is used with the ``on-merge`` value, the VCS repositories
+will be reverted, **losing all local modifications** after the
+pull/update, right before the merge.
+
+This is especially useful in unattended executions, to clean up any
+previous failed merges.
+
+Currently only bzr repositories get reverted
+
+.. note:: new in version 1.9.0
 
 .. _openerp_options:
 
@@ -440,12 +465,14 @@ dedicated chapter about OpenERP scripts </scripts>`).
 
 :command-line-options: :ref:`command_line_options`
 :arguments: :ref:`arguments_session`
+:openerp-log-level: :ref:`openerp_log_level`
 
 Full example::
 
   openerp_scripts = my_script arguments=session
                     my_other_script=actual-script-name arguments=3,session
                     nosetests=nosetests command-line-options=-d
+                    sphinx-build=sphinx-build openerp-log-level=ERROR command_line_options=-d
 
 
 .. _upgrade_script_name:

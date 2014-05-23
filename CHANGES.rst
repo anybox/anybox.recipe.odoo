@@ -7,12 +7,23 @@ with any higher released unstable versions.
 
 1.9.0 (unreleased)
 ------------------
+- lanchpad #1294020: vcs-revert=on-merge option, and implementation
+  for bzr
 - launchpad #1274174: new feature for automatic merge of remote VCS sources
   (bzr only for now)
 
-1.8.3 (unreleased)
+1.8.4 (unreleased)
 ------------------
 - 
+
+1.8.3 (2014-04-19)
+------------------
+- launchpad #1281262: new ``openerp-log-level`` modifier in ``openerp_scripts``
+- launchpad #1289761: using the proper ``zc.buildout.UserError`` in
+  lots of places.
+- launchpad #1296178: have unparseable addons lines end up in
+  ``UserError`` as well.
+- launchpad #1229908: fixed tarball download url for the 6.0.x releases
 
 1.8.2 (2014-02-08)
 ------------------

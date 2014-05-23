@@ -73,6 +73,8 @@ class BzrBranch(BaseRepo):
                         for name, url in (
                             line.split('=', 1) for line in conffile
                             if not line.startswith('#') and '=' in line))
+        with working_directory_keeper:
+            os.chdir(self.target_dir)
 
     def write_conf(self, conf, to_file=None):
         """Write counterpart to read_conf (see docstring of read_conf)
@@ -124,10 +126,17 @@ class BzrBranch(BaseRepo):
         if not os.path.exists(self.target_dir):
             # not branched yet, there's nothing to clean
             return
+            subprocess.check_call(['bzr', 'clean-tree',
+                                   '--ignored', '--force'])
         with working_directory_keeper:
             os.chdir(self.target_dir)
             subprocess.check_call(['bzr', 'clean-tree',
                                    '--ignored', '--force'])
+
+    def revert(self, revision):
+        with working_directory_keeper:
+            os.chdir(self.target_dir)
+            subprocess.check_call(['bzr', 'revert', '-r', revision])
 
     def _update(self, revision):
         """Update existing branch at target dir to given revision.
