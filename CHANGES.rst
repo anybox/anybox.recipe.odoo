@@ -7,6 +7,8 @@ with any higher released unstable versions.
 
 1.8.4 (unreleased)
 ------------------
+- launchpad #1321919: [v8] fixed potential masking of standard library
+  by addons of the same name
 - launchpad #1320198: [bzr] using revids internally and in particular
   in freeze/extract features
 - launchpad #1320198: [bzr] forbidding change of parent location in
