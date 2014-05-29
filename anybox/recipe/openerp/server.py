@@ -285,11 +285,14 @@ conf = openerp.tools.config
         """
         desc = self._get_or_create_script('openerp_starter',
                                           name=qualified_name)[1]
-        desc.update(
-            arguments='%r, %r, version=%r' % (self._get_server_command(),
-                                              self.config_path,
-                                              self.major_version),
-        )
+
+        arguments = '%r, %r, version=%r' % (self._get_server_command(),
+                                            self.config_path,
+                                            self.major_version)
+        if self.major_version >= (8, 0):
+            arguments += ', gevent_script_path=%r' % self.gevent_script_path
+
+        desc.update(arguments=arguments)
 
         startup_delay = float(self.options.get('startup_delay', 0))
 
@@ -573,6 +576,12 @@ conf = openerp.tools.config
         self._install_interpreter()
 
         main_script = self.options.get('script_name', 'start_' + self.name)
+        if self.major_version >= (8, 0):
+            gevent_script_name = self.options.get('gevent_script_name',
+                                                  'gevent_%s' % self.name)
+            self._register_gevent_script(gevent_script_name)
+            self.gevent_script_path = join(self.bin_dir, gevent_script_name)
+
         self._register_main_startup_script(main_script)
         self.script_path = join(self.bin_dir, main_script)
 
@@ -599,11 +608,6 @@ conf = openerp.tools.config
             qualified_name = self.options.get('upgrade_script_name',
                                               'upgrade_%s' % self.name)
             self._register_upgrade_script(qualified_name)
-
-        if self.major_version >= (8, 0):
-            qualified_name = self.options.get('gevent_script_name',
-                                              'gevent_%s' % self.name)
-            self._register_gevent_script(qualified_name)
 
         self._install_openerp_scripts()
 
