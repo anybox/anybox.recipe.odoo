@@ -2,7 +2,6 @@
 """
 
 import subprocess
-from openerp.service.server import PreforkServer, stripped_sys_argv
 
 
 def do_patch(gevent_script_path):
@@ -12,6 +11,8 @@ def do_patch(gevent_script_path):
     This monkey patch could be safer, if the script path determination could be
     isolated from the actual process management logic in the original.
     """
+
+    from openerp.service.server import PreforkServer, stripped_sys_argv
 
     def long_polling_spawn(server):
         nargs = stripped_sys_argv()
