@@ -410,6 +410,19 @@ option ::
 
     script_name = start_erp
 
+gevent_script_name
+------------------
+
+..note :: for Odoo (formerly OpenERP) version 8 and onwards
+
+Lets you control the name of the asynchronous longpolling listener
+leveraging ``gevent`` (known as ``openerp-gevent`` in the basic
+install).
+
+The default is ``gevent_<PART>``.
+
+.. note:: new in version 1.8.4
+
 
 .. _openerp_scripts:
 

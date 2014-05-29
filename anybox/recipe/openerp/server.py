@@ -410,6 +410,26 @@ conf = openerp.tools.config
                 ''))
         desc['initialization'] = os.linesep.join(initialization)
 
+    def _register_gevent_script(self, qualified_name):
+        """Register the gevent startup script
+        """
+        desc = self._get_or_create_script('openerp-gevent',
+                                          name=qualified_name)[1]
+
+        initialization = os.linesep.join((
+            "import gevent.monkey",
+            "gevent.monkey.patch_all()",
+            "import psycogreen.gevent",
+            "psycogreen.gevent.patch_psycopg()",
+            ""))
+
+        if self.with_devtools:
+            initialization.extend((
+                'from anybox.recipe.openerp import devtools',
+                'devtools.load(for_tests=False)',
+                ''))
+        desc['initialization'] = initialization
+
     def _register_cron_worker_startup_script(self, qualified_name):
         """Register the cron worker script for installation.
 
@@ -548,6 +568,7 @@ conf = openerp.tools.config
 
         if self.major_version >= (8, 0):
             self.eggs_reqs.append(('oe', 'openerpcommand.main', 'run'))
+            self.eggs_reqs.append(('openerp-gevent', 'openerp.cli', 'main'))
 
         self._install_interpreter()
 
@@ -578,6 +599,11 @@ conf = openerp.tools.config
             qualified_name = self.options.get('upgrade_script_name',
                                               'upgrade_%s' % self.name)
             self._register_upgrade_script(qualified_name)
+
+        if self.major_version >= (8, 0):
+            qualified_name = self.options.get('gevent_script_name',
+                                              'gevent_%s' % self.name)
+            self._register_gevent_script(qualified_name)
 
         self._install_openerp_scripts()
 
