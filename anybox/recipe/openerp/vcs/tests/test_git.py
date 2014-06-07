@@ -137,6 +137,24 @@ class GitTestCase(GitBaseTestCase):
             f.write('mod')
         self.assertTrue(repo.uncommitted_changes())
 
+    def test_update_needs_pull(self):
+        """Update needs to be pulled from target."""
+        target_dir = os.path.join(self.dst_dir, "clone to update")
+        repo = GitRepo(target_dir, self.src_repo)
+        repo('master')
+
+        self.assertFalse(repo.uncommitted_changes())
+
+        # update the cloned repo
+        new_sha = git_write_commit(self.src_repo, 'tracked',
+                                   "new content", msg="new commit")
+        # We really don't have the new rev in our clone
+        self.assertNotEqual(repo.parents(), [new_sha])
+
+        # update our clone
+        repo('master')
+        self.assertEqual(repo.parents(), [new_sha])
+
 
 class GitBranchTestCase(GitBaseTestCase):
 

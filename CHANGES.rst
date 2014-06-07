@@ -11,6 +11,8 @@ with any higher released unstable versions.
   and have it used through the --workers option
 - launchpad #1321919: [v8] fixed potential masking of standard library
   by addons of the same name
+- launchpad #1234014: [git] tracked branch were not properly updated
+  if the branch was already the current one
 - launchpad #1320198: [bzr] using revids internally and in particular
   in freeze/extract features
 - launchpad #1320198: [bzr] forbidding change of parent location in

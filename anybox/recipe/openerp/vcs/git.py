@@ -83,6 +83,12 @@ class GitRepo(BaseRepo):
                             target_dir, revision)
                 self._switch(revision)
 
+            if self._isATrackedBranch(revision):
+                if not offline:
+                    logger.info("Pull for git repo %s (rev %s)...",
+                                target_dir, rev_str)
+                    subprocess.check_call(['git', 'pull'])
+
     def archive(self, target_path):
         revision = self.parents()[0]
         if not os.path.exists(target_path):
@@ -97,6 +103,14 @@ class GitRepo(BaseRepo):
             subprocess.check_call(['tar', '-x', '-f', target_tar.name,
                                    '-C', target_path])
             os.unlink(target_tar.name)
+
+    def _isATrackedBranch(self, revision):
+        rbp = self._remote_branch_prefix
+        branches = utils.check_output(["git", "branch", "-a"])
+        branch = revision
+        return re.search(
+            "^  " + re.escape(rbp) + "\/" + re.escape(branch) + "$", branches,
+            re.M)
 
     def _needToSwitchRevision(self, revision):
         """ Check if we need to checkout to an other branch
