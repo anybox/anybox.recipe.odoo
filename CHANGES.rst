@@ -7,7 +7,9 @@ with any higher released unstable versions.
 
 1.9.0 (unreleased)
 ------------------
-- lanchpad #1294020: vcs-revert=on-merge option, and implementation
+- launchpad #1234014: [git] tracked branch were not properly updated
+  if the branch had already been checkouted
+- launchpad #1294020: vcs-revert=on-merge option, and implementation
   for bzr
 - launchpad #1274174: new feature for automatic merge of remote VCS sources
   (bzr only for now)
