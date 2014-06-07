@@ -40,13 +40,13 @@ class TestBaseRecipe(RecipeTestCase):
         return self.recipe.sources[main_software][0]
 
     def get_source_url(self):
-        return self.recipe.sources[main_software][1][0]
+        return self.recipe.sources[main_software][1]
 
     def assertDownloadUrl(self, url):
         """Assert that main software is 'downloadable' with given url."""
         source = self.recipe.sources[main_software]
         self.assertEquals(source[0], 'downloadable')
-        self.assertEquals(source[1][0], url)
+        self.assertEquals(source[1], url)
 
     def test_version_release_6_1(self):
         self.make_recipe(version='6.1-1')
@@ -69,7 +69,8 @@ class TestBaseRecipe(RecipeTestCase):
 
         recipe = self.recipe
         self.assertEquals(self.get_source_type(), 'bzr')
-        self.assertEquals(self.get_source_url(), 'lp:openobject-server/6.1')
+        self.assertEquals(self.get_source_url(),
+                          ('lp:openobject-server/6.1', 'last:1'))
         self.assertEquals(recipe.openerp_dir,
                           os.path.join(recipe.parts, 'openerp-6.1'))
 

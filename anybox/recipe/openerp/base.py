@@ -76,7 +76,7 @@ class BaseRecipe(object):
        :location_spec: is, depending on the type, a tuple specifying how
                        fetch is to be done:
 
-                       ``(url, None)``, or ``(vcs_url, vcs_revision)``
+                       ``url``, or ``(vcs_url, vcs_revision)``
                        or ``None``
        :addons options: are typically used to specify that the addons
                         directory is actually a subdir of the specified one.
@@ -206,7 +206,7 @@ class BaseRecipe(object):
                 'base_url', self.default_dl_url[major_wanted])
             self.sources[main_software] = (
                 'downloadable',
-                ('/'.join((base_url.strip('/'), self.archive_filename)), None))
+                '/'.join((base_url.strip('/'), self.archive_filename)), None)
             return
 
         # in all other cases, the first token is the type of version
@@ -218,7 +218,7 @@ class BaseRecipe(object):
             url = version_split[1]
             self.archive_filename = urlparse(url).path.split('/')[-1]
             self.archive_path = join(self.downloads_dir, self.archive_filename)
-            self.sources[main_software] = ('downloadable', (url, None))
+            self.sources[main_software] = ('downloadable', url, None)
         elif type_spec == 'nightly':
             if len(version_split) != 3:
                 raise UserError(
@@ -236,7 +236,8 @@ class BaseRecipe(object):
                                         self.nightly_dl_url[series])
             self.sources[main_software] = (
                 'downloadable',
-                ('/'.join((base_url.strip('/'), self.archive_filename)), None))
+                '/'.join((base_url.strip('/'), self.archive_filename)),
+                None)
         else:
             # VCS types
             type_spec, url, repo_dir, self.version_wanted = version_split[0:4]
@@ -655,7 +656,7 @@ class BaseRecipe(object):
         if self.offline:
             raise IOError("%s not found, and offline "
                           "mode requested" % self.archive_path)
-        url = self.sources[main_software][1][0]
+        url = self.sources[main_software][1]
         logger.info("Downloading %s ..." % url)
 
         try:
@@ -682,7 +683,7 @@ class BaseRecipe(object):
         archivestat = os.stat(self.archive_path)
         length, modified = archivestat.st_size, archivestat.st_mtime
 
-        url = self.sources[main_software][1][0]
+        url = self.sources[main_software][1]
         logger.info("Checking if %s if fresh wrt %s",
                     self.archive_path, url)
         parsed = urlparse(url)
