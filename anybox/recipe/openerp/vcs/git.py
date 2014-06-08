@@ -98,7 +98,8 @@ class GitRepo(BaseRepo):
                 os.chdir(target_dir)
                 print("pull %s %s into %s" %
                       (url, revision, target_dir))
-                subprocess.check_call(['git', 'pull', url, revision])
+                subprocess.check_call(['git', 'pull', '--no-edit',
+                                       url, revision])
 
     def archive(self, target_path):
         # TODO: does this work with merge-ins?
