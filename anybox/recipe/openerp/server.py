@@ -319,7 +319,7 @@ conf = openerp.tools.config
         arguments = '%r, %r, version=%r, just_test=True' % (
             self._get_server_command(),
             self.config_path,
-            self.major_version),
+            self.major_version)
         if self.major_version >= (8, 0):
             arguments += ', gevent_script_path=%r' % self.gevent_script_path
 
