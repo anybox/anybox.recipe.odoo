@@ -17,7 +17,8 @@ TEST_DIR = os.path.dirname(__file__)
 class TestingRecipe(BaseRecipe):
     """A subclass with just enough few defaults for unit testing."""
 
-    archive_filenames = {'6.1': 'blob-%s.tgz'}
+    archive_filenames = {'6.1': 'blob-%s.tgz',
+                         '6.0': 'bl0b-%s.tgz'}
     archive_nightly_filenames = {'6.1': '6-1-nightly-%s.tbz'}
 
 
@@ -371,6 +372,44 @@ class TestBaseRecipe(RecipeTestCase):
         self.assertEquals(extends_develop.strip(),
                           "fakevcs+http://example.com/aeroolib@fakerev"
                           "#egg=aeroolib")
+
+    def test_finalize_addons_paths_odoo_layout(self):
+        self.make_recipe(
+            version='git http://github.com/odoo/odoo.git odoo 7.0')
+        self.recipe.version_detected = '7.0-somerev'
+        oerp_dir = self.recipe.openerp_dir
+        base_addons = os.path.join(oerp_dir, 'openerp', 'addons')
+        odoo_addons = os.path.join(oerp_dir, 'addons')
+        os.makedirs(base_addons)
+        os.makedirs(odoo_addons)
+        self.recipe.addons_paths = ['/some/separate/addons']
+        self.recipe.finalize_addons_paths(check_existence=False)
+        self.assertEquals(self.recipe.addons_paths,
+                          [base_addons, odoo_addons, '/some/separate/addons'])
+
+    def test_finalize_addons_paths_bzr_layout(self):
+        self.make_recipe(
+            version='bzr lp:openobject-server openerp last:1')
+        self.recipe.version_detected = '7.0-somerev'
+        oerp_dir = self.recipe.openerp_dir
+        base_addons = os.path.join(oerp_dir, 'openerp', 'addons')
+        os.makedirs(base_addons)
+        self.recipe.addons_paths = ['/some/separate/addons']
+        self.recipe.finalize_addons_paths(check_existence=False)
+        self.assertEquals(self.recipe.addons_paths, [base_addons,
+                                                     '/some/separate/addons'])
+
+    def test_finalize_addons_paths_60_layout(self):
+        self.make_recipe(version='6.0.4')
+        recipe = self.recipe
+        recipe.version_detected = '6.0.4'
+        oerp_dir = recipe.openerp_dir = os.path.join(recipe.parts, 'oerp60')
+        base_addons = os.path.join(oerp_dir, 'bin', 'addons')
+        os.makedirs(base_addons)
+        recipe.addons_paths = ['/some/separate/addons']
+        recipe.finalize_addons_paths(check_existence=False)
+        self.assertEquals(self.recipe.addons_paths, [base_addons,
+                                                     '/some/separate/addons'])
 
 
 class TestExtraction(RecipeTestCase):

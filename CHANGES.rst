@@ -7,6 +7,7 @@ with any higher released unstable versions.
 
 1.8.4 (unreleased)
 ------------------
+- launchpad #1327756: support new addons layout on github
 - launchpad #1324579: [odoo] generation of gevent script (longpolling)
   and have it used through the --workers option
 - launchpad #1321919: [v8] fixed potential masking of standard library
