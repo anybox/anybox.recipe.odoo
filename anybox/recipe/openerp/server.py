@@ -419,19 +419,20 @@ conf = openerp.tools.config
         desc = self._get_or_create_script('openerp-gevent',
                                           name=qualified_name)[1]
 
-        initialization = os.linesep.join((
+        initialization = [
             "import gevent.monkey",
             "gevent.monkey.patch_all()",
             "import psycogreen.gevent",
             "psycogreen.gevent.patch_psycopg()",
-            ""))
+            ""]
 
         if self.with_devtools:
-            initialization.extend((
+            initialization.extend([
                 'from anybox.recipe.openerp import devtools',
                 'devtools.load(for_tests=False)',
-                ''))
-        desc['initialization'] = initialization
+                ''])
+
+        desc['initialization'] = os.linesep.join(initialization)
 
     def _register_cron_worker_startup_script(self, qualified_name):
         """Register the cron worker script for installation.
