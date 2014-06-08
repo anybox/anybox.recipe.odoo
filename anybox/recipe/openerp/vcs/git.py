@@ -14,7 +14,7 @@ BUILDOUT_ORIGIN = 'origin'
 
 
 class GitRepo(BaseRepo):
-    """Represent a Git clone tied to a reference branch."""
+    """Represent a Git clone tied to a reference branch/commit/tag."""
 
     vcs_control_dir = '.git'
 
@@ -51,55 +51,59 @@ class GitRepo(BaseRepo):
         If target_dir already exists, does a simple fetch.
         Offline-mode: no branch nor fetch, but checkout.
         """
+        if self.options.get('merge'):
+            return self.merge(revision)
+
         target_dir = self.target_dir
         url = self.url
         offline = self.offline
 
         with working_directory_keeper:
-            if not self.options.get('merge'):
-                if not os.path.exists(target_dir):
-                    # TODO case of local url ?
-                    if offline:
-                        raise IOError(
-                            "git repository %s does not exist; cannot clone "
-                            "it from %s (offline mode)" % (target_dir, url))
-                    print("-> git init %s" % (target_dir,))
-                    subprocess.check_call(['git', 'init', target_dir])
-                    os.chdir(target_dir)
-                    print("-> git remote add %s %s" %
-                          (BUILDOUT_ORIGIN, url))
-                    subprocess.check_call(['git', 'remote', 'add',
-                                           BUILDOUT_ORIGIN, url])
+            if not os.path.exists(target_dir):
+                # TODO case of local url ?
+                if offline:
+                    raise IOError(
+                        "git repository %s does not exist; cannot clone "
+                        "it from %s (offline mode)" % (target_dir, url))
+                logging.info("git init %s" % (target_dir,))
+                subprocess.check_call(['git', 'init', target_dir])
+                os.chdir(target_dir)
+                print("-> git remote add %s %s" %
+                      (BUILDOUT_ORIGIN, url))
+                subprocess.check_call(['git', 'remote', 'add',
+                                       BUILDOUT_ORIGIN, url])
 
-                # TODO what if remote repo is actually local fs ?
-                os.chdir(target_dir)
-                if not offline:
-                    print("-> remote set-url %s %s" %
-                          (BUILDOUT_ORIGIN, url))
-                    subprocess.call(['git', 'remote', 'set-url',
-                                     BUILDOUT_ORIGIN, url])
-                    print("-> fetch %s into %s" %
-                          (BUILDOUT_ORIGIN, target_dir))
-                    subprocess.check_call(['git', 'fetch', BUILDOUT_ORIGIN])
-                    # TODO: check what happens when there are local changes
-                    # TODO: what about the 'clean' option
-                    print("-> checkout %s" % (revision,))
-                    subprocess.check_call(['git', 'checkout', revision])
-                    if self._is_a_branch(revision):
-                        # fast forward
-                        print("-> merge %s/%s" % (BUILDOUT_ORIGIN, revision,))
-                        subprocess.check_call(['git', 'merge',
-                                               BUILDOUT_ORIGIN + '/' + revision])
-            else:
-                if not self.is_versioned(target_dir):
-                    raise RuntimeError("Cannot merge into non existent "
-                                       "or non git local directory %s" %
-                                       target_dir)
-                os.chdir(target_dir)
-                print("pull %s %s into %s" %
-                      (url, revision, target_dir))
-                subprocess.check_call(['git', 'pull', '--no-edit',
-                                       url, revision])
+            # TODO what if remote repo is actually local fs ?
+            os.chdir(target_dir)
+            if not offline:
+                print("-> remote set-url %s %s" %
+                      (BUILDOUT_ORIGIN, url))
+                subprocess.call(['git', 'remote', 'set-url',
+                                 BUILDOUT_ORIGIN, url])
+                print("-> fetch %s into %s" %
+                      (BUILDOUT_ORIGIN, target_dir))
+                subprocess.check_call(['git', 'fetch', BUILDOUT_ORIGIN])
+                # TODO: check what happens when there are local changes
+                # TODO: what about the 'clean' option
+                print("-> checkout %s" % (revision,))
+                subprocess.check_call(['git', 'checkout', revision])
+                if self._is_a_branch(revision):
+                    # fast forward
+                    print("-> merge %s/%s" % (BUILDOUT_ORIGIN, revision,))
+                    subprocess.check_call(['git', 'merge',
+                                           BUILDOUT_ORIGIN + '/' + revision])
+
+    def merge(self, revision):
+        with working_directory_keeper:
+            if not self.is_versioned(self.target_dir):
+                raise RuntimeError("Cannot merge into non existent "
+                                   "or non git local directory %s" %
+                                   self.target_dir)
+            os.chdir(self.target_dir)
+            print("pull %s %s into %s" %
+                  (self.url, revision, self.target_dir))
+            subprocess.check_call(['git', 'pull', '--no-edit',
+                                   self.url, revision])
 
     def archive(self, target_path):
         # TODO: does this work with merge-ins?
@@ -129,8 +133,5 @@ class GitRepo(BaseRepo):
 
     def _is_a_branch(self, revision):
         branches = utils.check_output(["git", "branch"])
-        for branch in branches.split("\n"):
-            branch = branch[2:]
-            if revision == branch:
-                return True
-        return False
+        branches = branches.split()
+        return revision in branches
