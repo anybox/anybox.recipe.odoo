@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+from zc.buildout import UserError
 from ..testing import COMMIT_USER_FULL
 from ..testing import VcsTestCase
 from ..bzr import BzrBranch
@@ -29,25 +30,30 @@ class BzrBaseTestCase(VcsTestCase):
         f.close()
         subprocess.call(['bzr', 'commit', '-m', 'last version'])
 
-    def assertRevision(self, branch, rev, first_line):
+    def assertRevision(self, branch, rev, first_line, msg=None):
         """Assert that branch is at prescribed revision
+
+        :param branch: instance of :class:`BzrBranch` to work on
+        :param rev: revision number (revno)
+        :param first_line: expected first line of the 'tracked' file
+        :param msg: passed to underlying assertions
 
         Double check with expected first line of 'tracked' file."""
         target_dir = branch.target_dir
-        self.assertTrue(os.path.isdir(target_dir))
+        self.assertTrue(os.path.isdir(target_dir), msg=msg)
         f = open(os.path.join(target_dir, 'tracked'))
         lines = f.readlines()
         f.close()
-        self.assertEquals(lines[0].strip(), first_line)
-        self.assertEquals(branch.parents(), [rev])
+        self.assertEquals(lines[0].strip(), first_line, msg=msg)
+        self.assertEquals(branch.parents(as_revno=True), [rev], msg=msg)
 
-    def assertRevision1(self, branch):
+    def assertRevision1(self, branch, **kw):
         """Assert that branch is at revision 1."""
-        self.assertRevision(branch, '1', 'first')
+        self.assertRevision(branch, '1', 'first', **kw)
 
-    def assertRevision2(self, branch):
+    def assertRevision2(self, branch, **kw):
         """Assert that branch is at revision 2."""
-        self.assertRevision(branch, '2', 'last')
+        self.assertRevision(branch, '2', 'last', **kw)
 
 
 class BzrTestCase(BzrBaseTestCase):
@@ -79,6 +85,26 @@ class BzrTestCase(BzrBaseTestCase):
         # ensures that we actually did test something:
         self.assertEqual(monkey_called, ['last:1', None])
         self.assertRevision2(branch)  # branching worked
+
+    def test_parents_revid(self):
+        target_dir = os.path.join(self.dst_dir, "My branch")
+        branch = BzrBranch(target_dir, self.src_repo)
+        branch('last:1')
+        self.assertRevision2(branch, msg="Test impaired by other problem")
+
+        parents = branch.parents()
+        self.assertEquals(len(parents), 1)
+        self.assertTrue(parents[0].startswith('revid:test@example.org-'),
+                        msg="Result does not look to be a revid")
+
+    def test_parents_pip(self):
+        target_dir = os.path.join(self.dst_dir, "My branch")
+        branch = BzrBranch(target_dir, self.src_repo)
+        branch('last:1')
+        self.assertRevision2(branch, msg="Test impaired by other problem")
+
+        parents = branch.parents(pip_compatible=True)
+        self.assertEquals(parents, ['2'])
 
     def test_branch_options_conflict(self):
         target_dir = os.path.join(self.dst_dir, "My branch")
@@ -269,11 +295,23 @@ class BzrTestCase(BzrBaseTestCase):
             buildout_save_parent_location_1=old_src,
             parent_location=new_src))
 
-        # second rename
+        # second rename, on a fixed revno. The pull should be issued in that
+        # case, even if we already have that revno in original source
+        # (see lp:1320198)
         new_src2 = os.path.join(self.src_dir, 'new-src-repo2')
         os.rename(new_src, new_src2)
         branch = BzrBranch(target_dir, new_src2)
+
+        orig_pull = branch._pull
+
+        def logging_pull():
+            self.pulled = True
+            return orig_pull()
+        branch._pull = logging_pull
+
+        self.pulled = False
         branch('1')
+        self.assertTrue(self.pulled)
 
         self.assertEquals(branch.parse_conf(), dict(
             buildout_save_parent_location_1=old_src,
@@ -374,7 +412,9 @@ class BzrOfflineTestCase(BzrBaseTestCase):
             options = {}
         target_dir = os.path.join(self.dst_dir, path)
         # initial branching (non offline
-        BzrBranch(target_dir, self.src_repo)(initial_rev)
+        build_branch = BzrBranch(target_dir, self.src_repo)
+        build_branch(initial_rev)
+        build_branch.update_conf()  # just to get an absolute path in there
 
         # crippled offline branch
         branch = BzrBranch(target_dir, self.src_repo, offline=True, **options)
@@ -402,6 +442,43 @@ class BzrOfflineTestCase(BzrBaseTestCase):
         branch = self.make_local_branch("clone to update", 'last:1')
         branch('1')
         self.assertRevision1(branch)
+
+    def test_update_available_revno_url_change(self):
+        """[offline mode] upd to an available revno with URL change is an error
+        """
+        branch = self.make_local_branch("clone to update", 'last:1')
+        branch('1')
+        self.assertRevision1(branch, msg="Test is impaired")
+        new_branch = BzrBranch(branch.target_dir, 'http://other.url.example',
+                               offline=True)
+        self.assertRaises(UserError, new_branch, '1')
+        # conf has not changed
+        self.assertEquals(new_branch.parse_conf(), branch.parse_conf())
+
+    def test_update_live_rev_url_change(self):
+        """[offline mode] upd to a live revspec with URL change is an error
+        """
+        branch = self.make_local_branch("clone to update", 'last:1')
+        branch('1')
+        self.assertRevision1(branch, msg="Test is impaired")
+        new_branch = BzrBranch(branch.target_dir, 'http://other.url.example',
+                               offline=True)
+        self.assertRaises(UserError, new_branch, 'last:1')
+        self.assertEquals(new_branch.parse_conf(), branch.parse_conf())
+
+    def test_update_available_revid_url_change(self):
+        """[offline mode] upd to an available revid with URL change is ok
+        """
+        branch = self.make_local_branch("clone to update", 'last:1')
+        branch('1')
+
+        revid = branch.parents()[0]
+        self.assertTrue(revid.startswith, 'revid:')
+
+        new_branch = BzrBranch(branch.target_dir, 'http://other.url.example',
+                               offline=True)
+        new_branch(revid)
+        self.assertRevision1(new_branch)
 
     def test_update_available_revid(self):
         """[offline mode] update to an available revid works.

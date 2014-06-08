@@ -285,11 +285,14 @@ conf = openerp.tools.config
         """
         desc = self._get_or_create_script('openerp_starter',
                                           name=qualified_name)[1]
-        desc.update(
-            arguments='%r, %r, version=%r' % (self._get_server_command(),
-                                              self.config_path,
-                                              self.major_version),
-        )
+
+        arguments = '%r, %r, version=%r' % (self._get_server_command(),
+                                            self.config_path,
+                                            self.major_version)
+        if self.major_version >= (8, 0):
+            arguments += ', gevent_script_path=%r' % self.gevent_script_path
+
+        desc.update(arguments=arguments)
 
         startup_delay = float(self.options.get('startup_delay', 0))
 
@@ -313,16 +316,20 @@ conf = openerp.tools.config
         """
         desc = self._get_or_create_script('openerp_tester',
                                           name=qualified_name)[1]
+        arguments = '%r, %r, version=%r, just_test=True' % (
+            self._get_server_command(),
+            self.config_path,
+            self.major_version)
+        if self.major_version >= (8, 0):
+            arguments += ', gevent_script_path=%r' % self.gevent_script_path
+
         desc.update(
             entry='openerp_starter',
             initialization=os.linesep.join((
                 "from anybox.recipe.openerp import devtools",
                 "devtools.load(for_tests=True)",
                 "")),
-            arguments='%r, %r, version=%r, just_test=True' % (
-                self._get_server_command(),
-                self.config_path,
-                self.major_version),
+            arguments=arguments
         )
 
     def _register_upgrade_script(self, qualified_name):
@@ -408,6 +415,27 @@ conf = openerp.tools.config
                 'from anybox.recipe.openerp import devtools',
                 'devtools.load(for_tests=True)',
                 ''))
+        desc['initialization'] = os.linesep.join(initialization)
+
+    def _register_gevent_script(self, qualified_name):
+        """Register the gevent startup script
+        """
+        desc = self._get_or_create_script('openerp-gevent',
+                                          name=qualified_name)[1]
+
+        initialization = [
+            "import gevent.monkey",
+            "gevent.monkey.patch_all()",
+            "import psycogreen.gevent",
+            "psycogreen.gevent.patch_psycopg()",
+            ""]
+
+        if self.with_devtools:
+            initialization.extend([
+                'from anybox.recipe.openerp import devtools',
+                'devtools.load(for_tests=False)',
+                ''])
+
         desc['initialization'] = os.linesep.join(initialization)
 
     def _register_cron_worker_startup_script(self, qualified_name):
@@ -548,10 +576,17 @@ conf = openerp.tools.config
 
         if self.major_version >= (8, 0):
             self.eggs_reqs.append(('oe', 'openerpcommand.main', 'run'))
+            self.eggs_reqs.append(('openerp-gevent', 'openerp.cli', 'main'))
 
         self._install_interpreter()
 
         main_script = self.options.get('script_name', 'start_' + self.name)
+        if self.major_version >= (8, 0):
+            gevent_script_name = self.options.get('gevent_script_name',
+                                                  'gevent_%s' % self.name)
+            self._register_gevent_script(gevent_script_name)
+            self.gevent_script_path = join(self.bin_dir, gevent_script_name)
+
         self._register_main_startup_script(main_script)
         self.script_path = join(self.bin_dir, main_script)
 

@@ -43,7 +43,7 @@ class FakeRepo(vcs.base.BaseRepo):
         self.revision = revision
         self.log.append(('revert', revision))
 
-    def parents(self):
+    def parents(self, pip_compatible=False):
         return [self.revision]
 
     def archive(self, target):

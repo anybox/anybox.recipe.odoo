@@ -7,8 +7,6 @@ with any higher released unstable versions.
 
 1.9.0 (unreleased)
 ------------------
-- launchpad #1234014: [git] tracked branch were not properly updated
-  if the branch had already been checkouted
 - launchpad #1294020: vcs-revert=on-merge option, and implementation
   for bzr
 - launchpad #1274174: new feature for automatic merge of remote VCS sources
@@ -16,7 +14,19 @@ with any higher released unstable versions.
 
 1.8.4 (unreleased)
 ------------------
-- 
+- launchpad #1324579: [odoo] generation of gevent script (longpolling)
+  and have it used through the --workers option
+- launchpad #1321919: [v8] fixed potential masking of standard library
+  by addons of the same name
+- launchpad #1234014: [git] tracked branch were not properly updated
+  if the branch was already the current one
+- launchpad #1320198: [bzr] using revids internally and in particular
+  in freeze/extract features
+- launchpad #1320198: [bzr] forbidding change of parent location in
+  offline mode unless this is for a fixed revision ID (no ambiguity),
+  and forcing a pull in non offline mode.
+- launchpad #1317269: [v8] OpenERP server can't start in a multi workers mode
+- launchpad #1314566: [v8] OpenERP scripts & interpreter can't load db
 
 1.8.3 (2014-04-19)
 ------------------

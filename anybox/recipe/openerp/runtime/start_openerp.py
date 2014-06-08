@@ -11,6 +11,7 @@ from here.
 import sys
 import os
 from . import patch_openerp_v5
+from . import patch_odoo
 
 
 def insert_args(arguments):
@@ -20,7 +21,8 @@ def insert_args(arguments):
         sys.argv.insert(i+1, a)
 
 
-def main(starter, conf, version=None, just_test=False):
+def main(starter, conf, version=None, just_test=False,
+         gevent_script_path=None):
     """Call the `starter` script, dispatching configuration.
 
     All arguments are set in the standalone script produced by buildout through
@@ -58,10 +60,15 @@ def main(starter, conf, version=None, just_test=False):
     if version == (5, 0):
         patch_openerp_v5.do_patch()
 
+    if version >= (8, 0):
+        assert gevent_script_path is not None
+        patch_odoo.do_patch(gevent_script_path)
+
     os.chdir(os.path.split(starter)[0])
     glob = globals()
     glob['__name__'] = '__main__'
     glob['__file__'] = starter
+    sys.argv[0] = starter
     try:
         execfile(starter, globals())
     except SystemExit as exc:

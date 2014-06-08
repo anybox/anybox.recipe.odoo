@@ -383,21 +383,46 @@ class TestServer(RecipeTestCase):
                             'cron_worker_openerp',
                             ))
 
-    def test_install_scripts_70(self):
+    def test_install_scripts_70(self, with_devtools=True, **kw):
+        kw['with_devtools'] = 'true' if with_devtools else 'false'
         self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'oerp70'),
                          gunicorn='direct',
-                         with_devtools='true')
+                         **kw)
         self.recipe.version_detected = "7.0alpha"
         self.recipe.options['options.log_handler'] = ":INFO,werkzeug:WARNING"
 
         self.install_scripts(extra_develop={
             'openerp-command': 'fake_openerp-command'})
-        self.assertScripts(('start_openerp',
-                            'test_openerp',
-                            'gunicorn_openerp',
-                            'cron_worker_openerp',
-                            'openerp_command',
-                            ))
+
+        expected = ['start_openerp',
+                    'gunicorn_openerp',
+                    'cron_worker_openerp']
+        if with_devtools:
+            expected.extend(('test_openerp', 'openerp_command'))
+        self.assertScripts(expected)
+
+    def test_install_scripts_70_no_devtools(self):
+        self.test_install_scripts_70(with_devtools=False)
+
+    def test_install_scripts_80(self, with_devtools=True, **kw):
+        kw['with_devtools'] = 'true' if with_devtools else 'false'
+        self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'odoo80'),
+                         gunicorn='direct', **kw)
+        self.recipe.version_detected = "8.0alpha"
+        self.recipe.options['options.log_handler'] = ":INFO,werkzeug:WARNING"
+
+        self.install_scripts(extra_develop={
+            'openerp-command': 'fake_openerp-command'})
+
+        expected = ['start_openerp',
+                    'gunicorn_openerp',
+                    'cron_worker_openerp']
+        if with_devtools:
+            expected.extend(('test_openerp', 'openerp_command'))
+        self.assertScripts(expected)
+
+    def test_install_scripts_80_no_devtools(self):
+        self.test_install_scripts_80(with_devtools='false')
 
     def test_install_scripts_70_gunicorn_proxied(self):
         self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'oerp70'),
