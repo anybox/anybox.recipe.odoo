@@ -1244,6 +1244,8 @@ class BaseRecipe(object):
         if os.path.exists(base_addons):
             self.addons_paths.insert(0, base_addons)
 
+        self.insert_odoo_git_addons(base_addons)
+
         if check_existence:
             for path in self.addons_paths:
                 assert os.path.isdir(path), (
@@ -1253,11 +1255,49 @@ class BaseRecipe(object):
         if self.major_version <= (6, 0):
             self._60_fix_root_path()
 
+    def insert_odoo_git_addons(self, base_addons):
+        """Insert the standard, non-base addons bundled within Odoo git repo.
+
+        See `lp:1327756
+        <https://bugs.launchpad.net/anybox.recipe.openerp/+bug/1327756>`_
+
+        These addons are also part of the Github branch for prior versions,
+        therefore we cannot rely on version knowledge; we check for existence
+        instead.
+        If not found (e.g, we are on a nightly for OpenERP <= 7), this method
+        does nothing.
+
+        Care is taken not to break configurations that corrected this manually
+        with a ``local`` source in the ``addons`` option.
+
+        :param base_addons: the path to previously detected ``base`` addons,
+                            to properly insert right after them
+        """
+        odoo_git_addons = join(self.openerp_dir, 'addons')
+        if not os.path.isdir(odoo_git_addons):
+            return
+
+        addons_paths = self.addons_paths
+
+        try:
+            insert_at = addons_paths.index(base_addons) + 1
+        except ValueError:
+            insert_at = 0
+        try:
+            addons_paths.remove(odoo_git_addons)
+        except ValueError:
+            pass
+
+        addons_paths.insert(insert_at, odoo_git_addons)
+
     def cleanup_openerp_dir(self):
         """Revert local modifications that have been made during installation.
 
         These can be, e.g., forbidden by the freeze process."""
 
+        # GR TODO this will break with OSError if main package is renamed to
+        # 'odoo' we'll see then what the needed correction exactly is rather
+        # than swallowing the exception now
         shutil.rmtree(join(self.openerp_dir, 'openerp.egg-info'))
         # setup rewritten without PIL is cleaned during the process itself
 
