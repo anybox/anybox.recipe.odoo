@@ -316,16 +316,20 @@ conf = openerp.tools.config
         """
         desc = self._get_or_create_script('openerp_tester',
                                           name=qualified_name)[1]
+        arguments = '%r, %r, version=%r, just_test=True' % (
+            self._get_server_command(),
+            self.config_path,
+            self.major_version),
+        if self.major_version >= (8, 0):
+            arguments += ', gevent_script_path=%r' % self.gevent_script_path
+
         desc.update(
             entry='openerp_starter',
             initialization=os.linesep.join((
                 "from anybox.recipe.openerp import devtools",
                 "devtools.load(for_tests=True)",
                 "")),
-            arguments='%r, %r, version=%r, just_test=True' % (
-                self._get_server_command(),
-                self.config_path,
-                self.major_version),
+            arguments=arguments
         )
 
     def _register_upgrade_script(self, qualified_name):
