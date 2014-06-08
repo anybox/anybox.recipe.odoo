@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# flake8: noqa
 
 # setup.py from odoo 8.0 alpha, included as is, except for the dependencies
 
