@@ -63,20 +63,23 @@ class GitRepo(BaseRepo):
                         raise IOError(
                             "git repository %s does not exist; cannot clone "
                             "it from %s (offline mode)" % (target_dir, url))
+                    print("-> git init %s" % (target_dir,))
                     subprocess.check_call(['git', 'init', target_dir])
                     os.chdir(target_dir)
+                    print("-> git remote add %s %s" %
+                          (BUILDOUT_ORIGIN, url))
                     subprocess.check_call(['git', 'remote', 'add',
                                            BUILDOUT_ORIGIN, url])
 
                 # TODO what if remote repo is actually local fs ?
                 os.chdir(target_dir)
                 if not offline:
-                    print("-> create or update remote %s to %s" %
+                    print("-> remote set-url %s %s" %
                           (BUILDOUT_ORIGIN, url))
                     subprocess.call(['git', 'remote', 'set-url',
                                      BUILDOUT_ORIGIN, url])
-                    print("-> fetch remote %s %s into %s" %
-                          (BUILDOUT_ORIGIN, revision, target_dir))
+                    print("-> fetch %s into %s" %
+                          (BUILDOUT_ORIGIN, target_dir))
                     subprocess.check_call(['git', 'fetch', BUILDOUT_ORIGIN])
                     # TODO: check what happens when there are local changes
                     # TODO: what about the 'clean' option
@@ -84,7 +87,7 @@ class GitRepo(BaseRepo):
                     subprocess.check_call(['git', 'checkout', revision])
                     if self._is_a_branch(revision):
                         # fast forward
-                        print("-> merge %s" % (revision,))
+                        print("-> merge %s/%s" % (BUILDOUT_ORIGIN, revision,))
                         subprocess.check_call(['git', 'merge',
                                                BUILDOUT_ORIGIN + '/' + revision])
             else:
@@ -93,7 +96,7 @@ class GitRepo(BaseRepo):
                                        "or non git local directory %s" %
                                        target_dir)
                 os.chdir(target_dir)
-                print("detach and pull %s %s into %s" %
+                print("pull %s %s into %s" %
                       (url, revision, target_dir))
                 subprocess.check_call(['git', 'pull', url, revision])
 
@@ -116,7 +119,12 @@ class GitRepo(BaseRepo):
     def revert(self, revision):
         with working_directory_keeper:
             os.chdir(self.target_dir)
-            subprocess.check_call(['git', 'reset', '--hard', revision])
+            subprocess.check_call(['git', 'checkout', revision])
+            if self._is_a_branch(revision):
+                subprocess.check_call(['git', 'reset', '--hard',
+                                       BUILDOUT_ORIGIN + '/' + revision])
+            else:
+                subprocess.check_call(['git', 'reset', '--hard', revision])
 
     def _is_a_branch(self, revision):
         branches = utils.check_output(["git", "branch"])
