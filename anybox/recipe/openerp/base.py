@@ -1214,6 +1214,9 @@ class BaseRecipe(object):
 
         These can be, e.g., forbidden by the freeze process."""
 
+        # GR TODO this will break with OSError if main package is renamed to
+        # 'odoo' we'll see then what the needed correction exactly is rather
+        # than swallowing the exception now
         shutil.rmtree(join(self.openerp_dir, 'openerp.egg-info'))
         # setup rewritten without PIL is cleaned during the process itself
 
