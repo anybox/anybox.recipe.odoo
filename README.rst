@@ -1,18 +1,21 @@
-OpenERP buildout recipe
-=======================
+Odoo buildout recipe
+====================
+
+.. warning:: currently being extracted from anybox.recipe.openerp.
+
 This recipe for `Buildout <https://github.com/buildout/buildout>`_ is
 a fully featured tool allowing you to define and deploy quickly
-OpenERP installations of any kinds, ranging from development setups to
+Odoo installations of any kinds, ranging from development setups to
 fully automated production deployments or continuous integration.
 
 Some of its main features include:
 
-* uniformity across OpenERP versions (from 5.0 onwards)
-* installation of OpenERP server and, if meaningful, GTK and web clients.
+* uniformity across Odoo versions (from 5.0 onwards)
+* installation of Odoo server and, if meaningful, GTK and web clients.
 * retrieval of main software and addons from various sources,
   including the major version control systems
 * ability to pinpoint everything for replayability
-* management of OpenERP configuration
+* management of Odoo configuration
 * dedicated scripts creation for easy integration of external tools,
   such as test launchers
 * packaging: creation of self-contained equivalents for easy
@@ -73,3 +76,4 @@ Contributors:
  * Laurent Mignon
  * Leonardo Pistone
  * Stefan Rijnhart
+
