@@ -350,7 +350,7 @@ class BzrTestCase(BzrBaseTestCase):
 
     def test_lp_url(self):
         """lp: locations are being rewritten to the actual target."""
-        branch = BzrBranch('', 'lp:anybox.recipe.openerp')
+        branch = BzrBranch('', 'lp:anybox.something')
         # just testing for now that it's been rewritten
         self.failIf(branch.url.startswith('lp:'))
 
@@ -360,7 +360,7 @@ class BzrTestCase(BzrBaseTestCase):
 
     def test_lp_url_nobzrlib(self):
         """We can't safely handle lp: locations without bzrlib."""
-        from anybox.recipe.openerp import vcs
+        from ... import vcs
         save = vcs.bzr.LPDIR
         vcs.bzr.LPDIR = None
         self.assertRaises(RuntimeError, BzrBranch, '', 'lp:something')

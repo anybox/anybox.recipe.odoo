@@ -7,8 +7,8 @@ import logging
 import subprocess
 import zc.buildout
 from zc.buildout import UserError
-from anybox.recipe.openerp import devtools
-from anybox.recipe.openerp.base import BaseRecipe
+from base import BaseRecipe
+from . import devtools
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ class ServerRecipe(BaseRecipe):
         'trunk': 'openerp-8.0dev-%s.tar.gz'
     }
     recipe_requirements = ('babel',)
-    requirements = ('pychart', 'anybox.recipe.openerp')
+    requirements = ('pychart', 'anybox.recipe.odoo')
     soft_requirements = ('openerp-command',)
     with_openerp_command = False
     with_gunicorn = False
@@ -299,7 +299,7 @@ conf = openerp.tools.config
         initialization = ['']
         if self.with_devtools:
             initialization.extend((
-                'from anybox.recipe.openerp import devtools',
+                'from anybox.recipe.odoo import devtools',
                 'devtools.load(for_tests=False)',
                 ''))
 
@@ -326,7 +326,7 @@ conf = openerp.tools.config
         desc.update(
             entry='openerp_starter',
             initialization=os.linesep.join((
-                "from anybox.recipe.openerp import devtools",
+                "from anybox.recipe.odoo import devtools",
                 "devtools.load(for_tests=True)",
                 "")),
             arguments=arguments
@@ -412,7 +412,7 @@ conf = openerp.tools.config
 
         if self.with_devtools:
             initialization.extend((
-                'from anybox.recipe.openerp import devtools',
+                'from anybox.recipe.odoo import devtools',
                 'devtools.load(for_tests=True)',
                 ''))
         desc['initialization'] = os.linesep.join(initialization)
@@ -432,7 +432,7 @@ conf = openerp.tools.config
 
         if self.with_devtools:
             initialization.extend([
-                'from anybox.recipe.openerp import devtools',
+                'from anybox.recipe.odoo import devtools',
                 'devtools.load(for_tests=False)',
                 ''])
 
@@ -482,7 +482,7 @@ conf = openerp.tools.config
 
         initialization = os.linesep.join((
             "",
-            "from anybox.recipe.openerp.runtime.session import Session",
+            "from anybox.recipe.odoo.runtime.session import Session",
             "session = Session(%r, %r)" % (self.config_path,
                                            self.buildout_dir),
             "if len(sys.argv) <= 1:",
@@ -524,7 +524,7 @@ conf = openerp.tools.config
 
         common_init = os.linesep.join((
             "",
-            "from anybox.recipe.openerp.runtime.session import Session",
+            "from anybox.recipe.odoo.runtime.session import Session",
             "session = Session(%r, %r)" % (self.config_path,
                                            self.buildout_dir),
         ))
@@ -564,13 +564,13 @@ conf = openerp.tools.config
         # provide additional needed entry points for main start/test scripts
         self.eggs_reqs.extend((
             ('openerp_starter',
-             'anybox.recipe.openerp.runtime.start_openerp',
+             'anybox.recipe.odoo.runtime.start_openerp',
              'main'),
             ('openerp_cron_worker',
-             'anybox.recipe.openerp.runtime.start_openerp',
+             'anybox.recipe.odoo.runtime.start_openerp',
              'main'),
             ('openerp_upgrader',
-             'anybox.recipe.openerp.runtime.upgrade',
+             'anybox.recipe.odoo.runtime.upgrade',
              'upgrade'),
         ))
 

@@ -4,10 +4,10 @@ import subprocess
 import logging
 import tempfile
 
+from .. import utils
 from ..utils import working_directory_keeper
 from .base import BaseRepo
 from .base import SUBPROCESS_ENV
-from anybox.recipe.openerp import utils
 import re
 
 logger = logging.getLogger(__name__)

@@ -3,7 +3,7 @@ from os.path import join
 import sys
 import logging
 from utils import working_directory_keeper
-from anybox.recipe.openerp.base import BaseRecipe
+from base import BaseRecipe
 
 logger = logging.getLogger(__name__)
 

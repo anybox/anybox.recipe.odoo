@@ -16,7 +16,7 @@ if sys.version_info < (2, 7):
     requires.append('argparse')
 
 setup(
-    name="anybox.recipe.openerp",
+    name="anybox.recipe.odoo",
     version=version,
     author="Anybox",
     author_email="contact@anybox.fr",
@@ -25,7 +25,7 @@ setup(
     long_description='\n'.join((
         open('README.rst').read(),
         open('CHANGES.rst').read())),
-    url="https://launchpad.net/anybox.recipe.openerp",
+    url="https://github.com/anybox/anybox.recipe.odoo",
     packages=find_packages(),
     zip_safe=False,
     include_package_data=True,
@@ -42,9 +42,7 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
     entry_points={'zc.buildout': [
-        'server = anybox.recipe.openerp.server:ServerRecipe',
-        'webclient = anybox.recipe.openerp.webclient:WebClientRecipe',
-        'gtkclient = anybox.recipe.openerp.gtkclient:GtkClientRecipe',
+        'server = anybox.recipe.odoo.server:ServerRecipe',
     ]},
     extras_require = {
       'bzr' : ['bzr'] },

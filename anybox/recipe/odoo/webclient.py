@@ -4,7 +4,7 @@ import logging
 import shutil
 import re
 from zc.buildout import UserError
-from anybox.recipe.openerp.base import BaseRecipe
+from .base import BaseRecipe
 
 logger = logging.getLogger(__name__)
 

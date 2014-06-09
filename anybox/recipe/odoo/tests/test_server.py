@@ -4,10 +4,10 @@ NB: zc.buildout.testing provides utilities for integration tests, with
 an embedded http server, etc.
 """
 import os
-from anybox.recipe.openerp.server import ServerRecipe
-from anybox.recipe.openerp.testing import get_vcs_log
-from anybox.recipe.openerp.testing import RecipeTestCase
 from zc.buildout import UserError
+from ..server import ServerRecipe
+from ..testing import get_vcs_log
+from ..testing import RecipeTestCase
 
 TEST_DIR = os.path.dirname(__file__)
 
@@ -180,7 +180,7 @@ class TestServer(RecipeTestCase):
         self.recipe.version_detected = '6.1-1'
         self.recipe.merge_requirements()
         self.assertEquals(set(self.recipe.requirements),
-                          set(['pychart', 'anybox.recipe.openerp',
+                          set(['pychart', 'anybox.recipe.odoo',
                                'Pillow', 'openerp']))
 
     def test_merge_requirements_PIL(self):
@@ -205,7 +205,7 @@ class TestServer(RecipeTestCase):
         self.make_recipe(version='6.1', with_devtools='true')
         self.recipe.version_detected = '6.1-1'
         self.recipe.merge_requirements()
-        from anybox.recipe.openerp import devtools
+        from .. import devtools
         self.assertTrue(set(devtools.requirements).issubset(
             self.recipe.requirements))
 

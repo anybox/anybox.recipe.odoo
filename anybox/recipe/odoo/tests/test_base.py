@@ -5,10 +5,10 @@ import shutil
 import tempfile
 from ConfigParser import ConfigParser, NoOptionError
 from zc.buildout import UserError
-from anybox.recipe.openerp.server import BaseRecipe
-from anybox.recipe.openerp.base import main_software
-from anybox.recipe.openerp.base import GP_VCS_EXTEND_DEVELOP
-from anybox.recipe.openerp.testing import RecipeTestCase
+from ..server import BaseRecipe
+from ..base import main_software
+from ..base import GP_VCS_EXTEND_DEVELOP
+from ..testing import RecipeTestCase
 from ..testing import COMMIT_USER_FULL
 from ..testing import get_vcs_log
 

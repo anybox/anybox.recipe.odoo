@@ -133,7 +133,7 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
     else:
         logger.info("Database latest upgrade version : %s", db_version)
 
-    upgrade_module = imp.load_source('anybox.recipe.openerp.upgrade_openerp',
+    upgrade_module = imp.load_source('anybox.recipe.odoo.upgrade_openerp',
                                      upgrade_script)
     statuscode = getattr(upgrade_module, upgrade_callable)(session, logger)
     if statuscode is None or statuscode == 0:

@@ -20,7 +20,7 @@
 #
 ##############################################################################
 #
-# anybox.recipe.openerp is also under AGPL v3+
+# anybox.recipe.odoo is also under AGPL v3+
 #
 
 """

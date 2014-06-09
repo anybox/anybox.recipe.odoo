@@ -67,7 +67,7 @@ class Session(object):
     There should be exactly one instance of this class per process.
     It can be used for any kind of script involving OpenERP API, and provides
     facilities for upgrade scripts (see also
-    :mod:anybox.recipe.openerp.runtime.upgrade)
+    :mod:anybox.recipe.odoo.runtime.upgrade)
 
     Before actual use, call :meth:`open`.
     Then you'll have useful attributes and methods reminiscent of the unit test
