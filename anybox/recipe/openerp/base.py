@@ -494,12 +494,14 @@ class BaseRecipe(object):
             if not split:
                 return
             loc_type = split[0]
-            if loc_type != 'bzr':
-                raise UserError("Only merges of type 'bzr' are "
+            if not loc_type in ('bzr', 'git'):
+                raise UserError("Only merges of type 'bzr' and 'git' are "
                                 "currently supported.")
             options = dict(opt.split('=') for opt in split[4:])
             if loc_type == 'bzr':
                 options['bzr-init'] = 'merge'
+            else:
+                options['merge'] = True
 
             repo_url, local_dir, repo_rev = split[1:4]
             location_spec = (repo_url, repo_rev)

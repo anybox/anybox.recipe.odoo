@@ -255,6 +255,9 @@ class BzrBranch(BaseRepo):
         If target_dir already exists, does a simple pull.
         Offline-mode: no branch nor pull, but update.
         In all cases, an attempt to update is performed before any pull
+
+        Special case: if the 'merge' option is True,
+        merge revision into current branch.
         """
         target_dir = self.target_dir
         offline = self.offline

@@ -9,8 +9,9 @@ with any higher released unstable versions.
 ------------------
 - launchpad #1294020: vcs-revert=on-merge option, and implementation
   for bzr
-- launchpad #1274174: new feature for automatic merge of remote VCS sources
-  (bzr only for now)
+- launchpad #1274174: new feature for automatic merge of remote VCS
+  sources, with bzr support.
+- launchpad #1327773: [git] support for automatic merges
 
 1.8.5 (unreleased)
 ------------------

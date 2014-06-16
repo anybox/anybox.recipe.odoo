@@ -176,3 +176,6 @@ class BaseRepo(object):
                                on the VCS type.
         """
         raise NotImplementedError
+
+    def archive(self, target_path):
+        raise NotImplementedError

@@ -1,5 +1,4 @@
 import os
-import sys
 import subprocess
 import logging
 import tempfile
@@ -8,13 +7,14 @@ from ..utils import working_directory_keeper
 from .base import BaseRepo
 from .base import SUBPROCESS_ENV
 from anybox.recipe.openerp import utils
-import re
 
 logger = logging.getLogger(__name__)
 
+BUILDOUT_ORIGIN = 'origin'
+
 
 class GitRepo(BaseRepo):
-    """Represent a Git clone tied to a reference branch."""
+    """Represent a Git clone tied to a reference branch/commit/tag."""
 
     vcs_control_dir = '.git'
 
@@ -46,50 +46,69 @@ class GitRepo(BaseRepo):
             return bool(out.strip())
 
     def get_update(self, revision):
-        """Ensure that target_dir is a branch of url at specified revision.
+        """Make it so that the target directory is at the prescribed revision.
 
-        If target_dir already exists, does a simple fetch.
-        Offline-mode: no branch nor fetch, but checkout.
+        Special case: if the 'merge' option is True,
+        merge revision into current branch.
         """
+        if self.options.get('merge'):
+            return self.merge(revision)
+
         target_dir = self.target_dir
         url = self.url
         offline = self.offline
-        rev_str = revision
 
         with working_directory_keeper:
-            is_target_dir_exists = os.path.exists(target_dir)
-            if not is_target_dir_exists:
-                # TODO case of local url ?
+            if not os.path.exists(target_dir):
                 if offline:
+                    # TODO case of local url ?
                     raise IOError(
-                        "git repository %s does not exist; cannot clone it "
-                        "from %s (offline mode)" % (target_dir, url))
+                        "git repository %s does not exist; cannot clone "
+                        "it from %s (offline mode)" % (target_dir, url))
+                logger.info("%s> git init", target_dir)
+                subprocess.check_call(['git', 'init', target_dir])
+                os.chdir(target_dir)
+                logger.info("%s> git remote add %s %s",
+                            target_dir, BUILDOUT_ORIGIN, url)
+                subprocess.check_call(['git', 'remote', 'add',
+                                       BUILDOUT_ORIGIN, url])
 
-                os.chdir(os.path.split(target_dir)[0])
-                logger.info("Cloning %s ...", url)
-                subprocess.check_call(['git', 'clone', url, target_dir])
-            os.chdir(target_dir)
-
-            if is_target_dir_exists:
+            if not offline:
                 # TODO what if remote repo is actually local fs ?
-                if not offline:
-                    logger.info("Fetch for git repo %s (rev %s)...",
-                                target_dir, rev_str)
-                    subprocess.check_call(['git', 'fetch'])
+                os.chdir(target_dir)
+                logger.info("%s> git remote set-url %s %s",
+                            target_dir, BUILDOUT_ORIGIN, url)
+                subprocess.call(['git', 'remote', 'set-url',
+                                 BUILDOUT_ORIGIN, url])
+                logger.info("%s> git fetch %s",
+                            target_dir, BUILDOUT_ORIGIN)
+                subprocess.check_call(['git', 'fetch', BUILDOUT_ORIGIN])
+                # TODO: check what happens when there are local changes
+                # TODO: what about the 'clean' option
+                logger.info("%s> git checkout %s", target_dir, revision)
+                subprocess.check_call(['git', 'checkout', revision])
+                if self._is_a_branch(revision):
+                    # fast forward
+                    logger.info("%s> git merge merge %s/%s",
+                                target_dir, BUILDOUT_ORIGIN, revision)
+                    subprocess.check_call(['git', 'merge',
+                                           BUILDOUT_ORIGIN + '/' + revision])
 
-            if revision and self._needToSwitchRevision(revision):
-                # switch to the expected revision
-                logger.info("Checkout %s to revision %s",
-                            target_dir, revision)
-                self._switch(revision)
-
-            if self._isATrackedBranch(revision):
-                if not offline:
-                    logger.info("Pull for git repo %s (rev %s)...",
-                                target_dir, rev_str)
-                    subprocess.check_call(['git', 'pull'])
+    def merge(self, revision):
+        """Merge revision into current branch"""
+        with working_directory_keeper:
+            if not self.is_versioned(self.target_dir):
+                raise RuntimeError("Cannot merge into non existent "
+                                   "or non git local directory %s" %
+                                   self.target_dir)
+            os.chdir(self.target_dir)
+            logger.info("%s> git pull %s %s",
+                        self.target_dir, self.url, revision)
+            subprocess.check_call(['git', 'pull', '--no-edit',
+                                   self.url, revision])
 
     def archive(self, target_path):
+        # TODO: does this work with merge-ins?
         revision = self.parents()[0]
         if not os.path.exists(target_path):
             os.makedirs(target_path)
@@ -104,81 +123,17 @@ class GitRepo(BaseRepo):
                                    '-C', target_path])
             os.unlink(target_tar.name)
 
-    def _isATrackedBranch(self, revision):
-        rbp = self._remote_branch_prefix
-        branches = utils.check_output(["git", "branch", "-a"])
-        branch = revision
-        return re.search(
-            "^  " + re.escape(rbp) + "\/" + re.escape(branch) + "$", branches,
-            re.M)
+    def revert(self, revision):
+        with working_directory_keeper:
+            os.chdir(self.target_dir)
+            subprocess.check_call(['git', 'checkout', revision])
+            if self._is_a_branch(revision):
+                subprocess.check_call(['git', 'reset', '--hard',
+                                       BUILDOUT_ORIGIN + '/' + revision])
+            else:
+                subprocess.check_call(['git', 'reset', '--hard', revision])
 
-    def _needToSwitchRevision(self, revision):
-        """ Check if we need to checkout to an other branch
-        """
-        p = utils.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
-        rev = p.split()[0]  # remove \n
-        logger.info("Current revision '%s' - Expected revision '%s'",
-                    rev, revision)
-        return rev != revision
-
-    def _switch(self, revision):
-        rbp = self._remote_branch_prefix
-        branches = utils.check_output(["git", "branch", "-a"])
-        branch = revision
-        if re.search("^(\*| ) %s$" % re.escape(branch), branches, re.M):
-            # the branch is local, normal checkout will work
-            logger.info("The branch is local; normal checkout ")
-            argv = ["checkout", branch]
-        elif re.search(
-            "^  " + re.escape(rbp) + "\/" + re.escape(branch) + "$", branches,
-                re.M):
-            # the branch is not local, normal checkout won't work here
-            logger.info("The branch is not local; checkout remote branch ")
-            argv = ["checkout", "-b", branch, "%s/%s" % (rbp, branch)]
-        else:
-            # A tag or revision was specified instead of a branch
-            logger.info("Checkout tag or revision")
-            argv = ["checkout", revision]
-        # runs the checkout with predetermined arguments
-        argv.insert(0, "git")
-        subprocess.check_call(argv)
-
-    @property
-    def _remote_branch_prefix(self):
-        version = self._git_version
-        if version < (1, 6, 3):
-            return "origin"
-        else:
-            return "remotes/origin"
-
-    @property
-    def _git_version(self):
-        out = utils.check_output(["git", "--version"])
-        m = re.search("git version (\d+)\.(\d+)(\.\d+)?(\.\d+)?", out)
-        if m is None:
-            logger.error("Unable to parse git version output")
-            logger.error("'git --version' output was:\n%s\n%s", out)
-            sys.exit(1)
-        version = m.groups()
-
-        if version[3] is not None:
-            version = (
-                int(version[0]),
-                int(version[1]),
-                int(version[2][1:]),
-                int(version[3][1:])
-            )
-        elif version[2] is not None:
-            version = (
-                int(version[0]),
-                int(version[1]),
-                int(version[2][1:])
-            )
-        else:
-            version = (int(version[0]), int(version[1]))
-        if version < (1, 5):
-            logger.error(
-                "Git version %s is unsupported, please upgrade",
-                ".".join([str(v) for v in version]))
-            sys.exit(1)
-        return version
+    def _is_a_branch(self, revision):
+        branches = utils.check_output(["git", "branch"])
+        branches = branches.split()
+        return revision in branches
