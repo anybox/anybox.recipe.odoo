@@ -7,6 +7,8 @@ with any higher released unstable versions.
 
 1.8.5 (unreleased)
 ------------------
+- launchpad #1249566: [bzr] avoid outgoing requests in offline mode
+  due to lp: locations resolution
 
 1.8.4 (2014-06-16)
 ------------------
