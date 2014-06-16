@@ -265,21 +265,27 @@ class GitMergeTestCase(GitBaseTestCase):
         repo = GitRepo(target_dir, self.src_repo)
 
         repo('master')
-        self.assertFalse(os.path.exists(os.path.join(target_dir, 'file_on_branch1')),
+        self.assertFalse(os.path.exists(os.path.join(target_dir,
+                                                     'file_on_branch1')),
                          'file_on_branch1 should not exist')
-        self.assertFalse(os.path.exists(os.path.join(target_dir, 'file_on_branch2')),
+        self.assertFalse(os.path.exists(os.path.join(target_dir,
+                                                     'file_on_branch2')),
                          'file_on_branch2 should not exist')
 
         repo('branch1')
-        self.assertTrue(os.path.exists(os.path.join(target_dir, 'file_on_branch1')),
-                         'file_on_branch1 should exist')
-        self.assertFalse(os.path.exists(os.path.join(target_dir, 'file_on_branch2')),
+        self.assertTrue(os.path.exists(os.path.join(target_dir,
+                                                    'file_on_branch1')),
+                        'file_on_branch1 should exist')
+        self.assertFalse(os.path.exists(os.path.join(target_dir,
+                                                     'file_on_branch2')),
                          'file_on_branch2 should not exist')
 
         repo('branch2')
-        self.assertFalse(os.path.exists(os.path.join(target_dir, 'file_on_branch1')),
+        self.assertFalse(os.path.exists(os.path.join(target_dir,
+                                                     'file_on_branch1')),
                          'file_on_branch1 should not exist')
-        self.assertTrue(os.path.exists(os.path.join(target_dir, 'file_on_branch2')),
+        self.assertTrue(os.path.exists(os.path.join(target_dir,
+                                                    'file_on_branch2')),
                         'file_on_branch2 should exist')
 
     def test_02_merge(self):
@@ -288,14 +294,18 @@ class GitMergeTestCase(GitBaseTestCase):
         repo('master')
 
         repo.merge('branch1')
-        self.assertTrue(os.path.exists(os.path.join(target_dir, 'file_on_branch1')),
+        self.assertTrue(os.path.exists(os.path.join(target_dir,
+                                                    'file_on_branch1')),
                         'file_on_branch1 should exist')
-        self.assertFalse(os.path.exists(os.path.join(target_dir, 'file_on_branch2')),
-                        'file_on_branch2 should not exist')
+        self.assertFalse(os.path.exists(os.path.join(target_dir,
+                                                     'file_on_branch2')),
+                         'file_on_branch2 should not exist')
         repo.merge('branch2')
-        self.assertTrue(os.path.exists(os.path.join(target_dir, 'file_on_branch1')),
+        self.assertTrue(os.path.exists(os.path.join(target_dir,
+                                                    'file_on_branch1')),
                         'file_on_branch1 should exist')
-        self.assertTrue(os.path.exists(os.path.join(target_dir, 'file_on_branch2')),
+        self.assertTrue(os.path.exists(os.path.join(target_dir,
+                                                    'file_on_branch2')),
                         'file_on_branch2 should exist')
 
     def test_03_revert(self):
@@ -304,9 +314,11 @@ class GitMergeTestCase(GitBaseTestCase):
         repo('master')
 
         repo.merge('branch1')
-        self.assertTrue(os.path.exists(os.path.join(target_dir, 'file_on_branch1')),
+        self.assertTrue(os.path.exists(os.path.join(target_dir,
+                                                    'file_on_branch1')),
                         'file_on_branch1 should exist')
 
         repo.revert('master')
-        self.assertFalse(os.path.exists(os.path.join(target_dir, 'file_on_branch1')),
+        self.assertFalse(os.path.exists(os.path.join(target_dir,
+                                                     'file_on_branch1')),
                          'file_on_branch1 should not exist')
