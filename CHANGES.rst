@@ -5,7 +5,12 @@ The 1.8 series are stable versions, while the 1.9 are unstable.
 Changes displayed as "unreleased" in th stable series are released
 with any higher released unstable versions.
 
-1.8.4 (unreleased)
+1.8.5 (unreleased)
+------------------
+- launchpad #1249566: [bzr] avoid outgoing requests in offline mode
+  due to lp: locations resolution
+
+1.8.4 (2014-06-16)
 ------------------
 - launchpad #1327756: support new addons layout on github
 - launchpad #1324579: [odoo] generation of gevent script (longpolling)

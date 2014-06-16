@@ -42,7 +42,7 @@ class BzrBranch(BaseRepo):
                         "probably disappear in version 1.8.")
             self.options['bzr-init'] = 'lightweight-checkout'
 
-        if self.url.startswith('lp:'):
+        if self.url.startswith('lp:') and not self.offline:
             if LPDIR is None:
                 raise RuntimeError(
                     "To use launchpad locations (lp:), bzrlib must be "
@@ -99,7 +99,7 @@ class BzrBranch(BaseRepo):
             return
 
         old_parent = conf['parent_location']
-        if old_parent == self.url:
+        if old_parent == self.url or self.url.startswith('lp:'):
             return False
 
         self.previous_conf = deepcopy(conf)
