@@ -97,16 +97,24 @@ class BaseRecipe(object):
 
     """
 
-    default_dl_url = {'6.0': 'http://nightly.openerp.com/old/openerp-6/',
-                      '6.1': 'http://nightly.openerp.com/6.1/releases/',
-                      '7.0': 'http://nightly.openerp.com/7.0/releases/',
-                      }
+    default_dl_url = {
+        '8.0': 'http://nightly.openerp.com/8.0/releases/',
+    }
+    """Base URLs to look for official, released versions.
 
-    nightly_dl_url = {'6.0': 'http://nightly.openerp.com/6.0/6.0/',
-                      '6.1': 'http://nightly.openerp.com/6.1/nightly/src/',
-                      '7.0': 'http://nightly.openerp.com/7.0/nightly/src/',
-                      'trunk': 'http://nightly.openerp.com/trunk/nightly/src/',
-                      }
+    The URL for 8.0 may have to be adapted once it's released for good.
+    This one is guessed from 7.0 and is needed by unit tests.
+    """
+
+    nightly_dl_url = {
+        'trunk': 'http://nightly.openerp.com/trunk/nightly/src/',
+        '8.0': 'http://nightly.openerp.com/8.0/nightly/src/',
+    }
+    """Base URLs to look for nightly versions.
+
+    The URL for 8.0 may have to be adapted once it's released for good.
+    This one is guessed from 7.0 and is needed by unit tests.
+    """
 
     recipe_requirements = ()  # distribution required for the recipe itself
     recipe_requirements_paths = ()  # a default value is useful in unit tests
@@ -155,7 +163,7 @@ class BaseRecipe(object):
             options['scripts'] = ''
 
         # a dictionnary of messages to display in case a distribution is
-        # not installable.
+        # not installable (kept PIL to have an example, but Odoo is on Pillow)
         self.missing_deps_instructions = {
             'PIL': ("You don't need to require it for OpenERP any more, since "
                     "the recipe automatically adds a dependency to Pillow. "
@@ -415,17 +423,7 @@ class BaseRecipe(object):
                 logger.warn('Tarball member %r is outside of %r. Ignored.',
                             tinfo, sandbox)
 
-    def _produce_setup_without_pil(self, src_directory):
-        """Create a copy of setup.py without PIL and return a path to it."""
-
-        new_setup_path = join(src_directory, 'setup.nopil.py')
-        with open(join(src_directory, 'setup.py')) as inp:
-            setup_str = inp.read()
-        with open(new_setup_path, 'w') as out:
-            out.write(setup_str.replace("'PIL',", ''))
-        return new_setup_path
-
-    def develop(self, src_directory, setup_has_pil=False):
+    def develop(self, src_directory):
         """Develop the specified source distribution.
 
         Any call to zc.recipe.eggs will use that developped version.
@@ -439,16 +437,7 @@ class BaseRecipe(object):
         pythonpath_bak = os.getenv('PYTHONPATH')
         os.putenv('PYTHONPATH', ':'.join(self.recipe_requirements_paths))
 
-        if setup_has_pil:
-            setup = self._produce_setup_without_pil(src_directory)
-        else:
-            setup = src_directory
-
-        try:
-            zc.buildout.easy_install.develop(setup, develop_dir)
-        finally:
-            if setup_has_pil:
-                os.unlink(setup)
+        zc.buildout.easy_install.develop(src_directory, develop_dir)
 
         if pythonpath_bak is None:
             os.unsetenv('PYTHONPATH')
@@ -765,14 +754,7 @@ class BaseRecipe(object):
         """Add openerp paths into the extra-paths (used in scripts' sys.path).
         """
         extra = self.extra_paths
-        if self.major_version >= (6, 2):
-            # TODO still necessary ?
-            extra.append(self.openerp_dir)
-            if self.major_version < (8, 0):
-                extra.append(join(self.openerp_dir, 'addons'))
-        else:
-            extra.extend((join(self.openerp_dir, 'bin'),
-                          join(self.openerp_dir, 'bin', 'addons')))
+        extra.append(self.openerp_dir)
         self.options['extra-paths'] = os.linesep.join(extra)
 
     def install(self):
@@ -1207,18 +1189,6 @@ class BaseRecipe(object):
 
     update = install
 
-    def _60_fix_root_path(self):
-        """Correction of root path for OpenERP 6.0 pure python install
-
-        Actual implementation is up to subclasses
-        """
-
-    def _60_default_addons_path(self):
-        """Set the default addons path for OpenERP 6.0 pure python install
-
-        Actual implementation is up to subclasses
-        """
-
     def _default_addons_path(self):
         """Set the default addons path for OpenERP > 6.0 pure python install
 
@@ -1228,8 +1198,8 @@ class BaseRecipe(object):
     def finalize_addons_paths(self, check_existence=True):
         """Add implicit paths and serialize in the addons_path option.
 
-        if check_existence is True, all the paths will be checked for
-        existence.
+        :param check_existence: if ``True``, all the paths will be checked for
+                                existence (useful for unit tests)
         """
         opt_key = 'options.addons_path'
         if opt_key in self.options:
@@ -1237,10 +1207,7 @@ class BaseRecipe(object):
                             "please use addons lines with type 'local' "
                             "instead." % (self.name, opt_key))
 
-        if self.major_version <= (6, 0):
-            base_addons = join(self.openerp_dir, 'bin', 'addons')
-        else:
-            base_addons = join(self.openerp_dir, 'openerp', 'addons')
+        base_addons = join(self.openerp_dir, 'openerp', 'addons')
         if os.path.exists(base_addons):
             self.addons_paths.insert(0, base_addons)
 
@@ -1252,8 +1219,6 @@ class BaseRecipe(object):
                     "Not a directory: %r (aborting)" % path)
 
         self.options['options.addons_path'] = ','.join(self.addons_paths)
-        if self.major_version <= (6, 0):
-            self._60_fix_root_path()
 
     def insert_odoo_git_addons(self, base_addons):
         """Insert the standard, non-base addons bundled within Odoo git repo.
@@ -1299,7 +1264,6 @@ class BaseRecipe(object):
         # 'odoo' we'll see then what the needed correction exactly is rather
         # than swallowing the exception now
         shutil.rmtree(join(self.openerp_dir, 'openerp.egg-info'))
-        # setup rewritten without PIL is cleaned during the process itself
 
     def buildout_cfg_name(self, argv=None):
         """Return the name of the config file that's been called.

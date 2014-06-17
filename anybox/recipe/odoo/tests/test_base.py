@@ -18,9 +18,9 @@ TEST_DIR = os.path.dirname(__file__)
 class TestingRecipe(BaseRecipe):
     """A subclass with just enough few defaults for unit testing."""
 
-    archive_filenames = {'6.1': 'blob-%s.tgz',
-                         '6.0': 'bl0b-%s.tgz'}
-    archive_nightly_filenames = {'6.1': '6-1-nightly-%s.tbz'}
+    archive_filenames = {'8.0': 'blob-%s.tgz',
+                         }
+    archive_nightly_filenames = {'8.0': '8-0-nightly-%s.tbz'}
 
 
 class TestBaseRecipe(RecipeTestCase):
@@ -49,31 +49,33 @@ class TestBaseRecipe(RecipeTestCase):
         self.assertEquals(source[0], 'downloadable')
         self.assertEquals(source[1], url)
 
-    def test_version_release_6_1(self):
-        self.make_recipe(version='6.1-1')
+    def test_version_release_8_0(self):
+        self.make_recipe(version='8.0-1')
 
         recipe = self.recipe
-        self.assertEquals(recipe.version_wanted, '6.1-1')
+        self.assertEquals(recipe.version_wanted, '8.0-1')
         self.assertDownloadUrl(
-            'http://nightly.openerp.com/6.1/releases/blob-6.1-1.tgz')
+            'http://nightly.openerp.com/8.0/releases/blob-8.0-1.tgz')
 
-    def test_version_nightly_6_1(self):
-        self.make_recipe(version='nightly 6.1 1234-5')
+    def test_version_nightly_8_0(self):
+        self.make_recipe(version='nightly 8.0 1234-5')
 
         self.assertDownloadUrl(
-            'http://nightly.openerp.com/6.1/nightly/src/'
-            '6-1-nightly-1234-5.tbz')
+            'http://nightly.openerp.com/8.0/nightly/src/'
+            '8-0-nightly-1234-5.tbz')
 
-    def test_version_bzr_6_1(self):
+    def test_version_bzr_8_0(self):
+        # this one is a bit ridiculous now, but let's keep it
+        # and make a Git one beside it
         self.make_recipe(
-            version='bzr lp:openobject-server/6.1 openerp-6.1 last:1')
+            version='bzr lp:openobject-server/8.0 openerp-8.0 last:1')
 
         recipe = self.recipe
         self.assertEquals(self.get_source_type(), 'bzr')
         self.assertEquals(self.get_source_url(),
-                          ('lp:openobject-server/6.1', 'last:1'))
+                          ('lp:openobject-server/8.0', 'last:1'))
         self.assertEquals(recipe.openerp_dir,
-                          os.path.join(recipe.parts, 'openerp-6.1'))
+                          os.path.join(recipe.parts, 'openerp-8.0'))
 
     def test_version_local(self):
         local_path = 'path/to/local/version'
@@ -90,26 +92,26 @@ class TestBaseRecipe(RecipeTestCase):
         self.assertEquals(recipe.archive_filename, 'openerp-12.0.tgz')
 
     def test_base_url(self):
-        self.make_recipe(version='6.1-1',
+        self.make_recipe(version='8.0-1',
                          base_url='http://example.org/openerp')
-        self.assertDownloadUrl('http://example.org/openerp/blob-6.1-1.tgz')
+        self.assertDownloadUrl('http://example.org/openerp/blob-8.0-1.tgz')
 
     def test_base_url_nightly(self):
-        self.make_recipe(version='nightly 6.1 1234-5',
+        self.make_recipe(version='nightly 8.0 1234-5',
                          base_url='http://example.org/openerp')
         self.assertDownloadUrl(
-            'http://example.org/openerp/6-1-nightly-1234-5.tbz')
+            'http://example.org/openerp/8-0-nightly-1234-5.tbz')
 
     def test_buildout_cfg_name(self):
-        self.make_recipe(version='6.1-1')
+        self.make_recipe(version='8.0-1')
         bcn = self.recipe.buildout_cfg_name
         self.assertEquals(bcn(), 'buildout.cfg')
         self.assertEquals(bcn(('-D', 'install', 'openerp')), 'buildout.cfg')
-        self.assertEquals(bcn(('-c', '6.1.cfg')), '6.1.cfg')
-        self.assertEquals(bcn(('--config', '6.1.cfg')), '6.1.cfg')
-        self.assertEquals(bcn(('-o', '--config', '6.1.cfg')), '6.1.cfg')
-        self.assertEquals(bcn(('--config=6.1.cfg',)), '6.1.cfg')
-        self.assertEquals(bcn(('--config=6.1.cfg', '-o')), '6.1.cfg')
+        self.assertEquals(bcn(('-c', '8.0.cfg')), '8.0.cfg')
+        self.assertEquals(bcn(('--config', '8.0.cfg')), '8.0.cfg')
+        self.assertEquals(bcn(('-o', '--config', '8.0.cfg')), '8.0.cfg')
+        self.assertEquals(bcn(('--config=8.0.cfg',)), '8.0.cfg')
+        self.assertEquals(bcn(('--config=8.0.cfg', '-o')), '8.0.cfg')
 
     def test_parse_addons_revisions(self):
         """Test both parse_addons and parse_revisions."""
@@ -179,7 +181,7 @@ class TestBaseRecipe(RecipeTestCase):
         """
         conf = ConfigParser()
         conf.add_section('freeze')
-        self.make_recipe(version='6.1-1')
+        self.make_recipe(version='8.0-1')
         self.build_babel_egg()
         self.recipe.options['eggs'] = 'Babel'
         self.recipe.install_requirements()  # to get 'ws' attribute
@@ -198,7 +200,7 @@ class TestBaseRecipe(RecipeTestCase):
         conf = ConfigParser()
         conf.add_section('freeze')
         conf.set('freeze', 'some.distribution', '1.0alpha')
-        self.make_recipe(version='6.1-1')
+        self.make_recipe(version='8.0-1')
         self.build_babel_egg()
         self.recipe.options['eggs'] = 'Babel'
         self.recipe.install_requirements()  # to get 'ws' attribute
@@ -214,7 +216,7 @@ class TestBaseRecipe(RecipeTestCase):
         """
         conf = ConfigParser()
         conf.add_section('freeze')
-        self.make_recipe(version='6.1-1')
+        self.make_recipe(version='8.0-1')
         self.recipe.develop(os.path.join(TEST_DIR, 'fake_babel'))
         self.recipe.options['eggs'] = 'Babel'
         self.recipe.install_requirements()  # to get 'ws' attribute
@@ -222,7 +224,7 @@ class TestBaseRecipe(RecipeTestCase):
         self.assertRaises(NoOptionError, conf.get, 'freeze', 'Babel')
 
     def test_freeze_vcs_source(self):
-        self.make_recipe(version='6.1-1')
+        self.make_recipe(version='8.0-1')
         b_dir = self.recipe.buildout_dir
         repo_path = os.path.join(b_dir, 'custom')
         subprocess.check_call(['hg', 'init', repo_path])
@@ -336,7 +338,7 @@ class TestBaseRecipe(RecipeTestCase):
         self.assertEqual(get_vcs_log(), [])
 
     def test_freeze_vcs_source_dirty(self):
-        self.make_recipe(version='6.1-1')
+        self.make_recipe(version='8.0-1')
         b_dir = self.recipe.buildout_dir
         repo_path = os.path.join(b_dir, 'custom')
         subprocess.check_call(['hg', 'init', repo_path])
@@ -364,13 +366,13 @@ class TestBaseRecipe(RecipeTestCase):
         self.assertTrue(bool(self.recipe.local_modifications))
 
     def test_prepare_frozen_buildout(self):
-        self.make_recipe(version='6.1-1')
+        self.make_recipe(version='8.0-1')
         conf = ConfigParser()
         self.recipe._prepare_frozen_buildout(conf)
         self.assertTrue('buildout' in conf.sections())
 
     def test_prepare_frozen_buildout_gp_vcsdevelop(self):
-        self.make_recipe(version='6.1-1')
+        self.make_recipe(version='8.0-1')
         self.recipe.b_options[GP_VCS_EXTEND_DEVELOP] = (
             "fakevcs+http://example.com/aeroolib#egg=aeroolib")
 
@@ -389,7 +391,7 @@ class TestBaseRecipe(RecipeTestCase):
         manually updating the repo. In all cases, the instrospected revision
         will be used.
         """
-        self.make_recipe(version='6.1-1')
+        self.make_recipe(version='8.0-1')
         self.recipe.b_options[GP_VCS_EXTEND_DEVELOP] = (
             "fakevcs+http://example.com/aeroolib@somerev#egg=aeroolib")
 
@@ -426,18 +428,6 @@ class TestBaseRecipe(RecipeTestCase):
         self.assertEquals(self.recipe.addons_paths, [base_addons,
                                                      '/some/separate/addons'])
 
-    def test_finalize_addons_paths_60_layout(self):
-        self.make_recipe(version='6.0.4')
-        recipe = self.recipe
-        recipe.version_detected = '6.0.4'
-        oerp_dir = recipe.openerp_dir = os.path.join(recipe.parts, 'oerp60')
-        base_addons = os.path.join(oerp_dir, 'bin', 'addons')
-        os.makedirs(base_addons)
-        recipe.addons_paths = ['/some/separate/addons']
-        recipe.finalize_addons_paths(check_existence=False)
-        self.assertEquals(self.recipe.addons_paths, [base_addons,
-                                                     '/some/separate/addons'])
-
 
 class TestExtraction(RecipeTestCase):
 
@@ -453,7 +443,7 @@ class TestExtraction(RecipeTestCase):
         self.recipe = TestingRecipe(self.buildout, name, options)
 
     def test_prepare_extracted_buildout(self):
-        self.make_recipe(version='6.1-1')
+        self.make_recipe(version='8.0-1')
         conf = ConfigParser()
         self.recipe._prepare_extracted_buildout(conf, self.extract_target_dir)
         self.assertTrue('buildout' in conf.sections())
@@ -509,7 +499,7 @@ class TestExtraction(RecipeTestCase):
         self.assertEquals(conf.get('openerp', 'revisions').strip(), '')
 
     def test_prepare_extracted_buildout_gp_vcsdevelop(self):
-        self.make_recipe(version='6.1-1')
+        self.make_recipe(version='8.0-1')
         self.recipe.b_options[GP_VCS_EXTEND_DEVELOP] = (
             "fakevcs+http://example.com/aeroolib#egg=aeroolib")
         self.recipe.b_options['develop'] = os.path.join(

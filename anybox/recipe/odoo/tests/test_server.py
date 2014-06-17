@@ -20,7 +20,7 @@ class TestServer(RecipeTestCase):
     def test_retrieve_addons_local(self):
         """Setting up a local addons line."""
         addons_dir = os.path.join(self.buildout_dir, 'addons-custom')
-        self.make_recipe(version='6.1', addons='local addons-custom')
+        self.make_recipe(version='8.0', addons='local addons-custom')
 
         self.recipe.retrieve_addons()
         paths = self.recipe.addons_paths
@@ -33,7 +33,7 @@ class TestServer(RecipeTestCase):
         os.mkdir(addons_dir)
         with open(os.path.join(addons_dir, '__openerp__.py'), 'w') as f:
             f.write("#Empty python package")
-        self.make_recipe(version='6.1', addons='local addons-custom')
+        self.make_recipe(version='8.0', addons='local addons-custom')
         self.assertRaises(UserError, self.recipe.retrieve_addons)
 
     def test_retrieve_addons_local_options(self):
@@ -41,7 +41,7 @@ class TestServer(RecipeTestCase):
         """
         custom_dir = os.path.join(self.buildout_dir, 'custom')
         addons_dir = os.path.join(custom_dir, 'addons')
-        self.make_recipe(version='6.1', addons='local custom subdir=addons')
+        self.make_recipe(version='8.0', addons='local custom subdir=addons')
 
         self.recipe.retrieve_addons()
         paths = self.recipe.addons_paths
@@ -50,7 +50,7 @@ class TestServer(RecipeTestCase):
 
     def test_retrieve_addons_vcs(self):
         """A VCS line in addons."""
-        self.make_recipe(version='6.1', addons='fakevcs http://trunk.example '
+        self.make_recipe(version='8.0', addons='fakevcs http://trunk.example '
                          'addons-trunk rev')
         # manual creation because fakevcs does nothing but retrieve_addons
         # has assertions on existence of target directories
@@ -67,7 +67,7 @@ class TestServer(RecipeTestCase):
 
     def test_retrieve_addons_vcs_2(self):
         """Two VCS lines in addons."""
-        self.make_recipe(version='6.1', addons=os.linesep.join((
+        self.make_recipe(version='8.0', addons=os.linesep.join((
             'fakevcs http://trunk.example addons-trunk rev',
             'fakevcs http://other.example addons-other 76')))
         # manual creation because fakevcs does nothing but retrieve_addons
@@ -89,7 +89,7 @@ class TestServer(RecipeTestCase):
     def test_retrieve_addons_vcs_order(self):
         """Ordering of addons paths is respected."""
         self.make_recipe(
-            version='6.1',
+            version='8.0',
             addons=os.linesep.join(
                 ['fakevcs http://trunk.example addons-%d rev' % d
                  for d in range(10)]))
@@ -104,7 +104,7 @@ class TestServer(RecipeTestCase):
             self.assertEqual(paths, expected)
 
     def test_retrieve_addons_subdir(self):
-        self.make_recipe(version='6.1', addons='fakevcs lp:openerp-web web '
+        self.make_recipe(version='8.0', addons='fakevcs lp:openerp-web web '
                          'last:1 subdir=addons bzrinit=branch')
         # manual creation because fakevcs does nothing but retrieve_addons
         # has assertions on existence of target directories
@@ -122,7 +122,7 @@ class TestServer(RecipeTestCase):
 
     def check_retrieve_addons_single(self, dirname):
         """The VCS is a whole addon."""
-        self.make_recipe(version='6.1',
+        self.make_recipe(version='8.0',
                          addons='fakevcs custom %s last:1' % dirname)
         dirname = dirname.rstrip('/')
         # manual creation of our single addon
@@ -151,7 +151,7 @@ class TestServer(RecipeTestCase):
 
     def test_retrieve_addons_single_collision(self):
         """The VCS is a whole addon, and there's a collision in renaming"""
-        self.make_recipe(version='6.1', addons='fakevcs custom addon last:1')
+        self.make_recipe(version='8.0', addons='fakevcs custom addon last:1')
         addon_dir = os.path.join(self.buildout_dir, 'addon')
         os.mkdir(addon_dir)
         open(os.path.join(addon_dir, '__openerp__.py'), 'w').close()
@@ -166,7 +166,7 @@ class TestServer(RecipeTestCase):
     def test_retrieve_addons_clear_locks(self):
         """Retrieving addons with vcs-clear-locks option."""
         addons_dir = os.path.join(self.buildout_dir, 'addons')
-        options = dict(version='6.1', addons='fakevcs lp:my-addons addons -1')
+        options = dict(version='8.0', addons='fakevcs lp:my-addons addons -1')
         options['vcs-clear-locks'] = 'True'
         self.make_recipe(**options)
         self.recipe.retrieve_addons()
@@ -176,25 +176,16 @@ class TestServer(RecipeTestCase):
                           ])
 
     def test_merge_requirements(self):
-        self.make_recipe(version='6.1')
-        self.recipe.version_detected = '6.1-1'
+        self.make_recipe(version='8.0')
+        self.recipe.version_detected = '8.0-1'
         self.recipe.merge_requirements()
         self.assertEquals(set(self.recipe.requirements),
                           set(['pychart', 'anybox.recipe.odoo',
-                               'Pillow', 'openerp']))
-
-    def test_merge_requirements_PIL(self):
-        self.make_recipe(version='nightly trunk latest')
-        self.recipe.version_detected = '6.2-nightly-20121110-003000'
-        requirements = self.recipe.requirements
-        requirements.append('PIL')
-        self.recipe.merge_requirements()
-        self.assertTrue('PIL' not in requirements)
-        self.assertTrue('Pillow' in requirements)
+                               'openerp']))
 
     def test_merge_requirements_gunicorn(self):
-        self.make_recipe(version='6.1', gunicorn='direct')
-        self.recipe.version_detected = '6.1-1'
+        self.make_recipe(version='8.0', gunicorn='direct')
+        self.recipe.version_detected = '8.0-1'
         self.recipe.apply_version_dependent_decisions()  # TODO make a helper
         self.recipe.merge_requirements()
         req = self.recipe.requirements
@@ -202,34 +193,12 @@ class TestServer(RecipeTestCase):
         self.assertTrue('psutil' in req)
 
     def test_merge_requirements_devtools(self):
-        self.make_recipe(version='6.1', with_devtools='true')
-        self.recipe.version_detected = '6.1-1'
+        self.make_recipe(version='8.0', with_devtools='true')
+        self.recipe.version_detected = '8.0-1'
         self.recipe.merge_requirements()
         from .. import devtools
         self.assertTrue(set(devtools.requirements).issubset(
             self.recipe.requirements))
-
-    def test_merge_requirements_oe(self):
-        self.make_recipe(version='nightly trunk 20121101',
-                         with_devtools='true')
-        self.recipe.version_detected = '7.0alpha'
-        self.recipe.apply_version_dependent_decisions()
-        self.recipe.merge_requirements()
-        self.assertTrue('openerp-command' in self.recipe.requirements)
-
-    def test_merge_requirements_oe_nodevtools(self):
-        self.make_recipe(version='nightly trunk 20121101',
-                         with_devtools='false')
-        self.recipe.version_detected = '7.0alpha'
-        self.recipe.merge_requirements()
-        self.assertFalse('openerp-command' in self.recipe.requirements)
-
-    def test_merge_requirements_oe_61(self):
-        self.make_recipe(version='nightly 6.1 20121101',
-                         with_devtools='true')
-        self.recipe.version_detected = '6.1-20121101'
-        self.recipe.merge_requirements()
-        self.assertFalse('openerp-command' in self.recipe.requirements)
 
     def assertScripts(self, wanted):
         """Assert that scripts have been produced."""
@@ -240,51 +209,19 @@ class TestServer(RecipeTestCase):
             if not script in binlist:
                 self.fail("Script %r missing in bin directory." % script)
 
-    def test_retrieve_fixup_addons_local_61(self):
-        addons_dir = os.path.join(self.buildout_dir, 'addons-custom')
-        oerp_dir = os.path.join(TEST_DIR, 'oerp61')
-        self.make_recipe(version='local %s' % oerp_dir,
-                         addons='local addons-custom')
-
-        self.recipe.version_detected = "6.1-20121003-233130"
-        self.assertEquals(self.recipe.major_version, (6, 1))
-        self.recipe.retrieve_addons()
-        paths = self.recipe.addons_paths
-        self.recipe.finalize_addons_paths(check_existence=False)
-        self.assertEquals(paths, [os.path.join(oerp_dir, 'openerp', 'addons'),
-                                  addons_dir])
-
-    def test_retrieve_fixup_addons_local_60_check_ok(self):
-        oerp_dir = os.path.join(TEST_DIR, 'oerp60')
-        self.make_recipe(version='local %s' % oerp_dir,
-                         addons='local addons-custom',
-                         )
-
-        self.recipe.version_detected = "6.0.4"
-        self.recipe.retrieve_addons()
-
-        addons_dir = os.path.join(self.buildout_dir, 'addons-custom')
-        root_dir = os.path.join(oerp_dir, 'bin', 'addons')
-        os.mkdir(addons_dir)
-        self.recipe.finalize_addons_paths()
-        paths = self.recipe.addons_paths
-        self.assertEqual(paths, [root_dir, addons_dir])
-        self.assertEqual(self.recipe.options['options.root_path'],
-                         os.path.join(oerp_dir, 'bin'))
-
     def test_retrieve_fixup_addons_check(self):
         """Test that existence check of addons paths is done."""
-        oerp_dir = os.path.join(TEST_DIR, 'oerp60')
+        oerp_dir = os.path.join(TEST_DIR, 'odoo80')
         self.make_recipe(version='local %s' % oerp_dir,
                          addons='local addons-custom',
                          )
 
-        self.recipe.version_detected = "6.0.4"
+        self.recipe.version_detected = "8.0.0"
         self.recipe.retrieve_addons()
         self.assertRaises(AssertionError, self.recipe.finalize_addons_paths)
 
     def test_forbid_addons_paths_option(self):
-        oerp_dir = os.path.join(TEST_DIR, 'oerp60')
+        oerp_dir = os.path.join(TEST_DIR, 'odoo80')
         self.make_recipe(version='local %s' % oerp_dir,
                          addons='local addons-custom',
                          )
@@ -293,7 +230,7 @@ class TestServer(RecipeTestCase):
         self.assertRaises(UserError, self.recipe.finalize_addons_paths,
                           check_existence=False)
 
-    def install_scripts(self, extra_develop=None, setup_has_pil=False,
+    def install_scripts(self, extra_develop=None,
                         extra_requirements=()):
         """Helper for full integration tests again a typical OpenERP setup.py
 
@@ -319,8 +256,7 @@ class TestServer(RecipeTestCase):
         self.recipe.options['eggs'] = os.linesep.join(eggs)
 
         self.recipe.install_requirements()
-        self.recipe.develop(self.recipe.openerp_dir,
-                            setup_has_pil=setup_has_pil)
+        self.recipe.develop(self.recipe.openerp_dir)
 
         bindir = os.path.join(self.buildout_dir, 'bin')
         os.mkdir(bindir)
@@ -328,44 +264,13 @@ class TestServer(RecipeTestCase):
         self.recipe._register_extra_paths()
         self.recipe._install_startup_scripts()
 
-    def test_install_scripts_61(self):
-        self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'oerp61'),
-                         gunicorn='direct',
-                         with_devtools='true')
-        self.recipe.options['options.log_handler'] = ":INFO,werkzeug:WARNING"
-        self.recipe.options['options.log_level'] = "WARNING"
-        self.recipe.version_detected = "6.1-20121003-233130"
-
-        self.install_scripts()
-        self.assertScripts(('start_openerp',
-                            'test_openerp',
-                            'gunicorn_openerp',
-                            'cron_worker_openerp',
-                            ))
-
-        with open(os.path.join(self.buildout_dir, 'etc',
-                               'gunicorn_openerp.conf.py')) as gconf:
-            s = gconf.read()
-            self.assertTrue("[':INFO', 'werkzeug:WARNING']" in s)
-
-    def test_install_scripts_60(self):
-        self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'oerp60'),
-                         with_devtools='true')
-        self.recipe.options['options.log_level'] = "WARNING"
-        self.recipe.version_detected = "6.0.4"
-
-        self.install_scripts()
-        self.assertScripts(('start_openerp',
-                            'test_openerp',
-                            ))
-
     def test_install_scripts_soft_deps(self):
         """If a soft requirement is missing, the scripts are still generated.
         """
-        self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'oerp61'),
+        self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'odoo80'),
                          gunicorn='direct',
                          with_devtools='true')
-        self.recipe.version_detected = "6.1-20121003-233130"
+        self.recipe.version_detected = "8.0-20121003-233130"
 
         softreq = 'zztest-softreq'
         self.recipe.missing_deps_instructions[softreq] = (
@@ -383,27 +288,6 @@ class TestServer(RecipeTestCase):
                             'cron_worker_openerp',
                             ))
 
-    def test_install_scripts_70(self, with_devtools=True, **kw):
-        kw['with_devtools'] = 'true' if with_devtools else 'false'
-        self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'oerp70'),
-                         gunicorn='direct',
-                         **kw)
-        self.recipe.version_detected = "7.0alpha"
-        self.recipe.options['options.log_handler'] = ":INFO,werkzeug:WARNING"
-
-        self.install_scripts(extra_develop={
-            'openerp-command': 'fake_openerp-command'})
-
-        expected = ['start_openerp',
-                    'gunicorn_openerp',
-                    'cron_worker_openerp']
-        if with_devtools:
-            expected.extend(('test_openerp', 'openerp_command'))
-        self.assertScripts(expected)
-
-    def test_install_scripts_70_no_devtools(self):
-        self.test_install_scripts_70(with_devtools=False)
-
     def test_install_scripts_80(self, with_devtools=True, **kw):
         kw['with_devtools'] = 'true' if with_devtools else 'false'
         self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'odoo80'),
@@ -411,30 +295,24 @@ class TestServer(RecipeTestCase):
         self.recipe.version_detected = "8.0alpha"
         self.recipe.options['options.log_handler'] = ":INFO,werkzeug:WARNING"
 
-        self.install_scripts(extra_develop={
-            'openerp-command': 'fake_openerp-command'})
+        self.install_scripts()
 
         expected = ['start_openerp',
                     'gunicorn_openerp',
                     'cron_worker_openerp']
         if with_devtools:
-            expected.extend(('test_openerp', 'openerp_command'))
+            expected.append('test_openerp')
         self.assertScripts(expected)
 
     def test_install_scripts_80_no_devtools(self):
         self.test_install_scripts_80(with_devtools='false')
 
     def test_install_scripts_70_gunicorn_proxied(self):
-        self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'oerp70'),
+        self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'odoo80'),
                          gunicorn='proxied')
-        self.recipe.version_detected = "7.0alpha"
+        self.recipe.version_detected = "8.0alpha"
 
-        # necessary for openerp-command, will be part of post-release refactor
-        self.recipe.options['options.addons_path'] = ''
-
-        self.install_scripts(
-            extra_develop={'openerp-command': 'fake_openerp-command'},
-            setup_has_pil=True)
+        self.install_scripts()
         self.assertScripts(('start_openerp',
                             'gunicorn_openerp',
                             'cron_worker_openerp',
@@ -442,7 +320,7 @@ class TestServer(RecipeTestCase):
 
     def test_parse_openerp_scripts(self):
         self.make_recipe(
-            version='local %s' % os.path.join(TEST_DIR, 'oerp70'),
+            version='local %s' % os.path.join(TEST_DIR, 'odoo80'),
             openerp_scripts=os.linesep.join((
                 'myentry=script_name',
                 'nosetests command-line-options=-d',
@@ -466,7 +344,7 @@ class TestServer(RecipeTestCase):
 
     def test_parse_openerp_scripts_improper_log_level(self):
         self.make_recipe(
-            version='local %s' % os.path.join(TEST_DIR, 'oerp70'),
+            version='local %s' % os.path.join(TEST_DIR, 'odoo80'),
             openerp_scripts=('myentry=script_name_opt openerp-log-level=cool '
                              'command-line-options=-d,-f'))
         self.assertRaises(UserError, self.recipe._parse_openerp_scripts)

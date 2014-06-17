@@ -4,7 +4,6 @@ from os.path import join
 import sys
 import shutil
 import logging
-import subprocess
 import zc.buildout
 from zc.buildout import UserError
 from base import BaseRecipe
@@ -18,19 +17,27 @@ SERVER_COMMA_LIST_OPTIONS = ('log_handler', )
 class ServerRecipe(BaseRecipe):
     """Recipe for server install and config
     """
+
     archive_filenames = {
-        '6.0': 'openerp-server-%s.tar.gz',
-        '6.1': 'openerp-%s.tar.gz',
+        '8.0': 'openerp-%s.tar.gz',
     }
+    """Name of expected released tarballs in base URL, by major version.
+
+    Derived from 7.0 pattern, will need to be adapted once Odoo is released.
+    """
+
     archive_nightly_filenames = {
-        '6.1': 'openerp-6.1-%s.tar.gz',
-        '7.0': 'openerp-7.0-%s.tar.gz',
+        '8.0': 'openerp-8.0-%s.tar.gz',
         'trunk': 'openerp-8.0dev-%s.tar.gz'
     }
+    """Name of expected nightly tarballs in base URL, by major version.
+
+    Derived from 7.0 pattern, will need to be adapted for Odoo.
+    """
+
     recipe_requirements = ('babel',)
     requirements = ('pychart', 'anybox.recipe.odoo')
     soft_requirements = ('openerp-command',)
-    with_openerp_command = False
     with_gunicorn = False
     with_upgrade = True
     ws = None
@@ -47,64 +54,38 @@ class ServerRecipe(BaseRecipe):
         # interpreters
         opt.pop('interpreter', None)
         self.openerp_scripts = {}
-        self.missing_deps_instructions.update({
-            'openerp-command': ("Please provide it with 'develop' or "
-                                "'gp.vcsdevelop'. "
-                                "You may download it on "
-                                "https://launchpad.net/openerp-command."),
-        })
 
     def apply_version_dependent_decisions(self):
         """Store some booleans depending on detected version.
 
         Also does some options normalization accordingly.
+        Currently, there is only one Odoo version, this method
+        will be really useful again in a while.
         """
         gunicorn = self.options.get('gunicorn', '').strip().lower()
         self.with_gunicorn = bool(gunicorn)
 
-        if gunicorn and self.major_version == (6, 1):
-            entries = dict(direct='core', proxied='proxied')
-            self.gunicorn_entry = entries.get(gunicorn)
-            assert self.gunicorn_entry is not None, (
-                "In OpenERP 6.1, gunicorn option value must be "
-                "one of %r" % entries.keys())
-        elif self.major_version >= (6, 2) and gunicorn == 'proxied':
+        if gunicorn == 'proxied':
             self.options['options.proxy_mode'] = 'True'
-            logger.warn("'gunicorn = proxied' now superseded in this OpenERP "
-                        "version by the 'proxy_mode' OpenERP server option ")
-
-        self.with_openerp_command = (
-            (self.with_devtools and self.major_version >= (6, 2)
-             or self.major_version >= (8, 0)))
+            logger.warn("'gunicorn = proxied' now superseded since "
+                        "OpenERP 7 by the 'proxy_mode' OpenERP server option ")
 
     def merge_requirements(self):
         """Prepare for installation by zc.recipe.egg
 
-         - add Pillow iff PIL not present in eggs option.
-         - (OpenERP >= 6.1) develop the openerp distribution and require it
+         - develop the openerp distribution and require it
          - gunicorn's related dependencies if needed
-
-        For PIL, extracted requirements are not taken into account. This way,
-        if at some point,
-        OpenERP introduce a hard dependency on PIL, we'll still install Pillow.
-        The only case where PIL will have precedence over Pillow will thus be
-        the case of a legacy buildout.
-        See https://bugs.launchpad.net/anybox.recipe.openerp/+bug/1017252
 
         Once 'openerp' is required, zc.recipe.egg will take it into account
         and put it in needed scripts, interpreters etc.
+
+        Historically, in ``anybox.recipe.openerp`` this used to take care
+        of adding Pillow, which is now in Odoo's ``setup.py``.
         """
-        setup_has_pil = False
-        if not 'PIL' in self.options.get('eggs', '').split():
-            if 'PIL' in self.requirements:
-                setup_has_pil = True
-                self.requirements.remove('PIL')
-            self.requirements.append('Pillow')
-        if self.major_version >= (6, 1):
-            openerp_dir = getattr(self, 'openerp_dir', None)
-            if openerp_dir is not None:  # happens in unit tests
-                self.develop(openerp_dir, setup_has_pil=setup_has_pil)
-            self.requirements.append('openerp')
+        openerp_dir = getattr(self, 'openerp_dir', None)
+        if openerp_dir is not None:  # happens in unit tests
+            self.develop(openerp_dir)
+        self.requirements.append('openerp')
 
         if self.with_gunicorn:
             self.requirements.extend(('psutil', 'gunicorn'))
@@ -112,25 +93,16 @@ class ServerRecipe(BaseRecipe):
         if self.with_devtools:
             self.requirements.extend(devtools.requirements)
 
-        if self.with_openerp_command and self.major_version < (8, 0):
-            self.requirements.append('openerp-command')
-
         BaseRecipe.merge_requirements(self)
 
     def _create_default_config(self):
         """Have OpenERP generate its default config file.
         """
         self.options.setdefault('options.admin_passwd', '')
-        if self.major_version <= (6, 0):
-            # root-path not available as command-line option
-            os.chdir(join(self.openerp_dir, 'bin'))
-            subprocess.check_call([self.script_path, '--stop-after-init', '-s',
-                                   ])
-        else:
-            sys.path.extend([self.openerp_dir])
-            sys.path.extend([egg.location for egg in self.ws])
-            from openerp.tools.config import configmanager
-            configmanager(self.config_path).save()
+        sys.path.append(self.openerp_dir)
+        sys.path.extend([egg.location for egg in self.ws])
+        from openerp.tools.config import configmanager
+        configmanager(self.config_path).save()
 
     def _create_gunicorn_conf(self, qualified_name):
         """Put a gunicorn_PART.conf.py script in /etc.
@@ -159,15 +131,6 @@ import openerp
 bind = %(bind)r
 pidfile = %(qualified_name)r + '.pid'
 workers = %(workers)s
-
-if openerp.release.major_version == '6.1':
-    on_starting = openerp.wsgi.core.on_starting
-    try:
-      when_ready = openerp.wsgi.core.when_ready
-    except AttributeError: # not in current head of 6.1
-      pass
-    pre_request = openerp.wsgi.core.pre_request
-    post_request = openerp.wsgi.core.post_request
 
 timeout = %(timeout)s
 max_requests = %(max_requests)s
@@ -216,11 +179,7 @@ conf = openerp.tools.config
 
     def _get_server_command(self):
         """Return a full path to the main OpenERP server command."""
-        if self.major_version <= (6, 0):
-            server_cmd = join('bin', 'openerp-server.py')
-        else:
-            server_cmd = 'openerp-server'
-        return join(self.openerp_dir, server_cmd)
+        return join(self.openerp_dir, 'openerp-server')
 
     def _parse_openerp_scripts(self):
         """Parse required scripts from conf."""
@@ -281,11 +240,11 @@ conf = openerp.tools.config
         desc = self._get_or_create_script('openerp_starter',
                                           name=qualified_name)[1]
 
-        arguments = '%r, %r, version=%r' % (self._get_server_command(),
-                                            self.config_path,
-                                            self.major_version)
-        if self.major_version >= (8, 0):
-            arguments += ', gevent_script_path=%r' % self.gevent_script_path
+        arguments = '%r, %r, version=%r, gevent_script_path=%r' % (
+            self._get_server_command(),
+            self.config_path,
+            self.major_version,
+            self.gevent_script_path)
 
         desc.update(arguments=arguments)
 
@@ -315,8 +274,7 @@ conf = openerp.tools.config
             self._get_server_command(),
             self.config_path,
             self.major_version)
-        if self.major_version >= (8, 0):
-            arguments += ', gevent_script_path=%r' % self.gevent_script_path
+        arguments += ', gevent_script_path=%r' % self.gevent_script_path
 
         desc.update(
             entry='openerp_starter',
@@ -367,50 +325,14 @@ conf = openerp.tools.config
 
         gunicorn_entry_point = gunicorn_options.get('entry_point')
         if gunicorn_entry_point is None:
-            if self.major_version >= (6, 2):
-                # proxy vs direct now handled by an OpenERP server option
-                gunicorn_entry_point = ('openerp:'
-                                        'service.wsgi_server.application')
-            else:
-                gunicorn_entry_point = (
-                    'openerp:wsgi.%s.application' % self.gunicorn_entry)
+            gunicorn_entry_point = ('openerp:'
+                                    'service.wsgi_server.application')
 
         # gunicorn's main() does not take arguments, that's why we have
         # to resort on hacking sys.argv
         desc['initialization'] = (
             "from sys import argv; argv[1:] = ['%s', '-c', '%s.conf.py']" % (
                 gunicorn_entry_point, join(self.etc, qualified_name)))
-
-    def _register_openerp_command(self, qualified_name):
-        """Register https://launchpad.net/openerp-command for install.
-        """
-        if self.major_version < (8, 0):
-            logger.warn("Installing separate openerp-command as %r. "
-                        "In OpenERP 7, openerp-command used to be "
-                        "an independent python distribution, ready for "
-                        "development operations, but not ready for "
-                        "production operation. You are supposed to make "
-                        "this distribution available in some way (alternate "
-                        "PyPI server, develop, gp.vcs_develop...)",
-                        qualified_name)
-        desc = self._get_or_create_script('oe', name=qualified_name)[1]
-
-        # can't reuse self.addons here, because the true addons path maybe
-        # different depending on addons options, such as subdir
-        addons = ':'.join(self.addons_paths)
-        initialization = []
-        if addons is not None:
-            initialization.extend((
-                "import os",
-                "os.environ['OPENERP_ADDONS'] = %r" % addons,
-                ''))
-
-        if self.with_devtools:
-            initialization.extend((
-                'from anybox.recipe.odoo import devtools',
-                'devtools.load(for_tests=True)',
-                ''))
-        desc['initialization'] = os.linesep.join(initialization)
 
     def _register_gevent_script(self, qualified_name):
         """Register the gevent startup script
@@ -564,31 +486,24 @@ conf = openerp.tools.config
             ('openerp_cron_worker',
              'anybox.recipe.odoo.runtime.start_openerp',
              'main'),
+            ('openerp-gevent',
+             'openerp.cli',
+             'main'),
             ('openerp_upgrader',
              'anybox.recipe.odoo.runtime.upgrade',
              'upgrade'),
         ))
 
-        if self.major_version >= (8, 0):
-            self.eggs_reqs.append(('oe', 'openerpcommand.main', 'run'))
-            self.eggs_reqs.append(('openerp-gevent', 'openerp.cli', 'main'))
-
         self._install_interpreter()
 
         main_script = self.options.get('script_name', 'start_' + self.name)
-        if self.major_version >= (8, 0):
-            gevent_script_name = self.options.get('gevent_script_name',
-                                                  'gevent_%s' % self.name)
-            self._register_gevent_script(gevent_script_name)
-            self.gevent_script_path = join(self.bin_dir, gevent_script_name)
+        gevent_script_name = self.options.get('gevent_script_name',
+                                              'gevent_%s' % self.name)
+        self._register_gevent_script(gevent_script_name)
+        self.gevent_script_path = join(self.bin_dir, gevent_script_name)
 
         self._register_main_startup_script(main_script)
         self.script_path = join(self.bin_dir, main_script)
-
-        if self.with_openerp_command:
-            self._register_openerp_command(
-                self.options.get('openerp_command_name',
-                                 '%s_command' % self.name))
 
         if self.with_devtools:
             self._register_test_script(
@@ -610,10 +525,3 @@ conf = openerp.tools.config
             self._register_upgrade_script(qualified_name)
 
         self._install_openerp_scripts()
-
-    def _60_fix_root_path(self):
-        """Correction of root path for OpenERP 6.0 pure python install"""
-
-        if 'options.root_path' not in self.options:
-            self.options['options.root_path'] = join(self.openerp_dir, 'bin')
-
