@@ -10,7 +10,6 @@ from here.
 
 import sys
 import os
-from . import patch_openerp_v5
 from . import patch_odoo
 
 
@@ -57,9 +56,6 @@ def main(starter, conf, version=None, just_test=False,
 
     insert_args(arguments)
 
-    if version == (5, 0):
-        patch_openerp_v5.do_patch()
-
     if version >= (8, 0):
         assert gevent_script_path is not None
         patch_odoo.do_patch(gevent_script_path)
@@ -72,9 +68,4 @@ def main(starter, conf, version=None, just_test=False,
     try:
         execfile(starter, globals())
     except SystemExit as exc:
-        if version == (5, 0):
-            # Without Agent.quit() the Timer threads may go on forever
-            # and the script will never stop
-            import netsvc
-            netsvc.Agent.quit()
         return exc.code

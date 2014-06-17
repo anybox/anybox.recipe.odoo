@@ -100,7 +100,6 @@ class BaseRecipe(object):
     default_dl_url = {'6.0': 'http://nightly.openerp.com/old/openerp-6/',
                       '6.1': 'http://nightly.openerp.com/6.1/releases/',
                       '7.0': 'http://nightly.openerp.com/7.0/releases/',
-                      '5.0': 'http://nightly.openerp.com/old/openerp-5/',
                       }
 
     nightly_dl_url = {'6.0': 'http://nightly.openerp.com/6.0/6.0/',
@@ -324,8 +323,9 @@ class BaseRecipe(object):
     def read_release(self):
         """Try and read the release.py file directly.
 
-        Should be used only if reading setup.py failed, which happens
-        with OpenERP 5.0
+        Used as a fallback in case reading setup.py failed, which happened
+        in an old OpenERP version. Could become the norm, but setup is also
+        used to list dependencies.
         """
         with open(join(self.openerp_dir, 'bin', 'release.py'), 'rb') as f:
             mod = imp.load_module('release', f, 'release.py',

@@ -18,9 +18,6 @@ def main(starter, conf, version=()):
 
     insert_args(arguments)
 
-    if version == (5, 0):
-        from . import patch_openerp_v5  # noqa
-
     os.chdir(os.path.split(starter)[0])
     glob = globals()
     glob['__name__'] = '__main__'

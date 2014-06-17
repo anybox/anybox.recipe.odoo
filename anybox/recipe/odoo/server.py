@@ -19,7 +19,6 @@ class ServerRecipe(BaseRecipe):
     """Recipe for server install and config
     """
     archive_filenames = {
-        '5.0': 'openerp-server-%s.tar.gz',
         '6.0': 'openerp-server-%s.tar.gz',
         '6.1': 'openerp-%s.tar.gz',
     }
@@ -95,10 +94,6 @@ class ServerRecipe(BaseRecipe):
         Once 'openerp' is required, zc.recipe.egg will take it into account
         and put it in needed scripts, interpreters etc.
         """
-        if self.major_version < (6, 0):
-            self.requirements.extend(
-                self.archeo_requirements.get(self.major_version))
-
         setup_has_pil = False
         if not 'PIL' in self.options.get('eggs', '').split():
             if 'PIL' in self.requirements:
@@ -622,8 +617,3 @@ conf = openerp.tools.config
         if 'options.root_path' not in self.options:
             self.options['options.root_path'] = join(self.openerp_dir, 'bin')
 
-    archeo_requirements = {
-        (5, 0): ['psycopg2', 'pytz', 'lxml', 'egenix-mx-base',
-                 'reportlab', 'pydot',
-                 ],
-        }
