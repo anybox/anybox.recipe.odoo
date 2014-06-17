@@ -10,23 +10,34 @@ from ...utils import working_directory_keeper, WorkingDirectoryKeeper
 from ...utils import check_output
 
 
-def git_write_commit(repo_dir, filename, contents, msg="Unit test commit"):
+def git_set_user_info(repo_dir):
+    """Write user information locally in repo, to allow commit creations.
+
+    Commit creations can be issued by more commands than just ``commit``, e.g,
+    ``merge`` or ``pull``.
+    Git will fail if the user email and name aren't properly set at that time.
+    """
+    with WorkingDirectoryKeeper():  # independent from other instances
+        os.chdir(repo_dir)
+        subprocess.call(['git', 'config', 'user.email', COMMIT_USER_EMAIL])
+        subprocess.call(['git', 'config', 'user.name', COMMIT_USER_NAME])
+
+
+def git_write_commit(repo_dir, filepath, contents, msg="Unit test commit"):
     """Write specified file with contents, commit and return commit SHA.
 
-    ``filename`` is actually a relative path from ``repo_dir``.
+    :param filepath: path of file to write to, relative to repository
     """
-
     with WorkingDirectoryKeeper():  # independent from the main instance
         os.chdir(repo_dir)
-        # repo configuration is local by default
         # needs to be done just once, but I prefer to do it a few useless
         # times than to forget it, since it's easy to turn into a sporadic
         # test breakage on continuous integration builds.
-        subprocess.call(['git', 'config', 'user.email', COMMIT_USER_EMAIL])
-        subprocess.call(['git', 'config', 'user.name', COMMIT_USER_NAME])
-        with open(filename, 'w') as f:
+
+        git_set_user_info(repo_dir)
+        with open(filepath, 'w') as f:
             f.write(contents)
-        subprocess.call(['git', 'add', filename])
+        subprocess.call(['git', 'add', filepath])
         subprocess.call(['git', 'commit', '-m', msg])
         return check_output(['git', 'rev-parse', '--verify', 'HEAD']).strip()
 
@@ -292,6 +303,7 @@ class GitMergeTestCase(GitBaseTestCase):
         target_dir = os.path.join(self.dst_dir, "to_repo")
         repo = GitRepo(target_dir, self.src_repo)
         repo('master')
+        git_set_user_info(repo.target_dir)
 
         repo.merge('branch1')
         self.assertTrue(os.path.exists(os.path.join(target_dir,
@@ -312,6 +324,7 @@ class GitMergeTestCase(GitBaseTestCase):
         target_dir = os.path.join(self.dst_dir, "to_repo")
         repo = GitRepo(target_dir, self.src_repo)
         repo('master')
+        git_set_user_info(repo.target_dir)
 
         repo.merge('branch1')
         self.assertTrue(os.path.exists(os.path.join(target_dir,
