@@ -156,8 +156,10 @@ class BzrBranch(BaseRepo):
                                ``as_revno`` to ``True`` (pip URL syntax for bzr
                                does not allow revids, because of the ``@`` in
                                bzr revids)
-        This will not detect pending merges, but :meth:`uncommitted_changes`
-        will, and that is enough for freeze/extract features.
+
+        This method will not detect pending merges, but
+        :meth:`uncommitted_changes` will, and that is enough for freeze/extract
+        features.
         """
         revno = check_output(['bzr', 'revno', '--tree', self.target_dir],
                              env=SUBPROCESS_ENV).strip()
