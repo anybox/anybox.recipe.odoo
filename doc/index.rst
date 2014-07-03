@@ -59,6 +59,7 @@ Contents
    scripts
    dev_prod_workflow
    contributing
+   devnotes/index
 
 Code documentation
 ------------------

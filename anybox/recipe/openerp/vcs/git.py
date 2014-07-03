@@ -75,6 +75,8 @@ class GitRepo(BaseRepo):
 
             if not offline:
                 # TODO what if remote repo is actually local fs ?
+                # GR, redux: git has a two notions of local repos, which
+                # differ at least for shallow clones : path or file://
                 os.chdir(target_dir)
                 logger.info("%s> git remote set-url %s %s",
                             target_dir, BUILDOUT_ORIGIN, url)
@@ -89,7 +91,7 @@ class GitRepo(BaseRepo):
                 subprocess.check_call(['git', 'checkout', revision])
                 if self._is_a_branch(revision):
                     # fast forward
-                    logger.info("%s> git merge merge %s/%s",
+                    logger.info("%s> git merge %s/%s",
                                 target_dir, BUILDOUT_ORIGIN, revision)
                     subprocess.check_call(['git', 'merge',
                                            BUILDOUT_ORIGIN + '/' + revision])
