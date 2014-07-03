@@ -106,6 +106,8 @@ class GitRepo(BaseRepo):
             os.chdir(self.target_dir)
             logger.info("%s> git pull %s %s",
                         self.target_dir, self.url, revision)
+            # GR --no-edit is not available on older git versions
+            # (seen with 1.7.2.5 from Debian 6)
             subprocess.check_call(['git', 'pull', '--no-edit',
                                    self.url, revision])
 
