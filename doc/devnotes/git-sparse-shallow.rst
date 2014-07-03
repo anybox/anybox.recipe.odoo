@@ -4,8 +4,8 @@ Git shallow clones and selective branch fetching
 Behavior on shallow clones
 --------------------------
 
-* ``git-fetch --depth`` will remove prior revision whereas
-  ``git-clone --depth`` followed by normal fetch will just start with
+* ``git fetch --depth`` will remove prior revision whereas
+  ``git clone --depth`` followed by normal fetch will just start with
   a shallow clone and stack new commits on top of that.
   Therefore fetch --depth looks to be potentially
   destructive although first tests with a local commit seem to be satisfactory.
@@ -13,7 +13,7 @@ Behavior on shallow clones
   Let's face it, people will be mostly interested in the huge gain of
   not having the pile of old history.
 
-* git-fetch cannot specify a precise revision by SHA1, nor can git-clone
+* ``git fetch`` cannot specify a precise revision by SHA1, nor can ``git clone``
 
   From the `Git mailing list <http://thread.gmane.org/gmane.comp.version-control.git/115811>`_:
 
