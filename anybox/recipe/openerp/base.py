@@ -688,7 +688,7 @@ class BaseRecipe(object):
         if self.major_version >= (6, 2):
             # TODO still necessary ?
             extra.append(self.openerp_dir)
-            if self.major_version < (8, 0):
+            if self.major_version < (7, 3):
                 extra.append(join(self.openerp_dir, 'addons'))
         else:
             extra.extend((join(self.openerp_dir, 'bin'),
