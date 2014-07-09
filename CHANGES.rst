@@ -7,6 +7,8 @@ with any higher released unstable versions.
 
 1.8.5 (unreleased)
 ------------------
+- launchpad #1338405: provided necessary environments init in session
+  (needed for interactive session and various scripts)
 - launchpad #1249566: [bzr] avoid outgoing requests in offline mode
   due to lp: locations resolution
 
