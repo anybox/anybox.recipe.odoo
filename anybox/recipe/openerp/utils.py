@@ -176,7 +176,7 @@ def total_seconds(td):
 
     The implementation for Python < 2.7 is taken from the
     `standard library documentation
-    <https://docs.python.org/2.7/library/datetime.html#datetime.timedelta.total_seconds>`_
+    <https://docs.python.org/2.7/library/datetime.html>`_
     """
     if sys.version_info >= (2, 7):
         return td.total_seconds()
