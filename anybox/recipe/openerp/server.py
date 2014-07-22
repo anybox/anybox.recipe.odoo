@@ -76,7 +76,7 @@ class ServerRecipe(BaseRecipe):
 
         self.with_openerp_command = (
             (self.with_devtools and self.major_version >= (6, 2)
-             or self.major_version >= (8, 0)))
+             or self.major_version >= (7, 3)))
 
     def merge_requirements(self):
         """Prepare for installation by zc.recipe.egg
@@ -117,7 +117,7 @@ class ServerRecipe(BaseRecipe):
         if self.with_devtools:
             self.requirements.extend(devtools.requirements)
 
-        if self.with_openerp_command and self.major_version < (8, 0):
+        if self.with_openerp_command and self.major_version < (7, 3):
             self.requirements.append('openerp-command')
 
         BaseRecipe.merge_requirements(self)
@@ -289,7 +289,7 @@ conf = openerp.tools.config
         arguments = '%r, %r, version=%r' % (self._get_server_command(),
                                             self.config_path,
                                             self.major_version)
-        if self.major_version >= (8, 0):
+        if self.major_version >= (7, 3):
             arguments += ', gevent_script_path=%r' % self.gevent_script_path
 
         desc.update(arguments=arguments)
@@ -320,7 +320,7 @@ conf = openerp.tools.config
             self._get_server_command(),
             self.config_path,
             self.major_version)
-        if self.major_version >= (8, 0):
+        if self.major_version >= (7, 3):
             arguments += ', gevent_script_path=%r' % self.gevent_script_path
 
         desc.update(
@@ -389,7 +389,7 @@ conf = openerp.tools.config
     def _register_openerp_command(self, qualified_name):
         """Register https://launchpad.net/openerp-command for install.
         """
-        if self.major_version < (8, 0):
+        if self.major_version < (7, 3):
             logger.warn("Installing separate openerp-command as %r. "
                         "In OpenERP 7, openerp-command used to be "
                         "an independent python distribution, ready for "
@@ -574,14 +574,14 @@ conf = openerp.tools.config
              'upgrade'),
         ))
 
-        if self.major_version >= (8, 0):
+        if self.major_version >= (7, 3):
             self.eggs_reqs.append(('oe', 'openerpcommand.main', 'run'))
             self.eggs_reqs.append(('openerp-gevent', 'openerp.cli', 'main'))
 
         self._install_interpreter()
 
         main_script = self.options.get('script_name', 'start_' + self.name)
-        if self.major_version >= (8, 0):
+        if self.major_version >= (7, 3):
             gevent_script_name = self.options.get('gevent_script_name',
                                                   'gevent_%s' % self.name)
             self._register_gevent_script(gevent_script_name)

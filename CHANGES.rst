@@ -7,6 +7,7 @@ with any higher released unstable versions.
 
 1.8.5 (unreleased)
 ------------------
+- gevent script generation backported to version 7.saas~3 and following
 - launchpad #1249566: [bzr] avoid outgoing requests in offline mode
   due to lp: locations resolution
 - launchpad #1244721: fixed final reporting of upgrade script with python 2.6
