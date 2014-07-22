@@ -14,6 +14,7 @@ from argparse import SUPPRESS
 from datetime import datetime
 from math import ceil
 
+from ..utils import total_seconds
 from .session import Session
 
 DEFAULT_LOG_FILE = 'upgrade.log'
@@ -144,7 +145,7 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
 
         logger.info("%s successful. Total time: %d seconds." % (
             "Initialization" if session.is_initialization else "Upgrade",
-            ceil((datetime.utcnow() - start_time).total_seconds())
+            ceil(total_seconds((datetime.utcnow() - start_time)))
         ))
     else:
         logger.error("Please check logs at %s" % log_path)
