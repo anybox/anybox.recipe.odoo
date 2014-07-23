@@ -4,6 +4,7 @@ import subprocess
 from ConfigParser import ConfigParser
 from ConfigParser import NoOptionError
 from ConfigParser import NoSectionError
+from zc.buildout import UserError
 from .base import BaseRepo
 from .base import SUBPROCESS_ENV
 from .base import update_check_call
@@ -159,7 +160,7 @@ class HgRepo(BaseRepo):
         if not os.path.exists(target_dir):
             # TODO case of local url ?
             if offline:
-                raise IOError(
+                raise UserError(
                     "hg repository %r does not exist; "
                     "cannot clone it from %r (offline mode)" % (target_dir,
                                                                 url))

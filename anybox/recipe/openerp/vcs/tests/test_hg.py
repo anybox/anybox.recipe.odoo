@@ -3,6 +3,8 @@
 import os
 import subprocess
 from ConfigParser import ConfigParser, RawConfigParser
+from zc.buildout import UserError
+
 from ..testing import COMMIT_USER_FULL
 from ..testing import VcsTestCase
 from ..hg import HgRepo
@@ -343,3 +345,10 @@ class HgOfflineTestCase(HgBaseTestCase):
         repo = self.make_clone("clone to update", '0')
         repo('default')
         self.assertRevision(repo, '0')
+
+    def test_missing_repo(self):
+        """[offline mode] update on branch head should not pull"""
+        repo = self.make_clone("clone to update", '0')
+        repo.target_dir = '/does/not/exist'
+
+        self.assertRaises(UserError, repo, 'default')
