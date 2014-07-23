@@ -28,5 +28,4 @@ class VcsTestCase(unittest.TestCase):
         raise NotImplementedError
 
     def tearDown(self):
-        print "TEARDOWN remove " + self.sandbox
         shutil.rmtree(self.sandbox)
