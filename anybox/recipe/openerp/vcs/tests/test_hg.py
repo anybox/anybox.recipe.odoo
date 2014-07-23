@@ -284,6 +284,16 @@ class HgTestCase(HgBaseTestCase):
         self.assertRaises(subprocess.CalledProcessError,
                           repo.get_update, 'default')
 
+    def test_archive(self):
+        """Hg clone, then archive"""
+        repo = HgRepo(os.path.join(self.dst_dir, "My clone"), self.src_repo)
+        repo('default')
+
+        archive_dir = os.path.join(self.dst_dir, "archive directory")
+        repo.archive(archive_dir)
+        with open(os.path.join(archive_dir, 'tracked')) as f:
+            self.assertEquals(f.readlines()[0].strip(), 'default')
+
 
 class HgOfflineTestCase(HgBaseTestCase):
 
