@@ -254,6 +254,19 @@ class HgTestCase(HgBaseTestCase):
         parser.read(os.path.join(target_dir, '.hg', 'hgrc'))
         self.assertEquals(parser.get('paths', 'default'), repo.url)
 
+    def test_hgrc_no_hgrc(self):
+        """Method to update hgrc paths should not fail if hgrc is missing.
+        """
+        repo = self.make_clone("clone to update", 'default')
+        target_dir = repo.target_dir
+        hgrc_path = os.path.join(target_dir, '.hg', 'hgrc')
+        os.remove(hgrc_path)
+
+        repo.update_hgrc_paths()
+        parser = ConfigParser()
+        parser.read(os.path.join(target_dir, '.hg', 'hgrc'))
+        self.assertEquals(parser.get('paths', 'default'), repo.url)
+
     def test_url_change(self):
         """HgRepo adapts itself to changes in source URL."""
         repo = self.make_clone("clone to update", 'default')

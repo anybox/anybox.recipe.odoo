@@ -25,7 +25,7 @@ class HgRepo(BaseRepo):
         Old paths are kept in renamed form: buildout_save_%d."""
         parser = ConfigParser()
         hgrc_path = os.path.join(self.target_dir, '.hg', 'hgrc')
-        parser.read(hgrc_path)
+        parser.read(hgrc_path)  # does not fail if file does not exist
 
         previous = None
         try:
