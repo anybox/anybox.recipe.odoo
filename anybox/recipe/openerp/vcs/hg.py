@@ -3,6 +3,7 @@ import logging
 import subprocess
 from ConfigParser import ConfigParser
 from ConfigParser import NoOptionError
+from ConfigParser import NoSectionError
 from .base import BaseRepo
 from .base import SUBPROCESS_ENV
 from .base import update_check_call
@@ -15,6 +16,8 @@ class HgRepo(BaseRepo):
 
     vcs_control_dir = '.hg'
 
+    vcs_official_name = 'Mercurial'
+
     def update_hgrc_paths(self):
         """Update hgrc paths section if needed.
 
@@ -22,20 +25,33 @@ class HgRepo(BaseRepo):
         parser = ConfigParser()
         hgrc_path = os.path.join(self.target_dir, '.hg', 'hgrc')
         parser.read(hgrc_path)
-        default = parser.get('paths', 'default')
-        if default == self.url:
+
+        previous = None
+        try:
+            previous = parser.get('paths', 'default')
+        except NoOptionError:
+            logger.info("No 'default' value for [paths] in %s, will set one",
+                        hgrc_path)
+        except NoSectionError:
+            logger.info("Creating [paths] section in %s", hgrc_path)
+            parser.add_section('paths')
+
+        if previous == self.url:
             return
 
-        count = 1
-        while True:
-            save = 'buildout_save_%d' % count
-            try:
-                parser.get('paths', save)
-            except NoOptionError:
-                break
-            count += 1
+        if previous is not None:
+            count = 1
+            while True:
+                save = 'buildout_save_%d' % count
+                try:
+                    parser.get('paths', save)
+                except NoOptionError:
+                    break
+                count += 1
+            parser.set('paths', save, previous)
+            logger.info("Change of origin URL, saving previous value as %r in "
+                        "[paths] section of %s", save, hgrc_path)
 
-        parser.set('paths', save, default)
         parser.set('paths', 'default', self.url)
         f = open(hgrc_path, 'w')
         parser.write(f)

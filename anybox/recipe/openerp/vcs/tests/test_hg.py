@@ -227,6 +227,30 @@ class HgTestCase(HgBaseTestCase):
                           self.src_repo)
         self.assertEquals(parser.get('paths', 'buildout_save_2'), new_src)
 
+    def test_hgrc_no_paths(self):
+        """Method to update hgrc paths should not fail if [paths] is missing."""
+        repo = self.make_clone("clone to update", 'default')
+        target_dir = repo.target_dir
+        hgrc_path = os.path.join(target_dir, '.hg', 'hgrc')
+        with open(hgrc_path, 'w'):
+            "just emptying the hgrc"
+
+        self.assertEqual(os.stat(hgrc_path).st_size, 0,
+                         msg="Test setup is invalid, no meaning in proceeding")
+
+        repo.update_hgrc_paths()
+        parser = ConfigParser()
+        parser.read(os.path.join(target_dir, '.hg', 'hgrc'))
+        self.assertEquals(parser.get('paths', 'default'), repo.url)
+
+        # now with [paths] section but no value for 'default'
+        with open(hgrc_path, 'w') as hgrc:
+            hgrc.write('[paths]\n')
+        repo.update_hgrc_paths()
+        parser = ConfigParser()
+        parser.read(os.path.join(target_dir, '.hg', 'hgrc'))
+        self.assertEquals(parser.get('paths', 'default'), repo.url)
+
     def test_url_change(self):
         """HgRepo adapts itself to changes in source URL."""
         repo = self.make_clone("clone to update", 'default')

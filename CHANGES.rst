@@ -13,6 +13,7 @@ with any higher released unstable versions.
 - launchpad #1249566: [bzr] avoid outgoing requests in offline mode
   due to lp: locations resolution
 - launchpad #1244721: fixed final reporting of upgrade script with python 2.6
+- launchpad #1208745: [hg] robustness about content of .hg/hgrc
 
 1.8.4 (2014-06-16)
 ------------------
