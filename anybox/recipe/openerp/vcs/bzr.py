@@ -32,6 +32,8 @@ class BzrBranch(BaseRepo):
 
     vcs_control_dir = '.bzr'
 
+    vcs_official_name = 'Bazaar'
+
     def __init__(self, *a, **kw):
         super(BzrBranch, self).__init__(*a, **kw)
         if self.options.get('bzr-init') == "ligthweight-checkout":

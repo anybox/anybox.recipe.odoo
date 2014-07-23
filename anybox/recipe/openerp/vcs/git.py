@@ -18,6 +18,8 @@ class GitRepo(BaseRepo):
 
     vcs_control_dir = '.git'
 
+    vcs_official_name = 'Git'
+
     def clean(self):
         if not os.path.isdir(self.target_dir):
             return

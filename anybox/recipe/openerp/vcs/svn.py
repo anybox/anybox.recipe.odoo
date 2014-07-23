@@ -12,6 +12,8 @@ class SvnCheckout(BaseRepo):
 
     vcs_control_dir = '.svn'
 
+    vcs_official_name = 'Subversion'
+
     def get_update(self, revision):
         """Ensure that target_dir is a branch of url at specified revision.
 

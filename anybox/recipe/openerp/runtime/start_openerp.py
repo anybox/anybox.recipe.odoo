@@ -60,7 +60,7 @@ def main(starter, conf, version=None, just_test=False,
     if version == (5, 0):
         patch_openerp_v5.do_patch()
 
-    if version >= (8, 0):
+    if version >= (7, 3):
         assert gevent_script_path is not None
         patch_odoo.do_patch(gevent_script_path)
 
