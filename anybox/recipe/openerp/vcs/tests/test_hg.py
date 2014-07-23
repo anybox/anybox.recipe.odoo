@@ -228,7 +228,8 @@ class HgTestCase(HgBaseTestCase):
         self.assertEquals(parser.get('paths', 'buildout_save_2'), new_src)
 
     def test_hgrc_no_paths(self):
-        """Method to update hgrc paths should not fail if [paths] is missing."""
+        """Method to update hgrc paths should not fail if [paths] is missing.
+        """
         repo = self.make_clone("clone to update", 'default')
         target_dir = repo.target_dir
         hgrc_path = os.path.join(target_dir, '.hg', 'hgrc')
