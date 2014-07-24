@@ -418,7 +418,7 @@ class TestServer(RecipeTestCase):
         self.install_scripts(extra_develop={
             'openerp-command': 'fake_openerp-command'})
 
-        self.assertTrue("server_wide_modules=('anybox_homepage',)"
+        self.assertTrue("server_wide_modules=('web', 'anybox_homepage')"
                         in self.read_script('start_openerp'))
         with open(os.path.join(
                 self.buildout_dir, 'etc', 'gunicorn_openerp.conf.py')) as gu:

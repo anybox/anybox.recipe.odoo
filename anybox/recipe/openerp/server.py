@@ -56,8 +56,10 @@ class ServerRecipe(BaseRecipe):
                                 "You may download it on "
                                 "https://launchpad.net/openerp-command."),
         })
-        self.server_wide_modules = option_splitlines(
-            opt.get('server_wide_modules'))
+        sw_modules = option_splitlines(opt.get('server_wide_modules'))
+        if sw_modules and 'web' not in sw_modules:
+            sw_modules = ('web', ) + sw_modules
+        self.server_wide_modules = sw_modules
 
     def apply_version_dependent_decisions(self):
         """Store some booleans depending on detected version.
@@ -161,9 +163,8 @@ class ServerRecipe(BaseRecipe):
                                 for k, v in self.options.items()
                                 if k.startswith(gunicorn_prefix))
 
-        sw_mods = gunicorn_options['server_wide_modules'] = ['web']
-        if self.server_wide_modules:
-            sw_mods.extend(self.server_wide_modules)
+        gunicorn_options['server_wide_modules'] = list(
+            self.server_wide_modules) if self.server_wide_modules else ['web']
 
         f = open(join(self.etc, qualified_name + '.conf.py'), 'w')
         conf = """'''Gunicorn configuration script.
