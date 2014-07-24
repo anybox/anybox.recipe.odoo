@@ -8,7 +8,8 @@ import subprocess
 import zc.buildout
 from zc.buildout import UserError
 from anybox.recipe.openerp import devtools
-from anybox.recipe.openerp.base import BaseRecipe
+from .base import BaseRecipe
+from .utils import option_splitlines, option_strip
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +101,7 @@ class ServerRecipe(BaseRecipe):
                 self.archeo_requirements.get(self.major_version))
 
         setup_has_pil = False
-        if not 'PIL' in self.options.get('eggs', '').split():
+        if not 'PIL' in option_splitlines(self.options.get('eggs', '')):
             if 'PIL' in self.requirements:
                 setup_has_pil = True
                 self.requirements.remove('PIL')
@@ -198,8 +199,8 @@ conf = openerp.tools.config
 
             conf += 'conf[%r] = %r' % (opt, val) + os.linesep
 
-        preload_dbs = self.options.get('gunicorn.preload_databases',
-                                       '').split()
+        preload_dbs = option_splitlines(self.options.get(
+            'gunicorn.preload_databases'))
         if preload_dbs:
             conf += os.linesep.join((
                 "",
@@ -233,7 +234,7 @@ conf = openerp.tools.config
         scripts = self.openerp_scripts
         if not 'openerp_scripts' in self.options:
             return
-        for line in self.options.get('openerp_scripts').split(os.linesep):
+        for line in option_splitlines(self.options.get('openerp_scripts')):
             line = line.split()
 
             naming = line[0].split('=')
@@ -335,7 +336,8 @@ conf = openerp.tools.config
     def _register_upgrade_script(self, qualified_name):
         desc = self._get_or_create_script('openerp_upgrader',
                                           name=qualified_name)[1]
-        script_opt = self.options.get('upgrade_script', 'upgrade.py run')
+        script_opt = option_strip(self.options.get('upgrade_script',
+                                                   'upgrade.py run'))
         script = script_opt.split()
         if len(script) != 2:
             # TODO add console script entry point support

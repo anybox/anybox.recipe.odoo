@@ -27,7 +27,6 @@ and in particular to the `configuration file syntax
 <https://pypi.python.org/pypi/zc.buildout/2.2.1#configuration-file-syntax>`_
 (these links may have to be adapted for the version in use).
 
-
 Buildout configuration files are written almost in INI format, and
 always start with a ``buildout`` section::
 
@@ -46,6 +45,17 @@ must specify the recipe that's to be used::
 An extra dependency of the recipe gets required at runtime like this::
 
   recipe = anybox.recipe.openerp[bzr]:server
+
+.. note:: inline comments
+
+          As of version 1.9 of the recipe, inline comments starting
+          with a semicolon *not at the beginning of a line* are
+          supported in the recipe's specific options, and especially
+          in the multi line ones, whereas ``zc.buildout`` does not
+          support them.
+
+          For more detail, check
+          :py:func:`anybox.recipe.openerp.utils.option_splitlines`.
 
 Command line
 ------------

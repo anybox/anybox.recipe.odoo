@@ -167,6 +167,83 @@ def check_output(*popenargs, **kwargs):
         raise exc
     return output
 
+INLINE_COMMENT_REGEXP = re.compile(r'\s;|^;')
+
+
+def option_splitlines(opt_val):
+    r"""Split a multiline option value.
+
+    This function performs stripping of whitespaces and allows comments as
+    `configparser <http://docs.python.org/2/library/configparser.html>`_ would
+    do. Namely:
+
+    * a line starting with a hash is a comment. This is already taken care of
+      by ``zc.buildout`` parsing of the configuration file.
+
+      :mod ConfigParser: does not apply this rule to the case where the hash
+      is after some leading whitespace, including line-continuation
+      indentation as in::
+
+          [foo]
+          bar = line1
+            line2
+          # this is a comment
+            # this is not a comment, and will appear in 'bar' value
+
+      Therefore this function does not have to do anything with respect to
+      hash-comments.
+
+    * everything after a semicolon following a whitespace is a comment::
+
+          [foo]
+          bar = line1
+                line2 ;this is a comment
+
+    :param basestring opt_val: the raw option value
+    :returns: tuple of strings
+
+    doctests (less readable than examples above, but more authoritative)::
+
+        >>> print 'NOCOMMIT'
+        NOCOMMIT
+        >>> option_splitlines('line1\n  line2 ;this is a comment\n  line3')
+        ('line1', 'line2', 'line3')
+        >>> option_splitlines('line1\n; inline comment from beginning\n  line3')
+        ('line1', 'line3')
+        >>> option_splitlines('line1\n; inline comment from beginning\n  line3')
+        ('line1', 'line3')
+        >>> option_splitlines('line1\n  ; disappears after stripping \n  line3')
+        ('line1', 'line3')
+        >>> option_splitlines('line1\n\n')
+        ('line1',)
+        >>> option_splitlines('')
+        ()
+
+    For convenience, ``None`` is accepted::
+
+        >>> option_splitlines(None)
+        ()
+
+    """
+    if opt_val is None:
+        return ()
+
+    lines = opt_val.splitlines()
+    return tuple(l for l in (option_strip(line) for line in lines)
+                 if l)
+
+
+def option_strip(opt_val):
+    """Same as :func:`option_splitlines` for a single line.
+
+    >>> option_strip("   hey, we have ; a comment")
+    'hey, we have'
+    >>> option_strip(None) is None
+    True
+    """
+    if opt_val is not None:
+        return INLINE_COMMENT_REGEXP.split(opt_val, 1)[0].strip()
+
 
 def total_seconds(td):
     """Uniformity backport of :meth:`datetime.timedelta.total_seconds``
