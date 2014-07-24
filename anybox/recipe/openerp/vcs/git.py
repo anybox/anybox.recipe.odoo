@@ -38,20 +38,39 @@ class GitRepo(BaseRepo):
 
         :returns: the parsed version tuple
 
+        Only the first 3 digits are kept. This is good enough for the few
+        version dependent cases we need, and coarse enough to avoid
+        more complicated parsing.
+
         Some real-life examples::
 
           >>> GitRepo.init_git_version('git version 1.8.5.3')
-          (1, 8, 5, 3)
+          (1, 8, 5)
           >>> GitRepo.init_git_version('git version 1.7.2.5')
-          (1, 7, 2, 5)
+          (1, 7, 2)
+
+        Seen on MacOSX (not on MacPorts)::
+
+          >>> GitRepo.init_git_version('git version 1.8.5.2 (Apple Git-48)')
+          (1, 8, 5)
+
+        Seen on Windows (Tortoise Git)::
+
+          >>> GitRepo.init_git_version('git version 1.8.4.msysgit.0')
+          (1, 8, 4)
+
+        A compiled version::
+
+          >>> GitRepo.init_git_version('git version 2.0.3.2.g996b0fd')
+          (2, 0, 3)
 
         This one does not exist, allowing us to prove that this method
         actually governs the :attr:`git_version` property
 
-          >>> GitRepo.init_git_version('git version 1.6.6.6')
-          (1, 6, 6, 6)
+          >>> GitRepo.init_git_version('git version 0.0.666')
+          (0, 0, 666)
           >>> GitRepo('', '').git_version
-          (1, 6, 6, 6)
+          (0, 0, 666)
 
         Expected exceptions:
 
@@ -71,7 +90,7 @@ class GitRepo(BaseRepo):
         v_str = v_str.strip()
         try:
             version = cls._git_version = tuple(
-                int(x) for x in v_str.split('git version ', 1)[-1].split('.'))
+                int(x) for x in v_str.split()[2].split('.')[:3])
         except:
             raise ValueError("Could not parse git version output %r. Please "
                              "report this" % v_str)
