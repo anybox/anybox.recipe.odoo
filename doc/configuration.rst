@@ -583,7 +583,7 @@ from the relevant options for the OpenERP script (currently
 
 Other simple supported options and their default values are (See also
 the `Gunicorn configuration documentation
-<http://docs.gunicorn.org/en/latest/configure.html>`) ::
+<http://docs.gunicorn.org/en/latest/configure.html>`_) ::
 
   gunicorn.workers = 4
   gunicorn.timeout = 240
@@ -599,8 +599,8 @@ You may specify the Gunicorn script name with the
 accordingly.
 
 The ``gunicorn.preload_databases`` option (one database per line) lets
-you specify databases to load in a `post_fork
-<http://docs.gunicorn.org/en/latest/configure.html#post-fork>` hook.
+you specify databases to load in a `post_fork hook
+<http://docs.gunicorn.org/en/latest/configure.html#post-fork>`_.
 With this setting, the worker processes will be ready for requests on these
 databases right after their startup. Moreover, Gunicorn does not handle any
 request to a worker until it is ready. Therefore, in workloads where
@@ -629,7 +629,7 @@ running instances of the project by enclosing this notion in
 the shippable configuration.
 
 It can also be leveraged by other scripts or recipe subsystems,
-notably the :ref:`gunicorn startup script <gunicorn_openerp>`.
+notably the :ref:`gunicorn startup script <gunicorn>`.
 
 .. note:: in any case, the ``web`` addon is loaded as a server-wide one.
 

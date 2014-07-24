@@ -174,15 +174,15 @@ def option_splitlines(opt_val):
     r"""Split a multiline option value.
 
     This function performs stripping of whitespaces and allows comments as
-    `configparser <http://docs.python.org/2/library/configparser.html>`_ would
+    `ConfigParser <http://docs.python.org/2/library/configparser.html>`_ would
     do. Namely:
 
     * a line starting with a hash is a comment. This is already taken care of
       by ``zc.buildout`` parsing of the configuration file.
 
-      :mod ConfigParser: does not apply this rule to the case where the hash
-      is after some leading whitespace, including line-continuation
-      indentation as in::
+      :mod:`ConfigParser` does not apply this rule to the case where the hash
+      is after some leading whitespace (e.g, line-continuation
+      indentation) as in this example::
 
           [foo]
           bar = line1
@@ -190,7 +190,7 @@ def option_splitlines(opt_val):
           # this is a comment
             # this is not a comment, and will appear in 'bar' value
 
-      Therefore this function does not have to do anything with respect to
+      Therefore this function does not have to perform anything with respect to
       hash-comments.
 
     * everything after a semicolon following a whitespace is a comment::
