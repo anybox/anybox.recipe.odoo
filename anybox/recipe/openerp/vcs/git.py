@@ -165,10 +165,14 @@ class GitRepo(BaseRepo):
             os.chdir(self.target_dir)
             logger.info("%s> git pull %s %s",
                         self.target_dir, self.url, revision)
-            # GR --no-edit is not available on older git versions
-            # (seen with 1.7.2.5 from Debian 6)
-            subprocess.check_call(['git', 'pull', '--no-edit',
-                                   self.url, revision])
+            cmd = ['git', 'pull', self.url, revision]
+            if self.git_version >= (1, 7, 8):
+                # --edit and --no-edit appear with Git 1.7.8
+                # see Documentation/RelNotes/1.7.8.txt of Git
+                # (https://git.kernel.org/cgit/git/git.git/tree)
+                cmd.insert(2, '--no-edit')
+
+            subprocess.check_call(cmd)
 
     def archive(self, target_path):
         # TODO: does this work with merge-ins?
