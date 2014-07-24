@@ -765,14 +765,13 @@ class BaseRecipe(object):
 
     def _register_extra_paths(self):
         """Add openerp paths into the extra-paths (used in scripts' sys.path).
+
+        This is useful up to the 6.0 series only, because in later version,
+        the 'openerp' directory is a proper distribution that we develop, with
+        the effect of putting it on the path automatically.
         """
         extra = self.extra_paths
-        if self.major_version >= (6, 2):
-            # TODO still necessary ?
-            extra.append(self.openerp_dir)
-            if self.major_version < (7, 3):
-                extra.append(join(self.openerp_dir, 'addons'))
-        else:
+        if self.major_version < (6, 1):
             extra.extend((join(self.openerp_dir, 'bin'),
                           join(self.openerp_dir, 'bin', 'addons')))
         self.options['extra-paths'] = os.linesep.join(extra)
