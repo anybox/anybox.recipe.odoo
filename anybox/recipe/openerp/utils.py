@@ -204,8 +204,6 @@ def option_splitlines(opt_val):
 
     doctests (less readable than examples above, but more authoritative)::
 
-        >>> print 'NOCOMMIT'
-        NOCOMMIT
         >>> option_splitlines('line1\n  line2 ;this is a comment\n  line3')
         ('line1', 'line2', 'line3')
         >>> option_splitlines('line1\n; inline comment from beginning\n  line3')
