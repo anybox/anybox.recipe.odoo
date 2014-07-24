@@ -12,6 +12,7 @@ with any higher released unstable versions.
 - launchpad #1274174: new feature for automatic merge of remote VCS
   sources, with bzr support.
 - launchpad #1327773: [git] support for automatic merges
+- launchpad #1232729: handling of server-wide modules by the recipe
 - launchpad #1327609: support inline comments in multi-line options
 
 1.8.5 (unreleased)

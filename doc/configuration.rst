@@ -540,7 +540,6 @@ about upgrade scripts.
 
 .. note:: new in version 1.8.0
 
-
 .. _gunicorn:
 
 gunicorn
@@ -609,6 +608,30 @@ one or a few databases are actually used, this setting keeps the user
 experience snappy even in the event of frequent worker restarts, and
 allows for graceful restarts (use this for minor changes only).
 
+.. _server_wide_modules:
+
+server_wide_modules
+-------------------
+.. note:: new in version 1.9.0
+
+This multi-line option lets you specify addons to be loaded directly
+at startup, independently of what is installed in the database.
+
+It plays the same role as the ``--load`` command-line option of the main OpenERP
+startup script, with lower precedence if the latter is also specified.
+Examples::
+
+  server_wide_modules = custom_homepage
+
+Since there is no entry in the OpenERP configuration file corresponding
+to ``--load``, this recipe option helps bringing uniformity accross
+running instances of the project by enclosing this notion in
+the shippable configuration.
+
+It can also be leveraged by other scripts or recipe subsystems,
+notably the :ref:`gunicorn startup script <gunicorn_openerp>`.
+
+.. note:: in any case, the ``web`` addon is loaded as a server-wide one.
 
 .. _openerp_command_name:
 
