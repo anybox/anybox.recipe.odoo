@@ -695,20 +695,6 @@ class BaseRecipe(object):
         if self.major_version >= (6, 2):
             # TODO still necessary ?
             extra.append(self.openerp_dir)
-            # GR: kept with github condition to avoid testing a bazillion
-            # projects right before a stable recipe release, but this is
-            # a good candidate for pure removal:
-            # putting the 'addons' subdir on the path is a leftover of
-            # 6.0 days (bin/addons at the time)
-            # and has always been wrong from 6.1 onwards.
-            # Sofar, I checked that this directory does not exist within:
-            # - 7.0 nightly
-            # - 7.0 bzr layout
-            # - 6.1 nightly
-            # but it's the typical one of the git layout, and that leads to
-            # shadowing bugs, see e.g., launchpad #1343518
-            if self.major_version < (7, 3) and not self.is_git_layout:
-                extra.append(join(self.openerp_dir, 'addons'))
         else:
             extra.extend((join(self.openerp_dir, 'bin'),
                           join(self.openerp_dir, 'bin', 'addons')))
