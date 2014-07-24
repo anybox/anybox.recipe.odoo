@@ -20,6 +20,63 @@ class GitRepo(BaseRepo):
 
     vcs_official_name = 'Git'
 
+    _git_version = None
+
+    @property
+    def git_version(self):
+        cls = self.__class__
+        version = cls._git_version
+        if version is not None:
+            return version
+
+        return cls.init_git_version(subprocess.check_output(
+            ['git', '--version']))
+
+    @classmethod
+    def init_git_version(cls, v_str):
+        """Parse git version string and store the resulting tuple on self.
+
+        :returns: the parsed version tuple
+
+        Some real-life examples::
+
+          >>> GitRepo.init_git_version('git version 1.8.5.3')
+          (1, 8, 5, 3)
+          >>> GitRepo.init_git_version('git version 1.7.2.5')
+          (1, 7, 2, 5)
+
+        This one does not exist, allowing us to prove that this method
+        actually governs the :attr:`git_version` property
+
+          >>> GitRepo.init_git_version('git version 1.6.6.6')
+          (1, 6, 6, 6)
+          >>> GitRepo('', '').git_version
+          (1, 6, 6, 6)
+
+        Expected exceptions:
+
+          >>> try: GitRepo.init_git_version('invalid')
+          ... except ValueError: pass
+
+        After playing with it, we must reset it so that tests can run with
+        the proper detected one, if needed::
+
+          >>> GitRepo.init_git_version(None)
+
+        """
+        if v_str is None:
+            cls._git_version = None
+            return
+
+        v_str = v_str.strip()
+        try:
+            version = cls._git_version = tuple(
+                int(x) for x in v_str.split('git version ', 1)[-1].split('.'))
+        except:
+            raise ValueError("Could not parse git version output %r. Please "
+                             "report this" % v_str)
+        return version
+
     def clean(self):
         if not os.path.isdir(self.target_dir):
             return
