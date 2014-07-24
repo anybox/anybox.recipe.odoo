@@ -71,7 +71,7 @@ class GitRepo(BaseRepo):
         v_str = v_str.strip()
         try:
             version = cls._git_version = tuple(
-                int(x) for x in v_str.split('git version ', 1)[-1].split('.'))
+                int(x) for x in v_str.split(" ")[2].split('.'))
         except:
             raise ValueError("Could not parse git version output %r. Please "
                              "report this" % v_str)
