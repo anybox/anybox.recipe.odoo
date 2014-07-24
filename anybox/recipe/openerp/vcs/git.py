@@ -29,7 +29,7 @@ class GitRepo(BaseRepo):
         if version is not None:
             return version
 
-        return cls.init_git_version(subprocess.check_output(
+        return cls.init_git_version(utils.check_output(
             ['git', '--version']))
 
     @classmethod
