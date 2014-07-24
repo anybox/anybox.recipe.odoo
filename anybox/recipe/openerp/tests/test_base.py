@@ -373,7 +373,7 @@ class TestBaseRecipe(RecipeTestCase):
                           "fakevcs+http://example.com/aeroolib@fakerev"
                           "#egg=aeroolib")
 
-    def test_finalize_addons_paths_odoo_layout(self):
+    def test_finalize_addons_paths_git_layout(self):
         self.make_recipe(
             version='git http://github.com/odoo/odoo.git odoo 7.0')
         self.recipe.version_detected = '7.0-somerev'
@@ -386,6 +386,9 @@ class TestBaseRecipe(RecipeTestCase):
         self.recipe.finalize_addons_paths(check_existence=False)
         self.assertEquals(self.recipe.addons_paths,
                           [base_addons, odoo_addons, '/some/separate/addons'])
+
+        self.recipe._register_extra_paths()
+        self.assertEqual(self.recipe.extra_paths, [oerp_dir])
 
     def test_finalize_addons_paths_bzr_layout(self):
         self.make_recipe(

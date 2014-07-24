@@ -109,6 +109,13 @@ class BaseRecipe(object):
     # Can be 'filename' or 'http-head'
     main_http_caching = 'filename'
 
+    is_git_layout = False
+    """True if this is the git layout, as seen from the move to GitHub.
+
+    In this layout, the standard addons other than ``base`` are in a ``addons``
+    directory right next to the ``openerp`` package.
+    """
+
     def __init__(self, buildout, name, options):
         self.requirements = list(self.requirements)
         self.recipe_requirements_path = []
@@ -688,7 +695,19 @@ class BaseRecipe(object):
         if self.major_version >= (6, 2):
             # TODO still necessary ?
             extra.append(self.openerp_dir)
-            if self.major_version < (7, 3):
+            # GR: kept with github condition to avoid testing a bazillion
+            # projects right before a stable recipe release, but this is
+            # a good candidate for pure removal:
+            # putting the 'addons' subdir on the path is a leftover of
+            # 6.0 days (bin/addons at the time)
+            # and has always been wrong from 6.1 onwards.
+            # Sofar, I checked that this directory does not exist within:
+            # - 7.0 nightly
+            # - 7.0 bzr layout
+            # - 6.1 nightly
+            # but it's the typical one of the git layout, and that leads to
+            # shadowing bugs, see e.g., launchpad #1343518
+            if self.major_version < (7, 3) and not self.is_git_layout:
                 extra.append(join(self.openerp_dir, 'addons'))
         else:
             extra.extend((join(self.openerp_dir, 'bin'),
@@ -1196,6 +1215,7 @@ class BaseRecipe(object):
         if not os.path.isdir(odoo_git_addons):
             return
 
+        self.is_git_layout = True
         addons_paths = self.addons_paths
 
         try:

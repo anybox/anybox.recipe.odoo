@@ -8,6 +8,8 @@ with any higher released unstable versions.
 1.8.5 (unreleased)
 ------------------
 - gevent script generation backported to version 7.saas~3 and following
+- launchpad #1343518: versions < 8 with layout of odoo on Github had severe
+  shadowing issues.
 - launchpad #1338405: [odoo] provided necessary environments init in session
   (needed for interactive session and various scripts)
 - launchpad #1249566: [bzr] avoid outgoing requests in offline mode
