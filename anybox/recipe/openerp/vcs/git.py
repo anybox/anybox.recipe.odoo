@@ -34,7 +34,7 @@ class GitRepo(BaseRepo):
 
     @classmethod
     def init_git_version(cls, v_str):
-        """Parse git version string and store the resulting tuple on self.
+        r"""Parse git version string and store the resulting tuple on self.
 
         :returns: the parsed version tuple
 
@@ -63,6 +63,11 @@ class GitRepo(BaseRepo):
 
           >>> GitRepo.init_git_version('git version 2.0.3.2.g996b0fd')
           (2, 0, 3)
+
+        Rewrapped by `hub <https://hub.github.com/>`_, it has two lines:
+
+          >>> GitRepo.init_git_version('git version 1.7.9\nhub version 1.11.0')
+          (1, 7, 9)
 
         This one does not exist, allowing us to prove that this method
         actually governs the :attr:`git_version` property
