@@ -186,7 +186,7 @@ class TestBaseRecipe(RecipeTestCase):
             version = conf.get('freeze', 'Babel')
         except NoOptionError:
             self.fail("Expected version of Babel egg not dumped !")
-        self.assertEquals(version, '0.123-dev')
+        self.assertTrue(version.startswith('0.123'))
 
     def test_freeze_egg_versions_merge(self):
         """Test that freezing of egg versions keeps eggs already dumped.
