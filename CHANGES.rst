@@ -5,6 +5,9 @@ The 1.8 series are stable versions, while the 1.9 are unstable.
 Changes displayed as "unreleased" in th stable series are released
 with any higher released unstable versions.
 
+1.8.6 (UNRELEASED)
+------------------
+
 1.8.5 (2014-07-29)
 ------------------
 - gevent script generation backported to version 7.saas~3 and following
