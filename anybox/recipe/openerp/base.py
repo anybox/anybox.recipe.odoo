@@ -1258,6 +1258,14 @@ class BaseRecipe(object):
         instead.
         If not found (e.g, we are on a nightly for OpenERP <= 7), this method
         does nothing.
+        We want to keep ordering of addons path.
+        If official addons path is missing, we add just after path of base
+        addons.
+        Otherwise, we do nothing to keep official addons where they are.
+
+        We preserve the order, because it is important for addons with same
+        name.
+        Only first found addons of duplicate names is considered.
 
         Care is taken not to break configurations that corrected this manually
         with a ``local`` source in the ``addons`` option.
@@ -1276,11 +1284,9 @@ class BaseRecipe(object):
         except ValueError:
             insert_at = 0
         try:
-            addons_paths.remove(odoo_git_addons)
+            addons_paths.index(odoo_git_addons)
         except ValueError:
-            pass
-
-        addons_paths.insert(insert_at, odoo_git_addons)
+            addons_paths.insert(insert_at, odoo_git_addons)
 
     def cleanup_openerp_dir(self):
         """Revert local modifications that have been made during installation.
