@@ -1258,14 +1258,15 @@ class BaseRecipe(object):
         instead.
         If not found (e.g, we are on a nightly for OpenERP <= 7), this method
         does nothing.
-        We want to keep ordering of addons path.
-        If official addons path is missing, we add just after path of base
-        addons.
-        Otherwise, we do nothing to keep official addons where they are.
+        The ordering of the different paths of addons is important, because
+        when several addons in different paths have the same name, the first
+        of them that is found is used. This can be used, for instance,
+        to replace an official addon by another one by placing a different
+        addons' path before the official one.
 
-        We preserve the order, because it is important for addons with same
-        name.
-        Only first found addons of duplicate names is considered.
+        If the official addons' path is already set in the config file
+        (e.g. at the end), it will leave it at the end of the paths list,
+        if it is not set, it will be placed at the beginning.
 
         Care is taken not to break configurations that corrected this manually
         with a ``local`` source in the ``addons`` option.
