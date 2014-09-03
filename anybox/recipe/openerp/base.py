@@ -563,6 +563,14 @@ class BaseRecipe(object):
                            clean=self.clean)
             options.update(addons_options)
 
+            group = addons_options.get('group')
+            group_dir = None
+            if group:
+                l0, l1 = os.path.split(local_dir)
+                group_dir = join(l0, group)
+                local_dir = join(group_dir, l1)
+                if not os.path.exists(group_dir):
+                    os.mkdir(group_dir)
             if loc_type != 'local':
                 for k, v in self.options.items():
                     if k.startswith(loc_type + '-'):
@@ -576,7 +584,13 @@ class BaseRecipe(object):
                 utils.clean_object_files(local_dir)
 
             subdir = addons_options.get('subdir')
-            addons_dir = join(local_dir, subdir) if subdir else local_dir
+            if group_dir:
+                addons_dir = group_dir
+            else:
+                addons_dir = local_dir
+
+            if subdir:
+                addons_dir = join(addons_dir, subdir)
 
             manifest = os.path.join(addons_dir, '__openerp__.py')
             manifest_pre_v6 = os.path.join(addons_dir, '__terp__.py')
@@ -599,7 +613,8 @@ class BaseRecipe(object):
                 os.mkdir(addons_dir)
                 new_dir = join(addons_dir, name)
                 os.rename(tmp, new_dir)
-            self.addons_paths.append(addons_dir)
+            if not addons_dir in self.addons_paths:
+                self.addons_paths.append(addons_dir)
 
     def revert_sources(self):
         """Revert all sources to the revisions specified in :attr:`sources`.
