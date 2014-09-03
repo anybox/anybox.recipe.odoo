@@ -449,8 +449,13 @@ class TestServer(RecipeTestCase):
         if IncompatibleVersionError is None:  # zc.buildout >= 1.7
             return  # @skip appears in py2.7
 
-        self.do_test_install_scripts_soft_deps(
-            exc=IncompatibleVersionError())
+        exc = IncompatibleVersionError()
+        try:
+            self.do_test_install_scripts_soft_deps(exc=exc)
+        except UserError as exc2:
+            self.assertEqual(exc2, exc)
+        else:
+            self.fail("Exception should have been reraised")
 
     def test_install_scripts_soft_deps_user_error(self):
         self.do_test_install_scripts_soft_deps(
