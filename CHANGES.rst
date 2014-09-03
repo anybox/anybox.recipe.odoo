@@ -7,6 +7,8 @@ with any higher released unstable versions.
 
 1.8.6 (UNRELEASED)
 ------------------
+- launchpad #1208028: another case where parsing of exception while
+  installing egg failed. Rewrote the whole logic, with much unit-testing
 
 1.8.5 (2014-07-29)
 ------------------
