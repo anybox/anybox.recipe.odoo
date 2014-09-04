@@ -2,6 +2,7 @@
 from os.path import join, basename
 import os
 import sys
+import re
 import urllib
 import tarfile
 import setuptools
@@ -19,6 +20,15 @@ except ImportError:  # Python < 2.7
 from zc.buildout.easy_install import MissingDistribution
 from zc.buildout import UserError
 from zc.buildout.easy_install import VersionConflict
+
+try:  # need to distinguish, because of differing semantics
+    from zc.buildout.easy_install import IncompatibleConstraintError
+except ImportError:  # zc.buildout < 1.7
+    IncompatibleConstraintError = None  # 'except None' is very fine
+    from zc.buildout.easy_install import IncompatibleVersionError
+else:
+    IncompatibleVersionError = None
+
 import zc.recipe.egg
 
 import httplib
@@ -119,6 +129,13 @@ class BaseRecipe(object):
     # Caching logic for the main OpenERP part (e.g, without addons)
     # Can be 'filename' or 'http-head'
     main_http_caching = 'filename'
+
+    is_git_layout = False
+    """True if this is the git layout, as seen from the move to GitHub.
+
+    In this layout, the standard addons other than ``base`` are in a ``addons``
+    directory right next to the ``openerp`` package.
+    """
 
     def __init__(self, buildout, name, options):
         self.requirements = list(self.requirements)
@@ -278,33 +295,52 @@ class BaseRecipe(object):
         """
         while True:
             missing = None
-            eggs = zc.recipe.egg.Scripts(self.buildout, '', self.options)
+            eggs_recipe = zc.recipe.egg.Scripts(self.buildout, '',
+                                                self.options)
             try:
-                eggs.install()
-            except MissingDistribution, exc:
+                eggs_recipe.install()
+            except MissingDistribution as exc:
                 missing = exc.data[0].project_name
-            except VersionConflict:
+            except VersionConflict as exc:
+                # GR not 100% sure, but this should mean a conflict with an
+                # already loaded version (don't know what can lead to this
+                # 'already', have seen it with zc.buildout itself only so far)
+                # In any case, removing the requirement can't make for a sane
+                # recovery
                 raise
-            except UserError, exc:  # zc.buildout >= 2.0
+            except IncompatibleVersionError as exc:  # zc.buildout < 1.7
+                # In exc's attrs, we have the version but not the project name
+                raise
+            except IncompatibleConstraintError as exc:
+                missing = exc.args[2].project_name
+            except UserError, exc:  # happens only for zc.buildout >= 2.0
                 missing = exc.message.split(os.linesep)[0].split()[-1]
-
-            if missing is not None:
-                msg = self.missing_deps_instructions.get(missing)
-                if msg is None:
-                    raise
-                logger.error("Could not find %r. " + msg, missing)
-                # GR this condition won't be enough in case of version
-                # conditions in requirement
-                if missing not in self.soft_requirements:
-                    sys.exit(1)
-                else:
-                    attempted = option_splitlines(self.options['eggs'])
-                    self.options['eggs'] = os.linesep.join(
-                        [egg for egg in attempted if egg != missing])
+                missing = re.split(r'[=<>]', missing)[0]
             else:
                 break
 
-        self.eggs_reqs, self.eggs_ws = eggs.working_set()
+            logger.error("Could not find or install %r. "
+                         + self.missing_deps_instructions.get(missing, '')
+                         + " Original exception %s.%s says: %s",
+                         missing,
+                         exc.__class__.__module__, exc.__class__.__name__, exc)
+            if missing not in self.soft_requirements:
+                raise exc
+
+            eggs = set(self.options['eggs'].split(os.linesep))
+            if missing not in eggs:
+                logger.error("Soft requirement %r is also an indirect "
+                             "dependency (either of OpenERP/Odoo or of "
+                             "one listed in config file). Can't retry.",
+                             missing)
+                raise exc
+
+            logger.warn("%r is a direct soft requirement, "
+                        "retrying without it", missing)
+            eggs.discard(missing)
+            self.options['eggs'] = os.linesep.join(eggs)
+
+        self.eggs_reqs, self.eggs_ws = eggs_recipe.working_set()
         self.ws = self.eggs_ws
 
     def apply_version_dependent_decisions(self):
@@ -1280,6 +1316,7 @@ class BaseRecipe(object):
         if not os.path.isdir(odoo_git_addons):
             return
 
+        self.is_git_layout = True
         addons_paths = self.addons_paths
 
         try:

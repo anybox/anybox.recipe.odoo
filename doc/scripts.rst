@@ -339,6 +339,9 @@ example::
                       "to be currently a problem with our setup. ")
        session.update_modules(['crm', 'sales'])
 
+No need to set ``db_version``, nor to commit: the recipe will do it
+for you in case of success (see below)
+
 Such callables (source file and name) can be declared in the
 buildout configuration with the ``upgrade_script`` option::
 
@@ -351,6 +354,18 @@ If the specified source file is not found, the recipe will initialize it
 with the simplest possible one : update of all modules. That is
 expected to work 90% of the time. The package manager can then modify
 it according to needs, and maybe track it in version control.
+
+.. note:: about versions
+
+          the ``db_version`` settable property is meant to be really
+          global for this precise project. The idea is that anything
+          depending only on a module's version number should be done
+          in that module's migration scripts (pre or post).
+
+          you're supposed to provide and maintain a "package version" in a
+          ``VERSION.txt`` file at the root of the buildout (the recipe
+          will warn you if it's missing). The recipe will use it to set
+          ``db_version`` at the end of the process.
 
 In truth, upgrade scripts are nothing but OpenERP scripts, with the
 entry point console script being provided by the recipe itself, and

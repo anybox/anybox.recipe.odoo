@@ -188,7 +188,7 @@ class TestBaseRecipe(RecipeTestCase):
             version = conf.get('freeze', 'Babel')
         except NoOptionError:
             self.fail("Expected version of Babel egg not dumped !")
-        self.assertEquals(version, '0.123-dev')
+        self.assertTrue(version.startswith('0.123'))
 
     def test_freeze_egg_versions_merge(self):
         """Test that freezing of egg versions keeps eggs already dumped.
@@ -400,7 +400,7 @@ class TestBaseRecipe(RecipeTestCase):
                           "fakevcs+http://example.com/aeroolib@fakerev"
                           "#egg=aeroolib")
 
-    def test_finalize_addons_paths_odoo_layout(self):
+    def test_finalize_addons_paths_git_layout(self):
         self.make_recipe(
             version='git http://github.com/odoo/odoo.git odoo 7.0')
         self.recipe.version_detected = '7.0-somerev'

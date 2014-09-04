@@ -18,9 +18,16 @@ with any higher released unstable versions.
 - launchpad #1232729: handling of server-wide modules by the recipe
 - launchpad #1327609: support inline comments in multi-line options
 
-1.8.5 (unreleased)
+1.8.6 (unreleased)
+------------------
+- launchpad #1208028: another case where parsing of exception while
+  installing egg failed. Rewrote the whole logic, with much unit-testing
+
+1.8.5 (2014-07-29)
 ------------------
 - gevent script generation backported to version 7.saas~3 and following
+- launchpad #1343518: versions < 8 with layout of odoo on Github had severe
+  shadowing issues.
 - launchpad #1338405: [odoo] provided necessary environments init in session
   (needed for interactive session and various scripts)
 - launchpad #1249566: [bzr] avoid outgoing requests in offline mode
