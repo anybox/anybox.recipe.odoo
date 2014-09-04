@@ -426,6 +426,25 @@ class TestBaseRecipe(RecipeTestCase):
         self.assertEquals(self.recipe.addons_paths, [base_addons,
                                                      '/some/separate/addons'])
 
+    def test_finalize_addons_paths_order(self):
+        """Test finalize_addons_paths keeps addons_path order
+        Ensure we don't move odoo addons in addons_path if it has been
+        set as local
+        """
+        self.make_recipe(
+            version='git http://github.com/odoo/odoo.git odoo 7.0')
+        self.recipe.version_detected = '7.0-somerev'
+        oerp_dir = self.recipe.openerp_dir
+        base_addons = os.path.join(oerp_dir, 'openerp', 'addons')
+        odoo_addons = os.path.join(oerp_dir, 'addons')
+        os.makedirs(base_addons)
+        os.makedirs(odoo_addons)
+        self.recipe.addons_paths = ['/some/separate/addons',
+                                    odoo_addons]
+        self.recipe.finalize_addons_paths(check_existence=False)
+        self.assertEquals(self.recipe.addons_paths,
+                          [base_addons, '/some/separate/addons', odoo_addons])
+
     def test_finalize_addons_paths_60_layout(self):
         self.make_recipe(version='6.0.4')
         recipe = self.recipe

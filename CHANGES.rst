@@ -7,6 +7,9 @@ with any higher released unstable versions.
 
 1.9.0 (unreleased)
 ------------------
+- launchpad #1358353: with github layout, respect ordering if the place of the
+  standards (non-base) addons is explicitely set as 'local' (allows to insert
+  overrides before them). 
 - launchpad #1294020: vcs-revert=on-merge option, and implementation
   for bzr
 - launchpad #1274174: new feature for automatic merge of remote VCS
