@@ -394,7 +394,7 @@ class TestServer(RecipeTestCase):
                             'test_openerp',
                             'gunicorn_openerp',
                             'cron_worker_openerp',
-                           ))
+                            ))
 
     def test_install_scripts_indirect_soft_deps(self, exc=None):
         """If a requirement is soft and indirect, UserError is properly raised.
