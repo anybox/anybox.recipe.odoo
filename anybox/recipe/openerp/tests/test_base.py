@@ -54,13 +54,13 @@ class TestBaseRecipe(RecipeTestCase):
         recipe = self.recipe
         self.assertEquals(recipe.version_wanted, '6.1-1')
         self.assertDownloadUrl(
-            'http://nightly.openerp.com/6.1/releases/blob-6.1-1.tgz')
+            'http://nightly.odoo.com/6.1/releases/blob-6.1-1.tgz')
 
     def test_version_nightly_6_1(self):
         self.make_recipe(version='nightly 6.1 1234-5')
 
         self.assertDownloadUrl(
-            'http://nightly.openerp.com/6.1/nightly/src/'
+            'http://nightly.odoo.com/6.1/nightly/src/'
             '6-1-nightly-1234-5.tbz')
 
     def test_version_bzr_6_1(self):
