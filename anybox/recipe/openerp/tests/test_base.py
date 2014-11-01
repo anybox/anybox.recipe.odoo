@@ -17,9 +17,9 @@ TEST_DIR = os.path.dirname(__file__)
 class TestingRecipe(BaseRecipe):
     """A subclass with just enough few defaults for unit testing."""
 
-    archive_filenames = {'6.1': 'blob-%s.tgz',
+    release_filenames = {'6.1': 'blob-%s.tgz',
                          '6.0': 'bl0b-%s.tgz'}
-    archive_nightly_filenames = {'6.1': '6-1-nightly-%s.tbz'}
+    nightly_filenames = {'6.1': '6-1-nightly-%s.tbz'}
 
 
 class TestBaseRecipe(RecipeTestCase):
