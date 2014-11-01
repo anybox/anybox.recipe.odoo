@@ -19,15 +19,18 @@ SERVER_COMMA_LIST_OPTIONS = ('log_handler', )
 class ServerRecipe(BaseRecipe):
     """Recipe for server install and config
     """
-    archive_filenames = {
+    release_filenames = {
         '5.0': 'openerp-server-%s.tar.gz',
         '6.0': 'openerp-server-%s.tar.gz',
         '6.1': 'openerp-%s.tar.gz',
+        # no more release after that, only nightlies
     }
-    archive_nightly_filenames = {
+    nightly_filenames = {
+        # the switch from release to nightlies occured during 6.1
         '6.1': 'openerp-6.1-%s.tar.gz',
         '7.0': 'openerp-7.0-%s.tar.gz',
-        'trunk': 'openerp-8.0dev-%s.tar.gz'
+        '8.0': 'odoo_8.0-%s.tar.gz',
+        'trunk': 'odoo_9.0alpha1-%s.tar.gz'
     }
     recipe_requirements = ('babel',)
     requirements = ('pychart', 'anybox.recipe.openerp')

@@ -108,16 +108,16 @@ class BaseRecipe(object):
 
     """
 
-    default_dl_url = {'6.0': 'http://nightly.openerp.com/old/openerp-6/',
-                      '6.1': 'http://nightly.openerp.com/6.1/releases/',
-                      '7.0': 'http://nightly.openerp.com/7.0/releases/',
-                      '5.0': 'http://nightly.openerp.com/old/openerp-5/',
+    release_dl_url = {'6.0': 'http://nightly.odoo.com/old/openerp-6/',
+                      '6.1': 'http://nightly.odoo.com/6.1/releases/',
+                      '5.0': 'http://nightly.odoo.com/old/openerp-5/',
                       }
 
-    nightly_dl_url = {'6.0': 'http://nightly.openerp.com/6.0/6.0/',
-                      '6.1': 'http://nightly.openerp.com/6.1/nightly/src/',
-                      '7.0': 'http://nightly.openerp.com/7.0/nightly/src/',
-                      'trunk': 'http://nightly.openerp.com/trunk/nightly/src/',
+    nightly_dl_url = {'6.0': 'http://nightly.odoo.com/6.0/6.0/',
+                      '6.1': 'http://nightly.odoo.com/6.1/nightly/src/',
+                      '7.0': 'http://nightly.odoo.com/7.0/nightly/src/',
+                      '8.0': 'http://nightly.odoo.com/8.0/nightly/src/',
+                      'trunk': 'http://nightly.odoo.com/trunk/nightly/src/',
                       }
 
     recipe_requirements = ()  # distribution required for the recipe itself
@@ -212,7 +212,7 @@ class BaseRecipe(object):
         if len(version_split) == 1:
             # version can be a simple version name, such as 6.1-1
             major_wanted = self.version_wanted[:3]
-            pattern = self.archive_filenames[major_wanted]
+            pattern = self.release_filenames[major_wanted]
             if pattern is None:
                 raise UserError('OpenERP version %r'
                                 'is not supported' % self.version_wanted)
@@ -220,7 +220,7 @@ class BaseRecipe(object):
             self.archive_filename = pattern % self.version_wanted
             self.archive_path = join(self.downloads_dir, self.archive_filename)
             base_url = self.options.get(
-                'base_url', self.default_dl_url[major_wanted])
+                'base_url', self.release_dl_url[major_wanted])
             self.sources[main_software] = (
                 'downloadable',
                 '/'.join((base_url.strip('/'), self.archive_filename)), None)
@@ -247,7 +247,7 @@ class BaseRecipe(object):
                 self.main_http_caching = 'http-head'
             series = self.nightly_series
             self.archive_filename = (
-                self.archive_nightly_filenames[series] % self.version_wanted)
+                self.nightly_filenames[series] % self.version_wanted)
             self.archive_path = join(self.downloads_dir, self.archive_filename)
             base_url = self.options.get('base_url',
                                         self.nightly_dl_url[series])
