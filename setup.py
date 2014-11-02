@@ -27,6 +27,7 @@ setup(
         open('CHANGES.rst').read())),
     url="https://launchpad.net/anybox.recipe.openerp",
     packages=find_packages(),
+    namespace_packages=['anybox', 'anybox.recipe'],
     zip_safe=False,
     include_package_data=True,
     install_requires=requires,
