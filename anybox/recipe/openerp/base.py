@@ -530,7 +530,7 @@ class BaseRecipe(object):
             if not split:
                 return
             loc_type = split[0]
-            if not loc_type in ('bzr', 'git'):
+            if loc_type not in ('bzr', 'git'):
                 raise UserError("Only merges of type 'bzr' and 'git' are "
                                 "currently supported.")
             options = dict(opt.split('=') for opt in split[4:])
@@ -649,7 +649,7 @@ class BaseRecipe(object):
                 os.mkdir(addons_dir)
                 new_dir = join(addons_dir, name)
                 os.rename(tmp, new_dir)
-            if not addons_dir in self.addons_paths:
+            if addons_dir not in self.addons_paths:
                 self.addons_paths.append(addons_dir)
 
     def revert_sources(self):

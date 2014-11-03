@@ -343,7 +343,7 @@ class BzrBranch(BaseRepo):
         target_dir = self.target_dir
         url = self.url
         offline = self.offline
-         # TODO case of local url ?
+        # TODO case of local url ?
         if offline:
             raise IOError(
                 "bzr branch %s does not exist; cannot branch it from "

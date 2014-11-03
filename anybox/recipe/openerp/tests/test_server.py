@@ -141,10 +141,10 @@ class TestServer(RecipeTestCase):
         self.assertEquals(get_vcs_log(), [
                           (addons1_dir, 'lp:my-addons1', 'last:1',
                            dict(offline=False, clear_locks=False, clean=False,
-                                    group="grouped")),
+                                group="grouped")),
                           (addons2_dir, 'lp:my-addons2', 'last:1',
                            dict(offline=False, clear_locks=False, clean=False,
-                                    group="grouped"))
+                                group="grouped"))
                           ])
         self.assertEquals(paths, [group_dir])
 
@@ -265,7 +265,7 @@ class TestServer(RecipeTestCase):
         bindir = os.path.join(self.buildout_dir, 'bin')
         binlist = os.listdir(bindir)
         for script in wanted:
-            if not script in binlist:
+            if script not in binlist:
                 self.fail("Script %r missing in bin directory." % script)
 
     def read_script(self, script_name):
