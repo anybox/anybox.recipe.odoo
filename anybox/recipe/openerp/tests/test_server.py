@@ -125,6 +125,29 @@ class TestServer(RecipeTestCase):
                           ])
         self.assertEquals(paths, [web_addons_dir])
 
+    def test_retrieve_addons_standalone_grouped(self):
+        self.make_recipe(version='6.1', addons='fakevcs lp:my-addons1 addons1 '
+                         'last:1 group=grouped\nfakevcs lp:my-addons2 addons2 '
+                         'last:1 group=grouped')
+        # manual creation because fakevcs does nothing but retrieve_addons
+        # has assertions on existence of target directories
+        group_dir = os.path.join(self.buildout_dir, 'grouped')
+        addons1_dir = os.path.join(group_dir, 'addons1')
+        addons2_dir = os.path.join(group_dir, 'addons2')
+
+        self.recipe.retrieve_addons()
+        paths = self.recipe.addons_paths
+        print get_vcs_log()
+        self.assertEquals(get_vcs_log(), [
+                          (addons1_dir, 'lp:my-addons1', 'last:1',
+                           dict(offline=False, clear_locks=False, clean=False,
+                                    group="grouped")),
+                          (addons2_dir, 'lp:my-addons2', 'last:1',
+                           dict(offline=False, clear_locks=False, clean=False,
+                                    group="grouped"))
+                          ])
+        self.assertEquals(paths, [group_dir])
+
     def check_retrieve_addons_single(self, dirname):
         """The VCS is a whole addon."""
         self.make_recipe(version='6.1',
