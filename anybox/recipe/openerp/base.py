@@ -608,8 +608,9 @@ class BaseRecipe(object):
                 if loc_type == 'local':
                     raise UserError(
                         "Automatic grouping of addons is not supported for "
-                        "local addons such as %r, because the recipe considers "
-                        "that  write operations in a local directory is "
+                        "local addons such as %r, because the recipe "
+                        "considers that write operations in a local "
+                        "directory is "
                         "outside of its reponsibilities (in other words, "
                         "it's better if "
                         "you create yourself the intermediate directory." % (
