@@ -600,8 +600,21 @@ class BaseRecipe(object):
             options.update(addons_options)
 
             group = addons_options.get('group')
+            # TODO forbid groupping in local addons
+            # the recipe should not consider it can have responsibility over
+            # this
             group_dir = None
             if group:
+                if loc_type == 'local':
+                    raise UserError(
+                        "Automatic grouping of addons is not supported for "
+                        "local addons such as %r, because the recipe considers "
+                        "that  write operations in a local directory is "
+                        "outside of its reponsibilities (in other words, "
+                        "it's better if "
+                        "you create yourself the intermediate directory." % (
+                            local_dir, ))
+
                 l0, l1 = os.path.split(local_dir)
                 group_dir = join(l0, group)
                 local_dir = join(group_dir, l1)
@@ -631,24 +644,12 @@ class BaseRecipe(object):
             manifest = os.path.join(addons_dir, '__openerp__.py')
             manifest_pre_v6 = os.path.join(addons_dir, '__terp__.py')
             if os.path.isfile(manifest) or os.path.isfile(manifest_pre_v6):
-                if loc_type == 'local':
-                    raise UserError(
-                        "Local addons line %r should refer to a directory "
-                        "containing addons, not to a standalone addon. "
-                        "The recipe can perform automatic creation of "
-                        "intermediate directories for VCS cases only"
-                        % addons_dir)
-                # repo is a single addon, put it actually below
-                name = os.path.split(addons_dir)[1]
-                c = 0
-                tmp = addons_dir + '_%d' % c
-                while os.path.exists(tmp):
-                    c += 1
-                    tmp = addons_dir + '_%d' % c
-                os.rename(addons_dir, tmp)
-                os.mkdir(addons_dir)
-                new_dir = join(addons_dir, name)
-                os.rename(tmp, new_dir)
+                raise UserError("Standalone addons such as %r "
+                                "are now supported by means "
+                                "of the explicit 'group' option. Please "
+                                "update your buildout configuration. " % (
+                                    addons_dir))
+
             if addons_dir not in self.addons_paths:
                 self.addons_paths.append(addons_dir)
 
