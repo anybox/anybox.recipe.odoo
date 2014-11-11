@@ -148,48 +148,19 @@ class TestServer(RecipeTestCase):
                           ])
         self.assertEquals(paths, [group_dir])
 
-    def check_retrieve_addons_single(self, dirname):
-        """The VCS is a whole addon."""
+    def test_addons_standalone_oldstyle_prohibited(self):
+        """Standalone addons must now be declared by the 'group' option."""
+        dirname = 'standalone'
         self.make_recipe(version='6.1',
                          addons='fakevcs custom %s last:1' % dirname)
         dirname = dirname.rstrip('/')
+
         # manual creation of our single addon
         addon_dir = os.path.join(self.buildout_dir, dirname)
         os.mkdir(addon_dir)
         open(os.path.join(addon_dir, '__openerp__.py'), 'w').close()
 
-        self.recipe.retrieve_addons()
-        paths = self.recipe.addons_paths
-        self.assertEquals(paths, [addon_dir])
-        self.assertEquals(os.listdir(addon_dir), [dirname])
-        moved_addon = os.path.join(addon_dir, dirname)
-        self.assertTrue('__openerp__.py' in os.listdir(moved_addon))
-
-        # update works
-        self.recipe.retrieve_addons()
-        self.assertEquals(get_vcs_log()[-1][0], moved_addon)
-
-    def test_retrieve_addons_single(self):
-        """The VCS is a whole addon."""
-        self.check_retrieve_addons_single('addon')
-
-    def test_retrieve_addons_single_trailing_slash(self):
-        """The VCS is a whole addon, its target directory has a trailing /"""
-        self.check_retrieve_addons_single('addon/')
-
-    def test_retrieve_addons_single_collision(self):
-        """The VCS is a whole addon, and there's a collision in renaming"""
-        self.make_recipe(version='6.1', addons='fakevcs custom addon last:1')
-        addon_dir = os.path.join(self.buildout_dir, 'addon')
-        os.mkdir(addon_dir)
-        open(os.path.join(addon_dir, '__openerp__.py'), 'w').close()
-
-        self.recipe.retrieve_addons()
-        paths = self.recipe.addons_paths
-        self.assertEquals(paths, [addon_dir])
-        self.assertEquals(os.listdir(addon_dir), ['addon'])
-        self.assertTrue(
-            '__openerp__.py' in os.listdir(os.path.join(addon_dir, 'addon')))
+        self.assertRaises(UserError, self.recipe.retrieve_addons)
 
     def test_retrieve_addons_clear_locks(self):
         """Retrieving addons with vcs-clear-locks option."""
