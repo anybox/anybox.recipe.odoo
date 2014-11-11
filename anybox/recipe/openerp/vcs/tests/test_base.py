@@ -9,7 +9,7 @@ import subprocess
 from .. import get_update
 from .. import testing
 from .. import SUPPORTED
-from ..base import UpdateError
+from ..base import UpdateError, BaseRepo
 from ..hg import HgRepo
 
 
@@ -29,6 +29,11 @@ class CommonTestCase(testing.VcsTestCase):
         subprocess.call(['hg', 'add'])
         subprocess.call(['hg', 'commit', '-m', 'initial commit',
                          '-u', testing.COMMIT_USER_FULL])
+
+    def test_str(self):
+        repo = BaseRepo('/some/path', 'http://some/url')
+        self.assertEqual(str(repo), "BaseRepo at '/some/path' "
+                         "(remote='http://some/url')")
 
     def test_unknown(self):
         self.assertRaises(ValueError,
