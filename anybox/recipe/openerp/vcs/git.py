@@ -104,6 +104,15 @@ class GitRepo(BaseRepo):
                              "report this" % v_str)
         return version
 
+    def log_call(self, cmd, callwith=subprocess.check_call,
+                 log_level=logging.INFO, **kw):
+            """Wrap a subprocess call with logging
+
+            :param meth: the calling method to use.
+            """
+            logger.log(log_level, "%s> call %r", self.target_dir, cmd)
+            callwith(cmd, **kw)
+
     def clean(self):
         if not os.path.isdir(self.target_dir):
             return
@@ -151,38 +160,29 @@ class GitRepo(BaseRepo):
                     raise IOError(
                         "git repository %s does not exist; cannot clone "
                         "it from %s (offline mode)" % (target_dir, url))
-                logger.info("%s> git init", target_dir)
-                subprocess.check_call(['git', 'init', target_dir])
+                self.log_call(['git', 'init', target_dir])
                 os.chdir(target_dir)
-                logger.info("%s> git remote add %s %s",
-                            target_dir, BUILDOUT_ORIGIN, url)
-                subprocess.check_call(['git', 'remote', 'add',
-                                       BUILDOUT_ORIGIN, url])
+                self.log_call(['git', 'remote', 'add',
+                               BUILDOUT_ORIGIN, url])
 
             if not offline:
                 # TODO what if remote repo is actually local fs ?
                 # GR, redux: git has a two notions of local repos, which
                 # differ at least for shallow clones : path or file://
                 os.chdir(target_dir)
-                logger.info("%s> git remote set-url %s %s",
-                            target_dir, BUILDOUT_ORIGIN, url)
-                subprocess.call(['git', 'remote', 'set-url',
-                                 BUILDOUT_ORIGIN, url])
-                logger.info("%s> git fetch %s",
-                            target_dir, BUILDOUT_ORIGIN)
-                subprocess.check_call(['git', 'fetch', BUILDOUT_ORIGIN])
+                self.log_call(
+                    ['git', 'remote', 'set-url', BUILDOUT_ORIGIN, url],
+                    callwith=subprocess.call)
+                self.log_call(['git', 'fetch', BUILDOUT_ORIGIN])
                 # TODO: check what happens when there are local changes
                 # TODO: what about the 'clean' option
-                logger.info("%s> git checkout %s", target_dir, revision)
-                subprocess.check_call(['git', 'checkout', revision])
+                self.log_call(['git', 'checkout', revision])
                 if self._is_a_branch(revision):
                     # fast forward
-                    logger.info("%s> git merge %s/%s",
-                                target_dir, BUILDOUT_ORIGIN, revision)
                     try:
-                        update_check_call(
-                            ['git', 'merge', '--ff-only',
-                             BUILDOUT_ORIGIN + '/' + revision])
+                        self.log_call(['git', 'merge', '--ff-only',
+                                       BUILDOUT_ORIGIN + '/' + revision],
+                                      callwith=update_check_call)
                     except UpdateError:
                         if not self.clear_retry:
                             raise
@@ -197,8 +197,9 @@ class GitRepo(BaseRepo):
                                         "but clear-retry option is active: "
                                         "trying a reset in case that's a "
                                         "simple fast-forward issue.", self)
-                            update_check_call(['git', 'reset', '--hard',
-                                               'origin/%s' % revision])
+                            self.log_call(['git', 'reset', '--hard',
+                                           'origin/%s' % revision],
+                                          callwith=update_check_call)
 
     def merge(self, revision):
         """Merge revision into current branch"""
@@ -208,8 +209,6 @@ class GitRepo(BaseRepo):
                                    "or non git local directory %s" %
                                    self.target_dir)
             os.chdir(self.target_dir)
-            logger.info("%s> git pull %s %s",
-                        self.target_dir, self.url, revision)
             cmd = ['git', 'pull', self.url, revision]
             if self.git_version >= (1, 7, 8):
                 # --edit and --no-edit appear with Git 1.7.8
@@ -217,7 +216,7 @@ class GitRepo(BaseRepo):
                 # (https://git.kernel.org/cgit/git/git.git/tree)
                 cmd.insert(2, '--no-edit')
 
-            subprocess.check_call(cmd)
+            self.log_call(cmd)
 
     def archive(self, target_path):
         # TODO: does this work with merge-ins?
@@ -240,10 +239,10 @@ class GitRepo(BaseRepo):
             os.chdir(self.target_dir)
             subprocess.check_call(['git', 'checkout', revision])
             if self._is_a_branch(revision):
-                subprocess.check_call(['git', 'reset', '--hard',
-                                       BUILDOUT_ORIGIN + '/' + revision])
+                self.log_call(['git', 'reset', '--hard',
+                              BUILDOUT_ORIGIN + '/' + revision])
             else:
-                subprocess.check_call(['git', 'reset', '--hard', revision])
+                self.log_call(['git', 'reset', '--hard', revision])
 
     def _is_a_branch(self, revision):
         # if this fails, we have a seriously corrupted repo
