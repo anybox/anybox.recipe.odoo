@@ -8,7 +8,6 @@ from .base import BaseRepo
 from .base import SUBPROCESS_ENV
 from .base import update_check_call
 from .base import update_check_output
-from .base import clone_check_call
 from .base import UpdateError
 from anybox.recipe.openerp import utils
 
@@ -247,6 +246,7 @@ class GitRepo(BaseRepo):
                 subprocess.check_call(['git', 'reset', '--hard', revision])
 
     def _is_a_branch(self, revision):
-        branches = utils.check_output(["git", "branch"])
+        # if this fails, we have a seriously corrupted repo
+        branches = update_check_output(["git", "branch"])
         branches = branches.split()
         return revision in branches
