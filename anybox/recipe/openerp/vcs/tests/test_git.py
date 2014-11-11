@@ -184,6 +184,13 @@ class GitTestCase(GitBaseTestCase):
         repo('master')
         self.assertEqual(repo.parents(), [new_sha])
 
+        # future updates work wihout help (we are back to normal conditions)
+        repo.clear_retry = False
+        new_sha2 = git_write_commit(self.src_repo, 'tracked',
+                                    "back to normal", msg="regular commit")
+        repo('master')
+        self.assertEqual(repo.parents(), [new_sha2])
+
 
 class GitBranchTestCase(GitBaseTestCase):
 

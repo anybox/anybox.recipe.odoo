@@ -10,6 +10,7 @@ from .base import SUBPROCESS_ENV
 from .base import update_check_call
 from .base import update_check_output
 from .base import clone_check_call
+from .base import UpdateError
 from anybox.recipe.openerp import utils
 import re
 
@@ -95,7 +96,24 @@ class GitRepo(BaseRepo):
                 if not offline:
                     logger.info("Pull for git repo %s (rev %s)...",
                                 target_dir, rev_str)
-                    update_check_call(['git', 'pull'])
+                    try:
+                        update_check_call(['git', 'pull',
+                                           '--ff', '--no-commit'])
+                    except UpdateError:
+                        if not self.clear_retry:
+                            raise
+                        else:
+                            # users are willing to wipe the entire repo
+                            # to get their updates ! Let's try something less
+                            # harsh first that works if previous latest commit
+                            # is not an ancestor of remote latest
+                            # note: fetch has already been done
+                            logger.warn("Direct pull failed for repo %s, "
+                                        "but clear-retry option is active: "
+                                        "trying a reset in case that's a "
+                                        "simple fast-forward issue.", self)
+                            update_check_call(['git', 'reset', '--hard',
+                                               'origin/%s' % revision])
 
     def archive(self, target_path):
         revision = self.parents()[0]
