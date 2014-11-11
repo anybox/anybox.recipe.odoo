@@ -25,6 +25,10 @@ with any higher released unstable versions.
 - launchpad #1358353: with github layout, respect ordering if the place of the
   standards (non-base) addons is explicitely set as 'local' (allows to insert
   overrides before them).
+- launchpad #1391258: [git] clear-retry is now honoured (a last chance
+  in case of non updatable repos), but a 'git reset' gets tried first
+  to circumvent impossible fast-forwards and avoid full recloning in
+  these cases.
 - launchpad #1208028: another case where parsing of exception while
   installing egg failed. Rewrote the whole logic, with much unit-testing
 - fixed URL and filenames for nightlies
