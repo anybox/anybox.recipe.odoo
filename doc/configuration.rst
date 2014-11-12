@@ -299,6 +299,37 @@ Possible values:
 :lightweight-checkout: Working copy initialized with the command
                        ``bzr checkout --lightweight url ...``
 
+.. _git_depth:
+
+The ``depth`` Git addons option
+```````````````````````````````
+.. note:: new in vertion 1.9.0
+
+
+**depth** is a per-repository configurable option to create and
+maintain Git shallow clones. It allows to specify the maximum history
+one wishes to keep in the local repository, hence minimizing the disk
+space needed and initial cloning time.
+
+Example::
+
+  version = git http://github.com/odoo/odoo.git odoo 8.0 depth=1
+
+You may also use this option to override the global ``git-depth``
+option, and in particular cancel it by specifying ``None``::
+
+  version = git http://github.com/odoo/odoo.git odoo 8.0 depth=None
+
+Currently, adding this option to an existing repository does not
+reduce the disk footprint immediately.
+
+.. warning:: the ``depth`` option is abrasive, and should be avoided
+             on developper setups: you may lose unpushed commits.
+             It is, however, a good fit for automated build or
+             deployment systems on which the history does not usually
+             matter.
+
+
 .. _merges:
 
 merges
@@ -390,6 +421,22 @@ This is especially useful in unattended executions, to clean up any
 previous failed merges.
 
 Currently only bzr repositories get reverted
+
+.. note:: new in version 1.9.0
+
+git-depth
+---------
+
+This is the global variant of the :ref:`git_depth` option (please read
+the provisions there carefully, as it is potentially dangerous).
+
+Setting a value to ``git-depth`` is the same as doing it for all
+involved Git repositories, but does not have precedence over
+per-repository settings (which can also remove it altogether).
+
+This option is especially meant for automated tools (continuous
+integration, unattended deployment) as
+they can easily add it from the command-line to any buildout.
 
 .. note:: new in version 1.9.0
 
