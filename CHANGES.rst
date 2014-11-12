@@ -7,6 +7,9 @@ with any higher released unstable versions.
 
 1.9.0 (unreleased)
 ------------------
+- launchpad #1332465: [git] support for shallow clones (--depth),
+  refactor to allow this consistently with detached head states,
+  branch changes, etc.
 - launchpad #1358353: with github layout, respect ordering if the place of the
   standards (non-base) addons is explicitely set as 'local' (allows to insert
   overrides before them).

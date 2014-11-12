@@ -232,7 +232,13 @@ class GitRepo(BaseRepo):
             if rtype is None and ishex(revision):
                 return self.fetch_remote_sha(revision)
 
-            self.log_call(['git', 'fetch', BUILDOUT_ORIGIN, revision])
+            fetch_cmd = ['git', 'fetch']
+            depth = self.options.get('depth')
+            if depth is not None:
+                fetch_cmd.extend(('--depth', depth))
+            fetch_cmd.extend((BUILDOUT_ORIGIN, revision))
+            self.log_call(fetch_cmd)
+
             if rtype == 'tag':
                 self.log_call(['git', 'checkout', sha])
             elif rtype == 'branch':

@@ -55,6 +55,13 @@ class GitBaseTestCase(VcsTestCase):
         self.commit_2_sha = git_write_commit(self.src_repo, 'tracked',
                                              "last", msg="last commit")
 
+    def assertDepthEquals(self, repo, depth):
+        """Check that the depth is indeed as expected."""
+        with working_directory_keeper:
+            os.chdir(repo.target_dir)
+            commits = subprocess.check_output(['git', 'rev-list', 'HEAD'])
+            self.assertEqual(len(commits.splitlines()), depth)
+
 
 class GitTestCase(GitBaseTestCase):
 
@@ -71,6 +78,15 @@ class GitTestCase(GitBaseTestCase):
         with working_directory_keeper:
             os.chdir(target_dir)
             self.assertEqual(repo.get_current_remote_fetch(), self.src_repo)
+
+    def test_clone_depth(self):
+        """Git clone with depth option"""
+        target_dir = os.path.join(self.dst_dir, "My clone")
+        repo = GitRepo(target_dir, self.src_repo, depth='1')('master')
+
+        self.assertTrue(os.path.isdir(target_dir))
+        self.assertEqual(repo.parents(), [self.commit_2_sha])
+        self.assertDepthEquals(repo, 1)
 
     def test_archive(self):
         """Git clone, then archive"""
@@ -422,6 +438,33 @@ class GitTagTestCase(GitBaseTestCase):
 
         repo('sometag')
         self.assertEqual(repo.parents(), [self.commit_1_sha])
+
+    def test_update_tag_to_head(self):
+        target_dir = os.path.join(self.dst_dir, "to_repo")
+        repo = GitRepo(target_dir, self.src_repo)
+        repo('sometag')
+        repo('master')
+        self.assertEqual(repo.parents(), [self.commit_2_sha])
+
+    def test_update_tag_to_head_depth(self):
+        target_dir = os.path.join(self.dst_dir, "to_repo")
+        repo = GitRepo(target_dir, self.src_repo, depth='1')
+        repo('sometag')
+        repo('master')
+        self.assertEqual(repo.parents(), [self.commit_2_sha])
+        self.assertDepthEquals(repo, 1)
+
+    def test_update_tag_to_tag_depth_backwards(self):
+        with working_directory_keeper:
+            os.chdir(self.src_repo)
+            subprocess.check_call(['git', 'tag', 'tag2', self.commit_2_sha])
+
+        target_dir = os.path.join(self.dst_dir, "to_repo")
+        repo = GitRepo(target_dir, self.src_repo, depth='1')
+        repo('tag2')
+        repo('sometag')
+        self.assertEqual(repo.parents(), [self.commit_1_sha])
+        self.assertDepthEquals(repo, 1)
 
 
 class GitAnnotatedTagTestCase(GitTagTestCase):
