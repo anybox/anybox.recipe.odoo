@@ -36,6 +36,22 @@ class GitRepo(BaseRepo):
 
     _git_version = None
 
+    def __init__(self, *args, **kwargs):
+        super(GitRepo, self).__init__(*args, **kwargs)
+        depth = self.options.pop('depth', None)
+        if depth is not None and depth != 'None':
+            # 'None' as a str can be used as an explicit per-repo override
+            # of a global setting
+            invalid = UserError("Invalid depth value %r for Git repository "
+                                "at %r" % (depth, self.target_dir))
+            try:
+                depth = int(depth)
+            except ValueError:
+                raise invalid
+            if depth <= 0:
+                raise invalid
+            self.options['depth'] = depth
+
     @property
     def git_version(self):
         cls = self.__class__
