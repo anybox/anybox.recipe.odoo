@@ -805,7 +805,6 @@ class BaseRecipe(object):
             if type_spec == 'git':
                 options['depth'] = options.pop('git-depth', None)
 
-            import pdb; pdb.set_trace()
             options.update(source[2])
             if self.clean:
                 options['clean'] = True
