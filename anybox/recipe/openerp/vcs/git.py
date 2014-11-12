@@ -235,7 +235,7 @@ class GitRepo(BaseRepo):
             fetch_cmd = ['git', 'fetch']
             depth = self.options.get('depth')
             if depth is not None:
-                fetch_cmd.extend(('--depth', depth))
+                fetch_cmd.extend(('--depth', str(depth)))
             fetch_cmd.extend((BUILDOUT_ORIGIN, revision))
             self.log_call(fetch_cmd)
 
@@ -250,7 +250,15 @@ class GitRepo(BaseRepo):
     def update_fetched_branch(self, branch):
         # TODO: check what happens when there are local changes
         # TODO: what about the 'clean' option
-        self.log_call(['git', 'checkout', branch])
+        if not self.options.get('depth'):
+            self.log_call(['git', 'checkout', branch])
+        else:
+            self.log_call(['git', 'checkout',
+                           '%s/%s' % (BUILDOUT_ORIGIN, branch)],
+                          callwith=update_check_call)
+            self.log_call(['git', 'branch', '-f', branch],
+                          callwith=update_check_call)
+
         if self._is_a_branch(branch):  # GR now we know that beforehand
             # fast forward
             try:

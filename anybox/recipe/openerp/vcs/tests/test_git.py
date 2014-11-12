@@ -170,10 +170,10 @@ class GitTestCase(GitBaseTestCase):
             f.write('mod')
         self.assertTrue(repo.uncommitted_changes())
 
-    def test_update_needs_pull(self):
+    def test_update_needs_pull(self, depth=None):
         """Update needs to be pulled from target."""
         target_dir = os.path.join(self.dst_dir, "clone to update")
-        repo = GitRepo(target_dir, self.src_repo)
+        repo = GitRepo(target_dir, self.src_repo, depth=depth)
         repo('master')
 
         self.assertFalse(repo.uncommitted_changes())
@@ -187,6 +187,12 @@ class GitTestCase(GitBaseTestCase):
         # update our clone
         repo('master')
         self.assertEqual(repo.parents(), [new_sha])
+        if depth is not None:
+            self.assertDepthEquals(repo, depth)
+
+    def test_update_needs_pull_depth(self):
+        """Update needs to be pulled from target (case with depth option)"""
+        self.test_update_needs_pull(depth=1)
 
     def test_update_no_ff(self):
         """Recov if fast fwd is not possible and vcs-clear-retry is True
@@ -257,12 +263,9 @@ class GitBranchTestCase(GitBaseTestCase):
         self.assertFalse(branch.uncommitted_changes())
 
         # modify the branch
-        branch('somebranch')
-        self.assertFalse(branch.uncommitted_changes())
-        self.assertFalse(branch.uncommitted_changes())
         git_write_commit(target_dir, 'tracked',
                          "last after branch", msg="last version")
-
+        branch('somebranch')
         git_write_commit(target_dir, 'tracked',
                          "last from branch", msg="last version")
         with open(target_file) as f:
@@ -274,13 +277,47 @@ class GitBranchTestCase(GitBaseTestCase):
         with open(target_file) as f:
             self.assertEqual(f.read().strip(), "last after branch")
 
-    def test_switch_remote_branch(self):
+    def test_switch_local_branch_depth(self):
+        """Switch to a branch created before the clone.
+
+        In this case, the branch already exists in local repo but there are new
+        commits for it in remote.
+        """
+        target_dir = os.path.join(self.dst_dir, "to_branch")
+        target_file = os.path.join(target_dir, 'tracked')
+        branch = GitRepo(target_dir, self.src_repo)
+
+        # update file from master in local repo after branching
+        branch("master")
+        git_write_commit(target_dir, 'tracked',
+                         "last after branch", msg="last after")
+
+        # commit in the remote branch
+        with working_directory_keeper:
+            os.chdir(self.src_repo)
+            subprocess.check_call(['git', 'checkout', 'somebranch'])
+        git_write_commit(self.src_repo, 'tracked',
+                         "new in branch", msg="last from branch")
+
+        branch('somebranch')
+        with open(target_file) as f:
+            self.assertEqual(f.read().strip(), "new in branch")
+
+        # switch back to remote master. Local commit has not disappeared,
+        # but I don't think is reasonible to actually make this a stable
+        # promise, especially if lots of history happened between the switches
+        branch('master')
+        self.assertFalse(branch.uncommitted_changes())
+        with open(target_file) as f:
+            self.assertEqual(f.read().strip(), "last after branch")
+
+    def test_switch_remote_branch(self, depth=None):
         """Switch to a branch created after the clone.
 
         In this case, the branch doesn't exist in local repo
         """
         target_dir = os.path.join(self.dst_dir, "to_branch")
-        branch = GitRepo(target_dir, self.src_repo)
+        branch = GitRepo(target_dir, self.src_repo, depth=depth)
         # update file from master after branching
         branch("master")
 
@@ -297,6 +334,13 @@ class GitBranchTestCase(GitBaseTestCase):
         branch("remotebranch")
         with open(os.path.join(target_dir, 'tracked')) as f:
             self.assertEquals(f.read().strip(), "last after remote branch")
+
+    def test_switch_remote_branch_depth(self):
+        """Switch to a branch created after the clone.
+
+        Case where depth option is in play.
+        """
+        self.test_switch_remote_branch(depth=1)
 
 
 class GitMergeTestCase(GitBaseTestCase):
