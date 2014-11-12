@@ -61,11 +61,16 @@ class GitTestCase(GitBaseTestCase):
     def test_clone(self):
         """Git clone."""
         target_dir = os.path.join(self.dst_dir, "My clone")
-        GitRepo(target_dir, self.src_repo)('master')
+        repo = GitRepo(target_dir, self.src_repo)('master')
 
         self.assertTrue(os.path.isdir(target_dir))
         with open(os.path.join(target_dir, 'tracked')) as f:
             self.assertEquals(f.read().strip(), 'last')
+
+        # also testing remote reading
+        with working_directory_keeper:
+            os.chdir(target_dir)
+            self.assertEqual(repo.get_current_remote_fetch(), self.src_repo)
 
     def test_archive(self):
         """Git clone, then archive"""
@@ -371,3 +376,70 @@ class GitMergeTestCase(GitBaseTestCase):
         self.assertFalse(os.path.exists(os.path.join(target_dir,
                                                      'file_on_branch1')),
                          'file_on_branch1 should not exist')
+
+
+class GitTagTestCase(GitBaseTestCase):
+
+    def create_src(self):
+        GitBaseTestCase.create_src(self)
+        os.chdir(self.src_repo)
+        self.make_tag('sometag')
+
+    def make_tag(self, tag):
+        subprocess.check_call(['git', 'tag', tag, self.commit_1_sha])
+
+    def test_query_remote(self):
+        target_dir = os.path.join(self.dst_dir, "to_repo")
+        repo = GitRepo(target_dir, self.src_repo)
+        with working_directory_keeper:
+            subprocess.check_call(['git', 'init', target_dir])
+            os.chdir(target_dir)
+            subprocess.check_call(['git', 'remote', 'add',
+                                   'orig', self.src_repo])
+            self.assertRemoteQueryResult(
+                repo.query_remote_ref('orig', 'sometag'), self.commit_1_sha)
+
+    def assertRemoteQueryResult(self, result, expected_sha):
+        """If possible, check that the result of query matches expected_sha.
+
+        To be subclassed for annotated tags. One can assume that current
+        working dir is the repo.
+        """
+        self.assertEqual(result, ('tag', expected_sha))
+
+    def test_clone_to_tag(self):
+        target_dir = os.path.join(self.dst_dir, "to_repo")
+        repo = GitRepo(target_dir, self.src_repo)
+        repo('sometag')
+        self.assertEqual(repo.parents(), [self.commit_1_sha])
+
+    def test_update_to_tag(self):
+        target_dir = os.path.join(self.dst_dir, "to_repo")
+        repo = GitRepo(target_dir, self.src_repo)
+        repo('master')
+        # checking that test base assumptions are right
+        self.assertEqual(repo.parents(), [self.commit_2_sha])
+
+        repo('sometag')
+        self.assertEqual(repo.parents(), [self.commit_1_sha])
+
+
+class GitAnnotatedTagTestCase(GitTagTestCase):
+    """Same as :class:`GitTagTestCase`, with annotated tags.
+
+    Annotated tags behave a bit differently that lightweight ones.
+    """
+
+    def make_tag(self, tag):
+        subprocess.check_call(['git', 'tag', '-a', '-m', "Annotation",
+                               tag, self.commit_1_sha])
+
+    def assertRemoteQueryResult(self, result, expected_sha):
+        """If possible, check that the result of query matches expected_sha.
+
+        In cas of annotated tags, the pointer is not on the tagged commit,
+        but on the tag.
+        """
+        # that will be enough for now : there are also tests for
+        # get_update(). This test is to fasten up debugging
+        self.assertEqual(result[0], ('tag'))
