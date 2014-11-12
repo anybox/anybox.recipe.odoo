@@ -168,10 +168,13 @@ class GitRepo(BaseRepo):
             return bool(out.strip())
 
     def get_current_remote_fetch(self):
-        for line in self.log_call(['git', 'remote', '-v'],
-                                  callwith=check_output).splitlines():
-            if line.endswith('(fetch)') and line.startswith(BUILDOUT_ORIGIN):
-                return line[len(BUILDOUT_ORIGIN):-7].strip()
+        with working_directory_keeper:
+            os.chdir(self.target_dir)
+            for line in self.log_call(['git', 'remote', '-v'],
+                                      callwith=check_output).splitlines():
+                if (line.endswith('(fetch)')
+                        and line.startswith(BUILDOUT_ORIGIN)):
+                    return line[len(BUILDOUT_ORIGIN):-7].strip()
 
     def offline_update(self, revision):
         target_dir = self.target_dir
@@ -188,8 +191,8 @@ class GitRepo(BaseRepo):
         if current_url != self.url:
             raise UserError("Existing Git repository at %r fetches from %r "
                             "which is different from the specified %r. "
-                            "Cannot update adresses in offline mode.",
-                            self.target_dir, current_url, )
+                            "Cannot update adresses in offline mode." % (
+                                self.target_dir, current_url, self.url))
 
     def fetch_remote_sha(self, sha):
         """Backwards compatibility wrapper."""
@@ -208,6 +211,7 @@ class GitRepo(BaseRepo):
                  ``(None, ref)`` if ref does not exist in remote. This happens
                  notably if ref if a commit sha (they can't be queried)
         """
+        os.chdir(self.target_dir)
         out = self.log_call(['git', 'ls-remote', remote, ref],
                             callwith=check_output).strip()
         if not out:
@@ -229,7 +233,7 @@ class GitRepo(BaseRepo):
             return self.merge(revision)
 
         if self.offline:
-            self.offline_update(revision)
+            return self.offline_update(revision)
 
         target_dir = self.target_dir
         url = self.url
