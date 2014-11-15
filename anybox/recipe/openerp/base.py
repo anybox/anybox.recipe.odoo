@@ -1103,8 +1103,21 @@ class BaseRecipe(object):
 
         if not os.path.exists(target_dir):
             os.mkdir(target_dir)
-
         out_conf.add_section(self.name)
+
+        # remove bzr extra if needed
+        pkg_extras, recipe_cls = self.options['recipe'].split(':')
+        extra_match = re.match(r'(.*?)\[(.*?)\]', pkg_extras)
+        if extra_match is not None:
+            recipe_pkg = extra_match.group(1)
+            extras = set(e.strip() for e in extra_match.group(2).split(','))
+            extras.discard('bzr')
+            extracted_recipe = recipe_pkg
+            if extras:
+                extracted_recipe += '[%s]' % ','.join(extras)
+            extracted_recipe += ':' + recipe_cls
+            out_conf.set(self.name, 'recipe', extracted_recipe)
+
         addons_option = []
         for local_path, source in self.sources.items():
             source_type = source[0]
@@ -1229,10 +1242,17 @@ class BaseRecipe(object):
         conf.set('buildout', 'develop',
                  os.linesep.join(d[len(bdir):] if d.startswith(bdir) else d
                                  for d in develops))
-        conf.set('buildout', GP_VCS_EXTEND_DEVELOP, '')
+
+        # remove gp.vcsdevelop from extensions
+        exts = self.buildout['buildout'].get('extensions', '').split()
+        if 'gp.vcsdevelop' in exts:
+            exts.remove('gp.vcsdevelop')
+        conf.set('buildout', 'extensions', '\n'.join(exts))
+
+
 
     def _install_script(self, name, content):
-        """Install and register a script with prescribed name and content.
+        """Install and register a scripbont with prescribed name and content.
 
         Return the script path
         """

@@ -17,6 +17,8 @@ with any higher released unstable versions.
 - launchpad #1274174: new feature for automatic merge of remote VCS
   sources, with bzr support.
 - launchpad #1327773: [git] support for automatic merges
+- launchpad #1392913: extract-download-to completely removes the
+  gp.vcsdevelop extension and the bzr extra in the produced buildout
 - launchpad #1232729: handling of server-wide modules by the recipe
 - launchpad #1327609: support inline comments in multi-line options
 

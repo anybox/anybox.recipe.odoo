@@ -469,6 +469,7 @@ class TestExtraction(RecipeTestCase):
         super(TestExtraction, self).tearDown()
 
     def make_recipe(self, name='openerp', **options):
+        options.setdefault('recipe', 'anybox.recipe.openerp:testrecipe')
         self.recipe = TestingRecipe(self.buildout, name, options)
 
     def test_prepare_extracted_buildout(self):
@@ -533,11 +534,13 @@ class TestExtraction(RecipeTestCase):
             "fakevcs+http://example.com/aeroolib#egg=aeroolib")
         self.recipe.b_options['develop'] = os.path.join(
             self.recipe.buildout_dir, 'simple_develop')
+        self.recipe.b_options['extensions'] = 'gp.vcsdevelop\n somotherext'
 
         conf = ConfigParser()
         self.recipe._prepare_extracted_buildout(conf, self.extract_target_dir)
-        extends_develop = conf.get('buildout', GP_VCS_EXTEND_DEVELOP)
-        self.assertEquals(extends_develop.strip(), '')
+        self.assertFalse(conf.has_option('buildout', GP_VCS_EXTEND_DEVELOP))
+        self.assertEqual(conf.get('buildout', 'extensions'), 'somotherext')
+
         develop = conf.get('buildout', 'develop').split(os.linesep)
         self.assertEquals(set(d for d in develop if d),
                           set(['aeroolib', 'simple_develop']))
@@ -547,3 +550,23 @@ class TestExtraction(RecipeTestCase):
         self.assertTrue(os.path.exists(target))
         with open(os.path.join(target, '.fake_archival.txt')) as f:
             self.assertEquals(f.read(), 'fakerev')
+
+    def test_prepare_extracted_buildout_remove_bzr(self):
+        self.make_recipe(version='local mainsoftware')
+        target_dir = self.extract_target_dir
+        self.recipe.options['recipe'] = 'anybox.recipe.odoo[bzr]:server'
+
+        conf = ConfigParser()
+        self.recipe._extract_sources(conf, target_dir, set())
+        self.assertEqual(conf.get(self.recipe.name, 'recipe'),
+                         'anybox.recipe.odoo:server')
+
+    def test_prepare_extracted_buildout_keep_other_extras(self):
+        self.make_recipe(version='local mainsoftware')
+        target_dir = self.extract_target_dir
+        self.recipe.options['recipe'] = 'anybox.recipe.odoo[bzr,other]:server'
+
+        conf = ConfigParser()
+        self.recipe._extract_sources(conf, target_dir, set())
+        self.assertEqual(conf.get(self.recipe.name, 'recipe'),
+                         'anybox.recipe.odoo[other]:server')
