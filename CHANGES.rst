@@ -5,7 +5,7 @@ The 1.8 series are stable versions, while the 1.9 are unstable.
 Changes displayed as "unreleased" in th stable series are released
 with any higher released unstable versions.
 
-1.8.6 (UNRELEASED)
+1.8.6 (2014-11-17)
 ------------------
 - launchpad #1358353: with github layout, respect ordering if the place of the
   standards (non-base) addons is explicitely set as 'local' (allows to insert
