@@ -13,6 +13,8 @@ with any higher released unstable versions.
 - launchpad #1358353: with github layout, respect ordering if the place of the
   standards (non-base) addons is explicitely set as 'local' (allows to insert
   overrides before them).
+- launchpad #1391571 (related): revert used to fail if some sources
+  were 'local' or 'downloadable'.
 - launchpad #1214832 (related): introduction of explicit 'group'
   option for standalone addons.
 - launchpad #1294020: vcs-revert=on-merge option, and implementation

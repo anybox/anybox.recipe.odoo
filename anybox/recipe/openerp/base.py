@@ -659,10 +659,11 @@ class BaseRecipe(object):
     def revert_sources(self):
         """Revert all sources to the revisions specified in :attr:`sources`.
         """
-        for target, (vcs_type, vcs_spec, options) in self.sources.iteritems():
-            if vcs_type in ('local', 'downloadable'):
+        for target, desc in self.sources.iteritems():
+            if desc[0] in ('local', 'downloadable'):
                 continue
 
+            vcs_type, vcs_spec, options = desc
             local_dir = self.openerp_dir if target is main_software else target
             local_dir = self.make_absolute(local_dir)
             repo = vcs.repo(vcs_type, local_dir, vcs_spec[0], **options)

@@ -310,12 +310,40 @@ class TestBaseRecipe(RecipeTestCase):
             self.assertEquals(os.path.exists(os.path.join(server_path, *path)),
                               expected)
 
+    def path_from_buildout(self, *relpath, **opt):
+        relpath = list(relpath)
+        if opt.get('from_parts'):
+            relpath.insert(0, self.recipe.parts)
+        return self.recipe.make_absolute(os.path.join(*relpath))
+
     def test_vcs_revert(self):
         """Test clean forwarding to vcs impl."""
         self.make_recipe(
             version='fakevcs http://some/where server-dir mainrev')
         self.recipe.revert_sources()
-        self.assertEqual(get_vcs_log(), [('revert', 'mainrev')])
+        self.assertEqual(get_vcs_log(), [
+            ('revert', 'mainrev',
+             self.path_from_buildout('server-dir', from_parts=True))])
+
+    def test_vcs_revert_standalone(self):
+        """Test clean forwarding to vcs impl, taking group path into acount"""
+        self.make_recipe(
+            version='local server-dir',
+            addons='fakevcs http://some/where adddir addrev group=spam')
+
+#        orig_revert = FakeRepo.revert
+#
+#        def more_logging_revert(self, rev):
+#            raise NotImplementedError
+
+#        FakeRepo.revert = notimp_revert
+        self.recipe.revert_sources()
+        self.assertEqual(get_vcs_log(), [
+            ('revert', 'addrev', self.path_from_buildout('spam,', 'adddir'))])
+
+        self.assertEqual(get_vcs_log(), [
+            ('revert', 'mainrev', self.recipe.make_absolute(
+                os.path.join('spam', 'server_dir')))])
 
     def test_vcs_revert_not_implemented(self):
         """Revert must not fail if a repo does not implement it."""

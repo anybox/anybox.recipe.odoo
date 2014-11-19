@@ -41,7 +41,7 @@ class FakeRepo(vcs.base.BaseRepo):
 
     def revert(self, revision):
         self.revision = revision
-        self.log.append(('revert', revision))
+        self.log.append(('revert', revision, self.target_dir))
 
     def parents(self, pip_compatible=False):
         return [self.revision]
