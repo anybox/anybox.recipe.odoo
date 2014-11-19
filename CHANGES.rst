@@ -25,7 +25,7 @@ with any higher released unstable versions.
 - launchpad #1232729: handling of server-wide modules by the recipe
 - launchpad #1327609: support inline comments in multi-line options
 
-1.8.6 (unreleased)
+1.8.6 (2014-11-17)
 ------------------
 - launchpad #1358353: with github layout, respect ordering if the place of the
   standards (non-base) addons is explicitely set as 'local' (allows to insert
