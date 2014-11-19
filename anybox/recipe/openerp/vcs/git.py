@@ -3,7 +3,9 @@ import subprocess
 import logging
 import tempfile
 
+from zc.buildout import UserError
 from ..utils import working_directory_keeper
+from ..utils import check_output
 from .base import BaseRepo
 from .base import SUBPROCESS_ENV
 from .base import update_check_call
@@ -16,6 +18,15 @@ logger = logging.getLogger(__name__)
 BUILDOUT_ORIGIN = 'origin'
 
 
+def ishex(s):
+    """True iff given string is a valid hexadecimal number."""
+    try:
+        int(s, 16)
+    except ValueError:
+        return False
+    return True
+
+
 class GitRepo(BaseRepo):
     """Represent a Git clone tied to a reference branch/commit/tag."""
 
@@ -24,6 +35,22 @@ class GitRepo(BaseRepo):
     vcs_official_name = 'Git'
 
     _git_version = None
+
+    def __init__(self, *args, **kwargs):
+        super(GitRepo, self).__init__(*args, **kwargs)
+        depth = self.options.pop('depth', None)
+        if depth is not None and depth != 'None':
+            # 'None' as a str can be used as an explicit per-repo override
+            # of a global setting
+            invalid = UserError("Invalid depth value %r for Git repository "
+                                "at %r" % (depth, self.target_dir))
+            try:
+                depth = int(depth)
+            except ValueError:
+                raise invalid
+            if depth <= 0:
+                raise invalid
+            self.options['depth'] = depth
 
     @property
     def git_version(self):
@@ -104,6 +131,15 @@ class GitRepo(BaseRepo):
                              "report this" % v_str)
         return version
 
+    def log_call(self, cmd, callwith=subprocess.check_call,
+                 log_level=logging.INFO, **kw):
+            """Wrap a subprocess call with logging
+
+            :param meth: the calling method to use.
+            """
+            logger.log(log_level, "%s> call %r", self.target_dir, cmd)
+            return callwith(cmd, **kw)
+
     def clean(self):
         if not os.path.isdir(self.target_dir):
             return
@@ -131,6 +167,62 @@ class GitRepo(BaseRepo):
             out = p.communicate()[0]
             return bool(out.strip())
 
+    def get_current_remote_fetch(self):
+        with working_directory_keeper:
+            os.chdir(self.target_dir)
+            for line in self.log_call(['git', 'remote', '-v'],
+                                      callwith=check_output).splitlines():
+                if (line.endswith('(fetch)')
+                        and line.startswith(BUILDOUT_ORIGIN)):
+                    return line[len(BUILDOUT_ORIGIN):-7].strip()
+
+    def offline_update(self, revision):
+        target_dir = self.target_dir
+
+        # TODO what if remote repo is actually local fs ?
+        # GR, redux: git has a two notions of local repos, which
+        # differ at least for shallow clones : path or file://
+        if not os.path.exists(target_dir):
+            # TODO case of local url ?
+            raise IOError("git repository %s does not exist; cannot clone "
+                          "it from %s (offline mode)" % (target_dir, self.url))
+
+        current_url = self.get_current_remote_fetch()
+        if current_url != self.url:
+            raise UserError("Existing Git repository at %r fetches from %r "
+                            "which is different from the specified %r. "
+                            "Cannot update adresses in offline mode." % (
+                                self.target_dir, current_url, self.url))
+
+    def fetch_remote_sha(self, sha):
+        """Backwards compatibility wrapper."""
+
+        logger.warn("Pointing to a remote commit directly by its SHA "
+                    "is unsafe and heavy. It is only supported for "
+                    "backwards compatibility.")
+        self.log_call(['git', 'fetch', BUILDOUT_ORIGIN])
+        self.log_call(['git', 'checkout', sha])
+
+    def query_remote_ref(self, remote, ref):
+        """Query remote repo about given ref.
+
+        :return: ``('tag', sha)`` if ref is a tag in remote
+                 ``('branch', sha)`` if ref is branch (aka "head") in remote
+                 ``(None, ref)`` if ref does not exist in remote. This happens
+                 notably if ref if a commit sha (they can't be queried)
+        """
+        os.chdir(self.target_dir)
+        out = self.log_call(['git', 'ls-remote', remote, ref],
+                            callwith=check_output).strip()
+        if not out:
+            return None, ref
+        for sha, fullref in (l.split() for l in out.splitlines()):
+            if fullref == 'refs/heads/' + ref:
+                return 'branch', sha
+            elif fullref == 'refs/tags/' + ref:
+                return 'tag', sha
+        return None, ref
+
     def get_update(self, revision):
         """Make it so that the target directory is at the prescribed revision.
 
@@ -140,65 +232,76 @@ class GitRepo(BaseRepo):
         if self.options.get('merge'):
             return self.merge(revision)
 
+        if self.offline:
+            return self.offline_update(revision)
+
         target_dir = self.target_dir
         url = self.url
-        offline = self.offline
 
         with working_directory_keeper:
-            if not os.path.exists(target_dir):
-                if offline:
-                    # TODO case of local url ?
-                    raise IOError(
-                        "git repository %s does not exist; cannot clone "
-                        "it from %s (offline mode)" % (target_dir, url))
-                logger.info("%s> git init", target_dir)
-                subprocess.check_call(['git', 'init', target_dir])
-                os.chdir(target_dir)
-                logger.info("%s> git remote add %s %s",
-                            target_dir, BUILDOUT_ORIGIN, url)
-                subprocess.check_call(['git', 'remote', 'add',
-                                       BUILDOUT_ORIGIN, url])
+            is_new = not os.path.exists(target_dir)
+            if is_new:
+                self.log_call(['git', 'init', target_dir])
 
-            if not offline:
-                # TODO what if remote repo is actually local fs ?
-                # GR, redux: git has a two notions of local repos, which
-                # differ at least for shallow clones : path or file://
-                os.chdir(target_dir)
-                logger.info("%s> git remote set-url %s %s",
-                            target_dir, BUILDOUT_ORIGIN, url)
-                subprocess.call(['git', 'remote', 'set-url',
-                                 BUILDOUT_ORIGIN, url])
-                logger.info("%s> git fetch %s",
-                            target_dir, BUILDOUT_ORIGIN)
-                subprocess.check_call(['git', 'fetch', BUILDOUT_ORIGIN])
-                # TODO: check what happens when there are local changes
-                # TODO: what about the 'clean' option
-                logger.info("%s> git checkout %s", target_dir, revision)
-                subprocess.check_call(['git', 'checkout', revision])
-                if self._is_a_branch(revision):
-                    # fast forward
-                    logger.info("%s> git merge %s/%s",
-                                target_dir, BUILDOUT_ORIGIN, revision)
-                    try:
-                        update_check_call(
-                            ['git', 'merge', '--ff-only',
-                             BUILDOUT_ORIGIN + '/' + revision])
-                    except UpdateError:
-                        if not self.clear_retry:
-                            raise
-                        else:
-                            # users are willing to wipe the entire repo
-                            # to get their updates ! Let's try something less
-                            # harsh first that works if previous latest commit
-                            # is not an ancestor of remote latest
-                            # note: fetch has already been done
-                            logger.warn("Fast-forward merge failed for "
-                                        "repo %s, "
-                                        "but clear-retry option is active: "
-                                        "trying a reset in case that's a "
-                                        "simple fast-forward issue.", self)
-                            update_check_call(['git', 'reset', '--hard',
-                                               'origin/%s' % revision])
+            os.chdir(target_dir)
+            self.log_call(['git', 'remote', 'add' if is_new else 'set-url',
+                           BUILDOUT_ORIGIN, url],
+                          log_level=logging.DEBUG)
+
+            rtype, sha = self.query_remote_ref(BUILDOUT_ORIGIN, revision)
+            if rtype is None and ishex(revision):
+                return self.fetch_remote_sha(revision)
+
+            fetch_cmd = ['git', 'fetch']
+            depth = self.options.get('depth')
+            if depth is not None:
+                fetch_cmd.extend(('--depth', str(depth)))
+            fetch_cmd.extend((BUILDOUT_ORIGIN, revision))
+            self.log_call(fetch_cmd)
+
+            if rtype == 'tag':
+                self.log_call(['git', 'checkout', sha])
+            elif rtype == 'branch':
+                self.update_fetched_branch(revision)
+            else:
+                raise NotImplementedError(
+                    "Unknown remote reference type %r" % rtype)
+
+    def update_fetched_branch(self, branch):
+        # TODO: check what happens when there are local changes
+        # TODO: what about the 'clean' option
+        if not self.options.get('depth'):
+            self.log_call(['git', 'checkout', branch])
+        else:
+            self.log_call(['git', 'checkout',
+                           '%s/%s' % (BUILDOUT_ORIGIN, branch)],
+                          callwith=update_check_call)
+            self.log_call(['git', 'branch', '-f', branch],
+                          callwith=update_check_call)
+
+        if self._is_a_branch(branch):  # GR now we know that beforehand
+            # fast forward
+            try:
+                self.log_call(['git', 'merge', '--ff-only',
+                               BUILDOUT_ORIGIN + '/' + branch],
+                              callwith=update_check_call)
+            except UpdateError:
+                if not self.clear_retry:
+                    raise
+                else:
+                    # users are willing to wipe the entire repo
+                    # to get their updates ! Let's try something less
+                    # harsh first that works if previous latest commit
+                    # is not an ancestor of remote latest
+                    # note: fetch has already been done
+                    logger.warn("Fast-forward merge failed for "
+                                "repo %s, "
+                                "but clear-retry option is active: "
+                                "trying a reset in case that's a "
+                                "simple fast-forward issue.", self)
+                    self.log_call(['git', 'reset', '--hard',
+                                   '%s/%s' % (BUILDOUT_ORIGIN, branch)],
+                                  callwith=update_check_call)
 
     def merge(self, revision):
         """Merge revision into current branch"""
@@ -208,8 +311,6 @@ class GitRepo(BaseRepo):
                                    "or non git local directory %s" %
                                    self.target_dir)
             os.chdir(self.target_dir)
-            logger.info("%s> git pull %s %s",
-                        self.target_dir, self.url, revision)
             cmd = ['git', 'pull', self.url, revision]
             if self.git_version >= (1, 7, 8):
                 # --edit and --no-edit appear with Git 1.7.8
@@ -217,7 +318,7 @@ class GitRepo(BaseRepo):
                 # (https://git.kernel.org/cgit/git/git.git/tree)
                 cmd.insert(2, '--no-edit')
 
-            subprocess.check_call(cmd)
+            self.log_call(cmd)
 
     def archive(self, target_path):
         # TODO: does this work with merge-ins?
@@ -240,10 +341,10 @@ class GitRepo(BaseRepo):
             os.chdir(self.target_dir)
             subprocess.check_call(['git', 'checkout', revision])
             if self._is_a_branch(revision):
-                subprocess.check_call(['git', 'reset', '--hard',
-                                       BUILDOUT_ORIGIN + '/' + revision])
+                self.log_call(['git', 'reset', '--hard',
+                              BUILDOUT_ORIGIN + '/' + revision])
             else:
-                subprocess.check_call(['git', 'reset', '--hard', revision])
+                self.log_call(['git', 'reset', '--hard', revision])
 
     def _is_a_branch(self, revision):
         # if this fails, we have a seriously corrupted repo

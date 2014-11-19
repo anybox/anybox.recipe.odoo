@@ -597,6 +597,8 @@ class BaseRecipe(object):
             options = dict(offline=self.offline,
                            clear_locks=self.vcs_clear_locks,
                            clean=self.clean)
+            if loc_type == 'git':
+                options['depth'] = self.options.get('git-depth')
             options.update(addons_options)
 
             group = addons_options.get('group')
@@ -800,6 +802,9 @@ class BaseRecipe(object):
             url, rev = source[1]
             options = dict((k, v) for k, v in self.options.iteritems()
                            if k.startswith(type_spec + '-'))
+            if type_spec == 'git':
+                options['depth'] = options.pop('git-depth', None)
+
             options.update(source[2])
             if self.clean:
                 options['clean'] = True

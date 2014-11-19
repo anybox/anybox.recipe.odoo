@@ -55,17 +55,35 @@ class GitBaseTestCase(VcsTestCase):
         self.commit_2_sha = git_write_commit(self.src_repo, 'tracked',
                                              "last", msg="last commit")
 
+    def assertDepthEquals(self, repo, depth):
+        """Check that the depth is indeed as expected."""
+        with working_directory_keeper:
+            os.chdir(repo.target_dir)
+            commits = subprocess.check_output(['git', 'rev-list', 'HEAD'])
+            self.assertEqual(len(commits.splitlines()), depth)
+
 
 class GitTestCase(GitBaseTestCase):
 
     def test_clone(self):
         """Git clone."""
         target_dir = os.path.join(self.dst_dir, "My clone")
-        GitRepo(target_dir, self.src_repo)('master')
+        repo = GitRepo(target_dir, self.src_repo)('master')
 
         self.assertTrue(os.path.isdir(target_dir))
         with open(os.path.join(target_dir, 'tracked')) as f:
             self.assertEquals(f.read().strip(), 'last')
+
+        self.assertEqual(repo.get_current_remote_fetch(), self.src_repo)
+
+    def test_clone_depth(self):
+        """Git clone with depth option"""
+        target_dir = os.path.join(self.dst_dir, "My clone")
+        repo = GitRepo(target_dir, self.src_repo, depth='1')('master')
+
+        self.assertTrue(os.path.isdir(target_dir))
+        self.assertEqual(repo.parents(), [self.commit_2_sha])
+        self.assertDepthEquals(repo, 1)
 
     def test_archive(self):
         """Git clone, then archive"""
@@ -149,10 +167,10 @@ class GitTestCase(GitBaseTestCase):
             f.write('mod')
         self.assertTrue(repo.uncommitted_changes())
 
-    def test_update_needs_pull(self):
+    def test_update_needs_pull(self, depth=None):
         """Update needs to be pulled from target."""
         target_dir = os.path.join(self.dst_dir, "clone to update")
-        repo = GitRepo(target_dir, self.src_repo)
+        repo = GitRepo(target_dir, self.src_repo, depth=depth)
         repo('master')
 
         self.assertFalse(repo.uncommitted_changes())
@@ -166,6 +184,12 @@ class GitTestCase(GitBaseTestCase):
         # update our clone
         repo('master')
         self.assertEqual(repo.parents(), [new_sha])
+        if depth is not None:
+            self.assertDepthEquals(repo, depth)
+
+    def test_update_needs_pull_depth(self):
+        """Update needs to be pulled from target (case with depth option)"""
+        self.test_update_needs_pull(depth=1)
 
     def test_update_no_ff(self):
         """Recov if fast fwd is not possible and vcs-clear-retry is True
@@ -236,12 +260,9 @@ class GitBranchTestCase(GitBaseTestCase):
         self.assertFalse(branch.uncommitted_changes())
 
         # modify the branch
-        branch('somebranch')
-        self.assertFalse(branch.uncommitted_changes())
-        self.assertFalse(branch.uncommitted_changes())
         git_write_commit(target_dir, 'tracked',
                          "last after branch", msg="last version")
-
+        branch('somebranch')
         git_write_commit(target_dir, 'tracked',
                          "last from branch", msg="last version")
         with open(target_file) as f:
@@ -253,13 +274,47 @@ class GitBranchTestCase(GitBaseTestCase):
         with open(target_file) as f:
             self.assertEqual(f.read().strip(), "last after branch")
 
-    def test_switch_remote_branch(self):
+    def test_switch_local_branch_depth(self):
+        """Switch to a branch created before the clone.
+
+        In this case, the branch already exists in local repo but there are new
+        commits for it in remote.
+        """
+        target_dir = os.path.join(self.dst_dir, "to_branch")
+        target_file = os.path.join(target_dir, 'tracked')
+        branch = GitRepo(target_dir, self.src_repo)
+
+        # update file from master in local repo after branching
+        branch("master")
+        git_write_commit(target_dir, 'tracked',
+                         "last after branch", msg="last after")
+
+        # commit in the remote branch
+        with working_directory_keeper:
+            os.chdir(self.src_repo)
+            subprocess.check_call(['git', 'checkout', 'somebranch'])
+        git_write_commit(self.src_repo, 'tracked',
+                         "new in branch", msg="last from branch")
+
+        branch('somebranch')
+        with open(target_file) as f:
+            self.assertEqual(f.read().strip(), "new in branch")
+
+        # switch back to remote master. Local commit has not disappeared,
+        # but I don't think is reasonible to actually make this a stable
+        # promise, especially if lots of history happened between the switches
+        branch('master')
+        self.assertFalse(branch.uncommitted_changes())
+        with open(target_file) as f:
+            self.assertEqual(f.read().strip(), "last after branch")
+
+    def test_switch_remote_branch(self, depth=None):
         """Switch to a branch created after the clone.
 
         In this case, the branch doesn't exist in local repo
         """
         target_dir = os.path.join(self.dst_dir, "to_branch")
-        branch = GitRepo(target_dir, self.src_repo)
+        branch = GitRepo(target_dir, self.src_repo, depth=depth)
         # update file from master after branching
         branch("master")
 
@@ -276,6 +331,13 @@ class GitBranchTestCase(GitBaseTestCase):
         branch("remotebranch")
         with open(os.path.join(target_dir, 'tracked')) as f:
             self.assertEquals(f.read().strip(), "last after remote branch")
+
+    def test_switch_remote_branch_depth(self):
+        """Switch to a branch created after the clone.
+
+        Case where depth option is in play.
+        """
+        self.test_switch_remote_branch(depth=1)
 
 
 class GitMergeTestCase(GitBaseTestCase):
@@ -371,3 +433,97 @@ class GitMergeTestCase(GitBaseTestCase):
         self.assertFalse(os.path.exists(os.path.join(target_dir,
                                                      'file_on_branch1')),
                          'file_on_branch1 should not exist')
+
+
+class GitTagTestCase(GitBaseTestCase):
+
+    def create_src(self):
+        GitBaseTestCase.create_src(self)
+        os.chdir(self.src_repo)
+        self.make_tag('sometag')
+
+    def make_tag(self, tag):
+        subprocess.check_call(['git', 'tag', tag, self.commit_1_sha])
+
+    def test_query_remote(self):
+        target_dir = os.path.join(self.dst_dir, "to_repo")
+        repo = GitRepo(target_dir, self.src_repo)
+        with working_directory_keeper:
+            subprocess.check_call(['git', 'init', target_dir])
+            os.chdir(target_dir)
+            subprocess.check_call(['git', 'remote', 'add',
+                                   'orig', self.src_repo])
+            self.assertRemoteQueryResult(
+                repo.query_remote_ref('orig', 'sometag'), self.commit_1_sha)
+
+    def assertRemoteQueryResult(self, result, expected_sha):
+        """If possible, check that the result of query matches expected_sha.
+
+        To be subclassed for annotated tags. One can assume that current
+        working dir is the repo.
+        """
+        self.assertEqual(result, ('tag', expected_sha))
+
+    def test_clone_to_tag(self):
+        target_dir = os.path.join(self.dst_dir, "to_repo")
+        repo = GitRepo(target_dir, self.src_repo)
+        repo('sometag')
+        self.assertEqual(repo.parents(), [self.commit_1_sha])
+
+    def test_update_to_tag(self):
+        target_dir = os.path.join(self.dst_dir, "to_repo")
+        repo = GitRepo(target_dir, self.src_repo)
+        repo('master')
+        # checking that test base assumptions are right
+        self.assertEqual(repo.parents(), [self.commit_2_sha])
+
+        repo('sometag')
+        self.assertEqual(repo.parents(), [self.commit_1_sha])
+
+    def test_update_tag_to_head(self):
+        target_dir = os.path.join(self.dst_dir, "to_repo")
+        repo = GitRepo(target_dir, self.src_repo)
+        repo('sometag')
+        repo('master')
+        self.assertEqual(repo.parents(), [self.commit_2_sha])
+
+    def test_update_tag_to_head_depth(self):
+        target_dir = os.path.join(self.dst_dir, "to_repo")
+        repo = GitRepo(target_dir, self.src_repo, depth='1')
+        repo('sometag')
+        repo('master')
+        self.assertEqual(repo.parents(), [self.commit_2_sha])
+        self.assertDepthEquals(repo, 1)
+
+    def test_update_tag_to_tag_depth_backwards(self):
+        with working_directory_keeper:
+            os.chdir(self.src_repo)
+            subprocess.check_call(['git', 'tag', 'tag2', self.commit_2_sha])
+
+        target_dir = os.path.join(self.dst_dir, "to_repo")
+        repo = GitRepo(target_dir, self.src_repo, depth='1')
+        repo('tag2')
+        repo('sometag')
+        self.assertEqual(repo.parents(), [self.commit_1_sha])
+        self.assertDepthEquals(repo, 1)
+
+
+class GitAnnotatedTagTestCase(GitTagTestCase):
+    """Same as :class:`GitTagTestCase`, with annotated tags.
+
+    Annotated tags behave a bit differently that lightweight ones.
+    """
+
+    def make_tag(self, tag):
+        subprocess.check_call(['git', 'tag', '-a', '-m', "Annotation",
+                               tag, self.commit_1_sha])
+
+    def assertRemoteQueryResult(self, result, expected_sha):
+        """If possible, check that the result of query matches expected_sha.
+
+        In cas of annotated tags, the pointer is not on the tagged commit,
+        but on the tag.
+        """
+        # that will be enough for now : there are also tests for
+        # get_update(). This test is to fasten up debugging
+        self.assertEqual(result[0], ('tag'))
