@@ -1260,8 +1260,6 @@ class BaseRecipe(object):
             exts.remove('gp.vcsdevelop')
         conf.set('buildout', 'extensions', '\n'.join(exts))
 
-
-
     def _install_script(self, name, content):
         """Install and register a scripbont with prescribed name and content.
 
