@@ -331,19 +331,9 @@ class TestBaseRecipe(RecipeTestCase):
             version='local server-dir',
             addons='fakevcs http://some/where adddir addrev group=spam')
 
-#        orig_revert = FakeRepo.revert
-#
-#        def more_logging_revert(self, rev):
-#            raise NotImplementedError
-
-#        FakeRepo.revert = notimp_revert
         self.recipe.revert_sources()
         self.assertEqual(get_vcs_log(), [
-            ('revert', 'addrev', self.path_from_buildout('spam,', 'adddir'))])
-
-        self.assertEqual(get_vcs_log(), [
-            ('revert', 'mainrev', self.recipe.make_absolute(
-                os.path.join('spam', 'server_dir')))])
+            ('revert', 'addrev', self.path_from_buildout('spam', 'adddir'))])
 
     def test_vcs_revert_not_implemented(self):
         """Revert must not fail if a repo does not implement it."""

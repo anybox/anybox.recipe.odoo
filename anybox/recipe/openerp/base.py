@@ -666,6 +666,11 @@ class BaseRecipe(object):
             vcs_type, vcs_spec, options = desc
             local_dir = self.openerp_dir if target is main_software else target
             local_dir = self.make_absolute(local_dir)
+            group = options.get('group')
+            if group:
+                l0, l1 = os.path.split(local_dir)
+                group_dir = join(l0, group)
+                local_dir = join(group_dir, l1)
             repo = vcs.repo(vcs_type, local_dir, vcs_spec[0], **options)
             try:
                 repo.revert(vcs_spec[1])
