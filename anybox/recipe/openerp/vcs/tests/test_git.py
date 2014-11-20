@@ -235,9 +235,11 @@ class GitBranchTestCase(GitBaseTestCase):
         self.make_branch(self.src_repo, 'somebranch')
 
     def make_branch(self, src_dir, name):
-        """create a branch
+        """create a branch and switch src repo to it.
+
+        Subsequent commits in src repo will happen in that branch
         """
-        subprocess.check_call(['git', 'branch', name], cwd=src_dir)
+        subprocess.check_call(['git', 'checkout', '-b', name], cwd=src_dir)
 
     def test_switch_local_branch(self):
         """Switch to a branch created before the clone.
@@ -290,9 +292,6 @@ class GitBranchTestCase(GitBaseTestCase):
                          "last after branch", msg="last after")
 
         # commit in the remote branch
-        with working_directory_keeper:
-            os.chdir(self.src_repo)
-            subprocess.check_call(['git', 'checkout', 'somebranch'])
         git_write_commit(self.src_repo, 'tracked',
                          "new in branch", msg="last from branch")
 
@@ -338,6 +337,19 @@ class GitBranchTestCase(GitBaseTestCase):
         Case where depth option is in play.
         """
         self.test_switch_remote_branch(depth=1)
+
+    def test_clone_on_branch(self, depth=None):
+        """Test that direct cloning on branch works."""
+        target_dir = os.path.join(self.dst_dir, "to_branch")
+        repo = GitRepo(target_dir, self.src_repo, depth=depth)
+        # update file in src after branching
+        sha = git_write_commit(self.src_repo, 'tracked',
+                               "in branch", msg="last version")
+        repo("somebranch")
+        self.assertEqual(repo.parents(), [sha])
+
+    def test_clone_on_branch_depth(self):
+        self.test_clone_on_branch(depth=1)
 
 
 class GitMergeTestCase(GitBaseTestCase):
