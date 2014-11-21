@@ -57,16 +57,16 @@ class GitBaseTestCase(VcsTestCase):
 
     def assertDepthEquals(self, repo, depth):
         """Check that the depth is indeed as expected."""
-	if repo.git_version < (1, 8, 2):
+        if repo.git_version < (1, 8, 2):
             # from Git's relNotes 1.8.2.txt:
             # * "git fetch --depth" was broken in at least three ways. The
             # resulting history was deeper than specified by one commit, (...)
 
-	    # better do nothing, that try would be misleading than check for 
+            # better do nothing, than check for
             # a precise offset of one, because tests have not a history
             # deep enough to make the difference with no --depth
             return
- 
+
         with working_directory_keeper:
             os.chdir(repo.target_dir)
             commits = subprocess.check_output(['git', 'rev-list', 'HEAD'])
