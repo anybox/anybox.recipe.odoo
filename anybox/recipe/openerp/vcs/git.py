@@ -270,6 +270,11 @@ class GitRepo(BaseRepo):
     def update_fetched_branch(self, branch):
         # TODO: check what happens when there are local changes
         # TODO: what about the 'clean' option
+        # setup remote tracking branch, in all cases
+        # it's necessary with Git 1.7.10, not with 1.9.3 and shoud not
+        # harm
+        self.log_call(['git', 'update-ref', '/'.join((
+            'refs', 'remotes', BUILDOUT_ORIGIN, branch)), 'FETCH_HEAD'])
         if self.options.get('depth'):
             # doing it the other way does not work, at least
             # not on Git 1.7
@@ -280,10 +285,7 @@ class GitRepo(BaseRepo):
             return
 
         if not self._is_a_branch(branch):
-            # setup remote tracking branch, then checkout
-            self.log_call(['git', 'update-ref', '/'.join((
-                'refs', 'remotes', BUILDOUT_ORIGIN, branch)), 'FETCH_HEAD'])
-            self.log_call(['git', 'checkout', '-b', branch, 'FETCH_HEAD']) 
+            self.log_call(['git', 'checkout', '-b', branch, 'FETCH_HEAD'])
         else:
             # switch, then fast-forward
             self.log_call(['git', 'checkout', branch])
@@ -346,7 +348,8 @@ class GitRepo(BaseRepo):
             subprocess.check_call(['git', 'checkout', revision])
             if self._is_a_branch(revision):
                 self.log_call(['git', 'reset', '--hard',
-                              BUILDOUT_ORIGIN + '/' + revision])
+                              BUILDOUT_ORIGIN + '/' + revision],
+                              callwith=update_check_call)
             else:
                 self.log_call(['git', 'reset', '--hard', revision])
 
