@@ -270,27 +270,32 @@ class GitRepo(BaseRepo):
     def update_fetched_branch(self, branch):
         # TODO: check what happens when there are local changes
         # TODO: what about the 'clean' option
-        if not self.options.get('depth'):
-            self.log_call(['git', 'checkout', branch])
-        else:
-            self.log_call(['git', 'checkout',
-                           '%s/%s' % (BUILDOUT_ORIGIN, branch)],
+        if self.options.get('depth'):
+            # doing it the other way does not work, at least
+            # not on Git 1.7
+            self.log_call(['git', 'checkout', 'FETCH_HEAD'],
                           callwith=update_check_call)
             self.log_call(['git', 'branch', '-f', branch],
                           callwith=update_check_call)
+            return
 
-        if self._is_a_branch(branch):  # GR now we know that beforehand
-            # fast forward
+        if not self._is_a_branch(branch):
+            # setup remote tracking branch, then checkout
+            self.log_call(['git', 'update-ref', '/'.join((
+                'refs', 'remotes', BUILDOUT_ORIGIN, branch)), 'FETCH_HEAD'])
+            self.log_call(['git', 'checkout', '-b', branch, 'FETCH_HEAD']) 
+        else:
+            # switch, then fast-forward
+            self.log_call(['git', 'checkout', branch])
             try:
-                self.log_call(['git', 'merge', '--ff-only',
-                               BUILDOUT_ORIGIN + '/' + branch],
+                self.log_call(['git', 'merge', '--ff-only', 'FETCH_HEAD'],
                               callwith=update_check_call)
             except UpdateError:
                 if not self.clear_retry:
                     raise
                 else:
                     # users are willing to wipe the entire repo
-                    # to get their updates ! Let's try something less
+                    # to get this update done ! Let's try something less
                     # harsh first that works if previous latest commit
                     # is not an ancestor of remote latest
                     # note: fetch has already been done
@@ -299,8 +304,7 @@ class GitRepo(BaseRepo):
                                 "but clear-retry option is active: "
                                 "trying a reset in case that's a "
                                 "simple fast-forward issue.", self)
-                    self.log_call(['git', 'reset', '--hard',
-                                   '%s/%s' % (BUILDOUT_ORIGIN, branch)],
+                    self.log_call(['git', 'reset', '--hard', 'FETCH_HEAD'],
                                   callwith=update_check_call)
 
     def merge(self, revision):
