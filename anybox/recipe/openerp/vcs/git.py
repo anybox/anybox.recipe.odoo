@@ -256,14 +256,16 @@ class GitRepo(BaseRepo):
             depth = self.options.get('depth')
             if depth is not None:
                 fetch_cmd.extend(('--depth', str(depth)))
-            fetch_refspec = revision
             if rtype == 'tag':
-                fetch_refspec = 'refs/tags/' + fetch_refspec
+                fetch_refspec = '+refs/tags/%s:refs/tags/%s' % (revision,
+                                                                revision)
+            else:
+                fetch_refspec = revision
             fetch_cmd.extend((BUILDOUT_ORIGIN, fetch_refspec))
             self.log_call(fetch_cmd)
 
             if rtype == 'tag':
-                self.log_call(['git', 'checkout', sha])
+                self.log_call(['git', 'checkout', revision])
             elif rtype == 'branch':
                 self.update_fetched_branch(revision)
             else:

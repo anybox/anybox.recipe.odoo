@@ -486,36 +486,44 @@ class GitTagTestCase(GitBaseTestCase):
         """
         self.assertEqual(result, ('tag', expected_sha))
 
-    def test_clone_to_tag(self):
+    def test_clone_to_tag(self, depth=None):
         target_dir = os.path.join(self.dst_dir, "to_repo")
-        repo = GitRepo(target_dir, self.src_repo)
+        repo = GitRepo(target_dir, self.src_repo, depth=depth)
         repo('sometag')
         self.assertEqual(repo.parents(), [self.commit_1_sha])
 
-    def test_update_to_tag(self):
+    def test_clone_to_tag_depth(self):
+        self.test_clone_to_tag(depth='1')
+
+    def test_update_to_tag(self, depth=None):
         target_dir = os.path.join(self.dst_dir, "to_repo")
-        repo = GitRepo(target_dir, self.src_repo)
+        repo = GitRepo(target_dir, self.src_repo, depth=depth)
         repo('master')
         # checking that test base assumptions are right
         self.assertEqual(repo.parents(), [self.commit_2_sha])
 
         repo('sometag')
         self.assertEqual(repo.parents(), [self.commit_1_sha])
+        subprocess.check_call(['git', 'checkout', 'sometag'],
+                              cwd=repo.target_dir)
 
-    def test_update_tag_to_head(self):
+    def test_update_to_tag_depth(self):
+        self.test_clone_to_tag(depth='1')
+
+    def test_update_tag_to_head(self, depth=None):
         target_dir = os.path.join(self.dst_dir, "to_repo")
-        repo = GitRepo(target_dir, self.src_repo)
+        repo = GitRepo(target_dir, self.src_repo, depth=depth)
         repo('sometag')
+        subprocess.check_call(['git', 'checkout', 'sometag'],
+                              cwd=repo.target_dir)
+        self.assertEqual(
+            check_output(['git', 'tag'], cwd=repo.target_dir).strip(),
+            'sometag')
         repo('master')
         self.assertEqual(repo.parents(), [self.commit_2_sha])
 
     def test_update_tag_to_head_depth(self):
-        target_dir = os.path.join(self.dst_dir, "to_repo")
-        repo = GitRepo(target_dir, self.src_repo, depth='1')
-        repo('sometag')
-        repo('master')
-        self.assertEqual(repo.parents(), [self.commit_2_sha])
-        self.assertDepthEquals(repo, 1)
+        self.test_update_tag_to_head(depth='1')
 
     def test_update_tag_to_tag_depth_backwards(self):
         with working_directory_keeper:
