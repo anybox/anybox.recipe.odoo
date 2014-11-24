@@ -306,5 +306,3 @@ class TestBaseRecipe(RecipeTestCase):
         recipe.finalize_addons_paths(check_existence=False)
         self.assertEquals(self.recipe.addons_paths, [base_addons,
                                                      '/some/separate/addons'])
-
-

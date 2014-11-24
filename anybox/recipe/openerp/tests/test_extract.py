@@ -4,7 +4,6 @@ import tempfile
 from ConfigParser import ConfigParser, NoOptionError
 from anybox.recipe.openerp.base import GP_VCS_EXTEND_DEVELOP
 from anybox.recipe.openerp.testing import RecipeTestCase
-from ..testing import TestingRecipe
 
 TEST_DIR = os.path.dirname(__file__)
 
