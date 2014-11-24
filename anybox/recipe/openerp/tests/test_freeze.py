@@ -18,7 +18,8 @@ class TestFreeze(RecipeTestCase):
              os.path.join(TEST_DIR, 'fake_babel', 'setup.py'),
              'bdist_egg',
              '-d', self.recipe.b_options['eggs-directory'],
-             '-b', os.path.join(self.buildout_dir, 'build')])
+             '-b', os.path.join(self.buildout_dir, 'build')],
+            stdout=subprocess.PIPE)
 
     def test_freeze_egg_versions(self):
         """Test that an egg requirement is properly dumped with its version.
@@ -76,7 +77,7 @@ class TestFreeze(RecipeTestCase):
             f.write('content')
         subprocess.check_call(['hg', '--cwd', repo_path,
                                'commit', '-A', '-m', 'somerev',
-                               '-u', COMMIT_USER_FULL,
+                               '-u', COMMIT_USER_FULL, '-q'
                                ])
 
         rev = self.recipe._freeze_vcs_source('hg', repo_path)
@@ -97,7 +98,7 @@ class TestFreeze(RecipeTestCase):
             f.write('content')
         subprocess.check_call(['hg', '--cwd', repo_path,
                                'commit', '-A', '-m', 'somerev',
-                               '-u', COMMIT_USER_FULL,
+                               '-u', COMMIT_USER_FULL, '-q',
                                ])
 
         self.recipe.local_modifications = []
@@ -107,7 +108,8 @@ class TestFreeze(RecipeTestCase):
         self.recipe._freeze_vcs_source('hg', repo_path)
         self.assertTrue(bool(self.recipe.local_modifications))
 
-        subprocess.check_call(['hg', '--cwd', repo_path, 'revert', '--all'])
+        subprocess.check_call(['hg', '-q',
+                               '--cwd', repo_path, 'revert', '--all'])
 
         # untracked file
         self.recipe.local_modifications = []
