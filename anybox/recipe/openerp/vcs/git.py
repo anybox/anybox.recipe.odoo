@@ -262,7 +262,7 @@ class GitRepo(BaseRepo):
             else:
                 fetch_refspec = revision
             fetch_cmd.extend((BUILDOUT_ORIGIN, fetch_refspec))
-            self.log_call(fetch_cmd)
+            self.log_call(fetch_cmd, callwith=update_check_call)
 
             if rtype == 'tag':
                 self.log_call(['git', 'checkout', revision])
