@@ -7,10 +7,19 @@ from tempfile import mkdtemp
 from zc.buildout.easy_install import Installer
 from . import vcs
 from . import utils
+from .base import BaseRecipe
 
 COMMIT_USER_NAME = 'Test'
 COMMIT_USER_EMAIL = 'test@example.org'
 COMMIT_USER_FULL = '%s %s' % (COMMIT_USER_NAME, COMMIT_USER_EMAIL)
+
+
+class TestingRecipe(BaseRecipe):
+    """A subclass with just enough few defaults for unit testing."""
+
+    release_filenames = {'6.1': 'blob-%s.tgz',
+                         '6.0': 'bl0b-%s.tgz'}
+    nightly_filenames = {'6.1': '6-1-nightly-%s.tbz'}
 
 
 class FakeRepo(vcs.base.BaseRepo):
@@ -108,7 +117,17 @@ class RecipeTestCase(unittest.TestCase):
             return inst._orig_obtain(requirement, source=source)
         Installer._obtain = _obtain
 
+    def make_recipe(self, name='openerp', **options):
+        self.recipe = TestingRecipe(self.buildout, name, options)
+
     def tearDown(self):
         clear_vcs_log()
         shutil.rmtree(self.buildout_dir)
         Installer._obtain = Installer._orig_obtain
+
+        # leftover egg-info at root of the source dir (frequent cwd)
+        # impairs use of this very same source dir for real-life testing
+        # with a 'develop' option.
+        egg_info = 'Babel.egg-info'
+        if os.path.isdir(egg_info):
+            shutil.rmtree(egg_info)
