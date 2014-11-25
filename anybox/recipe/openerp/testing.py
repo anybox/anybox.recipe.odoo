@@ -3,9 +3,11 @@ import os
 import unittest
 import sys
 import shutil
+import subprocess
 from tempfile import mkdtemp
 from UserDict import UserDict
 from zc.buildout.easy_install import Installer
+
 from . import vcs
 from . import utils
 from .base import BaseRecipe
@@ -82,6 +84,33 @@ def clear_vcs_log():
     FakeRepo.log = []
 
 
+class PersistentRevFakeRepo(FakeRepo):
+    """A variant of FakeRepo that still needs the directory structure around.
+
+    Makes for a more realistic test of some conditions.
+    In particular, reproduced launchpad #TODO
+    """
+
+    current_revisions = {}
+
+    @property
+    def revision(self):
+        return self.__class__.current_revisions.get(self.target_dir, 'fakerev')
+
+    @revision.setter
+    def revision(self, v):
+        self.__class__.current_revisions[self.target_dir] = v
+
+    def uncommitted_changes(self):
+        """This needs the directory to really exist and is controllable."""
+        files = set(os.listdir(self.target_dir))
+        files.discard('.fake')
+        return bool(files)
+
+
+vcs.SUPPORTED['pr_fakevcs'] = PersistentRevFakeRepo
+
+
 class RecipeTestCase(unittest.TestCase):
     """A base setup for tests of recipe classes"""
 
@@ -139,3 +168,22 @@ class RecipeTestCase(unittest.TestCase):
         egg_info = 'Babel.egg-info'
         if os.path.isdir(egg_info):
             shutil.rmtree(egg_info)
+
+    def build_babel_egg(self):
+        """build an egg for fake babel in buildout's eggs directory.
+
+        Require the test case to already have a ``test_dir`` attribute
+        (typically set on class with the dirname of the test)
+        """
+        subprocess.check_call(
+            [sys.executable,
+             os.path.join(self.test_dir, 'fake_babel', 'setup.py'),
+             'bdist_egg',
+             '-d', self.recipe.b_options['eggs-directory'],
+             '-b', os.path.join(self.buildout_dir, 'build')],
+            stdout=subprocess.PIPE)
+
+    def fill_working_set(self):
+        self.build_babel_egg()
+        self.recipe.options['eggs'] = 'Babel'
+        self.recipe.install_requirements()  # to get 'ws' attribute

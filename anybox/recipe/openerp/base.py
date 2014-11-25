@@ -1132,9 +1132,23 @@ class BaseRecipe(object):
                 out_conf.set(self.name, 'version', 'local ' + rel_path)
                 continue
 
-            addons_line = ['local', local_path]
+            # stripping the group option that won't be usefult
+            # and actually harming for extracted buildout conf
+            options = source[2]
+            group = options.pop('group', None)
+            if group:
+                target_local_path = os.path.dirname(local_path)
+                if group != os.path.basename(target_local_path):
+                    raise RuntimeError(
+                        "Inconsistent configuration that "
+                        "should not happen: group=%r, but resulting path %r "
+                        "does not have it as its parent" % (group, local_path))
+            else:
+                target_local_path = local_path
+
+            addons_line = ['local', target_local_path]
             addons_line.extend('%s=%s' % (opt, val)
-                               for opt, val in source[2].items())
+                               for opt, val in options.items())
             addons_option.append(' '.join(addons_line))
 
             abspath = self.make_absolute(local_path)

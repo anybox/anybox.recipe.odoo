@@ -1,61 +1,16 @@
 import os
-import sys
 import tempfile
 import shutil
 import subprocess
 from ConfigParser import ConfigParser, NoOptionError
 from anybox.recipe.openerp.base import GP_VCS_EXTEND_DEVELOP
-from .. import vcs
 from ..testing import RecipeTestCase
-from ..testing import FakeRepo
 from ..testing import COMMIT_USER_FULL
-
-TEST_DIR = os.path.dirname(__file__)
-
-
-class PersistentRevFakeRepo(FakeRepo):
-    """A variant of FakeRepo that still needs the directory structure around.
-
-    Makes for a more realistic test of some conditions.
-    In particular, reproduced launchpad #TODO
-    """
-
-    current_revisions = {}
-
-    @property
-    def revision(self):
-        return self.__class__.current_revisions.get(self.target_dir, 'fakerev')
-
-    @revision.setter
-    def revision(self, v):
-        self.__class__.current_revisions[self.target_dir] = v
-
-    def uncommitted_changes(self):
-        """This needs the directory to really exist and is controllable."""
-        files = set(os.listdir(self.target_dir))
-        files.discard('.fake')
-        return bool(files)
-
-
-vcs.SUPPORTED['pr_fakevcs'] = PersistentRevFakeRepo
 
 
 class TestFreeze(RecipeTestCase):
 
-    def build_babel_egg(self):
-        """build an egg for fake babel in buildout's eggs directory."""
-        subprocess.check_call(
-            [sys.executable,
-             os.path.join(TEST_DIR, 'fake_babel', 'setup.py'),
-             'bdist_egg',
-             '-d', self.recipe.b_options['eggs-directory'],
-             '-b', os.path.join(self.buildout_dir, 'build')],
-            stdout=subprocess.PIPE)
-
-    def fill_working_set(self):
-        self.build_babel_egg()
-        self.recipe.options['eggs'] = 'Babel'
-        self.recipe.install_requirements()  # to get 'ws' attribute
+    test_dir = os.path.dirname(__file__)
 
     def test_freeze_egg_versions(self):
         """Test that an egg requirement is properly dumped with its version.
@@ -96,7 +51,7 @@ class TestFreeze(RecipeTestCase):
         conf = ConfigParser()
         conf.add_section('freeze')
         self.make_recipe(version='6.1-1')
-        self.recipe.develop(os.path.join(TEST_DIR, 'fake_babel'))
+        self.recipe.develop(os.path.join(self.test_dir, 'fake_babel'))
         self.recipe.options['eggs'] = 'Babel'
         self.recipe.install_requirements()  # to get 'ws' attribute
         self.recipe._freeze_egg_versions(conf, 'freeze')
@@ -192,7 +147,6 @@ class TestFreeze(RecipeTestCase):
     def test_freeze_to(self):
         """Test the whole freeze method."""
 
-        FakeRepo.uncommitted_changes = lambda self: False
         self.make_recipe(
             version='pr_fakevcs http://main.soft.example odooo refspec',
             addons="pr_fakevcs http://repo.example target rev1\n"

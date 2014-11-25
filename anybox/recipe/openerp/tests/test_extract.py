@@ -5,10 +5,10 @@ from ConfigParser import ConfigParser, NoOptionError
 from anybox.recipe.openerp.base import GP_VCS_EXTEND_DEVELOP
 from anybox.recipe.openerp.testing import RecipeTestCase
 
-TEST_DIR = os.path.dirname(__file__)
-
 
 class TestExtraction(RecipeTestCase):
+
+    test_dir = os.path.dirname(__file__)
 
     def setUp(self):
         super(TestExtraction, self).setUp()
@@ -120,3 +120,31 @@ class TestExtraction(RecipeTestCase):
         self.recipe._extract_sources(conf, target_dir, set())
         self.assertEqual(conf.get(self.recipe.name, 'recipe'),
                          'anybox.recipe.odoo[other]:server')
+
+    def test_extract_downloads_to(self):
+        """Test the whole freeze method."""
+
+        self.make_recipe(
+            version='pr_fakevcs http://main.soft.example odooo refspec',
+            addons="pr_fakevcs http://repo.example target rev1\n"
+            "local somwehere\n"
+            "pr_fakevcs http://repo2.example stdln rev2 group=stdl"
+        )
+        os.mkdir(self.recipe.parts)
+        os.mkdir(os.path.join(self.recipe.openerp_dir))
+        self.recipe.retrieve_main_software()
+        self.recipe.retrieve_addons()
+        self.fill_working_set()
+
+        self.recipe.extract_downloads_to(self.extract_target_dir)
+        ext_conf = ConfigParser()
+        ext_conf.read(os.path.join(self.extract_target_dir, 'release.cfg'))
+
+        # notice standalone handling :
+        self.assertEqual(ext_conf.get('openerp', 'addons').splitlines(),
+                         ['local target', 'local somwehere',
+                          'local stdl'])
+
+        self.assertEqual(ext_conf.get('openerp', 'version').strip(),
+                         'local parts/odooo')
+        self.assertEqual(ext_conf.get('versions', 'babel'), '0.123-dev')
