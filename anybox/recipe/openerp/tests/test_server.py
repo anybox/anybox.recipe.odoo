@@ -137,7 +137,6 @@ class TestServer(RecipeTestCase):
 
         self.recipe.retrieve_addons()
         paths = self.recipe.addons_paths
-        print get_vcs_log()
         self.assertEquals(get_vcs_log(), [
                           (addons1_dir, 'lp:my-addons1', 'last:1',
                            dict(offline=False, clear_locks=False, clean=False,
