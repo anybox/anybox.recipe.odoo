@@ -4,6 +4,7 @@ import unittest
 import sys
 import shutil
 from tempfile import mkdtemp
+from UserDict import UserDict
 from zc.buildout.easy_install import Installer
 from . import vcs
 from . import utils
@@ -20,6 +21,13 @@ class TestingRecipe(BaseRecipe):
     release_filenames = {'6.1': 'blob-%s.tgz',
                          '6.0': 'bl0b-%s.tgz'}
     nightly_filenames = {'6.1': '6-1-nightly-%s.tbz'}
+
+    def __init__(self, buildout, name, options):
+        # we need to make buildout a regular object, because some subsystems
+        # will set extra attributes on it
+        if isinstance(buildout, dict):
+            buildout = UserDict(buildout)
+        super(TestingRecipe, self).__init__(buildout, name, options)
 
 
 class FakeRepo(vcs.base.BaseRepo):

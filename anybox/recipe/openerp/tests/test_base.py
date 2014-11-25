@@ -227,7 +227,6 @@ class TestBaseRecipe(RecipeTestCase):
         self.make_recipe(
             version='local server-dir',
             addons='fakevcs http://some/where adddir addrev group=spam')
-
         self.recipe.revert_sources()
         self.assertEqual(get_vcs_log(), [
             ('revert', 'addrev', self.path_from_buildout('spam', 'adddir'))])

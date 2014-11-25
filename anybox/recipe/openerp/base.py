@@ -517,6 +517,10 @@ class BaseRecipe(object):
                                 "Please check format " % line)
 
             addons_dir = addons_dir.rstrip('/')  # trailing / can be harmful
+            group = options.get('group')
+            if group:
+                split = os.path.split(addons_dir)
+                addons_dir = os.path.join(split[0], group, split[1])
             self.sources[addons_dir] = (loc_type, location_spec, options)
 
     def parse_merges(self, options):
@@ -602,9 +606,6 @@ class BaseRecipe(object):
             options.update(addons_options)
 
             group = addons_options.get('group')
-            # TODO forbid groupping in local addons
-            # the recipe should not consider it can have responsibility over
-            # this
             group_dir = None
             if group:
                 if loc_type == 'local':
@@ -618,11 +619,9 @@ class BaseRecipe(object):
                         "you create yourself the intermediate directory." % (
                             local_dir, ))
 
-                l0, l1 = os.path.split(local_dir)
-                group_dir = join(l0, group)
-                local_dir = join(group_dir, l1)
+                group_dir = os.path.dirname(local_dir)
                 if not os.path.exists(group_dir):
-                    os.mkdir(group_dir)
+                    os.makedirs(group_dir)
             if loc_type != 'local':
                 for k, v in self.options.items():
                     if k.startswith(loc_type + '-'):
@@ -666,11 +665,6 @@ class BaseRecipe(object):
             vcs_type, vcs_spec, options = desc
             local_dir = self.openerp_dir if target is main_software else target
             local_dir = self.make_absolute(local_dir)
-            group = options.get('group')
-            if group:
-                l0, l1 = os.path.split(local_dir)
-                group_dir = join(l0, group)
-                local_dir = join(group_dir, l1)
             repo = vcs.repo(vcs_type, local_dir, vcs_spec[0], **options)
             try:
                 repo.revert(vcs_spec[1])
@@ -1382,7 +1376,9 @@ class BaseRecipe(object):
         # GR TODO this will break with OSError if main package is renamed to
         # 'odoo' we'll see then what the needed correction exactly is rather
         # than swallowing the exception now
-        shutil.rmtree(join(self.openerp_dir, 'openerp.egg-info'))
+        egg_info_dir = join(self.openerp_dir, 'openerp.egg-info')
+        if os.path.exists(egg_info_dir):
+            shutil.rmtree(egg_info_dir)
         # setup rewritten without PIL is cleaned during the process itself
 
     def buildout_cfg_name(self, argv=None):

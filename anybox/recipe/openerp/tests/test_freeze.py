@@ -1,12 +1,43 @@
 import os
 import sys
+import tempfile
+import shutil
 import subprocess
 from ConfigParser import ConfigParser, NoOptionError
 from anybox.recipe.openerp.base import GP_VCS_EXTEND_DEVELOP
+from .. import vcs
 from ..testing import RecipeTestCase
+from ..testing import FakeRepo
 from ..testing import COMMIT_USER_FULL
 
 TEST_DIR = os.path.dirname(__file__)
+
+
+class PersistentRevFakeRepo(FakeRepo):
+    """A variant of FakeRepo that still needs the directory structure around.
+
+    Makes for a more realistic test of some conditions.
+    In particular, reproduced launchpad #TODO
+    """
+
+    current_revisions = {}
+
+    @property
+    def revision(self):
+        return self.__class__.current_revisions.get(self.target_dir, 'fakerev')
+
+    @revision.setter
+    def revision(self, v):
+        self.__class__.current_revisions[self.target_dir] = v
+
+    def uncommitted_changes(self):
+        """This needs the directory to really exist and is controllable."""
+        files = set(os.listdir(self.target_dir))
+        files.discard('.fake')
+        return bool(files)
+
+
+vcs.SUPPORTED['pr_fakevcs'] = PersistentRevFakeRepo
 
 
 class TestFreeze(RecipeTestCase):
@@ -21,15 +52,18 @@ class TestFreeze(RecipeTestCase):
              '-b', os.path.join(self.buildout_dir, 'build')],
             stdout=subprocess.PIPE)
 
+    def fill_working_set(self):
+        self.build_babel_egg()
+        self.recipe.options['eggs'] = 'Babel'
+        self.recipe.install_requirements()  # to get 'ws' attribute
+
     def test_freeze_egg_versions(self):
         """Test that an egg requirement is properly dumped with its version.
         """
         conf = ConfigParser()
         conf.add_section('freeze')
         self.make_recipe(version='6.1-1')
-        self.build_babel_egg()
-        self.recipe.options['eggs'] = 'Babel'
-        self.recipe.install_requirements()  # to get 'ws' attribute
+        self.fill_working_set()
         self.recipe._freeze_egg_versions(conf, 'freeze')
         try:
             version = conf.get('freeze', 'Babel')
@@ -154,3 +188,33 @@ class TestFreeze(RecipeTestCase):
         self.assertEquals(extends_develop.strip(),
                           "fakevcs+http://example.com/aeroolib@fakerev"
                           "#egg=aeroolib")
+
+    def test_freeze_to(self):
+        """Test the whole freeze method."""
+
+        FakeRepo.uncommitted_changes = lambda self: False
+        self.make_recipe(
+            version='pr_fakevcs http://main.soft.example odooo refspec',
+            addons="pr_fakevcs http://repo.example target rev1\n"
+            "local somwehere\n"
+            "pr_fakevcs http://repo2.example stdln rev2 group=stdl"
+        )
+        os.mkdir(self.recipe.parts)
+        os.mkdir(os.path.join(self.recipe.openerp_dir))
+        self.recipe.retrieve_main_software()
+        self.recipe.retrieve_addons()
+        self.fill_working_set()
+
+        tmpdir = tempfile.mkdtemp('test_recipe_freeze')
+        frozen_path = os.path.join(tmpdir, 'frozen.cfg')
+        outconf = ConfigParser()
+        try:
+            self.recipe.freeze_to(frozen_path)
+            outconf.read(frozen_path)
+        finally:
+            shutil.rmtree(tmpdir)
+
+        # the key in the addons sources for the standalone one has been
+        # shifted, that's just what the group option does internally
+        self.assertEqual(outconf.get('openerp', 'revisions').splitlines(),
+                         ['refspec', 'target rev1', 'stdl/stdln rev2'])
