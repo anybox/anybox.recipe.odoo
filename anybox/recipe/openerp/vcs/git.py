@@ -19,7 +19,13 @@ BUILDOUT_ORIGIN = 'origin'
 
 
 def ishex(s):
-    """True iff given string is a valid hexadecimal number."""
+    """True iff given string is a valid hexadecimal number.
+
+    >>> ishex('deadbeef')
+    True
+    >>> ishex('01bn78')
+    False
+    """
     try:
         int(s, 16)
     except ValueError:
@@ -107,7 +113,7 @@ class GitRepo(BaseRepo):
           >>> GitRepo('', '').git_version
           (0, 0, 666)
 
-        Expected exceptions:
+        Expected exceptions::
 
           >>> try: GitRepo.init_git_version('invalid')
           ... except ValueError: pass
@@ -184,8 +190,9 @@ class GitRepo(BaseRepo):
         # differ at least for shallow clones : path or file://
         if not os.path.exists(target_dir):
             # TODO case of local url ?
-            raise IOError("git repository %s does not exist; cannot clone "
-                          "it from %s (offline mode)" % (target_dir, self.url))
+            raise UserError("git repository %s does not exist; cannot clone "
+                            "it from %s (offline mode)" % (target_dir,
+                                                           self.url))
 
         current_url = self.get_current_remote_fetch()
         if current_url != self.url:
@@ -193,6 +200,9 @@ class GitRepo(BaseRepo):
                             "which is different from the specified %r. "
                             "Cannot update adresses in offline mode." % (
                                 self.target_dir, current_url, self.url))
+        self.log_call(['git', 'checkout', revision],
+                      callwith=update_check_call,
+                      cwd=self.target_dir)
 
     def fetch_remote_sha(self, sha):
         """Backwards compatibility wrapper."""
@@ -211,11 +221,9 @@ class GitRepo(BaseRepo):
                  ``(None, ref)`` if ref does not exist in remote. This happens
                  notably if ref if a commit sha (they can't be queried)
         """
-        os.chdir(self.target_dir)
         out = self.log_call(['git', 'ls-remote', remote, ref],
+                            cwd=self.target_dir,
                             callwith=check_output).strip()
-        if not out:
-            return None, ref
         for sha, fullref in (l.split() for l in out.splitlines()):
             if fullref == 'refs/heads/' + ref:
                 return 'branch', sha
