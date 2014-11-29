@@ -181,6 +181,16 @@ class TestServer(RecipeTestCase):
                           set(['pychart', 'anybox.recipe.openerp',
                                'Pillow', 'openerp']))
 
+    def test_merge_requirements_new_project_name(self):
+        """At any point in time, Odoo is prone to change package name."""
+        self.make_recipe(version='local %s' % os.path.join(
+            TEST_DIR, 'odoo-project-renaming'))
+        self.recipe.version_detected = '8.0'
+        self.recipe.merge_requirements()
+        self.assertEquals(set(self.recipe.requirements),
+                          set(['pychart', 'anybox.recipe.openerp',
+                               'Pillow', 'oodooo']))
+
     def test_merge_requirements_PIL(self):
         self.make_recipe(version='nightly trunk latest')
         self.recipe.version_detected = '6.2-nightly-20121110-003000'

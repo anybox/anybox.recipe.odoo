@@ -116,9 +116,11 @@ class ServerRecipe(BaseRecipe):
             self.requirements.append('Pillow')
         if self.major_version >= (6, 1):
             openerp_dir = getattr(self, 'openerp_dir', None)
+            openerp_project_name = 'openerp'
             if openerp_dir is not None:  # happens in unit tests
-                self.develop(openerp_dir, setup_has_pil=setup_has_pil)
-            self.requirements.append('openerp')
+                openerp_project_name = self.develop(
+                    openerp_dir, setup_has_pil=setup_has_pil)
+            self.requirements.append(openerp_project_name)
 
         if self.with_gunicorn:
             self.requirements.extend(('psutil', 'gunicorn'))

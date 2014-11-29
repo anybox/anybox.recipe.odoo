@@ -7,6 +7,8 @@ with any higher released unstable versions.
 
 1.9.0 (unreleased)
 ------------------
+- launchpad #1332147: insensitivity to project name in setup.py
+  (openerp, odoo, whatever).
 - launchpad #1332465: [git] support for shallow clones (--depth),
   refactor to allow this consistently with detached head states,
   branch changes, etc.

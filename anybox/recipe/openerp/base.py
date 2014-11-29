@@ -464,11 +464,18 @@ class BaseRecipe(object):
     def develop(self, src_directory, setup_has_pil=False):
         """Develop the specified source distribution.
 
-        Any call to zc.recipe.eggs will use that developped version.
-        develop() launches a subprocess, to which we need to forward
+        Any call to ``zc.recipe.eggs`` will use that developped version.
+        :meth:`develop` launches a subprocess, to which we need to forward
         the paths to requirements via PYTHONPATH.
-        If setup_has_pil is True, an altered version of setup that does not
-        require it is produced to perform the develop.
+
+        :param setup_has_pil: if ``True``, an altered version of setup that
+                              does not require PIL is produced to perform the
+                              develop, so that installation can be done with
+                              ``Pillow`` instead. Recent enough versions of
+                              OpenERP/Odoo are directly based on Pillow.
+        :returns: project name of the distribution that's been "developed"
+                  This is useful for OpenERP/Odoo itself, whose project name
+                  changed within the 8.0 stable branch.
         """
         logger.debug("Developing %r", src_directory)
         develop_dir = self.b_options['develop-eggs-directory']
@@ -481,15 +488,24 @@ class BaseRecipe(object):
             setup = src_directory
 
         try:
-            zc.buildout.easy_install.develop(setup, develop_dir)
+            egg_link = zc.buildout.easy_install.develop(setup, develop_dir)
         finally:
             if setup_has_pil:
                 os.unlink(setup)
+
+        suffix = '.egg-link'
 
         if pythonpath_bak is None:
             os.unsetenv('PYTHONPATH')
         else:
             os.putenv('PYTHONPATH', pythonpath_bak)
+
+        if not egg_link.endswith(suffix):
+            raise RuntimeError(
+                "Development of OpenERP/Odoo distribution "
+                "produced an unexpected egg link: %r" % egg_link)
+
+        return os.path.basename(egg_link)[:-len(suffix)]
 
     def parse_addons(self, options):
         """Parse the addons options into :attr:`sources`.
