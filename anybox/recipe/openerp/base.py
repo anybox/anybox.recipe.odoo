@@ -1403,13 +1403,16 @@ class BaseRecipe(object):
 
         These can be, e.g., forbidden by the freeze process."""
 
-        # GR TODO this will break with OSError if main package is renamed to
-        # 'odoo' we'll see then what the needed correction exactly is rather
-        # than swallowing the exception now
-        egg_info_dir = join(self.openerp_dir, 'openerp.egg-info')
-        if os.path.exists(egg_info_dir):
-            shutil.rmtree(egg_info_dir)
-        # setup rewritten without PIL is cleaned during the process itself
+        # from here we can't guess whether it's 'openerp' or 'odoo'.
+        # Nothing guarantees that this method is called after develop().
+        # It is in practice now, but one day, the extraction as a separate
+        # script of freeze/extract will become a reality.
+        for proj_name in ('openerp', 'odoo'):
+            egg_info_dir = join(self.openerp_dir, proj_name + '.egg-info')
+            if os.path.exists(egg_info_dir):
+                shutil.rmtree(egg_info_dir)
+        # if setup.py has been rewritten without PIL, it is cleaned
+        # during the process itself
 
     def buildout_cfg_name(self, argv=None):
         """Return the name of the config file that's been called.
