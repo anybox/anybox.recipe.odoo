@@ -42,7 +42,7 @@ class BzrBranch(BaseRepo):
                         "probably disappear in version 1.8.")
             self.options['bzr-init'] = 'lightweight-checkout'
 
-        if self.url.startswith('lp:'):
+        if self.url.startswith('lp:') and not self.offline:
             if LPDIR is None:
                 raise RuntimeError(
                     "To use launchpad locations (lp:), bzrlib must be "
@@ -101,7 +101,7 @@ class BzrBranch(BaseRepo):
             return
 
         old_parent = conf['parent_location']
-        if old_parent == self.url:
+        if old_parent == self.url or self.url.startswith('lp:'):
             return False
 
         self.previous_conf = deepcopy(conf)
@@ -255,6 +255,9 @@ class BzrBranch(BaseRepo):
         If target_dir already exists, does a simple pull.
         Offline-mode: no branch nor pull, but update.
         In all cases, an attempt to update is performed before any pull
+
+        Special case: if the 'merge' option is True,
+        merge revision into current branch.
         """
         target_dir = self.target_dir
         offline = self.offline

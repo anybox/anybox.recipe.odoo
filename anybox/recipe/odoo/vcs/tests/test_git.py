@@ -36,8 +36,8 @@ class GitBaseTestCase(VcsTestCase):
 
     def create_src(self):
         os.chdir(self.src_dir)
-        subprocess.call(['git', 'init', 'src-branch'])
-        self.src_repo = os.path.join(self.src_dir, 'src-branch')
+        subprocess.call(['git', 'init', 'src-repo'])
+        self.src_repo = os.path.join(self.src_dir, 'src-repo')
         self.commit_1_sha = git_write_commit(self.src_repo, 'tracked',
                                              "first", msg="initial commit")
         self.commit_2_sha = git_write_commit(self.src_repo, 'tracked',
@@ -229,3 +229,96 @@ class GitBranchTestCase(GitBaseTestCase):
         branch("remotebranch")
         with open(os.path.join(target_dir, 'tracked')) as f:
             self.assertEquals(f.read().strip(), "last after remote branch")
+
+
+class GitMergeTestCase(GitBaseTestCase):
+
+    def create_src(self):
+        GitBaseTestCase.create_src(self)
+        os.chdir(self.src_repo)
+
+        self.make_branch(self.src_repo, 'branch1')
+        self.checkout_branch(self.src_repo, 'branch1')
+        git_write_commit(self.src_repo, 'file_on_branch1',
+                         "file on branch 1", msg="on branch 1")
+        self.checkout_branch(self.src_repo, 'master')
+
+        self.make_branch(self.src_repo, 'branch2')
+        self.checkout_branch(self.src_repo, 'branch2')
+        git_write_commit(self.src_repo, 'file_on_branch2',
+                         "file on branch 2", msg="on branch 2")
+        self.checkout_branch(self.src_repo, 'master')
+
+    def make_branch(self, src_dir, name):
+        """create a branch
+        """
+        subprocess.check_call(['git', 'branch', name], cwd=src_dir)
+
+    def checkout_branch(self, src_dir, name):
+        """checkout a branch
+        """
+        subprocess.check_call(['git', 'checkout', name], cwd=src_dir)
+
+    def test_01_check_src_repo(self):
+        """test if the creation of source repo worked as expected"""
+        target_dir = os.path.join(self.dst_dir, "to_repo")
+        repo = GitRepo(target_dir, self.src_repo)
+
+        repo('master')
+        self.assertFalse(os.path.exists(os.path.join(target_dir,
+                                                     'file_on_branch1')),
+                         'file_on_branch1 should not exist')
+        self.assertFalse(os.path.exists(os.path.join(target_dir,
+                                                     'file_on_branch2')),
+                         'file_on_branch2 should not exist')
+
+        repo('branch1')
+        self.assertTrue(os.path.exists(os.path.join(target_dir,
+                                                    'file_on_branch1')),
+                        'file_on_branch1 should exist')
+        self.assertFalse(os.path.exists(os.path.join(target_dir,
+                                                     'file_on_branch2')),
+                         'file_on_branch2 should not exist')
+
+        repo('branch2')
+        self.assertFalse(os.path.exists(os.path.join(target_dir,
+                                                     'file_on_branch1')),
+                         'file_on_branch1 should not exist')
+        self.assertTrue(os.path.exists(os.path.join(target_dir,
+                                                    'file_on_branch2')),
+                        'file_on_branch2 should exist')
+
+    def test_02_merge(self):
+        target_dir = os.path.join(self.dst_dir, "to_repo")
+        repo = GitRepo(target_dir, self.src_repo)
+        repo('master')
+
+        repo.merge('branch1')
+        self.assertTrue(os.path.exists(os.path.join(target_dir,
+                                                    'file_on_branch1')),
+                        'file_on_branch1 should exist')
+        self.assertFalse(os.path.exists(os.path.join(target_dir,
+                                                     'file_on_branch2')),
+                         'file_on_branch2 should not exist')
+        repo.merge('branch2')
+        self.assertTrue(os.path.exists(os.path.join(target_dir,
+                                                    'file_on_branch1')),
+                        'file_on_branch1 should exist')
+        self.assertTrue(os.path.exists(os.path.join(target_dir,
+                                                    'file_on_branch2')),
+                        'file_on_branch2 should exist')
+
+    def test_03_revert(self):
+        target_dir = os.path.join(self.dst_dir, "to_repo")
+        repo = GitRepo(target_dir, self.src_repo)
+        repo('master')
+
+        repo.merge('branch1')
+        self.assertTrue(os.path.exists(os.path.join(target_dir,
+                                                    'file_on_branch1')),
+                        'file_on_branch1 should exist')
+
+        repo.revert('master')
+        self.assertFalse(os.path.exists(os.path.join(target_dir,
+                                                     'file_on_branch1')),
+                         'file_on_branch1 should not exist')

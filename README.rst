@@ -76,4 +76,4 @@ Contributors:
  * Laurent Mignon
  * Leonardo Pistone
  * Stefan Rijnhart
-
+ * Stéphane Bidoul

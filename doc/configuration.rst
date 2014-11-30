@@ -633,11 +633,7 @@ this buildout recipe.
 
             [buildout]
             extensions = gp.vcsdevelop
-            vcs-extend-develop = bzr+http://bazaar.launchpad.net/openerp/openerp-command@419#egg=openerp-command
-
-          The latest Launchpad revision is actually the final removal,
-          done at the time where it's been included in
-          ``lp:openobject-server``.
+            vcs-extend-develop = bzr+http://bazaar.launchpad.net/~openerp/openerp-command/7.0#egg=openerp-command
 
 
 .. warning::

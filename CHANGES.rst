@@ -2,7 +2,7 @@ Changes
 ~~~~~~~
 
 The 1.8 series are stable versions, while the 1.9 are unstable.
-Changes displayed as "unreleased" in th stable series are released
+Changes displayed as "unreleased" in the stable series are released
 with any higher released unstable versions.
 
 1.9.0 (unreleased)
@@ -10,14 +10,17 @@ with any higher released unstable versions.
 - rename to anybox.recipe.odoo
 - launchpad #1294020: vcs-revert=on-merge option, and implementation
   for bzr
-- launchpad #1274174: new feature for automatic merge of remote VCS sources
-  (bzr only for now)
+- launchpad #1274174: new feature for automatic merge of remote VCS
+  sources, with bzr support.
+- launchpad #1327773: [git] support for automatic merges
 
-1.8.4 (unreleased)
+1.8.5 (unreleased)
 ------------------
-These are changes from the stable branch of anybox.recipe.openerp that aren't
-currently released but will be by the time of anybox.recipe.odoo 1.9.0
- 
+- launchpad #1249566: [bzr] avoid outgoing requests in offline mode
+  due to lp: locations resolution
+
+1.8.4 (2014-06-16)
+------------------
 - launchpad #1327756: support new addons layout on github
 - launchpad #1324579: [odoo] generation of gevent script (longpolling)
   and have it used through the --workers option
