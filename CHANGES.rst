@@ -8,6 +8,8 @@ with any higher released unstable versions.
 1.9.0 (unreleased)
 ------------------
 - rename to anybox.recipe.odoo
+- launchpad #1214832 (related): introduction of explicit 'group'
+  option for standalone addons.
 - launchpad #1358353: with github layout, respect ordering if the place of the
   standards (non-base) addons is explicitely set as 'local' (allows to insert
   overrides before them).
@@ -16,6 +18,8 @@ with any higher released unstable versions.
 - launchpad #1274174: new feature for automatic merge of remote VCS
   sources, with bzr support.
 - launchpad #1327773: [git] support for automatic merges
+- launchpad #1392913: extract-download-to completely removes the
+  gp.vcsdevelop extension and the bzr extra in the produced buildout
 - launchpad #1232729: handling of server-wide modules by the recipe
 - launchpad #1327609: support inline comments in multi-line options
 
@@ -24,6 +28,10 @@ with any higher released unstable versions.
 - launchpad #1358353: with github layout, respect ordering if the place of the
   standards (non-base) addons is explicitely set as 'local' (allows to insert
   overrides before them).
+- launchpad #1391258: [git] clear-retry is now honoured (a last chance
+  in case of non updatable repos), but a 'git reset' gets tried first
+  to circumvent impossible fast-forwards and avoid full recloning in
+  these cases.
 - launchpad #1208028: another case where parsing of exception while
   installing egg failed. Rewrote the whole logic, with much unit-testing
 - fixed URL and filenames for nightlies

@@ -7,7 +7,9 @@ from .. import utils
 from ..utils import working_directory_keeper
 from .base import BaseRepo
 from .base import SUBPROCESS_ENV
-
+from .base import update_check_call
+from .base import update_check_output
+from .base import UpdateError
 
 logger = logging.getLogger(__name__)
 
@@ -177,8 +179,26 @@ class GitRepo(BaseRepo):
                     # fast forward
                     logger.info("%s> git merge %s/%s",
                                 target_dir, BUILDOUT_ORIGIN, revision)
-                    subprocess.check_call(['git', 'merge',
-                                           BUILDOUT_ORIGIN + '/' + revision])
+                    try:
+                        update_check_call(
+                            ['git', 'merge', '--ff-only',
+                             BUILDOUT_ORIGIN + '/' + revision])
+                    except UpdateError:
+                        if not self.clear_retry:
+                            raise
+                        else:
+                            # users are willing to wipe the entire repo
+                            # to get their updates ! Let's try something less
+                            # harsh first that works if previous latest commit
+                            # is not an ancestor of remote latest
+                            # note: fetch has already been done
+                            logger.warn("Fast-forward merge failed for "
+                                        "repo %s, "
+                                        "but clear-retry option is active: "
+                                        "trying a reset in case that's a "
+                                        "simple fast-forward issue.", self)
+                            update_check_call(['git', 'reset', '--hard',
+                                               'origin/%s' % revision])
 
     def merge(self, revision):
         """Merge revision into current branch"""
@@ -226,6 +246,7 @@ class GitRepo(BaseRepo):
                 subprocess.check_call(['git', 'reset', '--hard', revision])
 
     def _is_a_branch(self, revision):
-        branches = utils.check_output(["git", "branch"])
+        # if this fails, we have a seriously corrupted repo
+        branches = update_check_output(["git", "branch"])
         branches = branches.split()
         return revision in branches

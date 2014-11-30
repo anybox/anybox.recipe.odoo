@@ -1,11 +1,14 @@
 import os
 import shutil
 import subprocess
+import logging
 from .. import utils
 
 SUBPROCESS_ENV = os.environ.copy()
 SUBPROCESS_ENV['PYTHONPATH'] = SUBPROCESS_ENV.pop(
     'BUILDOUT_ORIGINAL_PYTHONPATH', '')
+
+logger = logging.getLogger(__name__)
 
 
 class UpdateError(subprocess.CalledProcessError):
@@ -109,6 +112,8 @@ class BaseRepo(object):
         except UpdateError:
             if self.offline or not self.clear_retry:
                 raise
+            logger.warn("Update of %s failed, removing and re-cloning "
+                        "according to the clear-retry option. ", self)
             self.clear_target()
             self.get_update(revision)
         return self  # nicer in particular for tests
@@ -130,6 +135,10 @@ class BaseRepo(object):
         Must be implemented in concrete subclasses
         """
         raise NotImplementedError
+
+    def __str__(self):
+        return "%s at %r (remote=%r)" % (
+            self.__class__.__name__, self.target_dir, self.url)
 
     @classmethod
     def is_versioned(cls, path):

@@ -77,3 +77,4 @@ Contributors:
  * Leonardo Pistone
  * Stefan Rijnhart
  * Stéphane Bidoul
+ * Sebastian Kennedy

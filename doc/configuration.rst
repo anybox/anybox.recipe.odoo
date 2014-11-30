@@ -206,8 +206,8 @@ Example::
 
 Remote repositories can either contain addons subdirectories, or
 be a single addon. In that latter case, called a *standalone
-addon*, the retrieved repository will be actually placed one directory
-below the specified target, to match the structure expected by
+addon*, the :ref:`group option <option_group>` must be used to place
+the addon in an intermediate subdirectory, to match the structure expected by
 OpenERP.
 
 Standalone addons are not supported in the local case (the
@@ -244,6 +244,33 @@ revision. You must be careful with the revision specification.
 Buildout offline mode is supported. In that case, update to the
 specified revision is performed, if the VCS allows it (Subversion does
 not).
+
+.. _option_group:
+
+The ``group`` addons option
+```````````````````````````
+.. note:: new in version 1.9.0
+
+The purpose of this option is to accomodate *standalone
+addons*. Indeed, OpenERP expects its configuration to refer to
+directory that contain addons, but some people might prefer to version
+their addons in separate VCS repositories.
+
+The ``group`` option allows to specify an intermediate directory into
+which the standalone addon should actually be set::
+
+   git http://example.com/some_addons some/target_dir group=some_group
+
+The addon will end up in ``some/some_group/target_dir`` and
+``some/some_group`` will be the directory registered to OpenERP
+
+Even if you have only standalone addon to register, you must do it
+with the ``group`` option.
+
+.. warning:: up to 1.8 versions, the recipe used to
+             create an intermediate directory silently for standalone
+             addons, this is not supported any more
+
 
 The ``subdir`` addons option
 ````````````````````````````

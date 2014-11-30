@@ -509,7 +509,7 @@ class BaseRecipe(object):
             if not split:
                 return
             loc_type = split[0]
-            if not loc_type in ('bzr', 'git'):
+            if loc_type not in ('bzr', 'git'):
                 raise UserError("Only merges of type 'bzr' and 'git' are "
                                 "currently supported.")
             options = dict(opt.split('=') for opt in split[4:])
@@ -578,6 +578,28 @@ class BaseRecipe(object):
                            clean=self.clean)
             options.update(addons_options)
 
+            group = addons_options.get('group')
+            # TODO forbid groupping in local addons
+            # the recipe should not consider it can have responsibility over
+            # this
+            group_dir = None
+            if group:
+                if loc_type == 'local':
+                    raise UserError(
+                        "Automatic grouping of addons is not supported for "
+                        "local addons such as %r, because the recipe "
+                        "considers that write operations in a local "
+                        "directory is "
+                        "outside of its reponsibilities (in other words, "
+                        "it's better if "
+                        "you create yourself the intermediate directory." % (
+                            local_dir, ))
+
+                l0, l1 = os.path.split(local_dir)
+                group_dir = join(l0, group)
+                local_dir = join(group_dir, l1)
+                if not os.path.exists(group_dir):
+                    os.mkdir(group_dir)
             if loc_type != 'local':
                 for k, v in self.options.items():
                     if k.startswith(loc_type + '-'):
@@ -591,30 +613,25 @@ class BaseRecipe(object):
                 utils.clean_object_files(local_dir)
 
             subdir = addons_options.get('subdir')
-            addons_dir = join(local_dir, subdir) if subdir else local_dir
+            if group_dir:
+                addons_dir = group_dir
+            else:
+                addons_dir = local_dir
+
+            if subdir:
+                addons_dir = join(addons_dir, subdir)
 
             manifest = os.path.join(addons_dir, '__openerp__.py')
             manifest_pre_v6 = os.path.join(addons_dir, '__terp__.py')
             if os.path.isfile(manifest) or os.path.isfile(manifest_pre_v6):
-                if loc_type == 'local':
-                    raise UserError(
-                        "Local addons line %r should refer to a directory "
-                        "containing addons, not to a standalone addon. "
-                        "The recipe can perform automatic creation of "
-                        "intermediate directories for VCS cases only"
-                        % addons_dir)
-                # repo is a single addon, put it actually below
-                name = os.path.split(addons_dir)[1]
-                c = 0
-                tmp = addons_dir + '_%d' % c
-                while os.path.exists(tmp):
-                    c += 1
-                    tmp = addons_dir + '_%d' % c
-                os.rename(addons_dir, tmp)
-                os.mkdir(addons_dir)
-                new_dir = join(addons_dir, name)
-                os.rename(tmp, new_dir)
-            self.addons_paths.append(addons_dir)
+                raise UserError("Standalone addons such as %r "
+                                "are now supported by means "
+                                "of the explicit 'group' option. Please "
+                                "update your buildout configuration. " % (
+                                    addons_dir))
+
+            if addons_dir not in self.addons_paths:
+                self.addons_paths.append(addons_dir)
 
     def revert_sources(self):
         """Revert all sources to the revisions specified in :attr:`sources`.
@@ -1062,8 +1079,21 @@ class BaseRecipe(object):
 
         if not os.path.exists(target_dir):
             os.mkdir(target_dir)
-
         out_conf.add_section(self.name)
+
+        # remove bzr extra if needed
+        pkg_extras, recipe_cls = self.options['recipe'].split(':')
+        extra_match = re.match(r'(.*?)\[(.*?)\]', pkg_extras)
+        if extra_match is not None:
+            recipe_pkg = extra_match.group(1)
+            extras = set(e.strip() for e in extra_match.group(2).split(','))
+            extras.discard('bzr')
+            extracted_recipe = recipe_pkg
+            if extras:
+                extracted_recipe += '[%s]' % ','.join(extras)
+            extracted_recipe += ':' + recipe_cls
+            out_conf.set(self.name, 'recipe', extracted_recipe)
+
         addons_option = []
         for local_path, source in self.sources.items():
             source_type = source[0]
@@ -1188,10 +1218,17 @@ class BaseRecipe(object):
         conf.set('buildout', 'develop',
                  os.linesep.join(d[len(bdir):] if d.startswith(bdir) else d
                                  for d in develops))
-        conf.set('buildout', GP_VCS_EXTEND_DEVELOP, '')
+
+        # remove gp.vcsdevelop from extensions
+        exts = self.buildout['buildout'].get('extensions', '').split()
+        if 'gp.vcsdevelop' in exts:
+            exts.remove('gp.vcsdevelop')
+        conf.set('buildout', 'extensions', '\n'.join(exts))
+
+
 
     def _install_script(self, name, content):
-        """Install and register a script with prescribed name and content.
+        """Install and register a scripbont with prescribed name and content.
 
         Return the script path
         """

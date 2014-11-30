@@ -133,48 +133,42 @@ class TestServer(RecipeTestCase):
                           ])
         self.assertEquals(paths, [web_addons_dir])
 
-    def check_retrieve_addons_single(self, dirname):
-        """The VCS is a whole addon."""
+    def test_retrieve_addons_standalone_grouped(self):
+        self.make_recipe(version='8.0', addons='fakevcs lp:my-addons1 addons1 '
+                         'last:1 group=grouped\nfakevcs lp:my-addons2 addons2 '
+                         'last:1 group=grouped')
+        # manual creation because fakevcs does nothing but retrieve_addons
+        # has assertions on existence of target directories
+        group_dir = os.path.join(self.buildout_dir, 'grouped')
+        addons1_dir = os.path.join(group_dir, 'addons1')
+        addons2_dir = os.path.join(group_dir, 'addons2')
+
+        self.recipe.retrieve_addons()
+        paths = self.recipe.addons_paths
+        print get_vcs_log()
+        self.assertEquals(get_vcs_log(), [
+                          (addons1_dir, 'lp:my-addons1', 'last:1',
+                           dict(offline=False, clear_locks=False, clean=False,
+                                group="grouped")),
+                          (addons2_dir, 'lp:my-addons2', 'last:1',
+                           dict(offline=False, clear_locks=False, clean=False,
+                                group="grouped"))
+                          ])
+        self.assertEquals(paths, [group_dir])
+
+    def test_addons_standalone_oldstyle_prohibited(self):
+        """Standalone addons must now be declared by the 'group' option."""
+        dirname = 'standalone'
         self.make_recipe(version='8.0',
                          addons='fakevcs custom %s last:1' % dirname)
         dirname = dirname.rstrip('/')
+
         # manual creation of our single addon
         addon_dir = os.path.join(self.buildout_dir, dirname)
         os.mkdir(addon_dir)
         open(os.path.join(addon_dir, '__openerp__.py'), 'w').close()
 
-        self.recipe.retrieve_addons()
-        paths = self.recipe.addons_paths
-        self.assertEquals(paths, [addon_dir])
-        self.assertEquals(os.listdir(addon_dir), [dirname])
-        moved_addon = os.path.join(addon_dir, dirname)
-        self.assertTrue('__openerp__.py' in os.listdir(moved_addon))
-
-        # update works
-        self.recipe.retrieve_addons()
-        self.assertEquals(get_vcs_log()[-1][0], moved_addon)
-
-    def test_retrieve_addons_single(self):
-        """The VCS is a whole addon."""
-        self.check_retrieve_addons_single('addon')
-
-    def test_retrieve_addons_single_trailing_slash(self):
-        """The VCS is a whole addon, its target directory has a trailing /"""
-        self.check_retrieve_addons_single('addon/')
-
-    def test_retrieve_addons_single_collision(self):
-        """The VCS is a whole addon, and there's a collision in renaming"""
-        self.make_recipe(version='8.0', addons='fakevcs custom addon last:1')
-        addon_dir = os.path.join(self.buildout_dir, 'addon')
-        os.mkdir(addon_dir)
-        open(os.path.join(addon_dir, '__openerp__.py'), 'w').close()
-
-        self.recipe.retrieve_addons()
-        paths = self.recipe.addons_paths
-        self.assertEquals(paths, [addon_dir])
-        self.assertEquals(os.listdir(addon_dir), ['addon'])
-        self.assertTrue(
-            '__openerp__.py' in os.listdir(os.path.join(addon_dir, 'addon')))
+        self.assertRaises(UserError, self.recipe.retrieve_addons)
 
     def test_retrieve_addons_clear_locks(self):
         """Retrieving addons with vcs-clear-locks option."""
@@ -219,7 +213,7 @@ class TestServer(RecipeTestCase):
         bindir = os.path.join(self.buildout_dir, 'bin')
         binlist = os.listdir(bindir)
         for script in wanted:
-            if not script in binlist:
+            if script not in binlist:
                 self.fail("Script %r missing in bin directory." % script)
 
     def read_script(self, script_name):

@@ -187,7 +187,7 @@ conf = openerp.tools.config
         """Parse required scripts from conf."""
 
         scripts = self.openerp_scripts
-        if not 'openerp_scripts' in self.options:
+        if 'openerp_scripts' not in self.options:
             return
         for line in option_splitlines(self.options.get('openerp_scripts')):
             line = line.split()
@@ -213,7 +213,7 @@ conf = openerp.tools.config
                     desc['arguments'] = token[len(arg_prefix):]
                 elif token.startswith(log_prefix):
                     level = token[len(log_prefix):].upper()
-                    if not level in dir(logging):
+                    if level not in dir(logging):
                         raise UserError("In script %r, improper logging "
                                         "level %r" % (name, level))
                     desc['openerp_log_level'] = level
