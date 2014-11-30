@@ -168,3 +168,20 @@ def check_output(*popenargs, **kwargs):
         exc.output = output
         raise exc
     return output
+
+
+def total_seconds(td):
+    """Uniformity backport of :meth:`datetime.timedelta.total_seconds``
+
+    :param td: a :class:`datetime.timedelta` instance
+    :returns: the number of seconds in ``tdelta``
+
+    The implementation for Python < 2.7 is taken from the
+    `standard library documentation
+    <https://docs.python.org/2.7/library/datetime.html#datetime.timedelta.total_seconds>`_
+    """
+    if sys.version_info >= (2, 7):
+        return td.total_seconds()
+
+    return ((td.microseconds +
+             (td.seconds + td.days * 24 * 3600) * 1e6) / 10**6)

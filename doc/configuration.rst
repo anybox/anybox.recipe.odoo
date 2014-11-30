@@ -270,7 +270,8 @@ Specify which VCS branches need to be merged into repositories
 specified under :ref:`addons` or :ref:`version`. The syntax is
 the same as for repositories specified under these directives.
 
-Currently only merges on bzr repositories are supported.
+Currently only merges on bzr and git repositories are supported
+(requires git 1.8)
 
 .. note:: new in version 1.9.0
 
