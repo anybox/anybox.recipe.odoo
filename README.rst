@@ -3,6 +3,9 @@ Odoo buildout recipe
 
 .. warning:: currently being extracted from anybox.recipe.openerp.
 
+.. note:: dear Git user, if you're looking for ``anybox.recipe.openerp``,
+          please checkout the ``a.r.openerp-1.9`` branch.
+
 This recipe for `Buildout <https://github.com/buildout/buildout>`_ is
 a fully featured tool allowing you to define and deploy quickly
 Odoo installations of any kinds, ranging from development setups to
@@ -11,7 +14,7 @@ fully automated production deployments or continuous integration.
 Some of its main features include:
 
 * uniformity across Odoo versions (from 5.0 onwards)
-* installation of Odoo server and, if meaningful, GTK and web clients.
+* installation of Odoo server
 * retrieval of main software and addons from various sources,
   including the major version control systems
 * ability to pinpoint everything for replayability
@@ -21,7 +24,7 @@ Some of its main features include:
 * packaging: creation of self-contained equivalents for easy
   deployment in tightly controlled hosting environmenents.
 
-All these to be considered together with zc.buildout‘s general
+All these to be considered together with Buildout‘s general
 properties, such as an extensible configuration file format for easy
 variation or separation of concerns, native Python distributions
 installation, and of course the huge ecosystem of other recipes.
@@ -42,15 +45,16 @@ alongside with the package. See `PyPIDocumentationHosting
 Bug reports and Feedback
 ~~~~~~~~~~~~~~~~~~~~~~~~
 Please don't hesitate to give feedback and especially report bugs or
-ask for new features through launchpad at this URL:
-https://bugs.launchpad.net/anybox.recipe.openerp/+bugs
+ask for new features on GitHub:
+https://github.com/anybox/anybox.recipe.odoo
 
 Useful links
 ~~~~~~~~~~~~
 
-* Code repository and bug tracker: https://launchpad.net/anybox.recipe.openerp
 * PyPI page: http://pypi.python.org/pypi/anybox.recipe.openerp
 * Main documentation: http://docs.anybox.fr/anybox.recipe.openerp
+* Legacy code repository and bug tracker:
+  https://launchpad.net/anybox.recipe.openerp
 
 
 Contributors information
