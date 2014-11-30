@@ -2,7 +2,7 @@ import os
 import sys
 from setuptools import setup, find_packages
 
-version = '1.8.4'
+version = '1.8.6'
 
 if sys.version_info < (2, 6):
     sys.stderr.write("This package requires Python 2.6 or newer. "
@@ -27,6 +27,7 @@ setup(
         open('CHANGES.rst').read())),
     url="https://launchpad.net/anybox.recipe.openerp",
     packages=find_packages(),
+    namespace_packages=['anybox', 'anybox.recipe'],
     zip_safe=False,
     include_package_data=True,
     install_requires=requires,

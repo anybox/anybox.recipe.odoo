@@ -5,10 +5,30 @@ The 1.8 series are stable versions, while the 1.9 are unstable.
 Changes displayed as "unreleased" in th stable series are released
 with any higher released unstable versions.
 
-1.8.5 (unreleased)
+1.8.6 (2014-11-17)
 ------------------
+- launchpad #1358353: with github layout, respect ordering if the place of the
+  standards (non-base) addons is explicitely set as 'local' (allows to insert
+  overrides before them).
+- launchpad #1391258: [git] clear-retry is now honoured (a last chance
+  in case of non updatable repos), but a 'git reset' gets tried first
+  to circumvent impossible fast-forwards and avoid full recloning in
+  these cases.
+- launchpad #1208028: another case where parsing of exception while
+  installing egg failed. Rewrote the whole logic, with much unit-testing
+- fixed URL and filenames for nightlies
+
+1.8.5 (2014-07-29)
+------------------
+- gevent script generation backported to version 7.saas~3 and following
+- launchpad #1343518: versions < 8 with layout of odoo on Github had severe
+  shadowing issues.
+- launchpad #1338405: [odoo] provided necessary environments init in session
+  (needed for interactive session and various scripts)
 - launchpad #1249566: [bzr] avoid outgoing requests in offline mode
   due to lp: locations resolution
+- launchpad #1244721: fixed final reporting of upgrade script with python 2.6
+- launchpad #1208745: [hg] robustness about content of .hg/hgrc
 
 1.8.4 (2014-06-16)
 ------------------

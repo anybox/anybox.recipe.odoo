@@ -177,6 +177,67 @@ class Session(object):
         config['without_demo'] = saved_without_demo
         self.init_cursor()
         self.uid = SUPERUSER_ID
+        self.init_environments()
+
+    def init_environments(self):
+        """Enter the environments context manager, but don't leave it
+
+        Automatically called by :meth:`open` and registry altering methods.
+        See :class:``openerp.api.Environment`` for explanations about
+        environments.
+
+        For OpenERP/Odoo versions prior to the new style API merge, this
+        is a no-op.
+
+        This thread-local ``environments`` is initialized and cleaned with
+        each request in the normal usage of the framework.
+        That's why is is provided as a context manager.
+
+        Therefore, user code probably needs in some case to clean it to avoid
+        side effects. This can be done by calling :meth:`clean_environments`.
+        """
+        try:
+            gen_factory = openerp.api.Environment.manage
+        except AttributeError:
+            return
+
+        self._environments_gen_context = gen_factory().gen
+        self._environments_gen_context.next()
+
+    def clean_environments(self, reinit=True):
+        """Cleans the thread-local environment.
+
+        See :meth:`init_environments` for more details.
+        This method does nothing if the environments have not been initialized.
+
+        :param bool reinit: if ``True``, :meth:`init_environments` will be
+                            called again after cleaning
+        """
+        try:
+            gen_context = self._environments_gen_context
+        except AttributeError:
+            return
+
+        try:
+            gen_context.next()
+        except StopIteration:
+            pass
+        else:
+            logger.warn("clean_environments: we had the context manager, but "
+                        "it had not been called. This suggest low-leve "
+                        "tampering with it that should be more cautious. "
+                        "Proceeding with cleansing.")
+            try:
+                gen_context.next()
+            except StopIteration:
+                pass
+            else:
+                raise RuntimeError("Called the environments context manager "
+                                   "twice and it's not finished. "
+                                   "This is really unexpected.")
+        del self._environments_gen_context
+        if reinit:
+            self.init_environments()
 
     # A later version might read that from buildout configuration.
     _version_parameter_name = DEFAULT_VERSION_PARAMETER
@@ -277,6 +338,7 @@ class Session(object):
 
     def rollback(self):
         self.cr.rollback()
+        self.clean_environments()
 
     def close(self):
         """Close the cursor and forget about the current database.
@@ -285,6 +347,7 @@ class Session(object):
         """
         dbname = self.cr.dbname
         self.cr.close()
+        self.clean_environments()
         openerp.modules.registry.RegistryManager.delete(dbname)
 
     def update_modules(self, modules, db=None):
@@ -315,6 +378,7 @@ class Session(object):
             db, update_module=True)
         config['update'].clear()
         self.init_cursor()
+        self.clean_environments()
 
     def install_modules(self, modules, db=None, update_modules_list=True,
                         open_with_demo=False):
@@ -366,6 +430,7 @@ class Session(object):
         config['init'].clear()
         config['without_demo'] = saved_without_demo
         self.init_cursor()
+        self.clean_environments()
 
     def handle_command_line_options(self, to_handle):
         """Handle prescribed command line options and eat them.

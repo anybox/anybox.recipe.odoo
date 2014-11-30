@@ -7,7 +7,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-MAJOR_VERSION_RE = re.compile(r'(\d+)[.](\d*)(\w*)')
+MAJOR_VERSION_RE = re.compile(r'(\d+)[.](saas~|)(\d*)(\w*)')
 
 
 class WorkingDirectoryKeeper(object):
@@ -67,11 +67,11 @@ def major_version(version_string):
     We can in recipe code check for >= (6, 2), that's not a big issue.
 
     Regarding OpenERP saas releases (e.g. 7.saas~1) that are short-lived stable
-    versions between two "X.0" LTS releases, the second version number does not
-    contain a numeric value. The value X.5 will be returned (e.g. 7.5)::
+    versions between two "X.0" LTS releases, the 'saas~' argument before the
+    minor version number is stripped. For instance::
 
-       >>> major_version('7.saas~1')
-       (7, 5)
+       >>> major_version('7.saas~3')
+       (7, 3)
 
     """
 
@@ -81,9 +81,7 @@ def major_version(version_string):
         raise ValueError("Unparseable version string: %r" % version_string)
 
     major = int(m.group(1))
-    minor = m.group(2)
-    if not minor and m.group(3).startswith('saas'):
-        return major, 5
+    minor = m.group(3)
 
     try:
         return major, int(minor)
@@ -168,3 +166,20 @@ def check_output(*popenargs, **kwargs):
         exc.output = output
         raise exc
     return output
+
+
+def total_seconds(td):
+    """Uniformity backport of :meth:`datetime.timedelta.total_seconds``
+
+    :param td: a :class:`datetime.timedelta` instance
+    :returns: the number of seconds in ``tdelta``
+
+    The implementation for Python < 2.7 is taken from the
+    `standard library documentation
+    <https://docs.python.org/2.7/library/datetime.html>`_
+    """
+    if sys.version_info >= (2, 7):
+        return td.total_seconds()
+
+    return ((td.microseconds +
+             (td.seconds + td.days * 24 * 3600) * 1e6) / 10**6)

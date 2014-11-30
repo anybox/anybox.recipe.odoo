@@ -6,6 +6,7 @@ from ..testing import COMMIT_USER_EMAIL
 from ..testing import COMMIT_USER_NAME
 from ..testing import VcsTestCase
 from ..git import GitRepo
+from ..base import UpdateError
 from ...utils import working_directory_keeper, WorkingDirectoryKeeper
 from ...utils import check_output
 
@@ -154,6 +155,41 @@ class GitTestCase(GitBaseTestCase):
         # update our clone
         repo('master')
         self.assertEqual(repo.parents(), [new_sha])
+
+    def test_update_no_ff(self):
+        """Recov if fast fwd is not possible and vcs-clear-retry is True
+
+        To create the condition we make a first clone on a commit and later
+        on move master sideways in the source (in real life this ends up
+        with the original commit being eventually gc'ed)
+        """
+        target_dir = os.path.join(self.dst_dir, "clone to update")
+        repo = GitRepo(target_dir, self.src_repo)
+        repo('master')
+
+        with working_directory_keeper:
+            os.chdir(self.src_repo)
+            subprocess.check_call(['git', 'checkout', self.commit_1_sha])
+        new_sha = git_write_commit(self.src_repo, 'tracked',
+                                   "new content", msg="new commit")
+        with working_directory_keeper:
+            os.chdir(self.src_repo)
+            subprocess.check_call(['git', 'branch', '-f', 'master'])
+            # not really necessary for the test, but still better for
+            # consistency
+            subprocess.check_call(['git', 'checkout', 'master'])
+
+        self.assertRaises(UpdateError, repo, 'master')
+        repo.clear_retry = True
+        repo('master')
+        self.assertEqual(repo.parents(), [new_sha])
+
+        # future updates work wihout help (we are back to normal conditions)
+        repo.clear_retry = False
+        new_sha2 = git_write_commit(self.src_repo, 'tracked',
+                                    "back to normal", msg="regular commit")
+        repo('master')
+        self.assertEqual(repo.parents(), [new_sha2])
 
 
 class GitBranchTestCase(GitBaseTestCase):

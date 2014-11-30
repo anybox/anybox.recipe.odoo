@@ -3,6 +3,8 @@
 import os
 import subprocess
 from ConfigParser import ConfigParser, RawConfigParser
+from zc.buildout import UserError
+
 from ..testing import COMMIT_USER_FULL
 from ..testing import VcsTestCase
 from ..hg import HgRepo
@@ -227,6 +229,44 @@ class HgTestCase(HgBaseTestCase):
                           self.src_repo)
         self.assertEquals(parser.get('paths', 'buildout_save_2'), new_src)
 
+    def test_hgrc_no_paths(self):
+        """Method to update hgrc paths should not fail if [paths] is missing.
+        """
+        repo = self.make_clone("clone to update", 'default')
+        target_dir = repo.target_dir
+        hgrc_path = os.path.join(target_dir, '.hg', 'hgrc')
+        with open(hgrc_path, 'w'):
+            "just emptying the hgrc"
+
+        self.assertEqual(os.stat(hgrc_path).st_size, 0,
+                         msg="Test setup is invalid, no meaning in proceeding")
+
+        repo.update_hgrc_paths()
+        parser = ConfigParser()
+        parser.read(os.path.join(target_dir, '.hg', 'hgrc'))
+        self.assertEquals(parser.get('paths', 'default'), repo.url)
+
+        # now with [paths] section but no value for 'default'
+        with open(hgrc_path, 'w') as hgrc:
+            hgrc.write('[paths]\n')
+        repo.update_hgrc_paths()
+        parser = ConfigParser()
+        parser.read(os.path.join(target_dir, '.hg', 'hgrc'))
+        self.assertEquals(parser.get('paths', 'default'), repo.url)
+
+    def test_hgrc_no_hgrc(self):
+        """Method to update hgrc paths should not fail if hgrc is missing.
+        """
+        repo = self.make_clone("clone to update", 'default')
+        target_dir = repo.target_dir
+        hgrc_path = os.path.join(target_dir, '.hg', 'hgrc')
+        os.remove(hgrc_path)
+
+        repo.update_hgrc_paths()
+        parser = ConfigParser()
+        parser.read(os.path.join(target_dir, '.hg', 'hgrc'))
+        self.assertEquals(parser.get('paths', 'default'), repo.url)
+
     def test_url_change(self):
         """HgRepo adapts itself to changes in source URL."""
         repo = self.make_clone("clone to update", 'default')
@@ -259,6 +299,16 @@ class HgTestCase(HgBaseTestCase):
         repo = HgRepo(target_dir, '/does-not-exit')
         self.assertRaises(subprocess.CalledProcessError,
                           repo.get_update, 'default')
+
+    def test_archive(self):
+        """Hg clone, then archive"""
+        repo = HgRepo(os.path.join(self.dst_dir, "My clone"), self.src_repo)
+        repo('default')
+
+        archive_dir = os.path.join(self.dst_dir, "archive directory")
+        repo.archive(archive_dir)
+        with open(os.path.join(archive_dir, 'tracked')) as f:
+            self.assertEquals(f.readlines()[0].strip(), 'default')
 
 
 class HgOfflineTestCase(HgBaseTestCase):
@@ -308,3 +358,10 @@ class HgOfflineTestCase(HgBaseTestCase):
         repo = self.make_clone("clone to update", '0')
         repo('default')
         self.assertRevision(repo, '0')
+
+    def test_missing_repo(self):
+        """[offline mode] update on branch head should not pull"""
+        repo = self.make_clone("clone to update", '0')
+        repo.target_dir = '/does/not/exist'
+
+        self.assertRaises(UserError, repo, 'default')

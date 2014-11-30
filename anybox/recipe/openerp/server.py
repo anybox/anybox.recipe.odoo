@@ -18,15 +18,18 @@ SERVER_COMMA_LIST_OPTIONS = ('log_handler', )
 class ServerRecipe(BaseRecipe):
     """Recipe for server install and config
     """
-    archive_filenames = {
+    release_filenames = {
         '5.0': 'openerp-server-%s.tar.gz',
         '6.0': 'openerp-server-%s.tar.gz',
         '6.1': 'openerp-%s.tar.gz',
+        # no more release after that, only nightlies
     }
-    archive_nightly_filenames = {
+    nightly_filenames = {
+        # the switch from release to nightlies occured during 6.1
         '6.1': 'openerp-6.1-%s.tar.gz',
         '7.0': 'openerp-7.0-%s.tar.gz',
-        'trunk': 'openerp-8.0dev-%s.tar.gz'
+        '8.0': 'odoo_8.0-%s.tar.gz',
+        'trunk': 'odoo_9.0alpha1-%s.tar.gz'
     }
     recipe_requirements = ('babel',)
     requirements = ('pychart', 'anybox.recipe.openerp')
@@ -76,7 +79,7 @@ class ServerRecipe(BaseRecipe):
 
         self.with_openerp_command = (
             (self.with_devtools and self.major_version >= (6, 2)
-             or self.major_version >= (8, 0)))
+             or self.major_version >= (7, 3)))
 
     def merge_requirements(self):
         """Prepare for installation by zc.recipe.egg
@@ -117,7 +120,7 @@ class ServerRecipe(BaseRecipe):
         if self.with_devtools:
             self.requirements.extend(devtools.requirements)
 
-        if self.with_openerp_command and self.major_version < (8, 0):
+        if self.with_openerp_command and self.major_version < (7, 3):
             self.requirements.append('openerp-command')
 
         BaseRecipe.merge_requirements(self)
@@ -289,7 +292,7 @@ conf = openerp.tools.config
         arguments = '%r, %r, version=%r' % (self._get_server_command(),
                                             self.config_path,
                                             self.major_version)
-        if self.major_version >= (8, 0):
+        if self.major_version >= (7, 3):
             arguments += ', gevent_script_path=%r' % self.gevent_script_path
 
         desc.update(arguments=arguments)
@@ -320,7 +323,7 @@ conf = openerp.tools.config
             self._get_server_command(),
             self.config_path,
             self.major_version)
-        if self.major_version >= (8, 0):
+        if self.major_version >= (7, 3):
             arguments += ', gevent_script_path=%r' % self.gevent_script_path
 
         desc.update(
@@ -389,7 +392,7 @@ conf = openerp.tools.config
     def _register_openerp_command(self, qualified_name):
         """Register https://launchpad.net/openerp-command for install.
         """
-        if self.major_version < (8, 0):
+        if self.major_version < (7, 3):
             logger.warn("Installing separate openerp-command as %r. "
                         "In OpenERP 7, openerp-command used to be "
                         "an independent python distribution, ready for "
@@ -574,14 +577,14 @@ conf = openerp.tools.config
              'upgrade'),
         ))
 
-        if self.major_version >= (8, 0):
+        if self.major_version >= (7, 3):
             self.eggs_reqs.append(('oe', 'openerpcommand.main', 'run'))
             self.eggs_reqs.append(('openerp-gevent', 'openerp.cli', 'main'))
 
         self._install_interpreter()
 
         main_script = self.options.get('script_name', 'start_' + self.name)
-        if self.major_version >= (8, 0):
+        if self.major_version >= (7, 3):
             gevent_script_name = self.options.get('gevent_script_name',
                                                   'gevent_%s' % self.name)
             self._register_gevent_script(gevent_script_name)

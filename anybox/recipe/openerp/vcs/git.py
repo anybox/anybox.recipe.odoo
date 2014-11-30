@@ -7,6 +7,10 @@ import tempfile
 from ..utils import working_directory_keeper
 from .base import BaseRepo
 from .base import SUBPROCESS_ENV
+from .base import update_check_call
+from .base import update_check_output
+from .base import clone_check_call
+from .base import UpdateError
 from anybox.recipe.openerp import utils
 import re
 
@@ -17,6 +21,8 @@ class GitRepo(BaseRepo):
     """Represent a Git clone tied to a reference branch."""
 
     vcs_control_dir = '.git'
+
+    vcs_official_name = 'Git'
 
     def clean(self):
         if not os.path.isdir(self.target_dir):
@@ -67,7 +73,7 @@ class GitRepo(BaseRepo):
 
                 os.chdir(os.path.split(target_dir)[0])
                 logger.info("Cloning %s ...", url)
-                subprocess.check_call(['git', 'clone', url, target_dir])
+                clone_check_call(['git', 'clone', url, target_dir])
             os.chdir(target_dir)
 
             if is_target_dir_exists:
@@ -75,6 +81,9 @@ class GitRepo(BaseRepo):
                 if not offline:
                     logger.info("Fetch for git repo %s (rev %s)...",
                                 target_dir, rev_str)
+                    # if a simple fetch fails, that is most probably
+                    # because of a network condition, we don't want
+                    # a retry, hence don't use update_check_call()
                     subprocess.check_call(['git', 'fetch'])
 
             if revision and self._needToSwitchRevision(revision):
@@ -87,7 +96,24 @@ class GitRepo(BaseRepo):
                 if not offline:
                     logger.info("Pull for git repo %s (rev %s)...",
                                 target_dir, rev_str)
-                    subprocess.check_call(['git', 'pull'])
+                    try:
+                        update_check_call(['git', 'pull',
+                                           '--ff', '--no-commit'])
+                    except UpdateError:
+                        if not self.clear_retry:
+                            raise
+                        else:
+                            # users are willing to wipe the entire repo
+                            # to get their updates ! Let's try something less
+                            # harsh first that works if previous latest commit
+                            # is not an ancestor of remote latest
+                            # note: fetch has already been done
+                            logger.warn("Direct pull failed for repo %s, "
+                                        "but clear-retry option is active: "
+                                        "trying a reset in case that's a "
+                                        "simple fast-forward issue.", self)
+                            update_check_call(['git', 'reset', '--hard',
+                                               'origin/%s' % revision])
 
     def archive(self, target_path):
         revision = self.parents()[0]
@@ -115,7 +141,7 @@ class GitRepo(BaseRepo):
     def _needToSwitchRevision(self, revision):
         """ Check if we need to checkout to an other branch
         """
-        p = utils.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
+        p = update_check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
         rev = p.split()[0]  # remove \n
         logger.info("Current revision '%s' - Expected revision '%s'",
                     rev, revision)

@@ -92,11 +92,15 @@ class RecipeTestCase(unittest.TestCase):
         # (Debian wheezy buildslave in a virtualenv, with zc.recipe.egg 2.0.0a3
         # we see nose being downloaded several times)
         self.unreachable_distributions = set()
+        self.exc_distributions = {}  # distrib name -> exc to raise
         Installer._orig_obtain = Installer._obtain
 
         def _obtain(inst, requirement, source=None):
             if requirement.project_name in self.unreachable_distributions:
                 return None
+            exc = self.exc_distributions.get(requirement.project_name)
+            if exc is not None:
+                raise exc
             return inst._orig_obtain(requirement, source=source)
         Installer._obtain = _obtain
 

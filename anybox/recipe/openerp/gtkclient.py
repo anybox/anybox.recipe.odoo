@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class GtkClientRecipe(BaseRecipe):
     """Recipe for gtk client and config
     """
-    archive_filenames = {'6.0': 'openerp-client-%s.tar.gz',
+    release_filenames = {'6.0': 'openerp-client-%s.tar.gz',
                          '6.1': 'openerp-client-%s.tar.gz',
                          '5.0': 'openerp-client-%s.tar.gz'}
 

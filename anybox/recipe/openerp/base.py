@@ -2,6 +2,7 @@
 from os.path import join, basename
 import os
 import sys
+import re
 import urllib
 import tarfile
 import setuptools
@@ -19,6 +20,15 @@ except ImportError:  # Python < 2.7
 from zc.buildout.easy_install import MissingDistribution
 from zc.buildout import UserError
 from zc.buildout.easy_install import VersionConflict
+
+try:  # need to distinguish, because of differing semantics
+    from zc.buildout.easy_install import IncompatibleConstraintError
+except ImportError:  # zc.buildout < 1.7
+    IncompatibleConstraintError = None  # 'except None' is very fine
+    from zc.buildout.easy_install import IncompatibleVersionError
+else:
+    IncompatibleVersionError = None
+
 import zc.recipe.egg
 
 import httplib
@@ -87,16 +97,16 @@ class BaseRecipe(object):
 
     """
 
-    default_dl_url = {'6.0': 'http://nightly.openerp.com/old/openerp-6/',
-                      '6.1': 'http://nightly.openerp.com/6.1/releases/',
-                      '7.0': 'http://nightly.openerp.com/7.0/releases/',
-                      '5.0': 'http://nightly.openerp.com/old/openerp-5/',
+    release_dl_url = {'6.0': 'http://nightly.odoo.com/old/openerp-6/',
+                      '6.1': 'http://nightly.odoo.com/6.1/releases/',
+                      '5.0': 'http://nightly.odoo.com/old/openerp-5/',
                       }
 
-    nightly_dl_url = {'6.0': 'http://nightly.openerp.com/6.0/6.0/',
-                      '6.1': 'http://nightly.openerp.com/6.1/nightly/src/',
-                      '7.0': 'http://nightly.openerp.com/7.0/nightly/src/',
-                      'trunk': 'http://nightly.openerp.com/trunk/nightly/src/',
+    nightly_dl_url = {'6.0': 'http://nightly.odoo.com/6.0/6.0/',
+                      '6.1': 'http://nightly.odoo.com/6.1/nightly/src/',
+                      '7.0': 'http://nightly.odoo.com/7.0/nightly/src/',
+                      '8.0': 'http://nightly.odoo.com/8.0/nightly/src/',
+                      'trunk': 'http://nightly.odoo.com/trunk/nightly/src/',
                       }
 
     recipe_requirements = ()  # distribution required for the recipe itself
@@ -108,6 +118,13 @@ class BaseRecipe(object):
     # Caching logic for the main OpenERP part (e.g, without addons)
     # Can be 'filename' or 'http-head'
     main_http_caching = 'filename'
+
+    is_git_layout = False
+    """True if this is the git layout, as seen from the move to GitHub.
+
+    In this layout, the standard addons other than ``base`` are in a ``addons``
+    directory right next to the ``openerp`` package.
+    """
 
     def __init__(self, buildout, name, options):
         self.requirements = list(self.requirements)
@@ -183,7 +200,7 @@ class BaseRecipe(object):
         if len(version_split) == 1:
             # version can be a simple version name, such as 6.1-1
             major_wanted = self.version_wanted[:3]
-            pattern = self.archive_filenames[major_wanted]
+            pattern = self.release_filenames[major_wanted]
             if pattern is None:
                 raise UserError('OpenERP version %r'
                                 'is not supported' % self.version_wanted)
@@ -191,7 +208,7 @@ class BaseRecipe(object):
             self.archive_filename = pattern % self.version_wanted
             self.archive_path = join(self.downloads_dir, self.archive_filename)
             base_url = self.options.get(
-                'base_url', self.default_dl_url[major_wanted])
+                'base_url', self.release_dl_url[major_wanted])
             self.sources[main_software] = (
                 'downloadable',
                 ('/'.join((base_url.strip('/'), self.archive_filename)), None))
@@ -218,7 +235,7 @@ class BaseRecipe(object):
                 self.main_http_caching = 'http-head'
             series = self.nightly_series
             self.archive_filename = (
-                self.archive_nightly_filenames[series] % self.version_wanted)
+                self.nightly_filenames[series] % self.version_wanted)
             self.archive_path = join(self.downloads_dir, self.archive_filename)
             base_url = self.options.get('base_url',
                                         self.nightly_dl_url[series])
@@ -265,33 +282,52 @@ class BaseRecipe(object):
         """
         while True:
             missing = None
-            eggs = zc.recipe.egg.Scripts(self.buildout, '', self.options)
+            eggs_recipe = zc.recipe.egg.Scripts(self.buildout, '',
+                                                self.options)
             try:
-                eggs.install()
-            except MissingDistribution, exc:
+                eggs_recipe.install()
+            except MissingDistribution as exc:
                 missing = exc.data[0].project_name
-            except VersionConflict:
+            except VersionConflict as exc:
+                # GR not 100% sure, but this should mean a conflict with an
+                # already loaded version (don't know what can lead to this
+                # 'already', have seen it with zc.buildout itself only so far)
+                # In any case, removing the requirement can't make for a sane
+                # recovery
                 raise
-            except UserError, exc:  # zc.buildout >= 2.0
+            except IncompatibleVersionError as exc:  # zc.buildout < 1.7
+                # In exc's attrs, we have the version but not the project name
+                raise
+            except IncompatibleConstraintError as exc:
+                missing = exc.args[2].project_name
+            except UserError, exc:  # happens only for zc.buildout >= 2.0
                 missing = exc.message.split(os.linesep)[0].split()[-1]
-
-            if missing is not None:
-                msg = self.missing_deps_instructions.get(missing)
-                if msg is None:
-                    raise
-                logger.error("Could not find %r. " + msg, missing)
-                # GR this condition won't be enough in case of version
-                # conditions in requirement
-                if missing not in self.soft_requirements:
-                    sys.exit(1)
-                else:
-                    attempted = self.options['eggs'].split(os.linesep)
-                    self.options['eggs'] = os.linesep.join(
-                        [egg for egg in attempted if egg != missing])
+                missing = re.split(r'[=<>]', missing)[0]
             else:
                 break
 
-        self.eggs_reqs, self.eggs_ws = eggs.working_set()
+            logger.error("Could not find or install %r. "
+                         + self.missing_deps_instructions.get(missing, '')
+                         + " Original exception %s.%s says: %s",
+                         missing,
+                         exc.__class__.__module__, exc.__class__.__name__, exc)
+            if missing not in self.soft_requirements:
+                raise exc
+
+            eggs = set(self.options['eggs'].split(os.linesep))
+            if missing not in eggs:
+                logger.error("Soft requirement %r is also an indirect "
+                             "dependency (either of OpenERP/Odoo or of "
+                             "one listed in config file). Can't retry.",
+                             missing)
+                raise exc
+
+            logger.warn("%r is a direct soft requirement, "
+                        "retrying without it", missing)
+            eggs.discard(missing)
+            self.options['eggs'] = os.linesep.join(eggs)
+
+        self.eggs_reqs, self.eggs_ws = eggs_recipe.working_set()
         self.ws = self.eggs_ws
 
     def apply_version_dependent_decisions(self):
@@ -688,8 +724,6 @@ class BaseRecipe(object):
         if self.major_version >= (6, 2):
             # TODO still necessary ?
             extra.append(self.openerp_dir)
-            if self.major_version < (8, 0):
-                extra.append(join(self.openerp_dir, 'addons'))
         else:
             extra.extend((join(self.openerp_dir, 'bin'),
                           join(self.openerp_dir, 'bin', 'addons')))
@@ -1186,6 +1220,17 @@ class BaseRecipe(object):
         If not found (e.g, we are on a nightly for OpenERP <= 7), this method
         does nothing.
 
+        The ordering of the different paths of addons is important.
+        When several addons at different paths have the same name, the first
+        of them being found is used. This can be used, for instance, to
+        replace an official addon by another one by placing a different
+        addons' path before the official one.
+
+        If the official addons' path is already set in the config file
+        (e.g. at the end), it will leave it at the end of the paths list,
+        if it is not set, it will be placed at the beginning just after
+        ``base`` addons' path.
+
         Care is taken not to break configurations that corrected this manually
         with a ``local`` source in the ``addons`` option.
 
@@ -1196,6 +1241,7 @@ class BaseRecipe(object):
         if not os.path.isdir(odoo_git_addons):
             return
 
+        self.is_git_layout = True
         addons_paths = self.addons_paths
 
         try:
@@ -1203,11 +1249,9 @@ class BaseRecipe(object):
         except ValueError:
             insert_at = 0
         try:
-            addons_paths.remove(odoo_git_addons)
+            addons_paths.index(odoo_git_addons)
         except ValueError:
-            pass
-
-        addons_paths.insert(insert_at, odoo_git_addons)
+            addons_paths.insert(insert_at, odoo_git_addons)
 
     def cleanup_openerp_dir(self):
         """Revert local modifications that have been made during installation.
