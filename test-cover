@@ -1,1 +1,1 @@
-nosetests anybox --with-coverage --cover-package=anybox --cover-erase --cover-html --cover-html-dir=$PWD/COVERAGE --with-id
+nosetests anybox --with-doctest --with-coverage --cover-package=anybox --cover-erase --cover-html --cover-html-dir=$PWD/COVERAGE --with-id --logging-level DEBUG

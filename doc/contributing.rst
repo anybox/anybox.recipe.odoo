@@ -75,7 +75,7 @@ Launching static analysis and unit tests
 Install ``nose``, ``flake8`` and, optionally, ``coverage``::
 
    recipe-env/bin/pip install nose coverage flake8==2.0 \
-                      pep8=1.4.6 mccabe==0.2.1 pyflakes==0.7.3 nose
+                      pep8==1.4.6 mccabe==0.2.1 pyflakes==0.7.3
 
 
 .. note:: we've had problems lately with discrepancies in ``pep8``

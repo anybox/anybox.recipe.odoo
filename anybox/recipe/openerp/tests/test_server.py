@@ -4,6 +4,11 @@ NB: zc.buildout.testing provides utilities for integration tests, with
 an embedded http server, etc.
 """
 import os
+from pkg_resources import Requirement
+
+from ..base import MissingDistribution
+from ..base import IncompatibleConstraintError
+from ..base import IncompatibleVersionError
 from anybox.recipe.openerp.server import ServerRecipe
 from anybox.recipe.openerp.testing import get_vcs_log
 from anybox.recipe.openerp.testing import RecipeTestCase
@@ -120,48 +125,41 @@ class TestServer(RecipeTestCase):
                           ])
         self.assertEquals(paths, [web_addons_dir])
 
-    def check_retrieve_addons_single(self, dirname):
-        """The VCS is a whole addon."""
+    def test_retrieve_addons_standalone_grouped(self):
+        self.make_recipe(version='6.1', addons='fakevcs lp:my-addons1 addons1 '
+                         'last:1 group=grouped\nfakevcs lp:my-addons2 addons2 '
+                         'last:1 group=grouped')
+        # manual creation because fakevcs does nothing but retrieve_addons
+        # has assertions on existence of target directories
+        group_dir = os.path.join(self.buildout_dir, 'grouped')
+        addons1_dir = os.path.join(group_dir, 'addons1')
+        addons2_dir = os.path.join(group_dir, 'addons2')
+
+        self.recipe.retrieve_addons()
+        paths = self.recipe.addons_paths
+        self.assertEquals(get_vcs_log(), [
+                          (addons1_dir, 'lp:my-addons1', 'last:1',
+                           dict(offline=False, clear_locks=False, clean=False,
+                                group="grouped")),
+                          (addons2_dir, 'lp:my-addons2', 'last:1',
+                           dict(offline=False, clear_locks=False, clean=False,
+                                group="grouped"))
+                          ])
+        self.assertEquals(paths, [group_dir])
+
+    def test_addons_standalone_oldstyle_prohibited(self):
+        """Standalone addons must now be declared by the 'group' option."""
+        dirname = 'standalone'
         self.make_recipe(version='6.1',
                          addons='fakevcs custom %s last:1' % dirname)
         dirname = dirname.rstrip('/')
+
         # manual creation of our single addon
         addon_dir = os.path.join(self.buildout_dir, dirname)
         os.mkdir(addon_dir)
         open(os.path.join(addon_dir, '__openerp__.py'), 'w').close()
 
-        self.recipe.retrieve_addons()
-        paths = self.recipe.addons_paths
-        self.assertEquals(paths, [addon_dir])
-        self.assertEquals(os.listdir(addon_dir), [dirname])
-        moved_addon = os.path.join(addon_dir, dirname)
-        self.assertTrue('__openerp__.py' in os.listdir(moved_addon))
-
-        # update works
-        self.recipe.retrieve_addons()
-        self.assertEquals(get_vcs_log()[-1][0], moved_addon)
-
-    def test_retrieve_addons_single(self):
-        """The VCS is a whole addon."""
-        self.check_retrieve_addons_single('addon')
-
-    def test_retrieve_addons_single_trailing_slash(self):
-        """The VCS is a whole addon, its target directory has a trailing /"""
-        self.check_retrieve_addons_single('addon/')
-
-    def test_retrieve_addons_single_collision(self):
-        """The VCS is a whole addon, and there's a collision in renaming"""
-        self.make_recipe(version='6.1', addons='fakevcs custom addon last:1')
-        addon_dir = os.path.join(self.buildout_dir, 'addon')
-        os.mkdir(addon_dir)
-        open(os.path.join(addon_dir, '__openerp__.py'), 'w').close()
-
-        self.recipe.retrieve_addons()
-        paths = self.recipe.addons_paths
-        self.assertEquals(paths, [addon_dir])
-        self.assertEquals(os.listdir(addon_dir), ['addon'])
-        self.assertTrue(
-            '__openerp__.py' in os.listdir(os.path.join(addon_dir, 'addon')))
+        self.assertRaises(UserError, self.recipe.retrieve_addons)
 
     def test_retrieve_addons_clear_locks(self):
         """Retrieving addons with vcs-clear-locks option."""
@@ -182,6 +180,16 @@ class TestServer(RecipeTestCase):
         self.assertEquals(set(self.recipe.requirements),
                           set(['pychart', 'anybox.recipe.openerp',
                                'Pillow', 'openerp']))
+
+    def test_merge_requirements_new_project_name(self):
+        """At any point in time, Odoo is prone to change package name."""
+        self.make_recipe(version='local %s' % os.path.join(
+            TEST_DIR, 'odoo-project-renaming'))
+        self.recipe.version_detected = '8.0'
+        self.recipe.merge_requirements()
+        self.assertEquals(set(self.recipe.requirements),
+                          set(['pychart', 'anybox.recipe.openerp',
+                               'Pillow', 'oodooo']))
 
     def test_merge_requirements_PIL(self):
         self.make_recipe(version='nightly trunk latest')
@@ -237,8 +245,12 @@ class TestServer(RecipeTestCase):
         bindir = os.path.join(self.buildout_dir, 'bin')
         binlist = os.listdir(bindir)
         for script in wanted:
-            if not script in binlist:
+            if script not in binlist:
                 self.fail("Script %r missing in bin directory." % script)
+
+    def read_script(self, script_name):
+        with open(os.path.join(self.buildout_dir, 'bin', script_name)) as f:
+            return f.read()
 
     def test_retrieve_fixup_addons_local_61(self):
         addons_dir = os.path.join(self.buildout_dir, 'addons-custom')
@@ -359,7 +371,7 @@ class TestServer(RecipeTestCase):
                             'test_openerp',
                             ))
 
-    def test_install_scripts_soft_deps(self):
+    def do_test_install_scripts_soft_deps(self, exc=None):
         """If a soft requirement is missing, the scripts are still generated.
         """
         self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'oerp61'),
@@ -374,7 +386,11 @@ class TestServer(RecipeTestCase):
 
         # offline won't be  enough, sadly for zc.buildout < 2.0
         self.recipe.b_options['offline'] = 'true'
-        self.unreachable_distributions.add(softreq)
+
+        if exc is None:
+            self.unreachable_distributions.add(softreq)
+        else:
+            self.exc_distributions[softreq] = exc
 
         self.install_scripts(extra_requirements=(softreq,))
         self.assertScripts(('start_openerp',
@@ -382,6 +398,91 @@ class TestServer(RecipeTestCase):
                             'gunicorn_openerp',
                             'cron_worker_openerp',
                             ))
+
+    def test_install_scripts_indirect_soft_deps(self, exc=None):
+        """If a requirement is soft and indirect, UserError is properly raised.
+        """
+        self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'oerp61'),
+                         gunicorn='direct',
+                         with_devtools='true')
+        self.recipe.version_detected = "6.1-20121003-233130"
+
+        somereq = 'zztest-req'
+        softreq = 'zztest-softreq'
+        self.recipe.missing_deps_instructions[softreq] = (
+            "This is an expected condition in this test.")
+        self.recipe.soft_requirements = (softreq,)
+
+        self.recipe.b_options['offline'] = 'true'
+
+        # the key fact is that the requirement that exc is about is not
+        # in recipe.options['eggs']
+        self.exc_distributions[somereq] = MissingDistribution(
+            Requirement.parse(softreq), [])
+
+        self.assertRaises(UserError, self.install_scripts,
+                          extra_requirements=(somereq,))
+
+    def test_install_scripts_soft_deps_missing_dist(self):
+        self.do_test_install_scripts_soft_deps()
+
+    def test_install_scripts_soft_deps_missing_dist_exc(self):
+        req = Requirement.parse("zztest-softreq")
+        self.do_test_install_scripts_soft_deps(
+            exc=MissingDistribution(req, []))
+
+    def test_install_scripts_soft_deps_incompatible_constraint(self):
+        if IncompatibleConstraintError is None:  # zc.buildout < 1.7
+            return  # @skip appears in py2.7
+
+        req = Requirement.parse("zztest-softreq==1.2.3")
+        self.do_test_install_scripts_soft_deps(
+            exc=IncompatibleConstraintError('Bad constraint', '>2', req))
+
+    def test_install_scripts_soft_deps_incompatible_constraint_reraise(self):
+        if IncompatibleConstraintError is None:  # zc.buildout < 1.7
+            return  # skipping infra is for py>2.7
+
+        req = Requirement.parse("zztest-hardreq==1.2.3")
+        exc = IncompatibleConstraintError('Bad constraint', '>2', req)
+        try:
+            self.do_test_install_scripts_soft_deps(exc=exc)
+        except IncompatibleConstraintError as exc2:
+            self.assertEqual(exc2, exc)
+        else:
+            self.fail("Exception should have been reraised")
+
+    def test_install_scripts_soft_deps_incompatible_version(self):
+        if IncompatibleVersionError is None:  # zc.buildout >= 1.7
+            return  # @skip appears in py2.7
+
+        exc = IncompatibleVersionError()
+        try:
+            self.do_test_install_scripts_soft_deps(exc=exc)
+        except UserError as exc2:
+            self.assertEqual(exc2, exc)
+        else:
+            self.fail("Exception should have been reraised")
+
+    def test_install_scripts_soft_deps_user_error(self):
+        self.do_test_install_scripts_soft_deps(
+            exc=UserError("We don't have a distribution for "
+                          "zztest-softreq==6.6.6\n"
+                          "and can't install one in offline "
+                          "(no-install) mode."))
+
+    def test_install_scripts_soft_deps_user_error_reraise(self):
+        exc = UserError("We don't have a distribution for "
+                        "zztest-hardreq==6.6.6\n"
+                        "and can't install one in offline "
+                        "(no-install) mode.")
+
+        try:
+            self.do_test_install_scripts_soft_deps(exc=exc)
+        except UserError as exc2:
+            self.assertEqual(exc, exc2)
+        else:
+            self.fail("Expected the same UserError to be reraised")
 
     def test_install_scripts_70(self, with_devtools=True, **kw):
         kw['with_devtools'] = 'true' if with_devtools else 'false'
@@ -403,6 +504,25 @@ class TestServer(RecipeTestCase):
 
     def test_install_scripts_70_no_devtools(self):
         self.test_install_scripts_70(with_devtools=False)
+
+    def test_install_scripts_70_server_wide_modules(self):
+        self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'oerp70'),
+                         gunicorn='direct',
+                         server_wide_modules='anybox_homepage')
+        self.recipe.version_detected = "7.0alpha"
+        self.recipe.options['options.log_handler'] = ":INFO,werkzeug:WARNING"
+
+        self.install_scripts(extra_develop={
+            'openerp-command': 'fake_openerp-command'})
+
+        self.assertTrue("server_wide_modules=('web', 'anybox_homepage')"
+                        in self.read_script('start_openerp'))
+        with open(os.path.join(
+                self.buildout_dir, 'etc', 'gunicorn_openerp.conf.py')) as gu:
+            self.assertTrue(
+                "openerp.conf.server_wide_modules = "
+                "['web', 'anybox_homepage']\n"
+                in gu)
 
     def test_install_scripts_80(self, with_devtools=True, **kw):
         kw['with_devtools'] = 'true' if with_devtools else 'false'

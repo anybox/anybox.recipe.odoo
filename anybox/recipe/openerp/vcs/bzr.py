@@ -32,6 +32,8 @@ class BzrBranch(BaseRepo):
 
     vcs_control_dir = '.bzr'
 
+    vcs_official_name = 'Bazaar'
+
     def __init__(self, *a, **kw):
         super(BzrBranch, self).__init__(*a, **kw)
         if self.options.get('bzr-init') == "ligthweight-checkout":
@@ -156,8 +158,10 @@ class BzrBranch(BaseRepo):
                                ``as_revno`` to ``True`` (pip URL syntax for bzr
                                does not allow revids, because of the ``@`` in
                                bzr revids)
-        This will not detect pending merges, but :meth:`uncommitted_changes`
-        will, and that is enough for freeze/extract features.
+
+        This method will not detect pending merges, but
+        :meth:`uncommitted_changes` will, and that is enough for freeze/extract
+        features.
         """
         revno = check_output(['bzr', 'revno', '--tree', self.target_dir],
                              env=SUBPROCESS_ENV).strip()
@@ -180,6 +184,8 @@ class BzrBranch(BaseRepo):
                                    '--ignored', '--force'])
 
     def revert(self, revision):
+        logger.info("Reverting bzr repo at %s to revision %r", self.target_dir,
+                    revision)
         with working_directory_keeper:
             os.chdir(self.target_dir)
             subprocess.check_call(['bzr', 'revert', '-r', revision])
@@ -337,7 +343,7 @@ class BzrBranch(BaseRepo):
         target_dir = self.target_dir
         url = self.url
         offline = self.offline
-         # TODO case of local url ?
+        # TODO case of local url ?
         if offline:
             raise IOError(
                 "bzr branch %s does not exist; cannot branch it from "

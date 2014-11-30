@@ -2,6 +2,7 @@
 from os.path import join, basename
 import os
 import sys
+import re
 import urllib
 import tarfile
 import setuptools
@@ -19,6 +20,15 @@ except ImportError:  # Python < 2.7
 from zc.buildout.easy_install import MissingDistribution
 from zc.buildout import UserError
 from zc.buildout.easy_install import VersionConflict
+
+try:  # need to distinguish, because of differing semantics
+    from zc.buildout.easy_install import IncompatibleConstraintError
+except ImportError:  # zc.buildout < 1.7
+    IncompatibleConstraintError = None  # 'except None' is very fine
+    from zc.buildout.easy_install import IncompatibleVersionError
+else:
+    IncompatibleVersionError = None
+
 import zc.recipe.egg
 
 import httplib
@@ -26,6 +36,7 @@ import rfc822
 from urlparse import urlparse
 from . import vcs
 from . import utils
+from .utils import option_splitlines, option_strip
 
 logger = logging.getLogger(__name__)
 
@@ -97,16 +108,16 @@ class BaseRecipe(object):
 
     """
 
-    default_dl_url = {'6.0': 'http://nightly.openerp.com/old/openerp-6/',
-                      '6.1': 'http://nightly.openerp.com/6.1/releases/',
-                      '7.0': 'http://nightly.openerp.com/7.0/releases/',
-                      '5.0': 'http://nightly.openerp.com/old/openerp-5/',
+    release_dl_url = {'6.0': 'http://nightly.odoo.com/old/openerp-6/',
+                      '6.1': 'http://nightly.odoo.com/6.1/releases/',
+                      '5.0': 'http://nightly.odoo.com/old/openerp-5/',
                       }
 
-    nightly_dl_url = {'6.0': 'http://nightly.openerp.com/6.0/6.0/',
-                      '6.1': 'http://nightly.openerp.com/6.1/nightly/src/',
-                      '7.0': 'http://nightly.openerp.com/7.0/nightly/src/',
-                      'trunk': 'http://nightly.openerp.com/trunk/nightly/src/',
+    nightly_dl_url = {'6.0': 'http://nightly.odoo.com/6.0/6.0/',
+                      '6.1': 'http://nightly.odoo.com/6.1/nightly/src/',
+                      '7.0': 'http://nightly.odoo.com/7.0/nightly/src/',
+                      '8.0': 'http://nightly.odoo.com/8.0/nightly/src/',
+                      'trunk': 'http://nightly.odoo.com/trunk/nightly/src/',
                       }
 
     recipe_requirements = ()  # distribution required for the recipe itself
@@ -118,6 +129,13 @@ class BaseRecipe(object):
     # Caching logic for the main OpenERP part (e.g, without addons)
     # Can be 'filename' or 'http-head'
     main_http_caching = 'filename'
+
+    is_git_layout = False
+    """True if this is the git layout, as seen from the move to GitHub.
+
+    In this layout, the standard addons other than ``base`` are in a ``addons``
+    directory right next to the ``openerp`` package.
+    """
 
     def __init__(self, buildout, name, options):
         self.requirements = list(self.requirements)
@@ -138,8 +156,7 @@ class BaseRecipe(object):
         # same as in zc.recipe.eggs
         self.extra_paths = [
             join(self.buildout_dir, p.strip())
-            for p in self.options.get('extra-paths', '').split(os.linesep)
-            if p.strip()
+            for p in option_splitlines(self.options.get('extra-paths'))
         ]
         self.options['extra-paths'] = os.linesep.join(self.extra_paths)
 
@@ -184,7 +201,7 @@ class BaseRecipe(object):
     def parse_version(self):
         """Set the main software in :attr:`sources` and related attributes.
         """
-        self.version_wanted = self.options.get('version')
+        self.version_wanted = option_strip(self.options.get('version'))
         if self.version_wanted is None:
             raise UserError('You must specify the version')
 
@@ -195,7 +212,7 @@ class BaseRecipe(object):
         if len(version_split) == 1:
             # version can be a simple version name, such as 6.1-1
             major_wanted = self.version_wanted[:3]
-            pattern = self.archive_filenames[major_wanted]
+            pattern = self.release_filenames[major_wanted]
             if pattern is None:
                 raise UserError('OpenERP version %r'
                                 'is not supported' % self.version_wanted)
@@ -203,7 +220,7 @@ class BaseRecipe(object):
             self.archive_filename = pattern % self.version_wanted
             self.archive_path = join(self.downloads_dir, self.archive_filename)
             base_url = self.options.get(
-                'base_url', self.default_dl_url[major_wanted])
+                'base_url', self.release_dl_url[major_wanted])
             self.sources[main_software] = (
                 'downloadable',
                 '/'.join((base_url.strip('/'), self.archive_filename)), None)
@@ -230,7 +247,7 @@ class BaseRecipe(object):
                 self.main_http_caching = 'http-head'
             series = self.nightly_series
             self.archive_filename = (
-                self.archive_nightly_filenames[series] % self.version_wanted)
+                self.nightly_filenames[series] % self.version_wanted)
             self.archive_path = join(self.downloads_dir, self.archive_filename)
             base_url = self.options.get('base_url',
                                         self.nightly_dl_url[series])
@@ -278,33 +295,52 @@ class BaseRecipe(object):
         """
         while True:
             missing = None
-            eggs = zc.recipe.egg.Scripts(self.buildout, '', self.options)
+            eggs_recipe = zc.recipe.egg.Scripts(self.buildout, '',
+                                                self.options)
             try:
-                eggs.install()
-            except MissingDistribution, exc:
+                eggs_recipe.install()
+            except MissingDistribution as exc:
                 missing = exc.data[0].project_name
-            except VersionConflict:
+            except VersionConflict as exc:
+                # GR not 100% sure, but this should mean a conflict with an
+                # already loaded version (don't know what can lead to this
+                # 'already', have seen it with zc.buildout itself only so far)
+                # In any case, removing the requirement can't make for a sane
+                # recovery
                 raise
-            except UserError, exc:  # zc.buildout >= 2.0
+            except IncompatibleVersionError as exc:  # zc.buildout < 1.7
+                # In exc's attrs, we have the version but not the project name
+                raise
+            except IncompatibleConstraintError as exc:
+                missing = exc.args[2].project_name
+            except UserError, exc:  # happens only for zc.buildout >= 2.0
                 missing = exc.message.split(os.linesep)[0].split()[-1]
-
-            if missing is not None:
-                msg = self.missing_deps_instructions.get(missing)
-                if msg is None:
-                    raise
-                logger.error("Could not find %r. " + msg, missing)
-                # GR this condition won't be enough in case of version
-                # conditions in requirement
-                if missing not in self.soft_requirements:
-                    sys.exit(1)
-                else:
-                    attempted = self.options['eggs'].split(os.linesep)
-                    self.options['eggs'] = os.linesep.join(
-                        [egg for egg in attempted if egg != missing])
+                missing = re.split(r'[=<>]', missing)[0]
             else:
                 break
 
-        self.eggs_reqs, self.eggs_ws = eggs.working_set()
+            logger.error("Could not find or install %r. "
+                         + self.missing_deps_instructions.get(missing, '')
+                         + " Original exception %s.%s says: %s",
+                         missing,
+                         exc.__class__.__module__, exc.__class__.__name__, exc)
+            if missing not in self.soft_requirements:
+                raise exc
+
+            eggs = set(self.options['eggs'].split(os.linesep))
+            if missing not in eggs:
+                logger.error("Soft requirement %r is also an indirect "
+                             "dependency (either of OpenERP/Odoo or of "
+                             "one listed in config file). Can't retry.",
+                             missing)
+                raise exc
+
+            logger.warn("%r is a direct soft requirement, "
+                        "retrying without it", missing)
+            eggs.discard(missing)
+            self.options['eggs'] = os.linesep.join(eggs)
+
+        self.eggs_reqs, self.eggs_ws = eggs_recipe.working_set()
         self.ws = self.eggs_ws
 
     def apply_version_dependent_decisions(self):
@@ -428,11 +464,18 @@ class BaseRecipe(object):
     def develop(self, src_directory, setup_has_pil=False):
         """Develop the specified source distribution.
 
-        Any call to zc.recipe.eggs will use that developped version.
-        develop() launches a subprocess, to which we need to forward
+        Any call to ``zc.recipe.eggs`` will use that developped version.
+        :meth:`develop` launches a subprocess, to which we need to forward
         the paths to requirements via PYTHONPATH.
-        If setup_has_pil is True, an altered version of setup that does not
-        require it is produced to perform the develop.
+
+        :param setup_has_pil: if ``True``, an altered version of setup that
+                              does not require PIL is produced to perform the
+                              develop, so that installation can be done with
+                              ``Pillow`` instead. Recent enough versions of
+                              OpenERP/Odoo are directly based on Pillow.
+        :returns: project name of the distribution that's been "developed"
+                  This is useful for OpenERP/Odoo itself, whose project name
+                  changed within the 8.0 stable branch.
         """
         logger.debug("Developing %r", src_directory)
         develop_dir = self.b_options['develop-eggs-directory']
@@ -445,15 +488,24 @@ class BaseRecipe(object):
             setup = src_directory
 
         try:
-            zc.buildout.easy_install.develop(setup, develop_dir)
+            egg_link = zc.buildout.easy_install.develop(setup, develop_dir)
         finally:
             if setup_has_pil:
                 os.unlink(setup)
+
+        suffix = '.egg-link'
 
         if pythonpath_bak is None:
             os.unsetenv('PYTHONPATH')
         else:
             os.putenv('PYTHONPATH', pythonpath_bak)
+
+        if not egg_link.endswith(suffix):
+            raise RuntimeError(
+                "Development of OpenERP/Odoo distribution "
+                "produced an unexpected egg link: %r" % egg_link)
+
+        return os.path.basename(egg_link)[:-len(suffix)]
 
     def parse_addons(self, options):
         """Parse the addons options into :attr:`sources`.
@@ -461,7 +513,7 @@ class BaseRecipe(object):
         See :class:`BaseRecipe` for the structure of :attr:`sources`.
         """
 
-        for line in options.get('addons', '').split(os.linesep):
+        for line in option_splitlines(options.get('addons')):
             split = line.split()
             if not split:
                 return
@@ -481,6 +533,10 @@ class BaseRecipe(object):
                                 "Please check format " % line)
 
             addons_dir = addons_dir.rstrip('/')  # trailing / can be harmful
+            group = options.get('group')
+            if group:
+                split = os.path.split(addons_dir)
+                addons_dir = os.path.join(split[0], group, split[1])
             self.sources[addons_dir] = (loc_type, location_spec, options)
 
     def parse_merges(self, options):
@@ -489,12 +545,12 @@ class BaseRecipe(object):
         See :class:`BaseRecipe` for the structure of :attr:`merges`.
         """
 
-        for line in options.get('merges', '').split(os.linesep):
+        for line in option_splitlines(options.get('merges')):
             split = line.split()
             if not split:
                 return
             loc_type = split[0]
-            if not loc_type in ('bzr', 'git'):
+            if loc_type not in ('bzr', 'git'):
                 raise UserError("Only merges of type 'bzr' and 'git' are "
                                 "currently supported.")
             options = dict(opt.split('=') for opt in split[4:])
@@ -519,16 +575,7 @@ class BaseRecipe(object):
 
         See :class:`BaseRecipe` for the structure of :attr:`sources`.
         """
-        for line in options.get('revisions', '').split(os.linesep):
-            # GR inline comment should have not gone through, but sometimes
-            # does (see lp:1130590). This below does not exactly conform to
-            # spec http://docs.python.org/2/library/configparser.html
-            # (we don't check for whitespace before separator), but is good
-            # enough in this case.
-            line = line.split(';', 1)[0].strip()
-            if not line:
-                continue
-
+        for line in option_splitlines(options.get('revisions')):
             split = line.split()
             if len(split) > 2:
                 raise UserError("Invalid revisions line: %r" % line)
@@ -570,8 +617,27 @@ class BaseRecipe(object):
             options = dict(offline=self.offline,
                            clear_locks=self.vcs_clear_locks,
                            clean=self.clean)
+            if loc_type == 'git':
+                options['depth'] = self.options.get('git-depth')
             options.update(addons_options)
 
+            group = addons_options.get('group')
+            group_dir = None
+            if group:
+                if loc_type == 'local':
+                    raise UserError(
+                        "Automatic grouping of addons is not supported for "
+                        "local addons such as %r, because the recipe "
+                        "considers that write operations in a local "
+                        "directory is "
+                        "outside of its reponsibilities (in other words, "
+                        "it's better if "
+                        "you create yourself the intermediate directory." % (
+                            local_dir, ))
+
+                group_dir = os.path.dirname(local_dir)
+                if not os.path.exists(group_dir):
+                    os.makedirs(group_dir)
             if loc_type != 'local':
                 for k, v in self.options.items():
                     if k.startswith(loc_type + '-'):
@@ -585,38 +651,34 @@ class BaseRecipe(object):
                 utils.clean_object_files(local_dir)
 
             subdir = addons_options.get('subdir')
-            addons_dir = join(local_dir, subdir) if subdir else local_dir
+            if group_dir:
+                addons_dir = group_dir
+            else:
+                addons_dir = local_dir
+
+            if subdir:
+                addons_dir = join(addons_dir, subdir)
 
             manifest = os.path.join(addons_dir, '__openerp__.py')
             manifest_pre_v6 = os.path.join(addons_dir, '__terp__.py')
             if os.path.isfile(manifest) or os.path.isfile(manifest_pre_v6):
-                if loc_type == 'local':
-                    raise UserError(
-                        "Local addons line %r should refer to a directory "
-                        "containing addons, not to a standalone addon. "
-                        "The recipe can perform automatic creation of "
-                        "intermediate directories for VCS cases only"
-                        % addons_dir)
-                # repo is a single addon, put it actually below
-                name = os.path.split(addons_dir)[1]
-                c = 0
-                tmp = addons_dir + '_%d' % c
-                while os.path.exists(tmp):
-                    c += 1
-                    tmp = addons_dir + '_%d' % c
-                os.rename(addons_dir, tmp)
-                os.mkdir(addons_dir)
-                new_dir = join(addons_dir, name)
-                os.rename(tmp, new_dir)
-            self.addons_paths.append(addons_dir)
+                raise UserError("Standalone addons such as %r "
+                                "are now supported by means "
+                                "of the explicit 'group' option. Please "
+                                "update your buildout configuration. " % (
+                                    addons_dir))
+
+            if addons_dir not in self.addons_paths:
+                self.addons_paths.append(addons_dir)
 
     def revert_sources(self):
         """Revert all sources to the revisions specified in :attr:`sources`.
         """
-        for target, (vcs_type, vcs_spec, options) in self.sources.iteritems():
-            if vcs_type in ('local', 'downloadable'):
+        for target, desc in self.sources.iteritems():
+            if desc[0] in ('local', 'downloadable'):
                 continue
 
+            vcs_type, vcs_spec, options = desc
             local_dir = self.openerp_dir if target is main_software else target
             local_dir = self.make_absolute(local_dir)
             repo = vcs.repo(vcs_type, local_dir, vcs_spec[0], **options)
@@ -756,6 +818,9 @@ class BaseRecipe(object):
             url, rev = source[1]
             options = dict((k, v) for k, v in self.options.iteritems()
                            if k.startswith(type_spec + '-'))
+            if type_spec == 'git':
+                options['depth'] = options.pop('git-depth', None)
+
             options.update(source[2])
             if self.clean:
                 options['clean'] = True
@@ -765,14 +830,13 @@ class BaseRecipe(object):
 
     def _register_extra_paths(self):
         """Add openerp paths into the extra-paths (used in scripts' sys.path).
+
+        This is useful up to the 6.0 series only, because in later version,
+        the 'openerp' directory is a proper distribution that we develop, with
+        the effect of putting it on the path automatically.
         """
         extra = self.extra_paths
-        if self.major_version >= (6, 2):
-            # TODO still necessary ?
-            extra.append(self.openerp_dir)
-            if self.major_version < (8, 0):
-                extra.append(join(self.openerp_dir, 'addons'))
-        else:
+        if self.major_version < (6, 1):
             extra.extend((join(self.openerp_dir, 'bin'),
                           join(self.openerp_dir, 'bin', 'addons')))
         self.options['extra-paths'] = os.linesep.join(extra)
@@ -933,7 +997,7 @@ class BaseRecipe(object):
             raise
 
         return tuple((line, pip.req.parse_editable(line))
-                     for line in lines.split(os.linesep) if line)
+                     for line in option_splitlines(lines))
 
     def _prepare_frozen_buildout(self, conf):
         """Create the 'buildout' section in conf."""
@@ -1060,8 +1124,21 @@ class BaseRecipe(object):
 
         if not os.path.exists(target_dir):
             os.mkdir(target_dir)
-
         out_conf.add_section(self.name)
+
+        # remove bzr extra if needed
+        pkg_extras, recipe_cls = self.options['recipe'].split(':')
+        extra_match = re.match(r'(.*?)\[(.*?)\]', pkg_extras)
+        if extra_match is not None:
+            recipe_pkg = extra_match.group(1)
+            extras = set(e.strip() for e in extra_match.group(2).split(','))
+            extras.discard('bzr')
+            extracted_recipe = recipe_pkg
+            if extras:
+                extracted_recipe += '[%s]' % ','.join(extras)
+            extracted_recipe += ':' + recipe_cls
+            out_conf.set(self.name, 'recipe', extracted_recipe)
+
         addons_option = []
         for local_path, source in self.sources.items():
             source_type = source[0]
@@ -1071,9 +1148,23 @@ class BaseRecipe(object):
                 out_conf.set(self.name, 'version', 'local ' + rel_path)
                 continue
 
-            addons_line = ['local', local_path]
+            # stripping the group option that won't be usefult
+            # and actually harming for extracted buildout conf
+            options = source[2]
+            group = options.pop('group', None)
+            if group:
+                target_local_path = os.path.dirname(local_path)
+                if group != os.path.basename(target_local_path):
+                    raise RuntimeError(
+                        "Inconsistent configuration that "
+                        "should not happen: group=%r, but resulting path %r "
+                        "does not have it as its parent" % (group, local_path))
+            else:
+                target_local_path = local_path
+
+            addons_line = ['local', target_local_path]
             addons_line.extend('%s=%s' % (opt, val)
-                               for opt, val in source[2].items())
+                               for opt, val in options.items())
             addons_option.append(' '.join(addons_line))
 
             abspath = self.make_absolute(local_path)
@@ -1171,7 +1262,7 @@ class BaseRecipe(object):
         conf.add_section('versions')
         conf.set('buildout', 'versions', 'versions')
 
-        develops = set(self.b_options.get('develop', '').split(os.linesep))
+        develops = set(option_splitlines(self.b_options.get('develop')))
 
         extracted = set()
         for raw, parsed in self._get_gp_vcs_develops():
@@ -1186,10 +1277,15 @@ class BaseRecipe(object):
         conf.set('buildout', 'develop',
                  os.linesep.join(d[len(bdir):] if d.startswith(bdir) else d
                                  for d in develops))
-        conf.set('buildout', GP_VCS_EXTEND_DEVELOP, '')
+
+        # remove gp.vcsdevelop from extensions
+        exts = self.buildout['buildout'].get('extensions', '').split()
+        if 'gp.vcsdevelop' in exts:
+            exts.remove('gp.vcsdevelop')
+        conf.set('buildout', 'extensions', '\n'.join(exts))
 
     def _install_script(self, name, content):
-        """Install and register a script with prescribed name and content.
+        """Install and register a scripbont with prescribed name and content.
 
         Return the script path
         """
@@ -1269,6 +1365,17 @@ class BaseRecipe(object):
         If not found (e.g, we are on a nightly for OpenERP <= 7), this method
         does nothing.
 
+        The ordering of the different paths of addons is important.
+        When several addons at different paths have the same name, the first
+        of them being found is used. This can be used, for instance, to
+        replace an official addon by another one by placing a different
+        addons' path before the official one.
+
+        If the official addons' path is already set in the config file
+        (e.g. at the end), it will leave it at the end of the paths list,
+        if it is not set, it will be placed at the beginning just after
+        ``base`` addons' path.
+
         Care is taken not to break configurations that corrected this manually
         with a ``local`` source in the ``addons`` option.
 
@@ -1279,6 +1386,7 @@ class BaseRecipe(object):
         if not os.path.isdir(odoo_git_addons):
             return
 
+        self.is_git_layout = True
         addons_paths = self.addons_paths
 
         try:
@@ -1286,11 +1394,9 @@ class BaseRecipe(object):
         except ValueError:
             insert_at = 0
         try:
-            addons_paths.remove(odoo_git_addons)
+            addons_paths.index(odoo_git_addons)
         except ValueError:
-            pass
-
-        addons_paths.insert(insert_at, odoo_git_addons)
+            addons_paths.insert(insert_at, odoo_git_addons)
 
     def cleanup_openerp_dir(self):
         """Revert local modifications that have been made during installation.
@@ -1300,7 +1406,9 @@ class BaseRecipe(object):
         # GR TODO this will break with OSError if main package is renamed to
         # 'odoo' we'll see then what the needed correction exactly is rather
         # than swallowing the exception now
-        shutil.rmtree(join(self.openerp_dir, 'openerp.egg-info'))
+        egg_info_dir = join(self.openerp_dir, 'openerp.egg-info')
+        if os.path.exists(egg_info_dir):
+            shutil.rmtree(egg_info_dir)
         # setup rewritten without PIL is cleaned during the process itself
 
     def buildout_cfg_name(self, argv=None):
