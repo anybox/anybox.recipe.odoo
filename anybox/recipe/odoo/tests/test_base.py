@@ -159,12 +159,15 @@ class TestBaseRecipe(RecipeTestCase):
 
     def build_babel_egg(self):
         """build an egg for fake babel in buildout's eggs directory."""
+        # change dir to avoid using the setup.cfg of current one
+        # typically, the one of the recipe
+        cwd = os.getcwd()
+        os.chdir(os.path.join(TEST_DIR, 'fake_babel'))
         subprocess.check_call(
-            [sys.executable,
-             os.path.join(TEST_DIR, 'fake_babel', 'setup.py'),
-             'bdist_egg',
+            [sys.executable, 'setup.py', 'bdist_egg',
              '-d', self.recipe.b_options['eggs-directory'],
              '-b', os.path.join(self.buildout_dir, 'build')])
+        os.chdir(cwd)
 
     def develop_babel(self):
         """Develop fake babel in buildout's directory"""
