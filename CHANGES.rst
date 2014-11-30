@@ -8,17 +8,26 @@ with any higher released unstable versions.
 1.9.0 (unreleased)
 ------------------
 - rename to anybox.recipe.odoo
+- launchpad #1358353: with github layout, respect ordering if the place of the
+  standards (non-base) addons is explicitely set as 'local' (allows to insert
+  overrides before them).
 - launchpad #1294020: vcs-revert=on-merge option, and implementation
   for bzr
 - launchpad #1274174: new feature for automatic merge of remote VCS
   sources, with bzr support.
 - launchpad #1327773: [git] support for automatic merges
+- launchpad #1232729: handling of server-wide modules by the recipe
+- launchpad #1327609: support inline comments in multi-line options
 
 1.8.5 (unreleased)
 ------------------
+- gevent script generation backported to version 7.saas~3 and following
+- launchpad #1338405: [odoo] provided necessary environments init in session
+  (needed for interactive session and various scripts)
 - launchpad #1249566: [bzr] avoid outgoing requests in offline mode
   due to lp: locations resolution
 - launchpad #1244721: fixed final reporting of upgrade script with python 2.6
+- launchpad #1208745: [hg] robustness about content of .hg/hgrc
 
 1.8.4 (2014-06-16)
 ------------------

@@ -21,6 +21,7 @@ def insert_args(arguments):
 
 
 def main(starter, conf, version=None, just_test=False,
+         server_wide_modules=None,
          gevent_script_path=None):
     """Call the `starter` script, dispatching configuration.
 
@@ -31,6 +32,9 @@ def main(starter, conf, version=None, just_test=False,
       ``openerp-server``)
     :param conf: path to the OpenERP configuration file (managed by the recipe)
     :param version: OpenERP major version
+    :param server_wide_modules: additional server wide modules, to pass with
+       the ``--load`` command-line option (ignored if the option is actually
+       there on the command line)
     :type version: tuple of integers
     :param just_test: if True, only run unit tests
     """
@@ -44,6 +48,13 @@ def main(starter, conf, version=None, just_test=False,
         if version >= (7, 0):
             arguments.append('--test-enable')
 
+    if server_wide_modules:
+        for opt in sys.argv[1:]:
+            if opt.startswith('--load'):
+                break
+        else:
+            arguments.append('--load=' + ','.join(server_wide_modules))
+
     if '--install-all' in sys.argv:
         sys.argv.remove('--install-all')
         from openerp.tools import config
@@ -56,7 +67,7 @@ def main(starter, conf, version=None, just_test=False,
 
     insert_args(arguments)
 
-    if version >= (8, 0):
+    if version >= (8, 0):  # always true in a.r.odoo, but keeping for now
         assert gevent_script_path is not None
         patch_odoo.do_patch(gevent_script_path)
 

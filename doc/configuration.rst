@@ -27,7 +27,6 @@ and in particular to the `configuration file syntax
 <https://pypi.python.org/pypi/zc.buildout/2.2.1#configuration-file-syntax>`_
 (these links may have to be adapted for the version in use).
 
-
 Buildout configuration files are written almost in INI format, and
 always start with a ``buildout`` section::
 
@@ -46,6 +45,17 @@ must specify the recipe that's to be used::
 An extra dependency of the recipe gets required at runtime like this::
 
   recipe = anybox.recipe.openerp[bzr]:server
+
+.. note:: inline comments
+
+          As of version 1.9 of the recipe, inline comments starting
+          with a semicolon *not at the beginning of a line* are
+          supported in the recipe's specific options, and especially
+          in the multi line ones, whereas ``zc.buildout`` does not
+          support them.
+
+          For more detail, check
+          :py:func:`anybox.recipe.openerp.utils.option_splitlines`.
 
 Command line
 ------------
@@ -530,7 +540,6 @@ about upgrade scripts.
 
 .. note:: new in version 1.8.0
 
-
 .. _gunicorn:
 
 gunicorn
@@ -574,7 +583,7 @@ from the relevant options for the OpenERP script (currently
 
 Other simple supported options and their default values are (See also
 the `Gunicorn configuration documentation
-<http://docs.gunicorn.org/en/latest/configure.html>`) ::
+<http://docs.gunicorn.org/en/latest/configure.html>`_) ::
 
   gunicorn.workers = 4
   gunicorn.timeout = 240
@@ -590,8 +599,8 @@ You may specify the Gunicorn script name with the
 accordingly.
 
 The ``gunicorn.preload_databases`` option (one database per line) lets
-you specify databases to load in a `post_fork
-<http://docs.gunicorn.org/en/latest/configure.html#post-fork>` hook.
+you specify databases to load in a `post_fork hook
+<http://docs.gunicorn.org/en/latest/configure.html#post-fork>`_.
 With this setting, the worker processes will be ready for requests on these
 databases right after their startup. Moreover, Gunicorn does not handle any
 request to a worker until it is ready. Therefore, in workloads where
@@ -599,6 +608,30 @@ one or a few databases are actually used, this setting keeps the user
 experience snappy even in the event of frequent worker restarts, and
 allows for graceful restarts (use this for minor changes only).
 
+.. _server_wide_modules:
+
+server_wide_modules
+-------------------
+.. note:: new in version 1.9.0
+
+This multi-line option lets you specify addons to be loaded directly
+at startup, independently of what is installed in the database.
+
+It plays the same role as the ``--load`` command-line option of the main OpenERP
+startup script, with lower precedence if the latter is also specified.
+Examples::
+
+  server_wide_modules = custom_homepage
+
+Since there is no entry in the OpenERP configuration file corresponding
+to ``--load``, this recipe option helps bringing uniformity accross
+running instances of the project by enclosing this notion in
+the shippable configuration.
+
+It can also be leveraged by other scripts or recipe subsystems,
+notably the :ref:`gunicorn startup script <gunicorn>`.
+
+.. note:: in any case, the ``web`` addon is loaded as a server-wide one.
 
 .. _openerp_command_name:
 

@@ -209,6 +209,10 @@ class TestServer(RecipeTestCase):
             if not script in binlist:
                 self.fail("Script %r missing in bin directory." % script)
 
+    def read_script(self, script_name):
+        with open(os.path.join(self.buildout_dir, 'bin', script_name)) as f:
+            return f.read()
+
     def test_retrieve_fixup_addons_check(self):
         """Test that existence check of addons paths is done."""
         oerp_dir = os.path.join(TEST_DIR, 'odoo80')
@@ -303,6 +307,24 @@ class TestServer(RecipeTestCase):
         if with_devtools:
             expected.append('test_openerp')
         self.assertScripts(expected)
+
+    def test_install_scripts_80_server_wide_modules(self):
+        self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'odoo80'),
+                         gunicorn='direct',
+                         server_wide_modules='anybox_homepage')
+        self.recipe.version_detected = "7.0alpha"
+        self.recipe.options['options.log_handler'] = ":INFO,werkzeug:WARNING"
+
+        self.install_scripts()
+
+        self.assertTrue("server_wide_modules=('web', 'anybox_homepage')"
+                        in self.read_script('start_openerp'))
+        with open(os.path.join(
+                self.buildout_dir, 'etc', 'gunicorn_openerp.conf.py')) as gu:
+            self.assertTrue(
+                "openerp.conf.server_wide_modules = "
+                "['web', 'anybox_homepage']\n"
+                in gu)
 
     def test_install_scripts_80_no_devtools(self):
         self.test_install_scripts_80(with_devtools='false')

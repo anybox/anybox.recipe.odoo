@@ -19,6 +19,89 @@ class GitRepo(BaseRepo):
 
     vcs_control_dir = '.git'
 
+    vcs_official_name = 'Git'
+
+    _git_version = None
+
+    @property
+    def git_version(self):
+        cls = self.__class__
+        version = cls._git_version
+        if version is not None:
+            return version
+
+        return cls.init_git_version(utils.check_output(
+            ['git', '--version']))
+
+    @classmethod
+    def init_git_version(cls, v_str):
+        r"""Parse git version string and store the resulting tuple on self.
+
+        :returns: the parsed version tuple
+
+        Only the first 3 digits are kept. This is good enough for the few
+        version dependent cases we need, and coarse enough to avoid
+        more complicated parsing.
+
+        Some real-life examples::
+
+          >>> GitRepo.init_git_version('git version 1.8.5.3')
+          (1, 8, 5)
+          >>> GitRepo.init_git_version('git version 1.7.2.5')
+          (1, 7, 2)
+
+        Seen on MacOSX (not on MacPorts)::
+
+          >>> GitRepo.init_git_version('git version 1.8.5.2 (Apple Git-48)')
+          (1, 8, 5)
+
+        Seen on Windows (Tortoise Git)::
+
+          >>> GitRepo.init_git_version('git version 1.8.4.msysgit.0')
+          (1, 8, 4)
+
+        A compiled version::
+
+          >>> GitRepo.init_git_version('git version 2.0.3.2.g996b0fd')
+          (2, 0, 3)
+
+        Rewrapped by `hub <https://hub.github.com/>`_, it has two lines:
+
+          >>> GitRepo.init_git_version('git version 1.7.9\nhub version 1.11.0')
+          (1, 7, 9)
+
+        This one does not exist, allowing us to prove that this method
+        actually governs the :attr:`git_version` property
+
+          >>> GitRepo.init_git_version('git version 0.0.666')
+          (0, 0, 666)
+          >>> GitRepo('', '').git_version
+          (0, 0, 666)
+
+        Expected exceptions:
+
+          >>> try: GitRepo.init_git_version('invalid')
+          ... except ValueError: pass
+
+        After playing with it, we must reset it so that tests can run with
+        the proper detected one, if needed::
+
+          >>> GitRepo.init_git_version(None)
+
+        """
+        if v_str is None:
+            cls._git_version = None
+            return
+
+        v_str = v_str.strip()
+        try:
+            version = cls._git_version = tuple(
+                int(x) for x in v_str.split()[2].split('.')[:3])
+        except:
+            raise ValueError("Could not parse git version output %r. Please "
+                             "report this" % v_str)
+        return version
+
     def clean(self):
         if not os.path.isdir(self.target_dir):
             return
@@ -107,10 +190,14 @@ class GitRepo(BaseRepo):
             os.chdir(self.target_dir)
             logger.info("%s> git pull %s %s",
                         self.target_dir, self.url, revision)
-            # GR --no-edit is not available on older git versions
-            # (seen with 1.7.2.5 from Debian 6)
-            subprocess.check_call(['git', 'pull', '--no-edit',
-                                   self.url, revision])
+            cmd = ['git', 'pull', self.url, revision]
+            if self.git_version >= (1, 7, 8):
+                # --edit and --no-edit appear with Git 1.7.8
+                # see Documentation/RelNotes/1.7.8.txt of Git
+                # (https://git.kernel.org/cgit/git/git.git/tree)
+                cmd.insert(2, '--no-edit')
+
+            subprocess.check_call(cmd)
 
     def archive(self, target_path):
         # TODO: does this work with merge-ins?

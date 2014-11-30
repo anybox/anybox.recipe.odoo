@@ -26,6 +26,7 @@ import rfc822
 from urlparse import urlparse
 from . import vcs
 from . import utils
+from .utils import option_splitlines, option_strip
 
 logger = logging.getLogger(__name__)
 
@@ -145,8 +146,7 @@ class BaseRecipe(object):
         # same as in zc.recipe.eggs
         self.extra_paths = [
             join(self.buildout_dir, p.strip())
-            for p in self.options.get('extra-paths', '').split(os.linesep)
-            if p.strip()
+            for p in option_splitlines(self.options.get('extra-paths'))
         ]
         self.options['extra-paths'] = os.linesep.join(self.extra_paths)
 
@@ -191,7 +191,7 @@ class BaseRecipe(object):
     def parse_version(self):
         """Set the main software in :attr:`sources` and related attributes.
         """
-        self.version_wanted = self.options.get('version')
+        self.version_wanted = option_strip(self.options.get('version'))
         if self.version_wanted is None:
             raise UserError('You must specify the version')
 
@@ -305,7 +305,7 @@ class BaseRecipe(object):
                 if missing not in self.soft_requirements:
                     sys.exit(1)
                 else:
-                    attempted = self.options['eggs'].split(os.linesep)
+                    attempted = option_splitlines(self.options['eggs'])
                     self.options['eggs'] = os.linesep.join(
                         [egg for egg in attempted if egg != missing])
             else:
@@ -450,7 +450,7 @@ class BaseRecipe(object):
         See :class:`BaseRecipe` for the structure of :attr:`sources`.
         """
 
-        for line in options.get('addons', '').split(os.linesep):
+        for line in option_splitlines(options.get('addons')):
             split = line.split()
             if not split:
                 return
@@ -478,7 +478,7 @@ class BaseRecipe(object):
         See :class:`BaseRecipe` for the structure of :attr:`merges`.
         """
 
-        for line in options.get('merges', '').split(os.linesep):
+        for line in option_splitlines(options.get('merges')):
             split = line.split()
             if not split:
                 return
@@ -508,16 +508,7 @@ class BaseRecipe(object):
 
         See :class:`BaseRecipe` for the structure of :attr:`sources`.
         """
-        for line in options.get('revisions', '').split(os.linesep):
-            # GR inline comment should have not gone through, but sometimes
-            # does (see lp:1130590). This below does not exactly conform to
-            # spec http://docs.python.org/2/library/configparser.html
-            # (we don't check for whitespace before separator), but is good
-            # enough in this case.
-            line = line.split(';', 1)[0].strip()
-            if not line:
-                continue
-
+        for line in option_splitlines(options.get('revisions')):
             split = line.split()
             if len(split) > 2:
                 raise UserError("Invalid revisions line: %r" % line)
@@ -754,9 +745,12 @@ class BaseRecipe(object):
 
     def _register_extra_paths(self):
         """Add openerp paths into the extra-paths (used in scripts' sys.path).
+
+        This is useful up to the 6.0 series only, because in later version,
+        the 'openerp' directory is a proper distribution that we develop, with
+        the effect of putting it on the path automatically.
         """
         extra = self.extra_paths
-        extra.append(self.openerp_dir)
         self.options['extra-paths'] = os.linesep.join(extra)
 
     def install(self):
@@ -915,7 +909,7 @@ class BaseRecipe(object):
             raise
 
         return tuple((line, pip.req.parse_editable(line))
-                     for line in lines.split(os.linesep) if line)
+                     for line in option_splitlines(lines))
 
     def _prepare_frozen_buildout(self, conf):
         """Create the 'buildout' section in conf."""
@@ -1153,7 +1147,7 @@ class BaseRecipe(object):
         conf.add_section('versions')
         conf.set('buildout', 'versions', 'versions')
 
-        develops = set(self.b_options.get('develop', '').split(os.linesep))
+        develops = set(option_splitlines(self.b_options.get('develop')))
 
         extracted = set()
         for raw, parsed in self._get_gp_vcs_develops():
@@ -1234,6 +1228,17 @@ class BaseRecipe(object):
         If not found (e.g, we are on a nightly for OpenERP <= 7), this method
         does nothing.
 
+        The ordering of the different paths of addons is important.
+        When several addons at different paths have the same name, the first
+        of them being found is used. This can be used, for instance, to
+        replace an official addon by another one by placing a different
+        addons' path before the official one.
+
+        If the official addons' path is already set in the config file
+        (e.g. at the end), it will leave it at the end of the paths list,
+        if it is not set, it will be placed at the beginning just after
+        ``base`` addons' path.
+
         Care is taken not to break configurations that corrected this manually
         with a ``local`` source in the ``addons`` option.
 
@@ -1251,11 +1256,9 @@ class BaseRecipe(object):
         except ValueError:
             insert_at = 0
         try:
-            addons_paths.remove(odoo_git_addons)
+            addons_paths.index(odoo_git_addons)
         except ValueError:
-            pass
-
-        addons_paths.insert(insert_at, odoo_git_addons)
+            addons_paths.insert(insert_at, odoo_git_addons)
 
     def cleanup_openerp_dir(self):
         """Revert local modifications that have been made during installation.
