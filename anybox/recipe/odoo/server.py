@@ -18,22 +18,15 @@ SERVER_COMMA_LIST_OPTIONS = ('log_handler', )
 class ServerRecipe(BaseRecipe):
     """Recipe for server install and config
     """
-
-    archive_filenames = {
-        '8.0': 'openerp-%s.tar.gz',
+    release_filenames = {
+        # no release since OpenERP 6.1, only nightlies
     }
-    """Name of expected released tarballs in base URL, by major version.
 
-    Derived from 7.0 pattern, will need to be adapted once Odoo is released.
-    """
-
-    archive_nightly_filenames = {
-        '8.0': 'openerp-8.0-%s.tar.gz',
-        'trunk': 'openerp-8.0dev-%s.tar.gz'
+    nightly_filenames = {
+        '8.0': 'odoo_8.0-%s.tar.gz',
+        'trunk': 'odoo_9.0alpha1-%s.tar.gz'
     }
     """Name of expected nightly tarballs in base URL, by major version.
-
-    Derived from 7.0 pattern, will need to be adapted for Odoo.
     """
 
     recipe_requirements = ('babel',)

@@ -9,7 +9,7 @@ if sys.version_info < (2, 6):
                      "Yours is " + sys.version + os.linesep)
     sys.exit(1)
 
-requires = ['setuptools', 'zc.recipe.egg', 'zc.buildout']
+requires = ['setuptools', 'zc.recipe.egg', 'zc.buildout>=2.2.0']
 
 if sys.version_info < (2, 7):
     requires.append('ordereddict')
@@ -27,6 +27,7 @@ setup(
         open('CHANGES.rst').read())),
     url="https://github.com/anybox/anybox.recipe.odoo",
     packages=find_packages(),
+    namespace_packages=['anybox', 'anybox.recipe'],
     zip_safe=False,
     include_package_data=True,
     install_requires=requires,
@@ -44,6 +45,5 @@ setup(
     entry_points={'zc.buildout': [
         'server = anybox.recipe.odoo.server:ServerRecipe',
     ]},
-    extras_require = {
-      'bzr' : ['bzr'] },
+    extras_require={'bzr': ['bzr']},
 )

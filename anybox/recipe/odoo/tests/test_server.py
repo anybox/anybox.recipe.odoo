@@ -4,6 +4,10 @@ NB: zc.buildout.testing provides utilities for integration tests, with
 an embedded http server, etc.
 """
 import os
+from pkg_resources import Requirement
+
+from ..base import MissingDistribution
+from ..base import IncompatibleConstraintError
 from zc.buildout import UserError
 from ..server import ServerRecipe
 from ..testing import get_vcs_log
@@ -12,10 +16,19 @@ from ..testing import RecipeTestCase
 TEST_DIR = os.path.dirname(__file__)
 
 
+class TestingRecipe(ServerRecipe):
+    """A subclass helping with the fact that there are no Odoo releases.
+
+    This is merely to avoid rewriting many tests.
+    """
+    release_filenames = {'8.0': 'fake-release-%s.tgz'}
+    release_dl_url = {'8.0': 'http://release.odoo.test/src/'}
+
+
 class TestServer(RecipeTestCase):
 
     def make_recipe(self, name='openerp', **options):
-        self.recipe = ServerRecipe(self.buildout, name, options)
+        self.recipe = TestingRecipe(self.buildout, name, options)
 
     def test_retrieve_addons_local(self):
         """Setting up a local addons line."""
@@ -268,7 +281,7 @@ class TestServer(RecipeTestCase):
         self.recipe._register_extra_paths()
         self.recipe._install_startup_scripts()
 
-    def test_install_scripts_soft_deps(self):
+    def do_test_install_scripts_soft_deps(self, exc=None):
         """If a soft requirement is missing, the scripts are still generated.
         """
         self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'odoo80'),
@@ -283,7 +296,11 @@ class TestServer(RecipeTestCase):
 
         # offline won't be  enough, sadly for zc.buildout < 2.0
         self.recipe.b_options['offline'] = 'true'
-        self.unreachable_distributions.add(softreq)
+
+        if exc is None:
+            self.unreachable_distributions.add(softreq)
+        else:
+            self.exc_distributions[softreq] = exc
 
         self.install_scripts(extra_requirements=(softreq,))
         self.assertScripts(('start_openerp',
@@ -291,6 +308,73 @@ class TestServer(RecipeTestCase):
                             'gunicorn_openerp',
                             'cron_worker_openerp',
                             ))
+
+    def test_install_scripts_indirect_soft_deps(self, exc=None):
+        """If a requirement is soft and indirect, UserError is properly raised.
+        """
+        self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'odoo80'),
+                         gunicorn='direct',
+                         with_devtools='true')
+        self.recipe.version_detected = "8.0"
+
+        somereq = 'zztest-req'
+        softreq = 'zztest-softreq'
+        self.recipe.missing_deps_instructions[softreq] = (
+            "This is an expected condition in this test.")
+        self.recipe.soft_requirements = (softreq,)
+
+        self.recipe.b_options['offline'] = 'true'
+
+        # the key fact is that the requirement that exc is about is not
+        # in recipe.options['eggs']
+        self.exc_distributions[somereq] = MissingDistribution(
+            Requirement.parse(softreq), [])
+
+        self.assertRaises(UserError, self.install_scripts,
+                          extra_requirements=(somereq,))
+
+    def test_install_scripts_soft_deps_missing_dist(self):
+        self.do_test_install_scripts_soft_deps()
+
+    def test_install_scripts_soft_deps_missing_dist_exc(self):
+        req = Requirement.parse("zztest-softreq")
+        self.do_test_install_scripts_soft_deps(
+            exc=MissingDistribution(req, []))
+
+    def test_install_scripts_soft_deps_incompatible_constraint(self):
+        req = Requirement.parse("zztest-softreq==1.2.3")
+        self.do_test_install_scripts_soft_deps(
+            exc=IncompatibleConstraintError('Bad constraint', '>2', req))
+
+    def test_install_scripts_soft_deps_incompatible_constraint_reraise(self):
+        req = Requirement.parse("zztest-hardreq==1.2.3")
+        exc = IncompatibleConstraintError('Bad constraint', '>2', req)
+        try:
+            self.do_test_install_scripts_soft_deps(exc=exc)
+        except IncompatibleConstraintError as exc2:
+            self.assertEqual(exc2, exc)
+        else:
+            self.fail("Exception should have been reraised")
+
+    def test_install_scripts_soft_deps_user_error(self):
+        self.do_test_install_scripts_soft_deps(
+            exc=UserError("We don't have a distribution for "
+                          "zztest-softreq==6.6.6\n"
+                          "and can't install one in offline "
+                          "(no-install) mode."))
+
+    def test_install_scripts_soft_deps_user_error_reraise(self):
+        exc = UserError("We don't have a distribution for "
+                        "zztest-hardreq==6.6.6\n"
+                        "and can't install one in offline "
+                        "(no-install) mode.")
+
+        try:
+            self.do_test_install_scripts_soft_deps(exc=exc)
+        except UserError as exc2:
+            self.assertEqual(exc, exc2)
+        else:
+            self.fail("Expected the same UserError to be reraised")
 
     def test_install_scripts_80(self, with_devtools=True, **kw):
         kw['with_devtools'] = 'true' if with_devtools else 'false'

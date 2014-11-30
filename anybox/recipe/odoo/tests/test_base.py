@@ -18,9 +18,9 @@ TEST_DIR = os.path.dirname(__file__)
 class TestingRecipe(BaseRecipe):
     """A subclass with just enough few defaults for unit testing."""
 
-    archive_filenames = {'8.0': 'blob-%s.tgz',
-                         }
-    archive_nightly_filenames = {'8.0': '8-0-nightly-%s.tbz'}
+    release_filenames = {'8.0': 'blob-%s.tgz'}
+    nightly_filenames = {'8.0': '8-0-nightly-%s.tbz'}
+    release_dl_url = {'8.0': 'http://release.odoo.test/src/'}
 
 
 class TestBaseRecipe(RecipeTestCase):
@@ -54,14 +54,13 @@ class TestBaseRecipe(RecipeTestCase):
 
         recipe = self.recipe
         self.assertEquals(recipe.version_wanted, '8.0-1')
-        self.assertDownloadUrl(
-            'http://nightly.openerp.com/8.0/releases/blob-8.0-1.tgz')
+        self.assertDownloadUrl('http://release.odoo.test/src/blob-8.0-1.tgz')
 
     def test_version_nightly_8_0(self):
         self.make_recipe(version='nightly 8.0 1234-5')
 
         self.assertDownloadUrl(
-            'http://nightly.openerp.com/8.0/nightly/src/'
+            'http://nightly.odoo.com/8.0/nightly/src/'
             '8-0-nightly-1234-5.tbz')
 
     def test_version_bzr_8_0(self):
@@ -190,7 +189,7 @@ class TestBaseRecipe(RecipeTestCase):
             version = conf.get('freeze', 'Babel')
         except NoOptionError:
             self.fail("Expected version of Babel egg not dumped !")
-        self.assertEquals(version, '0.123-dev')
+        self.assertTrue(version.startswith('0.123'))
 
     def test_freeze_egg_versions_merge(self):
         """Test that freezing of egg versions keeps eggs already dumped.
@@ -402,7 +401,7 @@ class TestBaseRecipe(RecipeTestCase):
                           "fakevcs+http://example.com/aeroolib@fakerev"
                           "#egg=aeroolib")
 
-    def test_finalize_addons_paths_odoo_layout(self):
+    def test_finalize_addons_paths_git_layout(self):
         self.make_recipe(
             version='git http://github.com/odoo/odoo.git odoo 7.0')
         self.recipe.version_detected = '7.0-somerev'

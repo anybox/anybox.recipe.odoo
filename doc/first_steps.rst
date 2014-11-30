@@ -99,8 +99,13 @@ Finally, perform the bootstrap with the virtualenv's Python::
 
   $ sandbox/bin/python bootstrap.py
 
+.. warning:: ``boostrap.py`` will fail if you don't already have a valid
+             ``buildout.cfg`` file. Don't hesitate over options, you
+             can bootstrap with a really minimal one and tweak it
+             later.
+
 From now on, all buildout related operations, including OpenERP
-startup script, custom scripts will be protected by this virtualenv.
+startup script, custom scripts will be protected by the virtualenv.
 
 .. note:: nothing, not even ``zc.buildout`` actually gets installed by
           buildout in such a virtualenv.
@@ -115,10 +120,11 @@ startup script, custom scripts will be protected by this virtualenv.
 
 Running the build
 -----------------
-
-Just run ::
+This is the day-to-day operation. Just run ::
 
   $ bin/buildout
+
+And rerun to apply any changes you could later make to ``buildout.cfg``.
 
 Starting OpenERP
 ----------------
