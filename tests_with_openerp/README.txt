@@ -1,1 +1,1 @@
-# see doc/contributing, seciotn "Integration tests"
+# see doc/contributing, section "Integration tests"
