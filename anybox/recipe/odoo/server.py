@@ -82,9 +82,10 @@ class ServerRecipe(BaseRecipe):
         of adding Pillow, which is now in Odoo's ``setup.py``.
         """
         openerp_dir = getattr(self, 'openerp_dir', None)
+        openerp_project_name = 'openerp'
         if openerp_dir is not None:  # happens in unit tests
-            self.develop(openerp_dir)
-        self.requirements.append('openerp')
+            openerp_project_name = self.develop(openerp_dir)
+        self.requirements.append(openerp_project_name)
 
         if self.with_gunicorn:
             self.requirements.extend(('psutil', 'gunicorn'))
@@ -93,6 +94,7 @@ class ServerRecipe(BaseRecipe):
             self.requirements.extend(devtools.requirements)
 
         BaseRecipe.merge_requirements(self)
+        return openerp_project_name
 
     def _create_default_config(self):
         """Have OpenERP generate its default config file.

@@ -8,11 +8,20 @@ with any higher released unstable versions.
 1.9.0 (unreleased)
 ------------------
 - rename to anybox.recipe.odoo
-- launchpad #1214832 (related): introduction of explicit 'group'
-  option for standalone addons.
+- launchpad #1332147: insensitivity to project name in setup.py
+  (openerp, odoo, whatever).
+- launchpad #1332465: [git] support for shallow clones (--depth),
+  refactor to allow this consistently with detached head states,
+  branch changes, etc.
 - launchpad #1358353: with github layout, respect ordering if the place of the
   standards (non-base) addons is explicitely set as 'local' (allows to insert
   overrides before them).
+- launchpad #1391571 (related): revert used to fail with grouped
+  standalone addons
+- launchpad #1391571 (related): revert used to fail if some sources
+  were 'local' or 'downloadable'.
+- launchpad #1214832 (related): introduction of explicit 'group'
+  option for standalone addons.
 - launchpad #1294020: vcs-revert=on-merge option, and implementation
   for bzr
 - launchpad #1274174: new feature for automatic merge of remote VCS
@@ -23,7 +32,7 @@ with any higher released unstable versions.
 - launchpad #1232729: handling of server-wide modules by the recipe
 - launchpad #1327609: support inline comments in multi-line options
 
-1.8.6 (unreleased)
+1.8.6 (2014-11-17)
 ------------------
 - launchpad #1358353: with github layout, respect ordering if the place of the
   standards (non-base) addons is explicitely set as 'local' (allows to insert

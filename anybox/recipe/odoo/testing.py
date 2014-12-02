@@ -3,14 +3,33 @@ import os
 import unittest
 import sys
 import shutil
+import subprocess
 from tempfile import mkdtemp
+from UserDict import UserDict
 from zc.buildout.easy_install import Installer
+
 from . import vcs
 from . import utils
+from .base import BaseRecipe
 
 COMMIT_USER_NAME = 'Test'
 COMMIT_USER_EMAIL = 'test@example.org'
 COMMIT_USER_FULL = '%s %s' % (COMMIT_USER_NAME, COMMIT_USER_EMAIL)
+
+
+class TestingRecipe(BaseRecipe):
+    """A subclass with just enough few defaults for unit testing."""
+
+    release_filenames = {'8.0': 'blob-%s.tgz'}
+    nightly_filenames = {'8.0': '8-0-nightly-%s.tbz'}
+    release_dl_url = {'8.0': 'http://release.odoo.test/src/'}
+
+    def __init__(self, buildout, name, options):
+        # we need to make buildout a regular object, because some subsystems
+        # will set extra attributes on it
+        if isinstance(buildout, dict):
+            buildout = UserDict(buildout)
+        super(TestingRecipe, self).__init__(buildout, name, options)
 
 
 class FakeRepo(vcs.base.BaseRepo):
@@ -41,7 +60,7 @@ class FakeRepo(vcs.base.BaseRepo):
 
     def revert(self, revision):
         self.revision = revision
-        self.log.append(('revert', revision))
+        self.log.append(('revert', revision, self.target_dir))
 
     def parents(self, pip_compatible=False):
         return [self.revision]
@@ -63,6 +82,33 @@ def get_vcs_log():
 
 def clear_vcs_log():
     FakeRepo.log = []
+
+
+class PersistentRevFakeRepo(FakeRepo):
+    """A variant of FakeRepo that still needs the directory structure around.
+
+    Makes for a more realistic test of some conditions.
+    In particular, reproduced launchpad #TODO
+    """
+
+    current_revisions = {}
+
+    @property
+    def revision(self):
+        return self.__class__.current_revisions.get(self.target_dir, 'fakerev')
+
+    @revision.setter
+    def revision(self, v):
+        self.__class__.current_revisions[self.target_dir] = v
+
+    def uncommitted_changes(self):
+        """This needs the directory to really exist and is controllable."""
+        files = set(os.listdir(self.target_dir))
+        files.discard('.fake')
+        return bool(files)
+
+
+vcs.SUPPORTED['pr_fakevcs'] = PersistentRevFakeRepo
 
 
 class RecipeTestCase(unittest.TestCase):
@@ -108,7 +154,36 @@ class RecipeTestCase(unittest.TestCase):
             return inst._orig_obtain(requirement, source=source)
         Installer._obtain = _obtain
 
+    def make_recipe(self, name='openerp', **options):
+        self.recipe = TestingRecipe(self.buildout, name, options)
+
     def tearDown(self):
         clear_vcs_log()
         shutil.rmtree(self.buildout_dir)
         Installer._obtain = Installer._orig_obtain
+
+        # leftover egg-info at root of the source dir (frequent cwd)
+        # impairs use of this very same source dir for real-life testing
+        # with a 'develop' option.
+        egg_info = 'Babel.egg-info'
+        if os.path.isdir(egg_info):
+            shutil.rmtree(egg_info)
+
+    def build_babel_egg(self):
+        """build an egg for fake babel in buildout's eggs directory.
+
+        Require the test case to already have a ``test_dir`` attribute
+        (typically set on class with the dirname of the test)
+        """
+        subprocess.check_call(
+            [sys.executable, 'setup.py',
+             'bdist_egg',
+             '-d', self.recipe.b_options['eggs-directory'],
+             '-b', os.path.join(self.buildout_dir, 'build')],
+            cwd=os.path.join(self.test_dir, 'fake_babel'),
+            stdout=subprocess.PIPE)
+
+    def fill_working_set(self):
+        self.build_babel_egg()
+        self.recipe.options['eggs'] = 'Babel'
+        self.recipe.install_requirements()  # to get 'ws' attribute

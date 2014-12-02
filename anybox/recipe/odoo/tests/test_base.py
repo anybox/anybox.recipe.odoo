@@ -1,15 +1,10 @@
 import os
 import sys
 import subprocess
-import shutil
-import tempfile
-from ConfigParser import ConfigParser, NoOptionError
 from zc.buildout import UserError
 from ..server import BaseRecipe
 from ..base import main_software
-from ..base import GP_VCS_EXTEND_DEVELOP
 from ..testing import RecipeTestCase
-from ..testing import COMMIT_USER_FULL
 from ..testing import get_vcs_log
 
 TEST_DIR = os.path.dirname(__file__)
@@ -24,18 +19,6 @@ class TestingRecipe(BaseRecipe):
 
 
 class TestBaseRecipe(RecipeTestCase):
-
-    def tearDown(self):
-        # leftover egg-info at root of the source dir (frequent cwd)
-        # impairs use of this very same source dir for real-life testing
-        # with a 'develop' option.
-        egg_info = 'Babel.egg-info'
-        if os.path.isdir(egg_info):
-            shutil.rmtree(egg_info)
-        super(TestBaseRecipe, self).tearDown()
-
-    def make_recipe(self, name='openerp', **options):
-        self.recipe = TestingRecipe(self.buildout, name, options)
 
     def get_source_type(self):
         return self.recipe.sources[main_software][0]
@@ -157,18 +140,6 @@ class TestBaseRecipe(RecipeTestCase):
             self.assertRaises(UserError,
                               recipe.parse_addons, dict(addons=illformed))
 
-    def build_babel_egg(self):
-        """build an egg for fake babel in buildout's eggs directory."""
-        # change dir to avoid using the setup.cfg of current one
-        # typically, the one of the recipe
-        cwd = os.getcwd()
-        os.chdir(os.path.join(TEST_DIR, 'fake_babel'))
-        subprocess.check_call(
-            [sys.executable, 'setup.py', 'bdist_egg',
-             '-d', self.recipe.b_options['eggs-directory'],
-             '-b', os.path.join(self.buildout_dir, 'build')])
-        os.chdir(cwd)
-
     def develop_babel(self):
         """Develop fake babel in buildout's directory"""
         subprocess.check_call(
@@ -177,74 +148,6 @@ class TestBaseRecipe(RecipeTestCase):
              'develop',
              '-d', self.recipe.b_options['develop-eggs-directory'],
              '-b', os.path.join(self.buildout_dir, 'build')])
-
-    def test_freeze_egg_versions(self):
-        """Test that an egg requirement is properly dumped with its version.
-        """
-        conf = ConfigParser()
-        conf.add_section('freeze')
-        self.make_recipe(version='8.0-1')
-        self.build_babel_egg()
-        self.recipe.options['eggs'] = 'Babel'
-        self.recipe.install_requirements()  # to get 'ws' attribute
-        self.recipe._freeze_egg_versions(conf, 'freeze')
-        try:
-            version = conf.get('freeze', 'Babel')
-        except NoOptionError:
-            self.fail("Expected version of Babel egg not dumped !")
-        self.assertTrue(version.startswith('0.123'))
-
-    def test_freeze_egg_versions_merge(self):
-        """Test that freezing of egg versions keeps eggs already dumped.
-
-        very much similar to test_freeze_egg_versions.
-        """
-        conf = ConfigParser()
-        conf.add_section('freeze')
-        conf.set('freeze', 'some.distribution', '1.0alpha')
-        self.make_recipe(version='8.0-1')
-        self.build_babel_egg()
-        self.recipe.options['eggs'] = 'Babel'
-        self.recipe.install_requirements()  # to get 'ws' attribute
-        self.recipe._freeze_egg_versions(conf, 'freeze')
-        try:
-            version = conf.get('freeze', 'some.distribution')
-        except NoOptionError:
-            self.fail("Expected version of 'some.distribution' not kept !")
-        self.assertEquals(version, '1.0alpha')
-
-    def test_freeze_egg_versions_develop(self):
-        """Test that a developped requirement is not dumped in [versions].
-        """
-        conf = ConfigParser()
-        conf.add_section('freeze')
-        self.make_recipe(version='8.0-1')
-        self.recipe.develop(os.path.join(TEST_DIR, 'fake_babel'))
-        self.recipe.options['eggs'] = 'Babel'
-        self.recipe.install_requirements()  # to get 'ws' attribute
-        self.recipe._freeze_egg_versions(conf, 'freeze')
-        self.assertRaises(NoOptionError, conf.get, 'freeze', 'Babel')
-
-    def test_freeze_vcs_source(self):
-        self.make_recipe(version='8.0-1')
-        b_dir = self.recipe.buildout_dir
-        repo_path = os.path.join(b_dir, 'custom')
-        subprocess.check_call(['hg', 'init', repo_path])
-        with open(os.path.join(repo_path, 'somefile'), 'w') as f:
-            f.write('content')
-        subprocess.check_call(['hg', '--cwd', repo_path,
-                               'commit', '-A', '-m', 'somerev',
-                               '-u', COMMIT_USER_FULL,
-                               ])
-
-        rev = self.recipe._freeze_vcs_source('hg', repo_path)
-        hg = subprocess.Popen(['hg', '--cwd', repo_path, 'diff', '-r', rev],
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
-        out, err = hg.communicate()
-        if hg.returncode or err:
-            self.fail("Invalid extracted revision: %r" % rev)
-        self.assertEquals(out, '', 'Extracted revision shows some diff')
 
     def test_clean(self):
         """Test clean for local server & addons and base class vcs addons.
@@ -314,12 +217,29 @@ class TestBaseRecipe(RecipeTestCase):
             self.assertEquals(os.path.exists(os.path.join(server_path, *path)),
                               expected)
 
+    def path_from_buildout(self, *relpath, **opt):
+        relpath = list(relpath)
+        if opt.get('from_parts'):
+            relpath.insert(0, self.recipe.parts)
+        return self.recipe.make_absolute(os.path.join(*relpath))
+
     def test_vcs_revert(self):
         """Test clean forwarding to vcs impl."""
         self.make_recipe(
             version='fakevcs http://some/where server-dir mainrev')
         self.recipe.revert_sources()
-        self.assertEqual(get_vcs_log(), [('revert', 'mainrev')])
+        self.assertEqual(get_vcs_log(), [
+            ('revert', 'mainrev',
+             self.path_from_buildout('server-dir', from_parts=True))])
+
+    def test_vcs_revert_standalone(self):
+        """Test clean forwarding to vcs impl, taking group path into acount"""
+        self.make_recipe(
+            version='local server-dir',
+            addons='fakevcs http://some/where adddir addrev group=spam')
+        self.recipe.revert_sources()
+        self.assertEqual(get_vcs_log(), [
+            ('revert', 'addrev', self.path_from_buildout('spam', 'adddir'))])
 
     def test_vcs_revert_not_implemented(self):
         """Revert must not fail if a repo does not implement it."""
@@ -338,71 +258,6 @@ class TestBaseRecipe(RecipeTestCase):
             FakeRepo.revert = orig_revert
 
         self.assertEqual(get_vcs_log(), [])
-
-    def test_freeze_vcs_source_dirty(self):
-        self.make_recipe(version='8.0-1')
-        b_dir = self.recipe.buildout_dir
-        repo_path = os.path.join(b_dir, 'custom')
-        subprocess.check_call(['hg', 'init', repo_path])
-        with open(os.path.join(repo_path, 'somefile'), 'w') as f:
-            f.write('content')
-        subprocess.check_call(['hg', '--cwd', repo_path,
-                               'commit', '-A', '-m', 'somerev',
-                               '-u', COMMIT_USER_FULL,
-                               ])
-
-        self.recipe.local_modifications = []
-        # modification on tracked file
-        with open(os.path.join(repo_path, 'somefile'), 'w') as f:
-            f.write('changed content')
-        self.recipe._freeze_vcs_source('hg', repo_path)
-        self.assertTrue(bool(self.recipe.local_modifications))
-
-        subprocess.check_call(['hg', '--cwd', repo_path, 'revert', '--all'])
-
-        # untracked file
-        self.recipe.local_modifications = []
-        with open(os.path.join(repo_path, 'untracked'), 'w') as f:
-            f.write('something else')
-        self.recipe._freeze_vcs_source('hg', repo_path)
-        self.assertTrue(bool(self.recipe.local_modifications))
-
-    def test_prepare_frozen_buildout(self):
-        self.make_recipe(version='8.0-1')
-        conf = ConfigParser()
-        self.recipe._prepare_frozen_buildout(conf)
-        self.assertTrue('buildout' in conf.sections())
-
-    def test_prepare_frozen_buildout_gp_vcsdevelop(self):
-        self.make_recipe(version='8.0-1')
-        self.recipe.b_options[GP_VCS_EXTEND_DEVELOP] = (
-            "fakevcs+http://example.com/aeroolib#egg=aeroolib")
-
-        conf = ConfigParser()
-        self.recipe._prepare_frozen_buildout(conf)
-        extends_develop = conf.get('buildout', GP_VCS_EXTEND_DEVELOP)
-        self.assertEquals(extends_develop.strip(),
-                          "fakevcs+http://example.com/aeroolib@fakerev"
-                          "#egg=aeroolib")
-
-    def test_prepare_frozen_buildout_gp_vcsdevelop_already_fixed(self):
-        """Test that prepare_frozen_buildout understands existing pinning.
-
-        One might say that we souldn't touch an existing revision pinning, but
-        a difference can arise from a tag resolution, or simply someone
-        manually updating the repo. In all cases, the instrospected revision
-        will be used.
-        """
-        self.make_recipe(version='8.0-1')
-        self.recipe.b_options[GP_VCS_EXTEND_DEVELOP] = (
-            "fakevcs+http://example.com/aeroolib@somerev#egg=aeroolib")
-
-        conf = ConfigParser()
-        self.recipe._prepare_frozen_buildout(conf)
-        extends_develop = conf.get('buildout', GP_VCS_EXTEND_DEVELOP)
-        self.assertEquals(extends_develop.strip(),
-                          "fakevcs+http://example.com/aeroolib@fakerev"
-                          "#egg=aeroolib")
 
     def test_finalize_addons_paths_git_layout(self):
         self.make_recipe(
@@ -448,117 +303,3 @@ class TestBaseRecipe(RecipeTestCase):
         self.recipe.finalize_addons_paths(check_existence=False)
         self.assertEquals(self.recipe.addons_paths,
                           [base_addons, '/some/separate/addons', odoo_addons])
-
-
-class TestExtraction(RecipeTestCase):
-
-    def setUp(self):
-        super(TestExtraction, self).setUp()
-        self.extract_target_dir = tempfile.mkdtemp('test_recipe_extract')
-
-    def tearDown(self):
-        shutil.rmtree(self.extract_target_dir)
-        super(TestExtraction, self).tearDown()
-
-    def make_recipe(self, name='openerp', **options):
-        options.setdefault('recipe', 'anybox.recipe.openerp:testrecipe')
-        self.recipe = TestingRecipe(self.buildout, name, options)
-
-    def test_prepare_extracted_buildout(self):
-        self.make_recipe(version='8.0-1')
-        conf = ConfigParser()
-        self.recipe._prepare_extracted_buildout(conf, self.extract_target_dir)
-        self.assertTrue('buildout' in conf.sections())
-
-    def test_extract_addons(self):
-        """Test extract_downloads_to about addons ('local' server version).
-        """
-        target_dir = self.extract_target_dir
-        addons = ['local specific',
-                  'fakevcs http://some/repo vcs-addons revspec']
-        self.make_recipe(version='local mainsoftware',
-                         addons=os.linesep.join(addons))
-
-        conf = ConfigParser()
-        extracted = set()
-        self.recipe._extract_sources(conf, target_dir, extracted)
-        addons_opt = set(conf.get('openerp', 'addons').split(os.linesep))
-        self.assertEquals(addons_opt,
-                          set(('local vcs-addons', 'local specific')))
-        self.assertEquals(extracted,
-                          set([os.path.join(target_dir, 'vcs-addons')]))
-
-        # no need to override revisions
-        self.assertRaises(NoOptionError, conf.get, 'openerp', 'revisions')
-
-        # testing that archival took place for fakevcs, but not for local
-
-        self.failIf(os.path.exists(os.path.join(target_dir, 'specific')),
-                    "Local addons dir should not have been extracted")
-        # get_update having not been called, it is expected to have the
-        # default revision 'fakerev', instead of 'revspec'.
-        with open(os.path.join(target_dir, 'vcs-addons',
-                               '.fake_archival.txt')) as f:
-            self.assertEquals(f.read(), 'fakerev')
-
-    def test_extract_addons_revisions(self):
-        """Test extract_downloads_to about revisions overriding.
-
-        In case the source buildout uses the revisions option, it must be
-        overridden in the extracted one because it does not make sense with
-        the 'local' scheme.
-        """
-        target_dir = self.extract_target_dir
-        addons = ['local specific',
-                  'fakevcs http://some/repo vcs-addons revspec']
-        self.make_recipe(version='local mainsoftware',
-                         addons=os.linesep.join(addons),
-                         revisions='vcs-addons 213')
-
-        conf = ConfigParser()
-        extracted = set()
-        self.recipe._extract_sources(conf, target_dir, extracted)
-        self.assertEquals(conf.get('openerp', 'revisions').strip(), '')
-
-    def test_prepare_extracted_buildout_gp_vcsdevelop(self):
-        self.make_recipe(version='8.0-1')
-        self.recipe.b_options[GP_VCS_EXTEND_DEVELOP] = (
-            "fakevcs+http://example.com/aeroolib#egg=aeroolib")
-        self.recipe.b_options['develop'] = os.path.join(
-            self.recipe.buildout_dir, 'simple_develop')
-        self.recipe.b_options['extensions'] = 'gp.vcsdevelop\n somotherext'
-
-        conf = ConfigParser()
-        self.recipe._prepare_extracted_buildout(conf, self.extract_target_dir)
-        self.assertFalse(conf.has_option('buildout', GP_VCS_EXTEND_DEVELOP))
-        self.assertEqual(conf.get('buildout', 'extensions'), 'somotherext')
-
-        develop = conf.get('buildout', 'develop').split(os.linesep)
-        self.assertEquals(set(d for d in develop if d),
-                          set(['aeroolib', 'simple_develop']))
-
-        # extraction has been done
-        target = os.path.join(self.extract_target_dir, 'aeroolib')
-        self.assertTrue(os.path.exists(target))
-        with open(os.path.join(target, '.fake_archival.txt')) as f:
-            self.assertEquals(f.read(), 'fakerev')
-
-    def test_prepare_extracted_buildout_remove_bzr(self):
-        self.make_recipe(version='local mainsoftware')
-        target_dir = self.extract_target_dir
-        self.recipe.options['recipe'] = 'anybox.recipe.odoo[bzr]:server'
-
-        conf = ConfigParser()
-        self.recipe._extract_sources(conf, target_dir, set())
-        self.assertEqual(conf.get(self.recipe.name, 'recipe'),
-                         'anybox.recipe.odoo:server')
-
-    def test_prepare_extracted_buildout_keep_other_extras(self):
-        self.make_recipe(version='local mainsoftware')
-        target_dir = self.extract_target_dir
-        self.recipe.options['recipe'] = 'anybox.recipe.odoo[bzr,other]:server'
-
-        conf = ConfigParser()
-        self.recipe._extract_sources(conf, target_dir, set())
-        self.assertEqual(conf.get(self.recipe.name, 'recipe'),
-                         'anybox.recipe.odoo[other]:server')

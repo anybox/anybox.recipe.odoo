@@ -452,23 +452,39 @@ class BaseRecipe(object):
     def develop(self, src_directory):
         """Develop the specified source distribution.
 
-        Any call to zc.recipe.eggs will use that developped version.
-        develop() launches a subprocess, to which we need to forward
+        Any call to ``zc.recipe.eggs`` will use that developped version.
+        :meth:`develop` launches a subprocess, to which we need to forward
         the paths to requirements via PYTHONPATH.
-        If setup_has_pil is True, an altered version of setup that does not
-        require it is produced to perform the develop.
+
+        :param setup_has_pil: if ``True``, an altered version of setup that
+                              does not require PIL is produced to perform the
+                              develop, so that installation can be done with
+                              ``Pillow`` instead. Recent enough versions of
+                              OpenERP/Odoo are directly based on Pillow.
+        :returns: project name of the distribution that's been "developed"
+                  This is useful for OpenERP/Odoo itself, whose project name
+                  changed within the 8.0 stable branch.
         """
         logger.debug("Developing %r", src_directory)
         develop_dir = self.b_options['develop-eggs-directory']
         pythonpath_bak = os.getenv('PYTHONPATH')
         os.putenv('PYTHONPATH', ':'.join(self.recipe_requirements_paths))
 
-        zc.buildout.easy_install.develop(src_directory, develop_dir)
+        egg_link = zc.buildout.easy_install.develop(src_directory, develop_dir)
+
+        suffix = '.egg-link'
 
         if pythonpath_bak is None:
             os.unsetenv('PYTHONPATH')
         else:
             os.putenv('PYTHONPATH', pythonpath_bak)
+
+        if not egg_link.endswith(suffix):
+            raise RuntimeError(
+                "Development of OpenERP/Odoo distribution "
+                "produced an unexpected egg link: %r" % egg_link)
+
+        return os.path.basename(egg_link)[:-len(suffix)]
 
     def parse_addons(self, options):
         """Parse the addons options into :attr:`sources`.
@@ -496,6 +512,10 @@ class BaseRecipe(object):
                                 "Please check format " % line)
 
             addons_dir = addons_dir.rstrip('/')  # trailing / can be harmful
+            group = options.get('group')
+            if group:
+                split = os.path.split(addons_dir)
+                addons_dir = os.path.join(split[0], group, split[1])
             self.sources[addons_dir] = (loc_type, location_spec, options)
 
     def parse_merges(self, options):
@@ -576,12 +596,11 @@ class BaseRecipe(object):
             options = dict(offline=self.offline,
                            clear_locks=self.vcs_clear_locks,
                            clean=self.clean)
+            if loc_type == 'git':
+                options['depth'] = self.options.get('git-depth')
             options.update(addons_options)
 
             group = addons_options.get('group')
-            # TODO forbid groupping in local addons
-            # the recipe should not consider it can have responsibility over
-            # this
             group_dir = None
             if group:
                 if loc_type == 'local':
@@ -595,11 +614,9 @@ class BaseRecipe(object):
                         "you create yourself the intermediate directory." % (
                             local_dir, ))
 
-                l0, l1 = os.path.split(local_dir)
-                group_dir = join(l0, group)
-                local_dir = join(group_dir, l1)
+                group_dir = os.path.dirname(local_dir)
                 if not os.path.exists(group_dir):
-                    os.mkdir(group_dir)
+                    os.makedirs(group_dir)
             if loc_type != 'local':
                 for k, v in self.options.items():
                     if k.startswith(loc_type + '-'):
@@ -636,10 +653,11 @@ class BaseRecipe(object):
     def revert_sources(self):
         """Revert all sources to the revisions specified in :attr:`sources`.
         """
-        for target, (vcs_type, vcs_spec, options) in self.sources.iteritems():
-            if vcs_type in ('local', 'downloadable'):
+        for target, desc in self.sources.iteritems():
+            if desc[0] in ('local', 'downloadable'):
                 continue
 
+            vcs_type, vcs_spec, options = desc
             local_dir = self.openerp_dir if target is main_software else target
             local_dir = self.make_absolute(local_dir)
             repo = vcs.repo(vcs_type, local_dir, vcs_spec[0], **options)
@@ -779,6 +797,9 @@ class BaseRecipe(object):
             url, rev = source[1]
             options = dict((k, v) for k, v in self.options.iteritems()
                            if k.startswith(type_spec + '-'))
+            if type_spec == 'git':
+                options['depth'] = options.pop('git-depth', None)
+
             options.update(source[2])
             if self.clean:
                 options['clean'] = True
@@ -1103,9 +1124,23 @@ class BaseRecipe(object):
                 out_conf.set(self.name, 'version', 'local ' + rel_path)
                 continue
 
-            addons_line = ['local', local_path]
+            # stripping the group option that won't be usefult
+            # and actually harming for extracted buildout conf
+            options = source[2]
+            group = options.pop('group', None)
+            if group:
+                target_local_path = os.path.dirname(local_path)
+                if group != os.path.basename(target_local_path):
+                    raise RuntimeError(
+                        "Inconsistent configuration that "
+                        "should not happen: group=%r, but resulting path %r "
+                        "does not have it as its parent" % (group, local_path))
+            else:
+                target_local_path = local_path
+
+            addons_line = ['local', target_local_path]
             addons_line.extend('%s=%s' % (opt, val)
-                               for opt, val in source[2].items())
+                               for opt, val in options.items())
             addons_option.append(' '.join(addons_line))
 
             abspath = self.make_absolute(local_path)
@@ -1225,8 +1260,6 @@ class BaseRecipe(object):
             exts.remove('gp.vcsdevelop')
         conf.set('buildout', 'extensions', '\n'.join(exts))
 
-
-
     def _install_script(self, name, content):
         """Install and register a scripbont with prescribed name and content.
 
@@ -1329,10 +1362,14 @@ class BaseRecipe(object):
 
         These can be, e.g., forbidden by the freeze process."""
 
-        # GR TODO this will break with OSError if main package is renamed to
-        # 'odoo' we'll see then what the needed correction exactly is rather
-        # than swallowing the exception now
-        shutil.rmtree(join(self.openerp_dir, 'openerp.egg-info'))
+        # from here we can't guess whether it's 'openerp' or 'odoo'.
+        # Nothing guarantees that this method is called after develop().
+        # It is in practice now, but one day, the extraction as a separate
+        # script of freeze/extract will become a reality.
+        for proj_name in ('openerp', 'odoo'):
+            egg_info_dir = join(self.openerp_dir, proj_name + '.egg-info')
+            if os.path.exists(egg_info_dir):
+                shutil.rmtree(egg_info_dir)
 
     def buildout_cfg_name(self, argv=None):
         """Return the name of the config file that's been called.

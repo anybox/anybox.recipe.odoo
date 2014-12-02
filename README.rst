@@ -82,3 +82,4 @@ Contributors:
  * Stefan Rijnhart
  * Stéphane Bidoul
  * Sebastian Kennedy
+ * Laetitia Gangloff

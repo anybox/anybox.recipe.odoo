@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # flake8: noqa
 
-# setup.py from odoo 8.0 alpha, included as is, except for the dependencies
+# setup.py with a wildly renamed project name
 
 ##############################################################################
 #
@@ -141,7 +141,7 @@ execfile(join(os.path.dirname(__file__), 'openerp', 'release.py'))
 # Both python2.7 32bits and 64bits are known to work.
 
 setuptools.setup(
-      name             = 'openerp',
+      name             = 'oodooo',
       version          = version,
       description      = description,
       long_description = long_desc,

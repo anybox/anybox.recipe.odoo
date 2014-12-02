@@ -145,7 +145,6 @@ class TestServer(RecipeTestCase):
 
         self.recipe.retrieve_addons()
         paths = self.recipe.addons_paths
-        print get_vcs_log()
         self.assertEquals(get_vcs_log(), [
                           (addons1_dir, 'lp:my-addons1', 'last:1',
                            dict(offline=False, clear_locks=False, clean=False,
@@ -189,6 +188,16 @@ class TestServer(RecipeTestCase):
         self.assertEquals(set(self.recipe.requirements),
                           set(['pychart', 'anybox.recipe.odoo',
                                'openerp']))
+
+    def test_merge_requirements_new_project_name(self):
+        """At any point in time, Odoo is prone to change package name."""
+        self.make_recipe(version='local %s' % os.path.join(
+            TEST_DIR, 'odoo-project-renaming'))
+        self.recipe.version_detected = '8.0'
+        self.recipe.merge_requirements()
+        self.assertEquals(set(self.recipe.requirements),
+                          set(['pychart', 'anybox.recipe.odoo',
+                               'oodooo']))
 
     def test_merge_requirements_gunicorn(self):
         self.make_recipe(version='8.0', gunicorn='direct')
