@@ -176,11 +176,11 @@ class RecipeTestCase(unittest.TestCase):
         (typically set on class with the dirname of the test)
         """
         subprocess.check_call(
-            [sys.executable,
-             os.path.join(self.test_dir, 'fake_babel', 'setup.py'),
+            [sys.executable, 'setup.py',
              'bdist_egg',
              '-d', self.recipe.b_options['eggs-directory'],
              '-b', os.path.join(self.buildout_dir, 'build')],
+            cwd=os.path.join(self.test_dir, 'fake_babel'),
             stdout=subprocess.PIPE)
 
     def fill_working_set(self):
