@@ -5,8 +5,13 @@ The 1.8 series are stable versions, while the 1.9 are unstable.
 Changes displayed as "unreleased" in the stable series are released
 with any higher released unstable versions.
 
-1.9.0 (unreleased)
-------------------
+anybox.recipe.odoo 1.9.0 (unreleased)
+-------------------------------------
+- first release, skimmed from anybox.recipe.openerp 1.9.0
+
+
+anybox.recipe.openerp 1.9.0 (2014-12-02)
+----------------------------------------
 - rename to anybox.recipe.odoo
 - launchpad #1332147: insensitivity to project name in setup.py
   (openerp, odoo, whatever).
