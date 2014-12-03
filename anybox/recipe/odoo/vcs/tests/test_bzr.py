@@ -363,7 +363,8 @@ class BzrTestCase(BzrBaseTestCase):
         from ... import vcs
         save = vcs.bzr.LPDIR
         vcs.bzr.LPDIR = None
-        self.assertRaises(RuntimeError, BzrBranch, '', 'lp:something')
+        self.assertRaises(RuntimeError, BzrBranch, '',
+                          'lp:anybox.recipe.openerp')
         vcs.bzr.LPDIR = save
 
     def test_update_clear_locks(self):
