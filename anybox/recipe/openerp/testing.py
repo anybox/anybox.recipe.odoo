@@ -66,7 +66,8 @@ class FakeRepo(vcs.base.BaseRepo):
         return [self.revision]
 
     def archive(self, target):
-        utils.mkdirp(target)
+        if not os.path.isdir(target):
+            os.makedirs(target)
         with open(os.path.join(target, '.fake_archival.txt'), 'w') as f:
             f.write(str(self.revision))
 

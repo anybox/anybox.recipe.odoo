@@ -90,14 +90,6 @@ def major_version(version_string):
             "Unrecognized second version segment in %r" % version_string)
 
 
-def mkdirp(path):
-    """Same as mkdir -p."""
-    if not os.path.exists(path):
-        parent, name = os.path.split(path)
-        mkdirp(parent)
-        os.mkdir(path)
-
-
 def is_object_file(filename):
     """True if given filename is a python object file."""
     return filename.endswith('.pyc') or filename.endswith('.pyo')
