@@ -257,7 +257,7 @@ class GitRepo(BaseRepo):
                           log_level=logging.DEBUG)
 
             rtype, sha = self.query_remote_ref(BUILDOUT_ORIGIN, revision)
-            if rtype is None and ishex(revision):
+            if rtype is None and (ishex(revision) or revision == 'FETCH_HEAD'):
                 return self.fetch_remote_sha(revision)
 
             fetch_cmd = ['git', 'fetch']
