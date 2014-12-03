@@ -350,7 +350,7 @@ class BzrTestCase(BzrBaseTestCase):
 
     def test_lp_url(self):
         """lp: locations are being rewritten to the actual target."""
-        branch = BzrBranch('', 'lp:anybox.something')
+        branch = BzrBranch('', 'lp:anybox.recipe.openerp')
         # just testing for now that it's been rewritten
         self.failIf(branch.url.startswith('lp:'))
 
