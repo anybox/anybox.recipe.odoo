@@ -17,9 +17,6 @@ def repo(vcs_type, target_dir, url, **options):
     cls = SUPPORTED.get(vcs_type)
     if cls is None:
         raise UserError("Unsupported VCS type: %r" % vcs_type)
-
-    # case of standalon addon (see launchpad #1012899)
-    target_dir = cls.fix_target(target_dir)
     return cls(target_dir, url, **options)
 
 

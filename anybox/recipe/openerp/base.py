@@ -1068,9 +1068,7 @@ class BaseRecipe(object):
                                is issued. This depends on the precise vcs.
         """
 
-        repo_cls = vcs.SUPPORTED[vcs_type]
-        abspath = repo_cls.fix_target(abspath)
-        repo = repo_cls(abspath, '')  # no need of remote URL
+        repo = vcs.repo(vcs_type, abspath, '')  # no need of remote URL
 
         if not allow_local_modification and repo.uncommitted_changes():
             self.local_modifications.append(abspath)
@@ -1198,20 +1196,14 @@ class BaseRecipe(object):
         """
 
         repo_path = self.make_absolute(repo_path)
-        repo_cls = vcs.SUPPORTED[vcs_type]
-        fixed_repo_path = repo_cls.fix_target(repo_path)
         target_path = os.path.join(target_dir, local_path)
-        if fixed_repo_path != repo_path:
-            # again the problem of shifts, temp lame solution
-            split = os.path.split(fixed_repo_path)
-            assert split[0] == repo_path
-            target_path = os.path.join(target_path, split[1])
 
-        utils.mkdirp(target_path)
+        if not os.path.exists(target_path):
+            os.makedirs(target_path)
         if target_path in extracted:
             return
 
-        repo = repo_cls(fixed_repo_path, '')  # no need of remote URL
+        repo = vcs.repo(vcs_type, repo_path, '')  # no need of remote URL
         repo.archive(target_path)
         extracted.add(target_path)
 

@@ -5,6 +5,8 @@ build/
 .coverage
 COVERAGE
 .noseids
+*.pyc
+*.orig
 
 buildbot/.installed.cfg
 buildbot/bin/

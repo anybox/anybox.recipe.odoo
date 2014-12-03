@@ -148,24 +148,6 @@ class BaseRepo(object):
         """
         return os.path.exists(os.path.join(path, cls.vcs_control_dir))
 
-    @classmethod
-    def fix_target(cls, target_dir):
-        """Take into account that some targets are actually shifted below.
-
-        That is the case of standalon addon (see launchpad #1012899).
-        """
-
-        if os.path.exists(target_dir) and not cls.is_versioned(target_dir):
-            name = os.path.split(target_dir)[-1]
-            new_target = os.path.join(target_dir, name)
-            manifest = os.path.join(new_target, '__openerp__.py')
-            manifest2 = os.path.join(new_target, '__terp__.py')
-            exists = os.path.exists(manifest)
-            exists = exists or os.path.exists(manifest2)
-            if cls.is_versioned(new_target) and exists:
-                return new_target
-        return target_dir
-
     def uncommitted_changes(self):
         """True if we have uncommitted changes.
 
