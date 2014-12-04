@@ -1,9 +1,12 @@
 Changes
 ~~~~~~~
 
-The 1.8 series are stable versions, while the 1.9 are unstable.
-Changes displayed as "unreleased" in th stable series are released
-with any higher released unstable versions.
+The 1.8 series are old stable versions, while the 1.9 are the new stable ones.
+
+1.8.7 (unreleased)
+------------------
+- launchpad #1332147: insensitivity to project name in setup.py
+  (openerp, odoo, whatever).
 
 1.8.6 (2014-11-17)
 ------------------
