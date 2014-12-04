@@ -9,7 +9,6 @@ from UserDict import UserDict
 from zc.buildout.easy_install import Installer
 
 from . import vcs
-from . import utils
 from .base import BaseRecipe
 
 COMMIT_USER_NAME = 'Test'
