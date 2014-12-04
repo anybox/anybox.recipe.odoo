@@ -229,6 +229,8 @@ class GitRepo(BaseRepo):
                 return 'branch', sha
             elif fullref == 'refs/tags/' + ref:
                 return 'tag', sha
+            elif fullref == ref and ref == 'HEAD':
+                return 'HEAD', sha
         return None, ref
 
     def get_update(self, revision):
@@ -274,7 +276,7 @@ class GitRepo(BaseRepo):
 
             if rtype == 'tag':
                 self.log_call(['git', 'checkout', revision])
-            elif rtype == 'branch':
+            elif rtype in ('branch', 'HEAD'):
                 self.update_fetched_branch(revision)
             else:
                 raise NotImplementedError(
@@ -288,13 +290,14 @@ class GitRepo(BaseRepo):
         # harm
         self.log_call(['git', 'update-ref', '/'.join((
             'refs', 'remotes', BUILDOUT_ORIGIN, branch)), 'FETCH_HEAD'])
-        if self.options.get('depth'):
+        if self.options.get('depth') or branch == 'HEAD':
             # doing it the other way does not work, at least
             # not on Git 1.7
             self.log_call(['git', 'checkout', 'FETCH_HEAD'],
                           callwith=update_check_call)
-            self.log_call(['git', 'branch', '-f', branch],
-                          callwith=update_check_call)
+            if branch != 'HEAD':
+                self.log_call(['git', 'branch', '-f', branch],
+                              callwith=update_check_call)
             return
 
         if not self._is_a_branch(branch):

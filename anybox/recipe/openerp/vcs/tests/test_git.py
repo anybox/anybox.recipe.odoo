@@ -290,6 +290,24 @@ class GitTestCase(GitBaseTestCase):
         self.assertEqual(repo.query_remote_ref(BUILDOUT_ORIGIN, 'deadbeef'),
                          (None, 'deadbeef'))
 
+    def test_clone_remote_HEAD(self):
+        """Remote HEAD should be usable to clone onto."""
+        target_dir = os.path.join(self.dst_dir, "clone to make on HEAD")
+        repo = GitRepo(target_dir, self.src_repo)
+        subprocess.check_call(['git', 'checkout', self.commit_1_sha],
+                              cwd=self.src_repo)
+        repo('HEAD')
+        self.assertEqual(repo.parents(), [self.commit_1_sha])
+
+    def test_clone_update_remote_HEAD(self):
+        """Remote HEAD should be usable to clone onto."""
+        target_dir = os.path.join(self.dst_dir, "clone to make on HEAD")
+        repo = GitRepo(target_dir, self.src_repo)('master')
+        subprocess.check_call(['git', 'checkout', self.commit_1_sha],
+                              cwd=self.src_repo)
+        repo('HEAD')
+        self.assertEqual(repo.parents(), [self.commit_1_sha])
+
 
 class GitBranchTestCase(GitBaseTestCase):
 
