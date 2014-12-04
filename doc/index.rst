@@ -8,17 +8,19 @@ OpenERP buildout recipe
 
 This recipe for `Buildout <https://github.com/buildout/buildout>`_ is
 a fully featured tool allowing you to define and deploy quickly
-OpenERP installations of any kinds, ranging from development setups to
+OpenERP/Odoo installations of any kinds, ranging from development setups to
 fully automated production deployments or continuous integration.
 
 Some of its main features include:
 
-* uniformity across OpenERP versions (from 5.0 onwards)
-* installation of OpenERP server and, if meaningful, GTK and web clients.
+* uniformity across OpenERP/Odoo versions (from 5.0 onwards). If you
+  wish to manage Odoo >= 8, please consider also using `anybox.recipe.odoo
+  <https://pypi.python.org/pypi/anybox.recipe.odoo>`_.
+* installation of OpenERP/Odoo server and, if meaningful, GTK and web clients.
 * retrieval of main software and addons from various sources,
   including the major version control systems
 * ability to pinpoint everything for replayability
-* management of OpenERP configuration
+* management of OpenERP/Odoo configuration
 * dedicated scripts creation for easy integration of external tools,
   such as test launchers
 * packaging: creation of self-contained equivalents for easy
@@ -37,8 +39,8 @@ Released *stable* versions of this documentation are uploaded to `pythonhosted
 
 The full documentation is written with `Sphinx
 <http://sphinx-doc.org>`_, built continuously and
-uploaded to http://docs.anybox.fr/anybox.recipe.openerp/trunk by Anybox' public
-buildbot.
+uploaded to http://docs.anybox.fr/anybox.recipe.openerp/current by
+Anybox' public buildbot.
 The Sphinx source tree is to be found under the ``doc`` subdirectory
 of this project.
 
