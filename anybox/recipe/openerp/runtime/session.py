@@ -432,6 +432,40 @@ class Session(object):
         self.init_cursor()
         self.clean_environments()
 
+    def ref(self, external_id):
+        """Return ir.model.data object id from its external identifier.
+
+        :param external_id: External identifier of form module.name.
+                            e.g. base.user_root
+        :raise: ValueError if not found or external_id malformed
+        """
+        if '.' not in external_id:
+            raise ValueError(
+                "ref requires a fully qualified parameter: 'module.identifier'"
+            )
+        ir_model_data = self.registry('ir.model.data')
+        module, name = external_id.split('.', 1)
+        _, ref_id = ir_model_data.get_object_reference(
+            self.cr, self.uid, module, name
+        )
+        return ref_id
+
+    def browse_ref(self, external_id):
+        """Return ir.model.data browse object from its external identifier.
+
+        :param external_id: External identifier of form module.name.
+                            e.g. base.user_root
+        :raise: ValueError if not found or external_id malformed
+        """
+        if '.' not in external_id:
+            raise ValueError(
+                "browse_ref requires a fully qualified parameter: "
+                "'module.identifier'"
+            )
+        ir_model_data = self.registry('ir.model.data')
+        module, name = external_id.split('.', 1)
+        return ir_model_data.get_object(self.cr, self.uid, module, name)
+
     def handle_command_line_options(self, to_handle):
         """Handle prescribed command line options and eat them.
 
