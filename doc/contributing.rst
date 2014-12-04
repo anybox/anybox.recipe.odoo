@@ -3,17 +3,20 @@ For contributors
 
 Source and tracking
 ~~~~~~~~~~~~~~~~~~~
-The recipe is currently hosted as a launchpad project, under Bazaar
-version control: https://launchpad.net/anybox.recipe.openerp
+The recipes are currently both hosted in a `single Git repository
+<https://github.com/anybox/anybox.recipe.odoo>`_, the master branch being
+``anybox.recipe.odoo``, whereas ``anybox.recipe.openerp`` is to be found in
+the ``a.r.openerp-x.y`` branches (currently only 1.9 and the legacy
+1.8). This unusual structure because they still have most in common,
+``a.r.odoo`` being ``a.r.openerp`` without the bits for backward compatibility
+before Odoo v8.
 
-We follow the standard launchpad workflow (bugs, merge requests…).
+We follow the standard GitHub workflow (issues, pull requests…).
 Code contributors are systematically added to the list of
 contributors at the end of the README, unless they explicitely wish
-not to (what Launchpad does is obvisouly out of our scope).
+not to (what GitHub does is obviously out of our scope).
 
-There are currently no branch naming rules.
-
-Members of the "Anybox" team have push privileges on the main branches.
+Members of the "Anybox" organization have push privileges on this repository.
 
 Using a development version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -22,18 +25,21 @@ To use a local version of the recipe, you may use the ``develop``
 general buildout option::
 
   [buildout]
-  develop = /path/to/anybox.recipe.openerp
+  develop = /path/to/anybox.recipe.o
 
-To track the latest version of a ``bzr`` branch of the recipe, we find
-the
+To track a Git branch, we find the
 `gp.vcsdevelop <https://pypi.python.org/pypi/gp.vcsdevelop>`_
-extension simple and useful. Here's an example (excerpt from
-``buildot/recipe-trunk.cfg``)::
+extension simple and useful. Here's an example for
+``anybox.recipe.openerp`` (notice the ``@`` notation for the branch)::
 
   [buildout]
   extensions = gp.vcsdevelop
-  vcs-extend-develop = bzr+http://bazaar.launchpad.net/~anybox/anybox.recipe.openerp/trunk#egg=anybox.recipe.openerp
+  vcs-extend-develop = git+https://github.com/anybox/anybox.recipe.odoo@a.r.openerp-1.9#egg=a.r.openerp
   vcs-update = True
+
+.. note:: ``gp.vcsdevelop`` leverages internally pip, and the
+          ``git+https`` syntax actually `comes from pip
+          <https://pip.pypa.io/en/latest/reference/pip_install.html#vcs-support>`_.
 
 .. note::
   Actually some parts of the recipe are aware of the possible use
@@ -44,13 +50,13 @@ extension simple and useful. Here's an example (excerpt from
 Development setup
 ~~~~~~~~~~~~~~~~~
 
-We recommend "developping" the source code in a virtualenv, together
+We recommend "developing" the source code in a virtualenv, together
 with ``bzr``. For instance::
 
   virtualenv recipe-env
   recipe-env/bin/pip install bzr
-  recipe-env/bin/bzr branch lp:anybox.recipe.openerp
-  cd anybox.recipe.openerp
+  git clone https://github.com/anybox/anybox.recipe.odoo
+  cd anybox.recipe.odoo
   python setup.py develop
 
 Coding style
@@ -63,11 +69,11 @@ as many other projects:
 * Static analysis with `flake8 <https://pypi.python.org/pypi/flake8>`_
   (combines conveniently `pep8 <https://pypi.python.org/pypi/pep8>`_
   and `pyflakes <https://pypi.python.org/pypi/pyflakes>`_).
-* Unit tests : we try and test as much as possible. It is hard to achieve a
+* Unit tests: we try and test as much as possible. It is hard to achieve a
   real 100% with a tool that calls so many external processes, but
   this is mitigated by our
   :ref:`continuous integration <continuous_integration>` practice of
-  doing real OpenERP installations with the latest revision of the recipe.
+  doing real Odoo/OpenERP installations with the latest revision of the recipe.
 
 Launching static analysis and unit tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -85,7 +91,7 @@ Install ``nose``, ``flake8`` and, optionally, ``coverage``::
 
 Run ``flake8`` and the tests (in this example, after virtualenv activation)::
 
-    cd anybox.recipe.openerp
+    cd anybox.recipe.odoo
     flake8 anybox && nosetests anybox --with-doctest
 
 There is also this convenience to run the tests and output a coverage report::
@@ -98,7 +104,7 @@ There is also this convenience to run the tests and output a coverage report::
 Integration tests
 ~~~~~~~~~~~~~~~~~
 
-There is a special category of tests: those that need a real OpenERP
+There is a special category of tests: those that need a real Odoo/OpenERP
 instance, built with the recipe, to run.
 
 They are located within the ``tests_with_openerp`` subdirectory and
@@ -146,10 +152,10 @@ Upon each push on the main branches, Anybox' public
 buildbot awakes to check the coding style, run the tests and build
 this documentation. You may check the status there:
 
-* `trunk builder
+* `anybox.recipe.odoo builder
+  <http://buildbot.anybox.fr/waterfall?show=anybox.recipe.odoo>`_
+* `anybox.recipe.openerp builder
   <http://buildbot.anybox.fr/waterfall?show=anybox.recipe.openerp>`_
-* `stable builder
-  <http://buildbot.anybox.fr/waterfall?show=anybox.recipe.openerp-stable>`_
 
 Actual runs
 -----------
@@ -163,12 +169,12 @@ latest bzr version of the recipe actually install several combinations
 of OpenObject server and addons, and run their unit tests.
 
 The configuration is stored in the ``buildbot`` subdirectory of the
-recipe trunk branch. It is made of a high level configuration file
+master branch. It is made of a high level configuration file
 (``MANIFEST.cfg``) and buildout configuration files. This buildbot
 instance actually aggregates several such configurations.
 
 The corresponding builders are those whose name starts with
-``recipe-`` or ``stable-recipe-`` in the `builders list
+``recipe-`` in the `builders list
 <http://buildbot.anybox.fr/builders>`_.
 
 .. note:: the `integration tests`_ mentioned above are executed in
