@@ -33,7 +33,7 @@ setup(
     install_requires=requires,
     tests_require=requires + ['nose', 'bzr'],
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
+        'Development Status :: 4 - Beta',
         'Framework :: Buildout :: Recipe',
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',
