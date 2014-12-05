@@ -9,7 +9,7 @@ Odoo buildout recipe
 .. note:: if you wish to manage OpenERP/Odoo versions before the
           product rename that occurred for v8, you should go to
           `anybox.recipe.openerp
-          <https://pypi.python.org/pypi/anybox.recipe.openerp>`.
+          <https://pypi.python.org/pypi/anybox.recipe.openerp>`_.
 
 This recipe for `Buildout <https://github.com/buildout/buildout>`_ is
 a fully featured tool allowing you to define and deploy quickly

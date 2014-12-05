@@ -1,8 +1,6 @@
 Odoo buildout recipe
 ====================
 
-.. warning:: currently being extracted from anybox.recipe.openerp.
-
 .. note:: dear Git user, if you're looking for ``anybox.recipe.openerp``,
           please checkout the ``a.r.openerp-1.9`` branch.
 
@@ -13,7 +11,7 @@ fully automated production deployments or continuous integration.
 
 Some of its main features include:
 
-* uniformity across Odoo versions (from 5.0 onwards)
+* uniformity across Odoo versions (from 8.0 onwards)
 * installation of Odoo server
 * retrieval of main software and addons from various sources,
   including the major version control systems
@@ -30,10 +28,10 @@ variation or separation of concerns, native Python distributions
 installation, and of course the huge ecosystem of other recipes.
 
 The `full documentation
-<http://pythonhosted.org/anybox.recipe.openerp>`_
+<http://pythonhosted.org/anybox.recipe.odoo>`_
 is written with `Sphinx
 <http://sphinx-doc.org>`_, built continuously and
-uploaded to http://docs.anybox.fr/anybox.recipe.openerp by Anybox' public
+uploaded to http://docs.anybox.fr/anybox.recipe.odoo by Anybox' public
 buildbot.
 The Sphinx source tree is to be found under the ``doc`` subdirectory
 of this project.
@@ -51,17 +49,16 @@ https://github.com/anybox/anybox.recipe.odoo
 Useful links
 ~~~~~~~~~~~~
 
-* PyPI page: http://pypi.python.org/pypi/anybox.recipe.openerp
-* Main documentation: http://docs.anybox.fr/anybox.recipe.openerp
-* Legacy code repository and bug tracker:
-  https://launchpad.net/anybox.recipe.openerp
+* PyPI page: http://pypi.python.org/pypi/anybox.recipe.odoo
+* Main documentation: http://docs.anybox.fr/anybox.recipe.odoo
+* Code repository and bug tracker: https://github.com/anybox/anybox.recipe.odoo
 
 
 Contributors information
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 See `the latest version of the contributors documentation
-<http://docs.anybox.fr/anybox.recipe.openerp/trunk/contributing.html>`_.
+<http://docs.anybox.fr/anybox.recipe.odoo/current/contributing.html>`_.
 
 
 Credits
