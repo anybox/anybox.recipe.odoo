@@ -1,5 +1,4 @@
 include *.rst
+prune buildbot
 include anybox/recipe/openerp/openerp-cron-worker
-include buildbot/*.cfg
-include buildbot/bootstrap.py
 include anybox/recipe/openerp/upgrade.py.tmpl
