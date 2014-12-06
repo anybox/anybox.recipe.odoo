@@ -430,6 +430,29 @@ class GitBranchTestCase(GitBaseTestCase):
         repo("somebranch")
         self.assertEqual(repo.parents(), [sha])
 
+    def test_clone_on_branch_update_HEAD(self):
+        """Update on remote HEAD works even if that's a branch change"""
+        target_dir = os.path.join(self.dst_dir, "to_branch")
+        repo = GitRepo(target_dir, self.src_repo)
+        # update file in src after branching
+        sha_branch = git_write_commit(self.src_repo, 'tracked',
+                                      "in branch", msg="last version")
+        repo("somebranch")
+        # verify test base assumption: we are indeed where we think
+        self.assertEqual(repo.parents(), [sha_branch])
+        subprocess.check_call(['git', 'checkout', 'master'],
+                              cwd=self.src_repo)
+        sha_master = git_write_commit(self.src_repo, 'tracked',
+                                      "after branch",
+                                      msg="new commit on master")
+
+        repo('HEAD')
+        self.assertEqual(repo.parents(), [sha_master])
+
+        # maybe that's unnecessary, but fun for now:
+        descr = check_output(['git', 'describe', '--all'], cwd=target_dir)
+        self.assertEqual(descr.strip(), 'remotes/origin/HEAD')
+
     def test_clone_on_branch_depth(self):
         self.test_clone_on_branch(depth=1)
 
