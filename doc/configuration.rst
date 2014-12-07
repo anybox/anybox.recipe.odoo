@@ -420,7 +420,7 @@ pull/update, right before the merge.
 This is especially useful in unattended executions, to clean up any
 previous failed merges.
 
-Currently only bzr repositories get reverted
+Currently only bzr and git repositories get reverted.
 
 .. note:: new in version 1.9.0
 
