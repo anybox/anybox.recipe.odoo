@@ -456,6 +456,34 @@ class GitBranchTestCase(GitBaseTestCase):
     def test_clone_on_branch_depth(self):
         self.test_clone_on_branch(depth=1)
 
+    def test_sha_pinning_branch_indication(self):
+        """SHA pinning with branch indication
+
+        It must work even if in origin, the specified commit is unreachable
+        from HEAD.
+
+        GR: I believe that in some cases, the bare fetch used if there's no
+        branch indication might not retrieve the wished SHA, but I couldn't
+        reproduce this kind of condition with a setup that wouldn't otherwise
+        make the other operations of :class:`GitRepo` fail.
+        """
+        target_dir = os.path.join(self.dst_dir, "to_branch")
+        sha = git_write_commit(self.src_repo, 'tracked',
+                               "in branch", msg="last in branch")
+        # rewinding src repo to master branch so that sha is unreachable
+        # from HEAD
+        subprocess.check_call(['git', 'checkout', 'master'], cwd=self.src_repo)
+        sha_master = git_write_commit(self.src_repo, 'tracked',
+                                      'on master', msg="new in master")
+
+        repo = GitRepo(target_dir, self.src_repo, branch='somebranch')
+        repo(sha)
+        self.assertEqual(repo.parents(), [sha])
+        self.assertNotEqual(
+            subprocess.call(['git', 'cat-file', '-e', sha_master],
+                            cwd=target_dir),
+            0, msg="SHA should not have been fetched")
+
 
 class GitMergeTestCase(GitBaseTestCase):
 

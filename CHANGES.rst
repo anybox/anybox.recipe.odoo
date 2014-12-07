@@ -5,6 +5,14 @@ The 1.8 series are stable versions, while the 1.9 are unstable.
 Changes displayed as "unreleased" in the stable series are released
 with any higher released unstable versions.
 
+1.9.1 (unreleased)
+------------------
+
+- github #4: [git] support HEAD as a (remote) revision
+  specification. In a related way, added the branch indication to SHA
+  pinning, which isn't deprecated any more due to wide usage, only
+  warned that it's suboptimal.
+
 1.9.0 (2014-12-02)
 ------------------
 - launchpad #1332147: insensitivity to project name in setup.py

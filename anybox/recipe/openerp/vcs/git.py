@@ -205,12 +205,28 @@ class GitRepo(BaseRepo):
                       cwd=self.target_dir)
 
     def fetch_remote_sha(self, sha):
-        """Backwards compatibility wrapper."""
+        """Fetch a precise SHA from remote if necessary.
 
-        logger.warn("Pointing to a remote commit directly by its SHA "
-                    "is unsafe and heavy. It is only supported for "
-                    "backwards compatibility.")
-        self.log_call(['git', 'fetch', BUILDOUT_ORIGIN])
+        SHA pinning is suboptimal, can't be guaranteed to work (see the
+        warnings emitted in code for explanations). Still, many users
+        people depend on it, for not having enough privileges to add tags.
+        """
+        logger.warn("%s: pointing to a remote commit directly by its SHA "
+                    "is unsafe because it can become unreachable "
+                    "due to history rewrites (squash, rebase) in the remote "
+                    "branch. "
+                    "Please consider using tags if you can.", self.target_dir)
+        branch = self.options.get('branch')
+        fetch_cmd = ['git', 'fetch', BUILDOUT_ORIGIN]
+        if branch is None:
+            logger.info("%s: SHA pinning without remote branch indication. "
+                        "Now performing a fetch with no argument, hoping "
+                        "it'll retrieve the commit %r. Please consider "
+                        "adding a branch indication for more efficiency "
+                        "and possibly reliability.", self.target_dir, sha)
+        else:
+            fetch_cmd.append(branch)
+        self.log_call(fetch_cmd, callwith=update_check_call)
         self.log_call(['git', 'checkout', sha])
 
     def query_remote_ref(self, remote, ref):
