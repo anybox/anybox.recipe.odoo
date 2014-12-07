@@ -204,13 +204,25 @@ class GitRepo(BaseRepo):
                       callwith=update_check_call,
                       cwd=self.target_dir)
 
+    def has_commit(self, sha):
+        """Return true if repo has specified commit"""
+        try:
+            objtype = check_output(['git', 'cat-file', '-t', sha],
+                                   cwd=self.target_dir,
+                                   stderr=subprocess.PIPE).strip()
+        except subprocess.CalledProcessError:
+            return False
+
+        return objtype == 'commit'
+
     def fetch_remote_sha(self, sha):
         """Backwards compatibility wrapper."""
 
         logger.warn("Pointing to a remote commit directly by its SHA "
                     "is unsafe and heavy. It is only supported for "
                     "backwards compatibility.")
-        self.log_call(['git', 'fetch', BUILDOUT_ORIGIN])
+        if not self.has_commit(sha):
+            self.log_call(['git', 'fetch', BUILDOUT_ORIGIN])
         self.log_call(['git', 'checkout', sha])
 
     def query_remote_ref(self, remote, ref):
