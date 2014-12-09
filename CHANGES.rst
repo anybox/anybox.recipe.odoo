@@ -17,6 +17,7 @@ anybox.recipe.openerp 1.9.1 (unreleased)
 ----------------------------------------
 - github PR #5: ``ir_model_data`` helpers for
   :py:class:`anybox.recipe.odoo.runtime.Session`
+- github #6: fixed download URL for OpenERP 6.1-1
 
 anybox.recipe.odoo 1.9.0 (2014-12-05)
 -------------------------------------
