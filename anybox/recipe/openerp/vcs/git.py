@@ -249,12 +249,29 @@ class GitRepo(BaseRepo):
                 return 'HEAD', sha
         return None, ref
 
+    dangerous_revisions = ('FETCH_HEAD', 'ORIG_HEAD', 'MERGE_HEAD',
+                           'CHERRY_PICK_HEAD', 'REVERT_HEAD')
+
     def get_update(self, revision):
         """Make it so that the target directory is at the prescribed revision.
 
         Special case: if the 'merge' option is True,
         merge revision into current branch.
         """
+        if revision in self.dangerous_revisions:
+            logger.warn("%s> use of %r as revision in the recipe may "
+                        "interfere with the Git subcommands issued "
+                        "by the recipe in unspecified ways. It is in "
+                        "particular not guaranteed to provide "
+                        "consistent results on subsequent runs, new versions "
+                        "of the recipe etc. "
+                        "You should use them for exceptional and "
+                        "timebound operations only, backed "
+                        "with good knowledge of the recipe internals. "
+                        "If you get a related error below, that won't be "
+                        "a recipe bug.",
+                        self.target_dir, revision)
+
         if self.options.get('merge'):
             return self.merge(revision)
 

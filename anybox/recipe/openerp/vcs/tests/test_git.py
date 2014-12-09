@@ -101,6 +101,13 @@ class GitTestCase(GitBaseTestCase):
 
         self.assertEqual(repo.get_current_remote_fetch(), self.src_repo)
 
+    def test_dangerous(self):
+        """Test the warning message for dangerous *_HEAD revisions """
+        target_dir = os.path.join(self.dst_dir, "My clone")
+        repo = GitRepo(target_dir, self.src_repo)('master')
+        repo.offline = True
+        repo('FETCH_HEAD')  # offline mode is a simple checkout, so that works
+
     def test_clone_depth(self):
         """Git clone with depth option"""
         target_dir = os.path.join(self.dst_dir, "My clone")
