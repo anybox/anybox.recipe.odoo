@@ -1,4 +1,3 @@
 include *.rst
 prune buildbot
-include anybox/recipe/openerp/openerp-cron-worker
-include anybox/recipe/openerp/upgrade.py.tmpl
+include anybox/recipe/odoo/upgrade.py.tmpl
