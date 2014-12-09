@@ -101,6 +101,13 @@ class GitTestCase(GitBaseTestCase):
 
         self.assertEqual(repo.get_current_remote_fetch(), self.src_repo)
 
+    def test_dangerous(self):
+        """Test the warning message for dangerous *_HEAD revisions """
+        target_dir = os.path.join(self.dst_dir, "My clone")
+        repo = GitRepo(target_dir, self.src_repo)('master')
+        repo.offline = True
+        repo('FETCH_HEAD')  # offline mode is a simple checkout, so that works
+
     def test_clone_depth(self):
         """Git clone with depth option"""
         target_dir = os.path.join(self.dst_dir, "My clone")
@@ -290,6 +297,24 @@ class GitTestCase(GitBaseTestCase):
         self.assertEqual(repo.query_remote_ref(BUILDOUT_ORIGIN, 'deadbeef'),
                          (None, 'deadbeef'))
 
+    def test_clone_remote_HEAD(self):
+        """Remote HEAD should be usable to clone onto."""
+        target_dir = os.path.join(self.dst_dir, "clone to make on HEAD")
+        repo = GitRepo(target_dir, self.src_repo)
+        subprocess.check_call(['git', 'checkout', self.commit_1_sha],
+                              cwd=self.src_repo)
+        repo('HEAD')
+        self.assertEqual(repo.parents(), [self.commit_1_sha])
+
+    def test_clone_update_remote_HEAD(self):
+        """Remote HEAD should be usable to clone onto."""
+        target_dir = os.path.join(self.dst_dir, "clone to make on HEAD")
+        repo = GitRepo(target_dir, self.src_repo)('master')
+        subprocess.check_call(['git', 'checkout', self.commit_1_sha],
+                              cwd=self.src_repo)
+        repo('HEAD')
+        self.assertEqual(repo.parents(), [self.commit_1_sha])
+
 
 class GitBranchTestCase(GitBaseTestCase):
 
@@ -412,8 +437,59 @@ class GitBranchTestCase(GitBaseTestCase):
         repo("somebranch")
         self.assertEqual(repo.parents(), [sha])
 
+    def test_clone_on_branch_update_HEAD(self):
+        """Update on remote HEAD works even if that's a branch change"""
+        target_dir = os.path.join(self.dst_dir, "to_branch")
+        repo = GitRepo(target_dir, self.src_repo)
+        # update file in src after branching
+        sha_branch = git_write_commit(self.src_repo, 'tracked',
+                                      "in branch", msg="last version")
+        repo("somebranch")
+        # verify test base assumption: we are indeed where we think
+        self.assertEqual(repo.parents(), [sha_branch])
+        subprocess.check_call(['git', 'checkout', 'master'],
+                              cwd=self.src_repo)
+        sha_master = git_write_commit(self.src_repo, 'tracked',
+                                      "after branch",
+                                      msg="new commit on master")
+
+        repo('HEAD')
+        self.assertEqual(repo.parents(), [sha_master])
+
+        # maybe that's unnecessary, but fun for now:
+        descr = check_output(['git', 'describe', '--all'], cwd=target_dir)
+        self.assertEqual(descr.strip(), 'remotes/origin/HEAD')
+
     def test_clone_on_branch_depth(self):
         self.test_clone_on_branch(depth=1)
+
+    def test_sha_pinning_branch_indication(self):
+        """SHA pinning with branch indication
+
+        It must work even if in origin, the specified commit is unreachable
+        from HEAD.
+
+        GR: I believe that in some cases, the bare fetch used if there's no
+        branch indication might not retrieve the wished SHA, but I couldn't
+        reproduce this kind of condition with a setup that wouldn't otherwise
+        make the other operations of :class:`GitRepo` fail.
+        """
+        target_dir = os.path.join(self.dst_dir, "to_branch")
+        sha = git_write_commit(self.src_repo, 'tracked',
+                               "in branch", msg="last in branch")
+        # rewinding src repo to master branch so that sha is unreachable
+        # from HEAD
+        subprocess.check_call(['git', 'checkout', 'master'], cwd=self.src_repo)
+        sha_master = git_write_commit(self.src_repo, 'tracked',
+                                      'on master', msg="new in master")
+
+        repo = GitRepo(target_dir, self.src_repo, branch='somebranch')
+        repo(sha)
+        self.assertEqual(repo.parents(), [sha])
+        self.assertNotEqual(
+            subprocess.call(['git', 'cat-file', '-e', sha_master],
+                            cwd=target_dir),
+            0, msg="SHA should not have been fetched")
 
 
 class GitMergeTestCase(GitBaseTestCase):
