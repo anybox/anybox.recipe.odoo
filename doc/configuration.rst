@@ -301,8 +301,8 @@ Possible values:
 
 .. _git_depth:
 
-The ``depth`` Git addons option
-```````````````````````````````
+The ``depth`` Git option
+````````````````````````
 .. note:: new in vertion 1.9.0
 
 
@@ -329,6 +329,27 @@ reduce the disk footprint immediately.
              deployment systems on which the history does not usually
              matter.
 
+.. _git_sha_branch:
+
+Git SHA pinning and the ``branch`` option
+`````````````````````````````````````````
+
+The ``branch`` option is used to specify a branch *indication* to help
+retrieving remote commits that can't be fetched directly.
+
+In Git, a commit can never be fetched by its SHA, but the recipe
+supports is nevertheless, so that version pinning can be achieved
+without enough authority to add tags in remote.
+
+To do so, the recipe must perform first a broader fetch, then hope the
+wished commit has become available locally. The ``branch`` option
+narrows said fetch for better efficiency and reliability.
+
+.. note:: the ``branch`` option is new in vertion 1.9.1
+
+.. warning:: non tagged commits can become unreachable, especially
+             if the remote repository gets lots of rebasing. If
+             possible, pinning on tags is always to be preferred.
 
 .. _merges:
 
@@ -420,7 +441,7 @@ pull/update, right before the merge.
 This is especially useful in unattended executions, to clean up any
 previous failed merges.
 
-Currently only bzr repositories get reverted
+Currently only bzr and git repositories get reverted.
 
 .. note:: new in version 1.9.0
 

@@ -10,7 +10,7 @@ This is because for now anybox.recipe.openerp is considered to be
 upstream of anybox.recipe.odoo, and will change in the future.
 
 anybox.recipe.odoo 1.9.1 (unreleased)
-------------------------------------
+-------------------------------------
 - github #7: template for ``upgrade.py`` was missing for a.r.odoo
 
 anybox.recipe.openerp 1.9.1 (unreleased)
@@ -18,6 +18,10 @@ anybox.recipe.openerp 1.9.1 (unreleased)
 - github PR #5: ``ir_model_data`` helpers for
   :py:class:`anybox.recipe.odoo.runtime.Session`
 - github #6: fixed download URL for OpenERP 6.1-1
+- github #3: [git] support HEAD as a (remote) revision
+  specification. In a related way, added the branch indication to SHA
+  pinning, which isn't deprecated any more due to wide usage, only
+  warned that it's suboptimal.
 
 anybox.recipe.odoo 1.9.0 (2014-12-05)
 -------------------------------------

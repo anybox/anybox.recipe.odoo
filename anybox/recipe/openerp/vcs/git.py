@@ -216,13 +216,31 @@ class GitRepo(BaseRepo):
         return objtype == 'commit'
 
     def fetch_remote_sha(self, sha):
-        """Backwards compatibility wrapper."""
+        """Fetch a precise SHA from remote if necessary.
 
-        logger.warn("Pointing to a remote commit directly by its SHA "
-                    "is unsafe and heavy. It is only supported for "
-                    "backwards compatibility.")
+        SHA pinning is suboptimal, can't be guaranteed to work (see the
+        warnings emitted in code for explanations). Still, many users
+        people depend on it, for not having enough privileges to add tags.
+        """
+        logger.warn("%s: pointing to a remote commit directly by its SHA "
+                    "is unsafe because it can become unreachable "
+                    "due to history rewrites (squash, rebase) in the remote "
+                    "branch. "
+                    "Please consider using tags if you can.", self.target_dir)
+        branch = self.options.get('branch')
         if not self.has_commit(sha):
-            self.log_call(['git', 'fetch', BUILDOUT_ORIGIN])
+            fetch_cmd = ['git', 'fetch', BUILDOUT_ORIGIN]
+            if branch is None:
+                logger.info("%s: SHA pinning without remote "
+                            "branch indication. "
+                            "Now performing a fetch with no argument, hoping "
+                            "it'll retrieve the commit %r. Please consider "
+                            "adding a branch indication for more efficiency "
+                            "and possibly reliability.", self.target_dir, sha)
+            else:
+                fetch_cmd.append(branch)
+            self.log_call(fetch_cmd, callwith=update_check_call)
+
         self.log_call(['git', 'checkout', sha])
 
     def query_remote_ref(self, remote, ref):
@@ -241,7 +259,12 @@ class GitRepo(BaseRepo):
                 return 'branch', sha
             elif fullref == 'refs/tags/' + ref:
                 return 'tag', sha
+            elif fullref == ref and ref == 'HEAD':
+                return 'HEAD', sha
         return None, ref
+
+    dangerous_revisions = ('FETCH_HEAD', 'ORIG_HEAD', 'MERGE_HEAD',
+                           'CHERRY_PICK_HEAD', 'REVERT_HEAD')
 
     def get_update(self, revision):
         """Make it so that the target directory is at the prescribed revision.
@@ -249,6 +272,20 @@ class GitRepo(BaseRepo):
         Special case: if the 'merge' option is True,
         merge revision into current branch.
         """
+        if revision in self.dangerous_revisions:
+            logger.warn("%s> use of %r as revision in the recipe may "
+                        "interfere with the Git subcommands issued "
+                        "by the recipe in unspecified ways. It is in "
+                        "particular not guaranteed to provide "
+                        "consistent results on subsequent runs, new versions "
+                        "of the recipe etc. "
+                        "You should use them for exceptional and "
+                        "timebound operations only, backed "
+                        "with good knowledge of the recipe internals. "
+                        "If you get a related error below, that won't be "
+                        "a recipe bug.",
+                        self.target_dir, revision)
+
         if self.options.get('merge'):
             return self.merge(revision)
 
@@ -286,7 +323,7 @@ class GitRepo(BaseRepo):
 
             if rtype == 'tag':
                 self.log_call(['git', 'checkout', revision])
-            elif rtype == 'branch':
+            elif rtype in ('branch', 'HEAD'):
                 self.update_fetched_branch(revision)
             else:
                 raise NotImplementedError(
@@ -300,13 +337,14 @@ class GitRepo(BaseRepo):
         # harm
         self.log_call(['git', 'update-ref', '/'.join((
             'refs', 'remotes', BUILDOUT_ORIGIN, branch)), 'FETCH_HEAD'])
-        if self.options.get('depth'):
+        if self.options.get('depth') or branch == 'HEAD':
             # doing it the other way does not work, at least
             # not on Git 1.7
             self.log_call(['git', 'checkout', 'FETCH_HEAD'],
                           callwith=update_check_call)
-            self.log_call(['git', 'branch', '-f', branch],
-                          callwith=update_check_call)
+            if branch != 'HEAD':
+                self.log_call(['git', 'branch', '-f', branch],
+                              callwith=update_check_call)
             return
 
         if not self._is_a_branch(branch):
