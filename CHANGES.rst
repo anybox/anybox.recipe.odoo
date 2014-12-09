@@ -1,12 +1,30 @@
 Changes
 ~~~~~~~
 
-The 1.8 series are stable versions, while the 1.9 are unstable.
+The 1.9 series of anybox.recipe.openerp are stable versions, while
+their counterparts are currently considered unstable.
 Changes displayed as "unreleased" in the stable series are released
 with any higher released unstable versions.
 
-1.9.0 (2014-12-02)
-------------------
+This is because for now anybox.recipe.openerp is considered to be
+upstream of anybox.recipe.odoo, and will change in the future.
+
+anybox.recipe.odoo 1.9.1 (unreleased)
+------------------------------------
+- github #7: template for ``upgrade.py`` was missing for a.r.odoo
+
+anybox.recipe.openerp 1.9.1 (unreleased)
+----------------------------------------
+- github PR #5: ``ir_model_data`` helpers for
+  :py:class:`anybox.recipe.odoo.runtime.Session`
+
+anybox.recipe.odoo 1.9.0 (2014-12-05)
+-------------------------------------
+- first release, skimmed from anybox.recipe.openerp 1.9.0
+- rename to anybox.recipe.odoo
+
+anybox.recipe.openerp 1.9.0 (2014-12-02)
+----------------------------------------
 - launchpad #1332147: insensitivity to project name in setup.py
   (openerp, odoo, whatever).
 - launchpad #1332465: [git] support for shallow clones (--depth),
