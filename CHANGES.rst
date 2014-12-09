@@ -7,7 +7,9 @@ with any higher released unstable versions.
 
 anybox.recipe.odoo 1.9.1 (unreleased)
 ------------------------------------
--
+- github #7: template for ``upgrade.py`` was missing for a.r.odoo 
+- github PR #5: ``ir_model_data`` helpers for 
+  :pY:class:`anybox.recipe.odoo.runtime.Session`
 
 anybox.recipe.odoo 1.9.0 (2014-12-05)
 -------------------------------------
