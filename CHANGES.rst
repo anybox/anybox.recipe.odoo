@@ -18,7 +18,7 @@ anybox.recipe.odoo 1.9.1 (2014-12-17)
 anybox.recipe.openerp 1.9.1 (unreleased)
 ----------------------------------------
 - github PR #5: ``ir_model_data`` helpers for
-  :py:class:`anybox.recipe.odoo.runtime.Session`
+  the ``Session`` API (sripts and python shell)
 - github #6: fixed download URL for OpenERP 6.1-1
 - github #3: [git] support HEAD as a (remote) revision
   specification. In a related way, added the branch indication to SHA
