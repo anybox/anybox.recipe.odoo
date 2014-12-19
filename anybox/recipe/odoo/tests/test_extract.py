@@ -154,7 +154,8 @@ class TestExtraction(RecipeTestCase):
             version='pr_fakevcs http://main.soft.example odooo refspec',
             addons="pr_fakevcs http://repo.example target rev1\n"
             "local somwehere\n"
-            "pr_fakevcs http://repo2.example stdln rev2 group=stdl"
+            "pr_fakevcs http://repo2.example stdln rev2 group=stdl\n"
+            "pr_fakevcs http://repo2.example stdln2 rev2 group=stdl"
         )
         os.mkdir(self.recipe.parts)
         os.mkdir(os.path.join(self.recipe.openerp_dir))
