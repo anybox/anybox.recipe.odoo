@@ -1357,9 +1357,7 @@ class BaseRecipe(object):
                 self._extract_vcs_source(source_type, abspath, target_dir,
                                          local_path, extracted)
         # remove duplicates preserving order
-        seen = set()
-        addons_option = [a for a in addons_option
-                         if not(a in seen or seen.add(a))]
+        addons_option = list(OrderedDict.fromkeys(addons_option))
         out_conf.set(self.name, 'addons', os.linesep.join(addons_option))
         if self.options.get('revisions'):
             out_conf.set(self.name, 'revisions', '')
