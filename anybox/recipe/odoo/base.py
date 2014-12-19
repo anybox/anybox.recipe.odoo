@@ -57,6 +57,7 @@ class MainSoftware(object):
 main_software = MainSoftware()
 
 GP_VCS_EXTEND_DEVELOP = 'vcs-extend-develop'
+GP_DEVELOP_DIR = 'develop-dir'
 
 
 class BaseRecipe(object):
@@ -956,8 +957,12 @@ class BaseRecipe(object):
         frozen.add(out_config_path)
 
     def _get_gp_vcs_develops(self):
-        """Return a tuple of (raw, parsed) vcs-extends-develop specifications.
+        """Return a tuple of (raw, parsed, sub_dir, abs_path)
+        vcs-extends-develop specifications.
         """
+        sub_dir = self.b_options.get(
+            GP_DEVELOP_DIR, '')
+        base_path = self.make_absolute(sub_dir)
         lines = self.b_options.get(
             GP_VCS_EXTEND_DEVELOP)
         if not lines:
@@ -972,8 +977,12 @@ class BaseRecipe(object):
                          "you ever run that buildout ?")
             raise
 
-        return tuple((line, pip.req.parse_editable(line))
-                     for line in option_splitlines(lines))
+        ret = []
+        for raw in option_splitlines(lines):
+            parsed = pip.req.parse_editable(raw)
+            abs_path = os.path.join(base_path, parsed[0])
+            ret.append((raw, parsed, sub_dir, abs_path))
+        return tuple(ret)
 
     def _prepare_frozen_buildout(self, conf):
         """Create the 'buildout' section in conf."""
@@ -984,8 +993,7 @@ class BaseRecipe(object):
 
         # freezing for gp.vcsdevelop
         extends = []
-        for raw, parsed in self._get_gp_vcs_develops():
-            local_path = parsed[0]
+        for raw, _, _, abs_path in self._get_gp_vcs_develops():
             hash_split = raw.rsplit('#')
             url = hash_split[0]
             url = url.rsplit('@', 1)[0]
@@ -994,7 +1002,7 @@ class BaseRecipe(object):
             # ignore files) and changes setup.cfg.
             # For now we'll have to allow local modifications.
             revision = self._freeze_vcs_source(vcs_type,
-                                               self.make_absolute(local_path),
+                                               abs_path,
                                                pip_compatible=True,
                                                allow_local_modification=True)
             extends.append('%s@%s#%s' % (url, revision, hash_split[1]))
@@ -1233,13 +1241,12 @@ class BaseRecipe(object):
         develops = set(option_splitlines(self.b_options.get('develop')))
 
         extracted = set()
-        for raw, parsed in self._get_gp_vcs_develops():
-            local_path = parsed[0]
-            abs_path = self.make_absolute(local_path)
+        for raw, parsed, sub_dir, abs_path in self._get_gp_vcs_develops():
+            target_sub_dir = os.path.join(sub_dir, parsed[0])
             vcs_type = raw.split('+', 1)[0]
             self._extract_vcs_source(vcs_type, abs_path,
-                                     target_dir, local_path, extracted)
-            develops.add(abs_path)  # looks silly, but better for uniformity
+                                     target_dir, target_sub_dir, extracted)
+            develops.add(target_sub_dir)  # looks silly, but better for uniformity
 
         bdir = os.path.join(self.buildout_dir, '')
         conf.set('buildout', 'develop',

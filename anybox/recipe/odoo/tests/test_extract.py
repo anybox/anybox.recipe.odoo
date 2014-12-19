@@ -3,6 +3,7 @@ import shutil
 import tempfile
 from ConfigParser import ConfigParser, NoOptionError
 from ..base import GP_VCS_EXTEND_DEVELOP
+from ..base import GP_DEVELOP_DIR
 from ..testing import RecipeTestCase
 
 
@@ -97,6 +98,31 @@ class TestExtraction(RecipeTestCase):
 
         # extraction has been done
         target = os.path.join(self.extract_target_dir, 'aeroolib')
+        self.assertTrue(os.path.exists(target))
+        with open(os.path.join(target, '.fake_archival.txt')) as f:
+            self.assertEquals(f.read(), 'fakerev')
+
+    def test_prepare_extracted_buildout_gp_vcsdevelop_develop_dir(self):
+        self.make_recipe(version='8.0')
+        self.recipe.b_options[GP_VCS_EXTEND_DEVELOP] = (
+            "fakevcs+http://example.com/aeroolib#egg=aeroolib")
+        self.recipe.b_options[GP_DEVELOP_DIR] = 'src'
+        self.recipe.b_options['develop'] = os.path.join(
+            self.recipe.buildout_dir, 'simple_develop')
+        self.recipe.b_options['extensions'] = 'gp.vcsdevelop\n somotherext'
+
+        conf = ConfigParser()
+        self.recipe._prepare_extracted_buildout(conf, self.extract_target_dir)
+        self.assertFalse(conf.has_option('buildout', GP_VCS_EXTEND_DEVELOP))
+        self.assertFalse(conf.has_option('buildout', GP_DEVELOP_DIR))
+        self.assertEqual(conf.get('buildout', 'extensions'), 'somotherext')
+
+        develop = conf.get('buildout', 'develop').split(os.linesep)
+        self.assertEquals(set(d for d in develop if d),
+                          set(['src/aeroolib', 'simple_develop']))
+
+        # extraction has been done
+        target = os.path.join(self.extract_target_dir, 'src', 'aeroolib')
         self.assertTrue(os.path.exists(target))
         with open(os.path.join(target, '.fake_archival.txt')) as f:
             self.assertEquals(f.read(), 'fakerev')
