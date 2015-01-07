@@ -73,7 +73,7 @@ as many other projects:
   real 100% with a tool that calls so many external processes, but
   this is mitigated by our
   :ref:`continuous integration <continuous_integration>` practice of
-  doing real Odoo/OpenERP installations with the latest revision of the recipe.
+  doing real Odoo installations with the latest revision of the recipe.
 
 Launching static analysis and unit tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -104,7 +104,7 @@ There is also this convenience to run the tests and output a coverage report::
 Integration tests
 ~~~~~~~~~~~~~~~~~
 
-There is a special category of tests: those that need a real Odoo/OpenERP
+There is a special category of tests: those that need a real Odoo
 instance, built with the recipe, to run.
 
 They are located within the ``tests_with_openerp`` subdirectory and
@@ -162,7 +162,7 @@ Actual runs
 
 Furthermore, this buildbot instance runs `anybox.buildbot.openerp
 <https://pypi.python.org/pypi/anybox.buildbot.openerp>`_,
-a buildbot configurator for OpenERP installations based on the recipe.
+a buildbot configurator for Odoo installations based on the recipe.
 
 This is used in turn to run high-level integration tests, having the
 latest bzr version of the recipe actually install several combinations
@@ -182,7 +182,7 @@ The corresponding builders are those whose name starts with
           ``recipe-7.0-postgresql-9.2`` builder.
 
 Some builds may appear to be broken because of tests failures been
-pushed by upstream in OpenERP itself or in the tested addons, but it's
+pushed by upstream in Odoo itself or in the tested addons, but it's
 easy to check whether this is due to a recipe failure or not.
 
 .. note::

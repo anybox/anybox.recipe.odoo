@@ -1,37 +1,37 @@
-OpenERP Scripts
-===============
+Odoo Scripts
+============
 
 The server recipe actually includes a general engine to install Python
-code that needs access to the OpenERP API and build
+code that needs access to the Odoo API and build
 configuration-aware executables.
 
 As usual, it tries and do so by bridging the standard Python packaging
 practice (setuptools-style console scripts, as in
-``zc.recipe.egg:scripts``) and OpenERP specificities.
+``zc.recipe.egg:scripts``) and Odoo specificities.
 
-We call such scripts *OpenERP scripts* to distinguish them among the
+We call such scripts *Odoo scripts* to distinguish them among the
 more general concept of console scripts.
 
-.. warning:: OpenERP scripts are currently supported for OpenERP ≥ 6.1 only.
+.. warning:: Odoo scripts are currently supported for versions ≥ 6.1 only.
 
 
 Use cases
 ~~~~~~~~~
 
-OpenERP scripts can do great in situations where an RPC script might
+Odoo scripts can do great in situations where an RPC script might
 not be powerful enough or not practical. Some examples:
 
 * specific batch jobs, especially for large databases (you get to
   control the transaction).
 * introspection tools.
 * general-purposes test launchers that don't have any knowledge of
-  OpenERP specifics, such as ``nose``. See :ref:`command_line_options`
+  Odoo specifics, such as ``nose``. See :ref:`command_line_options`
   for details about that.
 
-OpenERP vs RPC scripts for administrative tasks
------------------------------------------------
+Odoo vs RPC scripts for administrative tasks
+--------------------------------------------
 
-There are several Python distributions that wrap the OpenERP RPC APIs
+There are several Python distributions that wrap the Odoo RPC APIs
 for easy use within Python code.
 
 Using an RPC script for administrative tasks usually leads to
@@ -53,10 +53,10 @@ under stress to try and persuade them that it's only a matter of
 changing an obscure password ?
 
 
-OpenERP scripts vs Openerp cron jobs
-------------------------------------
+Odoo scripts vs Odoo cron jobs
+---------------------------------
 
-Because they are part of addons, OpenERP cron jobs also have full
+Because they are part of addons, Odoo cron jobs also have full
 unrestricted access to the internal API, and obviously don't suffer
 from the password plague.
 
@@ -65,19 +65,19 @@ Some ideas to make a choice:
 * who should control, schedule and tune execution (a system administrator or
   a functional admin)
 * which one the script author finds easiest to write for
-* reuse and distribution issues : OpenERP scripts are in Python
+* reuse and distribution issues : Odoo scripts are in Python
   distributions, cron jobs are in addons.
-* OpenERP scripts must implement their own transaction control,
+* Odoo scripts must implement their own transaction control,
   whereas cron jobs don't bother about it but rely on the framework's
   decisions.
 
 Perhaps, the best is not to choose : put the bulk of the logic in some
-technical addon, it's easy to rewrap it in an OpenERP script and as a
+technical addon, it's easy to rewrap it in an Odoo script and as a
 cron job.
 
 
-Declaring OpenERP Scripts
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Declaring Odoo Scripts
+~~~~~~~~~~~~~~~~~~~~~~
 There are several cases, depending on the script authors
 intentions. Script authors should therefore state clearly in their
 documentation how to declare them.
@@ -111,7 +111,7 @@ The following configuration::
   openerp_scripts = my_script
 
 Produces an executable ``bin/my_script-openerp-one``, that can import
-OpenERP server and addons code, and in which the OpenERP configuration
+Odoo server and addons code, and in which the Odoo configuration
 related to the appropriate buildout part (here, ``openerp-one``) is
 loaded in the standard ``openerp.tools.config``, for use in the
 script. The script has to take care of all database management operations.
@@ -147,7 +147,7 @@ the callable specified in the entry point, as in ``main(2,3)`` in that
 example.
 
 There is a special argument: ``session``, which is an object provided
-by the recipe to expose OpenERP API in a convenient manner for script
+by the recipe to expose Odoo API in a convenient manner for script
 authors. Check
 :py:class:`anybox.recipe.openerp.runtime.session.Session` to learn
 what can be done with it.
@@ -165,8 +165,8 @@ Command-line options
 
 In some cases, it is useful to do some operations, such as preloading
 a database, before actual running of the script. This is intended for
-scripts which have no special knowledge of OpenERP but may in turn
-call some code meant for OpenERP, that'd need some preparations to
+scripts which have no special knowledge of Odoo but may in turn
+call some code meant for Odoo, that'd need some preparations to
 already have been performed.
 
 The main use-case is unit tests launchers.
@@ -194,14 +194,14 @@ Currently available command-line-options:
 
 .. _openerp_log_level:
 
-OpenERP log level
------------------
+Odoo log level
+--------------
 This is mostly meant for scripts with the ``command-line-options=-d``
 modifier.
 
-In some cases, one is not interested in the logs during the OpenERP
+In some cases, one is not interested in the logs during the Odoo
 database load. The typical use-case this has been made for is the
-``sphinx-build`` script, where any warning from OpenERP would just
+``sphinx-build`` script, where any warning from Odoo would just
 make it harder to stop actual documentation warnings, or to limit the
 output of test launcher before actual testing begins.
 
@@ -216,8 +216,8 @@ Of course, the actual script can override that setting once it really
 starts, in which case the modifier is really only about the loading sequence.
 
 
-Writing OpenERP Scripts
-~~~~~~~~~~~~~~~~~~~~~~~
+Writing Odoo Scripts
+~~~~~~~~~~~~~~~~~~~~
 
 Script authors have to:
 
@@ -268,7 +268,7 @@ Making the distribution available
 
 In order to be used by the recipe, the distribution that holds the
 script code has to be *required* with the ``eggs`` option. But how can
-buildout retrieve it ? There's nothing specific to the OpenERP recipe
+buildout retrieve it ? There's nothing specific to the Odoo recipe
 about that, it works in the exact same way as for the standard
 ``zc.recipe.eggs`` recipe.
 
@@ -367,7 +367,7 @@ it according to needs, and maybe track it in version control.
           will warn you if it's missing). The recipe will use it to set
           ``db_version`` at the end of the process.
 
-In truth, upgrade scripts are nothing but OpenERP scripts, with the
+In truth, upgrade scripts are nothing but Odoo scripts, with the
 entry point console script being provided by the recipe itself, and
 in turn relaying to that user-level callable.
 See :py:mod:`anybox.recipe.openerp.runtime.upgrade` for more details
@@ -422,7 +422,7 @@ use ``--help`` with the version you have. Here's the current state::
                           working directory, supports homedir expansion ('~' on
                           POSIX systems). (default: upgrade.log)
     --log-level LOG_LEVEL
-                          Main OpenERP logging level. Does not affect the
+                          Main Odoo logging level. Does not affect the
                           logging from the main upgrade script itself. (default:
                           info)
     --console-log-level CONSOLE_LOG_LEVEL
@@ -434,7 +434,7 @@ use ``--help`` with the version you have. Here's the current state::
                           (lower level stages can still write) (default: False)
     -d DB_NAME, --db-name DB_NAME
                           Database name. If ommitted, the general default values
-                          from OpenERP config file or libpq will apply.
+                          from Odoo config file or libpq will apply.
     --init-load-demo-data
                           Demo data will be loaded with module installations if
                           and only if this modifier is specified (default:
@@ -470,7 +470,7 @@ Startup scripts
 ~~~~~~~~~~~~~~~
 The familiar ``start_openerp``, and its less pervasing siblings
 (``gunicorn_openerp``, ``test_openerp``, …) are also special cases of
-OpenERP scripts.
+Odoo scripts.
 
 What is special with them amounts to the following:
 
@@ -494,11 +494,11 @@ List of internal entry points
 
 Here's the list of currently available internal entry points. 
 
-:openerp_starter: main OpenERP startup script (dynamically added
+:openerp_starter: main Odoo startup script (dynamically added
                   behing the scenes by the recipe)
-:openerp_tester: uniform script to start OpenERP, launch all tests and
+:openerp_tester: uniform script to start Odoo, launch all tests and
                  exit. This can be achieved with the main startup
-                 scripts, but options differ among OpenERP versions.
+                 scripts, but options differ among Odoo versions.
                  (also dynamically added behind the scenes).
 :openerp_upgrader: entry point for the upgrade script
 :openerp_cron_worker: entry point for the cron worker script that gets

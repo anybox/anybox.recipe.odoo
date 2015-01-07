@@ -5,13 +5,13 @@
 # It is licensed under GNU Affero GPL v3.
 
 """
-OpenERP cron jobs worker
+Odoo cron jobs worker
 
-This script executes OpenERP cron jobs. Normally, cron jobs are handled by the
-OpenERP server but depending on deployment needs, independent worker processes
+This script executes Odoo cron jobs. Normally, cron jobs are handled by the
+Odoo server but depending on deployment needs, independent worker processes
 can be used. This is especially the case when the server is run via Gunicorn.
 
-OpenERP cron jobs worker re-uses openerp-server command-line options but does
+Odoo cron jobs worker re-uses openerp-server command-line options but does
 not honor all of them.
 
 Meaningful options include:
@@ -82,7 +82,7 @@ def list_databases():
     p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
     output = p2.communicate()[0]
     databases = output.splitlines()
-    # TODO filter out non-OpenERP databases
+    # TODO filter out non-Odoo databases
     databases = [d for d in databases if d not in ['template0', 'template1', 'postgres']]
     databases = [d for d in databases if not d.startswith('postgres')]
     return databases
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     openerp.cron.enable_schedule_wakeup = False
     openerp.multi_process = True # enable multi-process signaling
     import openerp.addons.base
-    print "OpenERP cron jobs worker. Hit Ctrl-C to exit."
+    print "Odoo cron jobs worker. Hit Ctrl-C to exit."
     print "Documentation is available at the top of the `opener-cron-worker` file."
     if config['db_name']:
         db_names = config['db_name'].split(',')

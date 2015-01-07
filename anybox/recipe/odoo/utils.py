@@ -47,9 +47,9 @@ def use_or_open(provided, path, *open_args):
 
 
 def major_version(version_string):
-    """The least common denominator of OpenERP versions : two numbers.
+    """The least common denominator of Odoo versions : two numbers.
 
-    OpenERP version numbers are a bit hard to compare if we consider nightly
+    Odoo version numbers are a bit hard to compare if we consider nightly
     releases, bzr versions etc. It's almost impossible to compare them without
     an a priori knowledge of release dates and revisions.
 
@@ -66,7 +66,7 @@ def major_version(version_string):
     nightlies as 6.2-date-time whereas version_info is (7, 0, 0, ALPHA)
     We can in recipe code check for >= (6, 2), that's not a big issue.
 
-    Regarding OpenERP saas releases (e.g. 7.saas~1) that are short-lived stable
+    Regarding Odoo saas releases (e.g. 7.saas~1) that are short-lived stable
     versions between two "X.0" LTS releases, the 'saas~' argument before the
     minor version number is stripped. For instance::
 

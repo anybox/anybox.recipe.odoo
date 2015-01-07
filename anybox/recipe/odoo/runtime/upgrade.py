@@ -32,13 +32,13 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
 
       It must accept the two following positional arguments, in that order:
 
-        - a :class:`.Session` instance (as in standard "OpenERP scripts")
+        - a :class:`.Session` instance (as in standard "Odoo scripts")
         - a logger (standard object from the :mod:`logging` module)
 
       and may return a non zero status code to indicate an error.
       Both ``None`` and 0 are interpreted as success.
 
-    * ``conf``: path to the OpenERP configuration file (managed by the recipe)
+    * ``conf``: path to the Odoo configuration file (managed by the recipe)
     * ``buildout_dir``: directory of the buildout
     """
 
@@ -49,7 +49,7 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
                         "current working directory, supports homedir "
                         "expansion ('~' on POSIX systems).")
     parser.add_argument('--log-level', default='info',
-                        help="Main OpenERP logging level. Does not affect the "
+                        help="Main Odoo logging level. Does not affect the "
                         "logging from the main upgrade script itself.")
     parser.add_argument('--console-log-level', default='info',
                         help="Level for the upgrade process console "
@@ -61,7 +61,7 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
                              "script (lower level stages can still write)")
     parser.add_argument('-d', '--db-name', default=SUPPRESS,
                         help="Database name. If ommitted, the general default "
-                        "values from OpenERP config file or libpq will apply.")
+                        "values from Odoo config file or libpq will apply.")
     parser.add_argument('--init-load-demo-data', action='store_true',
                         help="Demo data will be loaded with module "
                         "installations if and only if "

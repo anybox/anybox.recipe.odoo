@@ -67,7 +67,7 @@ class ServerRecipe(BaseRecipe):
         if gunicorn == 'proxied':
             self.options['options.proxy_mode'] = 'True'
             logger.warn("'gunicorn = proxied' now superseded since "
-                        "OpenERP 7 by the 'proxy_mode' OpenERP server option ")
+                        "OpenERP 7 by the 'proxy_mode' Odoo server option ")
 
     def merge_requirements(self):
         """Prepare for installation by zc.recipe.egg
@@ -97,7 +97,7 @@ class ServerRecipe(BaseRecipe):
         return openerp_project_name
 
     def _create_default_config(self):
-        """Have OpenERP generate its default config file.
+        """Have Odoo generate its default config file.
         """
         self.options.setdefault('options.admin_passwd', '')
         sys.path.append(self.openerp_dir)
@@ -108,7 +108,7 @@ class ServerRecipe(BaseRecipe):
     def _create_gunicorn_conf(self, qualified_name):
         """Put a gunicorn_PART.conf.py script in /etc.
 
-        Derived from the standard gunicorn.conf.py shipping with OpenERP.
+        Derived from the standard gunicorn.conf.py shipping with Odoo.
         """
         gunicorn_options = dict(
             workers='4',
@@ -173,7 +173,7 @@ conf = openerp.tools.config
                 "        server.log.info('Worker loading database %r',",
                 "                        db_name)",
                 "        RegistryManager.get(db_name)",
-                "    server.log.info('OpenERP databases %r loaded, '",
+                "    server.log.info('Odoo databases %r loaded, '",
                 "                    'worker ready '",
                 "                    'to serve requests', preload_dbs)",
             ))
@@ -182,7 +182,7 @@ conf = openerp.tools.config
         f.close()
 
     def _get_server_command(self):
-        """Return a full path to the main OpenERP server command."""
+        """Return a full path to the main Odoo server command."""
         return join(self.openerp_dir, 'openerp-server')
 
     def _parse_openerp_scripts(self):
@@ -379,7 +379,7 @@ conf = openerp.tools.config
                     or self.version_wanted == '6.1-1'):
                 logger.warn(
                     "Can't use openerp-cron-worker with version %s "
-                    "You have to run a separate regular OpenERP process "
+                    "You have to run a separate regular Odoo process "
                     "for cron jobs to be launched.", version)
                 return
 
@@ -412,7 +412,7 @@ conf = openerp.tools.config
             "session = Session(%r, %r)" % (self.config_path,
                                            self.buildout_dir),
             "if len(sys.argv) <= 1:",
-            "    print('To start the OpenERP working session, just do:')",
+            "    print('To start the Odoo working session, just do:')",
             "    print('    session.open(db=DATABASE_NAME)')",
             "    print('or, to use the database from the buildout "
             "part config:')",
@@ -442,7 +442,7 @@ conf = openerp.tools.config
 
         If initialization string is not passed, one will be cooked for
           - session initialization
-          - treatment of OpenERP options specific to this script, as required
+          - treatment of Odoo options specific to this script, as required
             in the 'options' key of the scripts descrition (typically to
             add a database opening option to the provided script).
         """

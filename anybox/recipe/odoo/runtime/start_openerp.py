@@ -30,8 +30,8 @@ def main(starter, conf, version=None, just_test=False,
 
     :param starter: path to the main script source file (currently
       ``openerp-server``)
-    :param conf: path to the OpenERP configuration file (managed by the recipe)
-    :param version: OpenERP major version
+    :param conf: path to the Odoo configuration file (managed by the recipe)
+    :param version: Odoo major version
     :param server_wide_modules: additional server wide modules, to pass with
        the ``--load`` command-line option (ignored if the option is actually
        there on the command line)
