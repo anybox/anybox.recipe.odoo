@@ -23,8 +23,8 @@ class ServerRecipe(BaseRecipe):
     }
 
     nightly_filenames = {
-        '8.0': 'odoo_8.0-%s.tar.gz',
-        'trunk': 'odoo_9.0alpha1-%s.tar.gz'
+        '8.0': 'odoo_8.0.%s.tar.gz',
+        'trunk': 'odoo_9.0alpha1.%s.tar.gz'
     }
     """Name of expected nightly tarballs in base URL, by major version.
     """

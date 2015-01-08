@@ -112,20 +112,23 @@ need to be launched with a launcher script constructed by the recipe.
 
 For example, create a testing buildout like this::
 
-  [openerp]
+  [buildout]
+  parts = odoo
+  [odoo]
   # version as you wish
+  version = nightly 8.0 latest
   eggs = nose
-  openerp_scripts nosetests command-line-options = -d
+  openerp_scripts = nosetests command-line-options=-d
 
 Then run ``bin/buildout``, create a database and initialize it. From
 the buildout directory::
 
   createdb test-recipe
-  bin/start_openerp -d test-recipe -i base --stop-after-init
+  bin/start_odoo -d test-recipe -i base --stop-after-init
 
 You can then run the tests::
 
-  bin/nosetests_openerp -d test-recipe -- /path/to/recipe/branch/tests_with_openerp
+  bin/nosetests_odoo -d test-recipe -- /path/to/recipe/branch/tests_with_openerp
 
 Currently, these tests are all about the ``Session`` objects, used in
 scripts.
