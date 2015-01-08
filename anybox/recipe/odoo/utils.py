@@ -133,7 +133,7 @@ def check_output(*popenargs, **kwargs):
     The stdout argument is not allowed as it is used internally.
     To capture standard error in the result, use stderr=STDOUT.
 
-    >>> os.environ['LANG'] = 'C'  # for uniformity of error msg
+    >>> os.environ['LC_ALL'] = 'C'  # for uniformity of error msg
     >>> err = check_output(["/bin/sh", "-c",
     ...               "ls -l non_existent_file ; exit 0"],
     ...              stderr=subprocess.STDOUT)
