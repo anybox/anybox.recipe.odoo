@@ -112,7 +112,7 @@ index servers, mirrors, etc.).
 Odoo recipes
 ~~~~~~~~~~~~
 
-There are three different recipes bundled with
+There are four different recipes bundled with
 ``anybox.recipe.openerp``. The option line to put in your part (see
 :ref:`buildout_conf_parts`) is the following.
 
@@ -126,6 +126,49 @@ Server
           (``lp:``), then you need to add the ``bzr`` extra-dependency::
 
             recipe = anybox.recipe.openerp[bzr]:server
+
+Release
+-------
+::
+    recipe = anybox.recipe.openerp:release
+
+This recipe allows turn a buildout that aggregates from various remote sources
+(tarball downloads, VCSes) into a self-contained buildout archive directory 
+that can be packed for easy distribution.
+
+.. note:: supported VCSes for this feature are currently Mercurial,
+          Bazaar and Git (excluding Subversion).
+
+Actually it extracts only the downloaded elements into a target
+directory and issues a buildout configuration with local references
+only. If that target directory has been itself initialized first with
+the *fixed elements* (buildout configuration files, bootstrap scripts,
+local addons), then it has all the needed elements, except eggs to
+be downloaded from PyPI or the specified index site.
+
+The produced buildout configuration in the target directory is
+``release.cfg``. So the buildout can be executed like this::
+
+  python bootstrap.py && bin/buildout -c release.cfg
+
+or further extended for system-dependent options such as port, db
+connection, etc.
+
+The recipe must extends the server recipe.
+Example::
+
+  [openerp]
+  recipe = anybox.recipe.openerp[bzr]:server
+  ...
+  
+  [openerp_release]
+  <= openerp
+  recipe = anybox.recipe.odoo[bzr]:release
+  release-dir = release
+  clean-dir = true
+  no-extends = true
+
+Python distributions managed with ``gp.vcsdevelop`` are taken into account.
 
 Web client
 ----------

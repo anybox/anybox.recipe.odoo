@@ -48,6 +48,7 @@ setup(
     ],
     entry_points={'zc.buildout': [
         'server = anybox.recipe.odoo.server:ServerRecipe',
+        'release = anybox.recipe.odoo.release:ReleaseRecipe',
     ]},
     extras_require={
         'bzr': ['bzr'],
