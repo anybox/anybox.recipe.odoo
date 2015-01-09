@@ -381,9 +381,9 @@ class GitRepo(BaseRepo):
                                    self.target_dir)
             os.chdir(self.target_dir)
             cmd = ['git', 'pull', self.url, revision]
-            if self.git_version >= (1, 7, 8):
-                # --edit and --no-edit appear with Git 1.7.8
-                # see Documentation/RelNotes/1.7.8.txt of Git
+            if self.git_version >= (1, 7, 10):
+                # --edit and --no-edit appear with Git 1.7.10
+                # see Documentation/RelNotes/1.7.10.txt of Git
                 # (https://git.kernel.org/cgit/git/git.git/tree)
                 cmd.insert(2, '--no-edit')
 
