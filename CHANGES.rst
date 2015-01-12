@@ -13,7 +13,7 @@ anybox.recipe.odoo 1.9.1 (unreleased)
 -------------------------------------
 - github #7: template for ``upgrade.py`` was missing for a.r.odoo
 
-anybox.recipe.openerp 1.9.1 (unreleased)
+anybox.recipe.openerp 1.9.1 (2015-01-12)
 ----------------------------------------
 - github PR #5: ``ir_model_data`` helpers for
   :py:class:`anybox.recipe.odoo.runtime.Session`
