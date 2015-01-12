@@ -9,7 +9,15 @@ with any higher released unstable versions.
 This is because for now anybox.recipe.openerp is considered to be
 upstream of anybox.recipe.odoo, and will change in the future.
 
-anybox.recipe.odoo 1.9.1 (unreleased)
+anybox.recipe.odoo 1.9.2 (unreleased)
+-------------------------------------
+-
+
+anybox.recipe.openerp 1.9.2 (unreleased)
+----------------------------------------
+-
+
+  anybox.recipe.odoo 1.9.1 (2014-12-17)
 -------------------------------------
 - github #7: template for ``upgrade.py`` was missing for a.r.odoo
 
