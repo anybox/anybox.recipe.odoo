@@ -178,6 +178,7 @@ class Session(object):
         self.init_cursor()
         self.uid = SUPERUSER_ID
         self.init_environments()
+        self.context = self.registry('res.users').context_get(self.cr, self.uid)
 
     def init_environments(self):
         """Enter the environments context manager, but don't leave it
