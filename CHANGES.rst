@@ -15,7 +15,8 @@ anybox.recipe.odoo 1.9.2 (unreleased)
 
 anybox.recipe.openerp 1.9.2 (unreleased)
 ----------------------------------------
--
+- github #30: fixed regression with option ``gunicorn.preload_databases``
+  that appeared in 1.9.0
 
   anybox.recipe.odoo 1.9.1 (2014-12-17)
 -------------------------------------

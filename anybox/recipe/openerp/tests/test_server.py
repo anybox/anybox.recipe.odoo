@@ -522,7 +522,7 @@ class TestServer(RecipeTestCase):
         with open(gunicorn_conf) as conf:
             for line in conf:
                 if 'preload_dbs =' in line:
-                    self.assertEqual(line.strip(), "preload_db = " + expected)
+                    self.assertEqual(line.strip(), "preload_dbs = " + expected)
 
     def test_gunicorn_preload_databases_multiple(self):
         self.test_gunicorn_preload_databases(databases='db1\ndb2',
