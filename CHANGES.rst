@@ -18,6 +18,7 @@ anybox.recipe.odoo 1.9.2 (unreleased)
 
 anybox.recipe.odoo 1.9.1 (2014-12-17)
 -------------------------------------
+- github #18: Support develop-dir option from gp.vcsdevelop
 - github #7: template for ``upgrade.py`` was missing for a.r.odoo
 
 anybox.recipe.openerp 1.9.1 (unreleased)
