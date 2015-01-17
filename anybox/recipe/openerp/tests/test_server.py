@@ -505,6 +505,29 @@ class TestServer(RecipeTestCase):
     def test_install_scripts_70_no_devtools(self):
         self.test_install_scripts_70(with_devtools=False)
 
+    def test_gunicorn_preload_databases(self, databases='onedb',
+                                        expected="('onedb',)"):
+        self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'oerp70'),
+                         gunicorn='direct')
+        self.recipe.version_detected = "7.0"
+        self.recipe.options['gunicorn.preload_databases'] = databases
+        self.recipe.options['options.log_handler'] = ":INFO,werkzeug:WARNING"
+
+        self.install_scripts()
+
+        self.assertScripts(['gunicorn_openerp'])
+        gunicorn_conf = os.path.join(self.recipe.etc,
+                                     'gunicorn_openerp.conf.py')
+        self.assertTrue(os.path.exists(gunicorn_conf))
+        with open(gunicorn_conf) as conf:
+            for line in conf:
+                if 'preload_dbs =' in line:
+                    self.assertEqual(line.strip(), "preload_db = " + expected)
+
+    def test_gunicorn_preload_databases_multiple(self):
+        self.test_gunicorn_preload_databases(databases='db1\ndb2',
+                                             expected="('db1', 'db2')")
+
     def test_install_scripts_70_server_wide_modules(self):
         self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'oerp70'),
                          gunicorn='direct',
