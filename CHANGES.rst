@@ -13,7 +13,8 @@ upstream of anybox.recipe.odoo, and will change in the future.
 
 anybox.recipe.odoo 1.9.2 (unreleased)
 -------------------------------------
--
+- Odoo renaming in the doc
+- adapted nightly archive URL
 
 anybox.recipe.odoo 1.9.1 (2014-12-17)
 -------------------------------------

@@ -20,7 +20,7 @@ setup(
     version=version,
     author="Anybox",
     author_email="contact@anybox.fr",
-    description="A buildout recipe to install and configure OpenERP",
+    description="A buildout recipe to install and configure Odoo",
     license="AGPLv3+",
     long_description='\n'.join((
         open('README.rst').read(),

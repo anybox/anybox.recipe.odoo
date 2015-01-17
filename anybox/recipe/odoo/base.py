@@ -47,7 +47,7 @@ class MainSoftware(object):
     whose meaning depends on the concrete recipe class using it.
 
     For example, in :class:`anybox.recipe.odoo.server.ServerRecipe`,
-    :data:`main_software` represents the OpenObject server or the OpenERP
+    :data:`main_software` represents the OpenObject server or the Odoo
     standard distribution.
     """
 
@@ -126,7 +126,7 @@ class BaseRecipe(object):
     soft_requirements = ()  # subset of requirements that's not necessary
     addons_paths = ()
 
-    # Caching logic for the main OpenERP part (e.g, without addons)
+    # Caching logic for the main Odoo part (e.g, without addons)
     # Can be 'filename' or 'http-head'
     main_http_caching = 'filename'
 
@@ -175,7 +175,7 @@ class BaseRecipe(object):
         # a dictionnary of messages to display in case a distribution is
         # not installable (kept PIL to have an example, but Odoo is on Pillow)
         self.missing_deps_instructions = {
-            'PIL': ("You don't need to require it for OpenERP any more, since "
+            'PIL': ("You don't need to require it for Odoo any more, since "
                     "the recipe automatically adds a dependency to Pillow. "
                     "If you really need it for other reasons, installing it "
                     "system-wide is a good option. "),
@@ -214,7 +214,7 @@ class BaseRecipe(object):
             major_wanted = self.version_wanted[:3]
             pattern = self.release_filenames[major_wanted]
             if pattern is None:
-                raise UserError('OpenERP version %r'
+                raise UserError('Odoo version %r'
                                 'is not supported' % self.version_wanted)
 
             self.archive_filename = pattern % self.version_wanted
@@ -396,7 +396,7 @@ class BaseRecipe(object):
                         self.read_release()
                     except Exception as exc:
                         raise EnvironmentError(
-                            'Problem while reading OpenERP release.py: '
+                            'Problem while reading Odoo release.py: '
                             + exc.message)
             except ImportError, exception:
                 if 'babel' in exception.message:
@@ -409,7 +409,7 @@ class BaseRecipe(object):
                 else:
                     raise exception
             except Exception, exception:
-                raise EnvironmentError('Problem while reading OpenERP '
+                raise EnvironmentError('Problem while reading Odoo '
                                        'setup.py: ' + exception.message)
             finally:
                 sys.argv = saved_argv
@@ -852,7 +852,7 @@ class BaseRecipe(object):
         self._register_extra_paths()
 
         if self.version_detected is None:
-            raise EnvironmentError('Version of OpenERP could not be detected')
+            raise EnvironmentError('Version of Odoo could not be detected')
         self.merge_requirements()
         self.install_requirements()
 

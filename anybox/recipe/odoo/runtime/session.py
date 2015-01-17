@@ -30,7 +30,7 @@ DEFAULT_VERSION_FILE = 'VERSION.txt'
 
 
 class OpenERPVersion(Version):
-    """OpenERP idea of version, wrapped in a class.
+    """Odoo idea of version, wrapped in a class.
 
     This is based on :meth:`openerp.tools.parse_version`, and
     Provides straight-ahead comparison with tuples of integers, or
@@ -65,7 +65,7 @@ class Session(object):
     """A class to give server-level access to one database.
 
     There should be exactly one instance of this class per process.
-    It can be used for any kind of script involving OpenERP API, and provides
+    It can be used for any kind of script involving Odoo API, and provides
     facilities for upgrade scripts (see also
     :mod:anybox.recipe.odoo.runtime.upgrade)
 
@@ -94,11 +94,11 @@ class Session(object):
     * :meth:`db_version`
     * :meth:`package_version`
 
-    Instantiation is done by passing the path to OpenERP main
+    Instantiation is done by passing the path to Odoo main
     configuration file and the path of the buildout directory.
 
     Usually, instantiation code is written by the recipe in the body of the
-    executable "OpenERP scripts" it produces.
+    executable "Odoo scripts" it produces.
     Script writers provide a callable that takes a
     :class:`.Session` object argument and declare it as a console script entry
     point in their distribution.
@@ -129,12 +129,12 @@ class Session(object):
     def open(self, db=None, with_demo=False):
         """Load the database
 
-        Loading an empty database in OpenERP has the side effect of installing
+        Loading an empty database in Odoo has the side effect of installing
         the ``base`` module. Whether to loading demo data or not has therefore
         to be decided right away.
 
         :param db: database name. If not specified, the same cascading of
-                   defaults as OpenERP mainstream will be applied:
+                   defaults as Odoo mainstream will be applied:
                    configuration file, psycopg2/lipq defaults.
         :param with_demo: controls the loading of demo data for all
                           module installations triggered by this call to
@@ -149,12 +149,12 @@ class Session(object):
                           In all cases, the behaviour will stay consistent
                           until the next call of ``open()``, but the
                           implementation does not protect against any race
-                          conditions in OpenERP internals.
+                          conditions in Odoo internals.
         """
         if db is None:
             db = config['db_name']
         if not db:
-            db = ''  # expected value expected by OpenERP to start defaulting.
+            db = ''  # expected value expected by Odoo to start defaulting.
 
         cnx = openerp.sql_db.db_connect(db)
         cr = cnx.cursor()
@@ -277,7 +277,7 @@ class Session(object):
         db_version = self.registry('ir.config_parameter').get_param(
             self.cr, self.uid, self._version_parameter_name)
         if not db_version:
-            # as usual OpenERP thinks its simpler to use False as None
+            # as usual Odoo thinks its simpler to use False as None
             # restoring sanity ASAP
             db_version = None
         else:
@@ -315,7 +315,7 @@ class Session(object):
                         "package version considered to be None")
 
     def update_modules_list(self):
-        """Update the list of available OpenERP modules, like the UI allows to.
+        """Update the list of available Odoo modules, like the UI allows to.
 
         This is necessary prior to install of any new module.
         """
@@ -486,9 +486,9 @@ class Session(object):
         """
 
         parser = OptionParser(
-            usage="%(prog)s [OpenERP options] -- other arguments",
-            description="This is a script rewrapped by OpenERP buildout "
-                        "recipe to add OpenERP-related options on the command "
+            usage="%(prog)s [Odoo options] -- other arguments",
+            description="This is a script rewrapped by Odoo buildout "
+                        "recipe to add Odoo-related options on the command "
                         "line prior to other arguments.")
 
         if '-d' in to_handle:
