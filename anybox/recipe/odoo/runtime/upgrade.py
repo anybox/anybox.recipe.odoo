@@ -142,7 +142,7 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
             logger.info("setting version %s in database" % pkg_version)
             session.db_version = pkg_version
         session.cr.commit()
-
+        session.close()
         logger.info("%s successful. Total time: %d seconds." % (
             "Initialization" if session.is_initialization else "Upgrade",
             ceil(total_seconds((datetime.utcnow() - start_time)))

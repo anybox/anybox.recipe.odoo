@@ -1246,7 +1246,8 @@ class BaseRecipe(object):
             vcs_type = raw.split('+', 1)[0]
             self._extract_vcs_source(vcs_type, abs_path,
                                      target_dir, target_sub_dir, extracted)
-            develops.add(target_sub_dir)  # looks silly, but better for uniformity
+            # looks silly, but better for uniformity:
+            develops.add(target_sub_dir)
 
         bdir = os.path.join(self.buildout_dir, '')
         conf.set('buildout', 'develop',

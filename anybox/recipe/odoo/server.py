@@ -168,7 +168,7 @@ conf = openerp.tools.config
                 "def post_fork(server, worker):",
                 "    '''Preload databases specified in buildout conf.'''",
                 "    from openerp.modules.registry import RegistryManager",
-                "    preload_dbs = %r" % preload_dbs,
+                "    preload_dbs = %r" % (preload_dbs,),
                 "    for db_name in preload_dbs:",
                 "        server.log.info('Worker loading database %r',",
                 "                        db_name)",

@@ -209,6 +209,11 @@ def option_splitlines(opt_val):
         >>> option_splitlines('')
         ()
 
+    The return value is guaranteed not to be a single string::
+
+        >>> option_splitlines('single')
+        ('single',)
+
     For convenience, ``None`` is accepted::
 
         >>> option_splitlines(None)

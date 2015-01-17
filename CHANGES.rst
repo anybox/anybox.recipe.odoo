@@ -17,11 +17,18 @@ anybox.recipe.odoo 1.9.2 (unreleased)
 - Odoo renaming in the doc
 - adapted nightly archive URL
 
+anybox.recipe.openerp 1.9.2 (unreleased)
+----------------------------------------
+- github #30: fixed regression with option ``gunicorn.preload_databases``
+  that appeared in 1.9.0
+- github #23: cursor auto-closing in upgrades, and more robustness of
+  ``Session.close()``
+
 anybox.recipe.odoo 1.9.1 (2014-12-17)
 -------------------------------------
 - github #7: template for ``upgrade.py`` was missing for a.r.odoo
 
-anybox.recipe.openerp 1.9.1 (unreleased)
+anybox.recipe.openerp 1.9.1 (2015-01-12)
 ----------------------------------------
 - github PR #5: ``ir_model_data`` helpers for
   the ``Session`` API (sripts and python shell)

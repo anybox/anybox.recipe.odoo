@@ -340,14 +340,32 @@ class Session(object):
         self.cr.rollback()
         self.clean_environments()
 
+    def is_cursor_closed(self):
+        """Compatibility wrapper.
+
+        On OpenERP 7, the attribute is ``__closed`` but can't even be accessed
+        if the cursor is closed (``OperationalError`` is raised systematically
+        in ``sql_db``)
+
+        On Odoo 8, the attribute is ``_closed`` and works correctly.
+        """
+        return any(self.cr.__dict__.get(c)
+                   for c in ('_Cursor__closed', '_closed'))
+
     def close(self):
         """Close the cursor and forget about the current database.
 
         The session is thus ready to open another database.
+        This methods should be idempotent, wouldn't fail if the cursor is
+        already closed or the current database is not in registry (either
+        already deleted, or could not be opened at all)
         """
         dbname = self.cr.dbname
-        self.cr.close()
+        if not self.is_cursor_closed():
+            self.cr.close()
         self.clean_environments()
+        # GR: I did check that implementation is designed not to fail
+        # on Odoo 8 and OpenERP 7
         openerp.modules.registry.RegistryManager.delete(dbname)
 
     def update_modules(self, modules, db=None):
