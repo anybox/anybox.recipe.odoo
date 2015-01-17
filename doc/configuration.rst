@@ -451,16 +451,12 @@ vcs-clear-retry
 If ``True`` failed updates are cleared and retried once.
 This is intended for brittle VCSes from CI robots.
 
-.. note:: new in version 1.9.0
-
 vcs-clear-locks
 ---------------
 
 Some VCS systems can leave locks after some failures and provide a separate
 way to break them. If ``True``,the repo will break any locks prior to
 operations (mostly useful for automated agents, such as CI robots)
-
-.. note:: new in version 1.9.0
 
 git-depth
 ---------
