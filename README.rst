@@ -27,6 +27,9 @@ properties, such as an extensible configuration file format for easy
 variation or separation of concerns, native Python distributions
 installation, and of course the huge ecosystem of other recipes.
 
+Documentation
+~~~~~~~~~~~~~
+
 The `full documentation
 <http://pythonhosted.org/anybox.recipe.odoo>`_
 is written with `Sphinx
