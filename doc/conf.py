@@ -40,7 +40,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'OpenERP buildout recipe'
-copyright = u'2011-2013, Anybox SAS'
+copyright = (u'2011-2015, <a href="http://anybox.fr/">Anybox SAS</a> '
+             u'and contributors')
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
