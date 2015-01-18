@@ -439,9 +439,6 @@ class TestServer(RecipeTestCase):
                 "['web', 'anybox_homepage']\n"
                 in gu)
 
-    def test_install_scripts_80_no_devtools(self):
-        self.test_install_scripts_80(with_devtools='false')
-
     def test_install_scripts_70_gunicorn_proxied(self):
         self.make_recipe(version='local %s' % os.path.join(TEST_DIR, 'odoo80'),
                          gunicorn='proxied')
