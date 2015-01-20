@@ -150,6 +150,16 @@ class TestExtraction(RecipeTestCase):
         self.assertEqual(conf.get(self.recipe.name, 'recipe'),
                          'anybox.recipe.odoo[other]:server')
 
+    def test_prepare_extracted_buildout_no_extras(self):
+        self.make_recipe(version='local mainsoftware')
+        target_dir = self.extract_target_dir
+        self.recipe.options['recipe'] = 'anybox.recipe.odoo:server'
+
+        conf = ConfigParser()
+        self.recipe._extract_sources(conf, target_dir, set())
+        self.assertEqual(conf.get(self.recipe.name, 'recipe'),
+                         'anybox.recipe.odoo:server')
+
     def test_extract_downloads_to(self):
         """Test the whole freeze method."""
 
