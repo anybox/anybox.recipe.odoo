@@ -62,7 +62,7 @@ class ReleaseRecipe(ServerRecipe):
         # since our recipe is an extension used to build the release package
         # we need to put the right recipe to use to install the server from
         # the generated configuration
-        recipe = self.options.get('recipe', 'anybox.recipe.odoo:server')
+        recipe = self.options.get('recipe', 'anybox.recipe.odoo:release')
         recipe = recipe.replace(':release', ':server')
         self.options['recipe'] = recipe
         vals = super(ReleaseRecipe, self)._extract_sources(
