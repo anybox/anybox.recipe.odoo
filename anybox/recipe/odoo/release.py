@@ -37,6 +37,12 @@ class ReleaseRecipe(ServerRecipe):
         opt = self.options
         opt.pop('freeze-to', None)
         opt.pop('extract-downloads-to', None)
+        no_extends = self.options.setdefault(
+            'no-extends', 'false')
+        self.no_extends = no_extends.lower() == 'true'
+        # keep a copy of the original eggs lit since this one is modified
+        # by the recipe
+        self.original_eggs = self.options.get('eggs')
         self.release_dir = opt.setdefault('release-dir', 'release')
         clean_dir = opt.setdefault('clean-dir', 'false').lower()
         self.clean_release_dir = clean_dir == 'true'
@@ -44,11 +50,11 @@ class ReleaseRecipe(ServerRecipe):
             if self.clean_release_dir:
                 logger.info("Clean release directory %s", self.release_dir)
                 shutil.rmtree(self.release_dir)
-                return
-            raise UserError('Target dir \'%s\' already exists. '
-                            'Delete-it before running or set \'clean-dir\' '
-                            'option to true in your config.'
-                            '' % self.release_dir)
+            else:
+                raise UserError('Target dir \'%s\' already exists. '
+                                'Delete-it before running or set '
+                                '\'clean-dir\' option to true in your config.'
+                                '' % self.release_dir)
 
     def install(self):
         self.merge_requirements()
@@ -67,14 +73,22 @@ class ReleaseRecipe(ServerRecipe):
         self.options['recipe'] = recipe
         vals = super(ReleaseRecipe, self)._extract_sources(
             out_conf, target_dir, extracted)
+
+        # not really the best place to add something to the out_conf in the
+        #  new section but the new section in the generated config is created
+        # in the base  _extract_soruces and we don't have an other place
+        # where it's possible to add options to the new section
+        if self.no_extends:
+            # if our buildout is standalone, we also need to copy the eggs
+            # params
+            out_conf.set(self.name, 'eggs', self.original_eggs)
         return vals
 
     def _prepare_extracted_buildout(self, conf, target_dir):
-        super(ReleaseRecipe, self)._prepare_extracted_buildout(conf, target_dir)
+        super(ReleaseRecipe, self)._prepare_extracted_buildout(
+            conf, target_dir)
         # remove the extends directive from buildout section if specified
-        # In some case it's usefull to generated a configuration file without 
+        # In some case it's usefull to generated a configuration file without
         # dependencies on other other files
-        no_extends = self.options.setdefault(
-            'no-extends', 'false')
-        if no_extends.lower() == 'true':
-             conf.set('buildout', 'extends', '')
+        if self.no_extends:
+            conf.set('buildout', 'extends', '')
