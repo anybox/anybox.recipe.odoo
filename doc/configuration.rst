@@ -164,20 +164,26 @@ Example::
   [openerp_release]
   <= openerp
   recipe = anybox.recipe.odoo[bzr]:release
-  release-dir = release
-  clean-dir = true
-  no-extends = true
-  pack-release = true
+  release-dir = release  #default release
+  clean-dir = true       #default false
+  no-extends = true      #default false
+  pack-release = true    #default false
+  track-changes = true   #default false
 
 If pack-release is true, the release will be packed in a 'tar.gz' file. If a
-version file (version.[txt|rst|md|markdown]) is found, the content will be used
+version file (VERSION.txt) is found, the content will be used
 in the filename of the archive.
 
-Example with the following version.txt::
+Example with the following VERSION.txt::
 
     1.0
 
 The generated archive will be release-1.0.tar.gz
+
+If track-changes is true, an empty git repository is initialize in the
+release-dir with the context as first commit. (could be usefull to track
+changes done after the installation)
+
 Python distributions managed with ``gp.vcsdevelop`` are taken into account.
 
 Web client

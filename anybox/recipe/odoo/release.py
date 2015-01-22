@@ -23,6 +23,8 @@ import shutil
 import logging
 from anybox.recipe.odoo.server import ServerRecipe
 from zc.buildout import UserError
+from anybox.recipe.odoo.utils import working_directory_keeper
+import subprocess
 
 logger = logging.getLogger(__name__)
 
@@ -50,13 +52,14 @@ class ReleaseRecipe(ServerRecipe):
     def install(self):
         self.version = self.get_version_txt()
         if not self.version:
-            logger.warning('No version file found (ex: version.txt)')
+            logger.warning('No version file found (ex: VERSION.txt)')
         else:
             logger.info('Start releasing version %s', self.version)
         self.merge_requirements()
         self.install_requirements()
         release_dir = self._prepare_release_dir()
         self.extract_downloads_to(release_dir)
+        self._init_tracking_changes(release_dir)
         self._pack_release(release_dir)
         return self.openerp_installed
 
@@ -114,6 +117,24 @@ class ReleaseRecipe(ServerRecipe):
             shutil.copy(self.version_file, target_dir)
         return ret
 
+    def _init_tracking_changes(self, release_dir):
+        opt = self.options
+        track_changes = opt.setdefault('track-changes', 'false').lower()
+        track_changes = track_changes == 'true'
+        if not track_changes:
+            return
+        logger.info("Init a GIT repository to track changes in %s",
+                    release_dir)
+        recipe = self.options.get('recipe')
+        with working_directory_keeper:
+            os.chdir(release_dir)
+            subprocess.call(['git', 'init', '.'])
+            subprocess.call(
+                ['git', 'config', 'user.email', 'release@release.com'])
+            subprocess.call(['git', 'config', 'user.name', recipe])
+            subprocess.call(['git', 'add', '.'])
+            subprocess.call(['git', 'commit', '-m', 'initial'])
+
     def _pack_release(self, release_dir):
         pack = self.options.setdefault('pack-release', 'false').lower()
         pack = pack == 'true'
@@ -136,7 +157,7 @@ class ReleaseRecipe(ServerRecipe):
             return self.__version_file
         for extension in TXT_EXTENSIONS:
             v_file = os.path.join(self.buildout_dir,
-                                  '.'.join(['version', extension]))
+                                  '.'.join(['VERSION', extension]))
             if os.path.exists(v_file):
                 logger.info('Found version file %s', v_file)
                 self.__version_file = v_file
