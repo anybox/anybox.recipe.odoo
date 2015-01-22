@@ -167,7 +167,17 @@ Example::
   release-dir = release
   clean-dir = true
   no-extends = true
+  pack-release = true
 
+If pack-release is true, the release will be packed in a 'tar.gz' file. If a
+version file (version.[txt|rst|md|markdown]) is found, the content will be used
+in the filename of the archive.
+
+Example with the following version.txt::
+
+    1.0
+
+The generated archive will be release-1.0.tar.gz
 Python distributions managed with ``gp.vcsdevelop`` are taken into account.
 
 Web client

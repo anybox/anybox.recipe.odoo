@@ -26,6 +26,8 @@ from zc.buildout import UserError
 
 logger = logging.getLogger(__name__)
 
+TXT_EXTENSIONS = ['rst', 'txt', 'markdown', 'md']
+
 
 class ReleaseRecipe(ServerRecipe):
     """Recipe to build a self-contained and offline playable archive
@@ -40,29 +42,41 @@ class ReleaseRecipe(ServerRecipe):
         no_extends = self.options.setdefault(
             'no-extends', 'false')
         self.no_extends = no_extends.lower() == 'true'
-        # keep a copy of the original eggs lit since this one is modified
+        # keep a copy of the original eggs list since this one is modified
         # by the recipe
         self.original_eggs = self.options.get('eggs')
-        self.release_dir = opt.setdefault('release-dir', 'release')
+        self.__version_file = None
+
+    def install(self):
+        self.version = self.get_version_txt()
+        if not self.version:
+            logger.warning('No version file found (ex: version.txt)')
+        else:
+            logger.info('Start releasing version %s', self.version)
+        self.merge_requirements()
+        self.install_requirements()
+        release_dir = self._prepare_release_dir()
+        self.extract_downloads_to(release_dir)
+        self._pack_release(release_dir)
+        return self.openerp_installed
+
+    update = install
+
+    def _prepare_release_dir(self):
+        opt = self.options
+        release_dir = opt.setdefault('release-dir', 'release')
         clean_dir = opt.setdefault('clean-dir', 'false').lower()
-        self.clean_release_dir = clean_dir == 'true'
-        if os.path.exists(self.release_dir):
-            if self.clean_release_dir:
-                logger.info("Clean release directory %s", self.release_dir)
-                shutil.rmtree(self.release_dir)
+        clean_release_dir = clean_dir == 'true'
+        if os.path.exists(release_dir):
+            if clean_release_dir:
+                logger.info("Clean release directory %s", release_dir)
+                shutil.rmtree(release_dir)
             else:
                 raise UserError('Target dir \'%s\' already exists. '
                                 'Delete-it before running or set '
                                 '\'clean-dir\' option to true in your config.'
-                                '' % self.release_dir)
-
-    def install(self):
-        self.merge_requirements()
-        self.install_requirements()
-        self.extract_downloads_to(self.release_dir)
-        return self.openerp_installed
-
-    update = install
+                                '' % release_dir)
+        return release_dir
 
     def _extract_sources(self, out_conf, target_dir, extracted):
         # since our recipe is an extension used to build the release package
@@ -92,3 +106,50 @@ class ReleaseRecipe(ServerRecipe):
         # dependencies on other other files
         if self.no_extends:
             conf.set('buildout', 'extends', '')
+
+    def extract_downloads_to(self, target_dir, outconf_name='release.cfg'):
+        ret = super(ReleaseRecipe, self).extract_downloads_to(
+            target_dir, outconf_name)
+        if self.version_file:
+            shutil.copy(self.version_file, target_dir)
+        return ret
+
+    def _pack_release(self, release_dir):
+        pack = self.options.setdefault('pack-release', 'false').lower()
+        pack = pack == 'true'
+        if not pack:
+            return
+        if self.version:
+            arch_file_name = '-'.join([release_dir, self.version])
+        else:
+            arch_file_name = release_dir
+        ret = shutil.make_archive(
+            os.path.join(self.buildout_dir, arch_file_name),
+            format='gztar', root_dir=self.buildout_dir, base_dir=release_dir,
+            logger=logger)
+        logger.info('Release packed in %s', ret)
+        return ret
+
+    @property
+    def version_file(self):
+        if self.__version_file:
+            return self.__version_file
+        for extension in TXT_EXTENSIONS:
+            v_file = os.path.join(self.buildout_dir,
+                                  '.'.join(['version', extension]))
+            if os.path.exists(v_file):
+                logger.info('Found version file %s', v_file)
+                self.__version_file = v_file
+                break
+        return self.__version_file
+
+    def get_version_txt(self):
+        if self.version_file:
+            f = open(self.version_file, 'r')
+            version = f.read()
+            return self.strip_version(version)
+        return None
+
+    def strip_version(self, version):
+        """Strip the version of all whitespace."""
+        return version.strip().replace(' ', '')
