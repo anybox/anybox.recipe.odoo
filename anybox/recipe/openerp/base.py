@@ -953,7 +953,18 @@ class BaseRecipe(object):
             if source_type == 'downloadable':
                 continue
 
-            revision = self._freeze_vcs_source(source_type, abspath)
+            required_rev = source[1][1]
+            revision = self._freeze_vcs_source(
+                source_type, abspath, required_rev)
+
+            # here it would be tempting not to repeat the freeze if
+            # the resulting revision is equal to revision_rev, BUT
+            # if revision_rev itself comes from use of the 'revisons' option
+            # then we could have masking of that in the extended buildout
+            # this could be taken care of for aesthetics by careful use of
+            # += and actually specification of what it should do for
+            # the 'revisions' option. In the meanwhile, let's just play safe
+
             if local_path is main_software:
                 addons_option.insert(0, '%s  ; main software part' % revision)
                 # actually, that comment will be lost if this is not the
@@ -1012,13 +1023,16 @@ class BaseRecipe(object):
             local_path = parsed[0]
             hash_split = raw.rsplit('#')
             url = hash_split[0]
-            url = url.rsplit('@', 1)[0]
+            rev_split = url.rsplit('@', 1)
+            url = rev_split[0]
+            revspec = rev_split[1] if len(rev_split) == 2 else None
             vcs_type = url.split('+', 1)[0]
             # vcs-develop process adds .egg-info file (often forgotten in VCS
             # ignore files) and changes setup.cfg.
             # For now we'll have to allow local modifications.
             revision = self._freeze_vcs_source(vcs_type,
                                                self.make_absolute(local_path),
+                                               revspec,
                                                pip_compatible=True,
                                                allow_local_modification=True)
             extends.append('%s@%s#%s' % (url, revision, hash_split[1]))
@@ -1058,14 +1072,21 @@ class BaseRecipe(object):
             if pick_opt in self.b_options:
                 conf.set('buildout', pick_opt, 'false')
 
-    def _freeze_vcs_source(self, vcs_type, abspath,
+    def _freeze_vcs_source(self, vcs_type, abspath, revspec,
                            pip_compatible=False,
                            allow_local_modification=False):
 
-        """Return the current revision for that VCS source.
+        """Return the frozen revision for the state of that VCS source.
 
+        :param vcs_type: self-explanatory
+        :param abspath: absolute path to local repository
+        :param revspec: the revision specification as required in the buildout
+                        configuration (can be suitable in itself and better
+                        than what we can produce)
         :param pip_compatible: if ``True``, a pip compatible revision number
                                is issued. This depends on the precise vcs.
+        :returns: ``None`` if ``revspec`` is already a frozen and reproducible
+                  specification.
         """
 
         repo = vcs.repo(vcs_type, abspath, '')  # no need of remote URL
@@ -1073,6 +1094,8 @@ class BaseRecipe(object):
         if not allow_local_modification and repo.uncommitted_changes():
             self.local_modifications.append(abspath)
 
+        if revspec is not None and repo.is_local_fixed_revision(revspec):
+            return revspec
         parents = repo.parents(pip_compatible=pip_compatible)
         if len(parents) > 1:
             self.local_modifications.append(abspath)

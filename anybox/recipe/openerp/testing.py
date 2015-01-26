@@ -70,6 +70,9 @@ class FakeRepo(vcs.base.BaseRepo):
         with open(os.path.join(target, '.fake_archival.txt'), 'w') as f:
             f.write(str(self.revision))
 
+    def is_local_fixed_revision(self, revspec):
+        return revspec in getattr(self, 'fixed_revs', ())
+
 
 vcs.SUPPORTED['fakevcs'] = FakeRepo
 from pip.vcs import vcs as pip_vcs

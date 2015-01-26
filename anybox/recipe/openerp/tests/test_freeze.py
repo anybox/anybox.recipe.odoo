@@ -69,7 +69,7 @@ class TestFreeze(RecipeTestCase):
                                '-u', COMMIT_USER_FULL, '-q'
                                ])
 
-        rev = self.recipe._freeze_vcs_source('hg', repo_path)
+        rev = self.recipe._freeze_vcs_source('hg', repo_path, 'default')
         hg = subprocess.Popen(['hg', '--cwd', repo_path, 'diff', '-r', rev],
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE)
@@ -77,6 +77,29 @@ class TestFreeze(RecipeTestCase):
         if hg.returncode or err:
             self.fail("Invalid extracted revision: %r" % rev)
         self.assertEquals(out, '', 'Extracted revision shows some diff')
+
+    def test_freeze_vcs_source_already_frozen(self):
+        self.make_recipe(version='6.1-1')
+        b_dir = self.recipe.buildout_dir
+        repo_path = os.path.join(b_dir, 'custom')
+        subprocess.check_call(['hg', 'init', repo_path])
+        with open(os.path.join(repo_path, 'somefile'), 'w') as f:
+            f.write('content')
+        subprocess.check_call(['hg', '--cwd', repo_path,
+                               'commit', '-A', '-m', 'somerev',
+                               '-u', COMMIT_USER_FULL, '-q'
+                               ])
+        subprocess.check_call(['hg', '--cwd', repo_path,
+                               'tag', 'sometag',
+                               '-u', COMMIT_USER_FULL, '-q'
+                               ])
+
+        self.assertEqual(
+            self.recipe._freeze_vcs_source('hg', repo_path, 'sometag'),
+            'sometag')
+        self.assertNotEqual(
+            self.recipe._freeze_vcs_source('hg', repo_path, 'default'),
+            'default')
 
     def test_freeze_vcs_source_dirty(self):
         self.make_recipe(version='6.1-1')
@@ -94,7 +117,7 @@ class TestFreeze(RecipeTestCase):
         # modification on tracked file
         with open(os.path.join(repo_path, 'somefile'), 'w') as f:
             f.write('changed content')
-        self.recipe._freeze_vcs_source('hg', repo_path)
+        self.recipe._freeze_vcs_source('hg', repo_path, 'default')
         self.assertTrue(bool(self.recipe.local_modifications))
 
         subprocess.check_call(['hg', '-q',
@@ -104,7 +127,7 @@ class TestFreeze(RecipeTestCase):
         self.recipe.local_modifications = []
         with open(os.path.join(repo_path, 'untracked'), 'w') as f:
             f.write('something else')
-        self.recipe._freeze_vcs_source('hg', repo_path)
+        self.recipe._freeze_vcs_source('hg', repo_path, 'default')
         self.assertTrue(bool(self.recipe.local_modifications))
 
     def test_prepare_frozen_buildout(self):
