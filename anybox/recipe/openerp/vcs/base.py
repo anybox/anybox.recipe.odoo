@@ -155,6 +155,29 @@ class BaseRepo(object):
         """
         raise NotImplementedError
 
+    def is_local_fixed_revision(self, revspec):
+        """True if revspec is a locally available fixed revision.
+
+        The concept of a fixed revision depends on the concrete VCS in use.
+        It means that retrieving revspec at any point in the future
+
+        1. is guaranteed to work
+        2. always yields the same result
+
+        In practice, for most VCSes, these cannot be totally guaranteed, but
+        each VCS defines those cases whose breaking is considered to be a
+        very bad practice.
+
+        In Mercurial, removing a commit from a public repository is possible,
+        but very bad.
+        In Git, removing a commit from a public repository is normal workflow,
+        but removing a tag is very bad.
+
+        The name stresses that only locally available ones will be recognized
+        due to the promise that this method does not query any remote repo.
+        """
+        raise NotImplementedError
+
     def parents(self, pip_compatible=False):
         """Return universal identifier for parent nodes, aka current revisions.
 
