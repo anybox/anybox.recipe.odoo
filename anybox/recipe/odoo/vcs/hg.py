@@ -1,6 +1,7 @@
 import os
 import logging
 import subprocess
+import warnings
 from ConfigParser import ConfigParser
 from ConfigParser import NoOptionError
 from ConfigParser import NoSectionError
@@ -73,6 +74,12 @@ class HgRepo(BaseRepo):
                             env=SUBPROCESS_ENV).split()
 
     def have_fixed_revision(self, revstr):
+        warnings.warn("have_fixed_revision() is deprecated and has been "
+                      "renamed to is_local_fixed_revision()",
+                      DeprecationWarning)
+        return self.is_local_fixed_revision(revstr)
+
+    def is_local_fixed_revision(self, revstr):
         """True if revstr is a fixed revision that we already have.
 
         Check is done for known tags (except tip) and known nodes identified
@@ -174,7 +181,7 @@ class HgRepo(BaseRepo):
         else:
             self.update_hgrc_paths()
             # TODO what if remote repo is actually local fs ?
-            if self.have_fixed_revision(revision):
+            if self.is_local_fixed_revision(revision):
                 self._update(revision)
                 return
 

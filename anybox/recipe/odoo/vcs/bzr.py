@@ -200,6 +200,11 @@ class BzrBranch(BaseRepo):
         logger.info("Updated %r to revision %s", self.target_dir, revision)
 
     def get_revid(self, revision):
+        """Convert a locally available revision to a revid.
+
+        :param str revision: any valid revision string.
+        :raises: :class:`LookupError` if not actually available.
+        """
         with working_directory_keeper:
             os.chdir(self.target_dir)
             try:
@@ -248,11 +253,21 @@ class BzrBranch(BaseRepo):
         """True iff the given revision string is for a fixed revision."""
 
         revstr = revstr.strip()  # one never knows
-        if revstr.startswith('revid:'):
+        if revstr.startswith('revid:') or revstr.startswith('tag:'):
             return True
         if not revstr or revstr.startswith('last:'):
             return False
         if self.is_revno(revstr, fixed=True):
+            return True
+
+    def is_local_fixed_revision(self, revstr):
+        if not self.is_fixed_revision(revstr):
+            return False
+        try:
+            self.get_revid(revstr)
+        except LookupError:
+            return False
+        else:
             return True
 
     def get_update(self, revision):

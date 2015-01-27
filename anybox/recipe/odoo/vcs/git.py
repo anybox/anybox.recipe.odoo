@@ -204,6 +204,14 @@ class GitRepo(BaseRepo):
                       callwith=update_check_call,
                       cwd=self.target_dir)
 
+    def is_local_fixed_revision(self, refspec):
+        """In Git, tags only are reproductible refspec."""
+        tags = (t.strip()
+                for t in self.log_call(['git', 'tag'],
+                                       callwith=check_output,
+                                       cwd=self.target_dir).splitlines())
+        return refspec in tags
+
     def has_commit(self, sha):
         """Return true if repo has specified commit"""
         try:

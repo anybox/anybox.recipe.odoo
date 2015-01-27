@@ -622,6 +622,8 @@ class GitTagTestCase(GitBaseTestCase):
         repo('sometag')
         self.assertEqual(repo.parents(), [self.commit_1_sha])
 
+        self.assertTrue(repo.is_local_fixed_revision('sometag'))
+
     def test_revert_to_tag(self):
         target_dir = os.path.join(self.dst_dir, "to_repo")
         repo = GitRepo(target_dir, self.src_repo)('master')

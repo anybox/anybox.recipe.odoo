@@ -195,15 +195,18 @@ class HgTestCase(HgBaseTestCase):
         repo(self.rev1)
         self.assertRevision(repo, 1)
 
-    def test_have_fixed_revision(self):
-        """Test some corner cases of have_fixed_revision."""
+    def test_is_local_fixed_revision(self):
+        """Test some corner cases of is_local_fixed_revision."""
         repo = self.make_clone("clone to update", 'default')
         repo(self.rev0)
-        self.assertFalse(repo.have_fixed_revision('tip'))
-        self.assertFalse(repo.have_fixed_revision(''))
+        self.assertFalse(repo.is_local_fixed_revision('tip'))
+        self.assertFalse(repo.is_local_fixed_revision(''))
+        self.assertTrue(repo.is_local_fixed_revision('0'))
+        self.assertTrue(repo.is_local_fixed_revision(self.rev0[:12]))
+        self.assertFalse(repo.is_local_fixed_revision(self.rev0[:2]))
+
+        # also test that the rename/deprecation isn't broken
         self.assertTrue(repo.have_fixed_revision('0'))
-        self.assertTrue(repo.have_fixed_revision(self.rev0[:12]))
-        self.assertFalse(repo.have_fixed_revision(self.rev0[:2]))
 
     def test_hgrc_paths_update(self):
         """Method to update hgrc paths updates them and stores old values"""

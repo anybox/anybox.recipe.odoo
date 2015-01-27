@@ -489,6 +489,18 @@ class BzrOfflineTestCase(BzrBaseTestCase):
         branch('revid:' + revid)
         self.assertRevision1(branch)
 
+    def test_update_available_tag_is_local_fixed_revision(self):
+        """[offline mode] update to an available tag works.
+        """
+        branch = self.make_local_branch("clone to update", 'last:1')
+        subprocess.check_call(['bzr', 'tag', '-r', '1', 'sometag'],
+                              cwd=branch.target_dir)
+        branch('tag:sometag')
+        self.assertRevision1(branch)
+        self.assertTrue(branch.is_local_fixed_revision('tag:sometag'))
+        self.assertFalse(branch.is_local_fixed_revision('tag:unknown'))
+        self.assertFalse(branch.is_local_fixed_revision('-1'))
+
     def test_lightweight_checkout_noupdate(self):
         """[offline mode] lightweight checkouts shall not be updated."""
         branch = self.make_local_branch(
