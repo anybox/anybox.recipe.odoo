@@ -1606,4 +1606,4 @@ class BaseRecipe(object):
     @classmethod
     def to_src_path(cls, base_path):
         return os.path.join('${buildout:odoo-src-dir}',
-                             base_path)
+                            base_path)
