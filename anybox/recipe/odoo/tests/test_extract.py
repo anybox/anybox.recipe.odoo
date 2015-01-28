@@ -43,7 +43,8 @@ class TestExtraction(RecipeTestCase):
         self.recipe._extract_sources(conf, target_dir, extracted)
         addons_opt = set(conf.get('openerp', 'addons').split(os.linesep))
         self.assertEquals(addons_opt,
-                          set(('local vcs-addons', 'local specific')))
+                          set(('local ${buildout:odoo-src-dir}/vcs-addons',
+                               'local ${buildout:odoo-src-dir}/specific')))
         self.assertEquals(extracted,
                           set([os.path.join(target_dir, 'vcs-addons')]))
 
@@ -94,7 +95,8 @@ class TestExtraction(RecipeTestCase):
 
         develop = conf.get('buildout', 'develop').split(os.linesep)
         self.assertEquals(set(d for d in develop if d),
-                          set(['aeroolib', 'simple_develop']))
+                          set(['${buildout:odoo-src-dir}/aeroolib',
+                               '${buildout:odoo-src-dir}/simple_develop']))
 
         # extraction has been done
         target = os.path.join(self.extract_target_dir, 'aeroolib')
@@ -119,7 +121,8 @@ class TestExtraction(RecipeTestCase):
 
         develop = conf.get('buildout', 'develop').split(os.linesep)
         self.assertEquals(set(d for d in develop if d),
-                          set(['src/aeroolib', 'simple_develop']))
+                          set(['${buildout:odoo-src-dir}/src/aeroolib',
+                               '${buildout:odoo-src-dir}/simple_develop']))
 
         # extraction has been done
         target = os.path.join(self.extract_target_dir, 'src', 'aeroolib')
@@ -168,11 +171,12 @@ class TestExtraction(RecipeTestCase):
 
         # notice standalone handling :
         self.assertEqual(ext_conf.get('openerp', 'addons').splitlines(),
-                         ['local target', 'local somwehere',
-                          'local stdl'])
+                         ['local ${buildout:odoo-src-dir}/target',
+                          'local ${buildout:odoo-src-dir}/somwehere',
+                          'local ${buildout:odoo-src-dir}/stdl'])
 
         self.assertEqual(ext_conf.get('openerp', 'version').strip(),
-                         'local parts/odooo')
+                         'local ${buildout:odoo-src-dir}/parts/odooo')
         # precise version depends on the setuptools version
         # from about setuptools 8.2 or 8.3, normalization to 0.123.dev0
         # according to PEP440 occurs
