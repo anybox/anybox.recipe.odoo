@@ -16,12 +16,15 @@ anybox.recipe.odoo 1.9.2 (unreleased)
 anybox.recipe.openerp 1.9.2 (unreleased)
 ----------------------------------------
 - github #30: fixed regression with option ``gunicorn.preload_databases``
+  that appeared in 1.9.0
+- github #23: cursor auto-closing in upgrades, and more robustness of
+  ``Session.close()``
 - github #33: during freeze, if the origin buildout configuration uses
   an already frozen revision specification, do not replace it by the
   result of introspection of local clone. Especially import with Git,
   because this used to replace nice tags with SHAs that are less reliable.
 
-  anybox.recipe.odoo 1.9.1 (2014-12-17)
+anybox.recipe.odoo 1.9.1 (2014-12-17)
 -------------------------------------
 - github #7: template for ``upgrade.py`` was missing for a.r.odoo
 
