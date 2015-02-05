@@ -154,7 +154,7 @@ The produced buildout configuration in the target directory is
 or further extended for system-dependent options such as port, db
 connection, etc.
 
-The recipe must extends the server recipe.
+The recipe must extends the server section.
 Example::
 
   [openerp]
@@ -164,11 +164,11 @@ Example::
   [openerp_release]
   <= openerp
   recipe = anybox.recipe.odoo[bzr]:release
-  release-dir = release  #default release
-  clean-dir = true       #default false
-  no-extends = true      #default false
-  pack-release = true    #default false
-  track-changes = true   #default false
+  release-dir = release  ;default release
+  clean-dir = true       ;default false
+  no-extends = true      ;default false
+  pack-release = true    ;default false
+  track-changes = true   :default false
 
 If pack-release is true, the release will be packed in a 'tar.gz' file. If a
 version file (VERSION.txt) is found, the content will be used
