@@ -604,7 +604,7 @@ Full example::
   openerp_scripts = my_script arguments=session
                     my_other_script=actual-script-name arguments=3,session
                     nosetests=nosetests command-line-options=-d
-                    sphinx-build=sphinx-build openerp-log-level=ERROR command_line_options=-d
+                    sphinx-build=sphinx-build openerp-log-level=ERROR command-line-options=-d
 
 
 .. _upgrade_script_name:
