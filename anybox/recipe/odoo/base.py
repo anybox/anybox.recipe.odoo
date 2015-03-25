@@ -226,7 +226,19 @@ class BaseRecipe(object):
             self.recipe_requirements = list(self.recipe_requirements)
             self.recipe_requirements.append('pip')
 
+        self.python_scripts_executable = options.get(
+            'python-scripts-executable')
+
         # same as in zc.recipe.eggs
+        relative_paths = options.get(
+            'relative-paths',
+            buildout['buildout'].get('relative-paths', 'false')
+            )
+        if relative_paths == 'true':
+            self._relative_paths = self.buildout_dir
+        else:
+            self._relative_paths = ''
+            assert relative_paths == 'false'
         self.extra_paths = [
             join(self.buildout_dir, p.strip())
             for p in option_splitlines(self.options.get('extra-paths'))
@@ -1667,6 +1679,13 @@ class BaseRecipe(object):
                 assert os.path.isdir(path), (
                     "Not a directory: %r (aborting)" % path)
 
+        self.addons_paths = [
+            os.path.relpath(
+                addons_path, os.path.join(self.openerp_dir, 'openerp'))
+            if self._relative_paths
+            else addons_path
+            for addons_path in list(self.addons_paths)
+        ]
         self.options['options.addons_path'] = ','.join(self.addons_paths)
 
     def insert_odoo_git_addons(self, base_addons):
