@@ -6,7 +6,7 @@ import shutil
 import logging
 import zc.buildout
 from zc.buildout import UserError
-from base import BaseRecipe
+from base import BaseRecipe,  _relative_path
 from . import devtools
 from .utils import option_splitlines, option_strip
 
@@ -53,6 +53,17 @@ class ServerRecipe(BaseRecipe):
         if sw_modules and 'web' not in sw_modules:
             sw_modules = ('web', ) + sw_modules
         self.server_wide_modules = sw_modules
+
+        if self.python_scripts_executable:
+            # Monkeypatch the script headers to replace the python
+            # executable by the one configured by the user
+            new_header = '#!%s' % self.python_scripts_executable
+            zc.buildout.easy_install.script_template = (
+                zc.buildout.easy_install.script_template.replace(
+                    zc.buildout.easy_install.script_header, new_header))
+            zc.buildout.easy_install.py_script_template = (
+                zc.buildout.easy_install.py_script_template.replace(
+                    zc.buildout.easy_install.script_header, new_header))
 
     def apply_version_dependent_decisions(self):
         """Store some booleans depending on detected version.
@@ -238,6 +249,17 @@ conf = openerp.tools.config
             desc = self.openerp_scripts[name] = dict(entry=entry)
             return name, desc
 
+    def _relativitize(self, path):
+        """Inspired from easy_install"""
+        if self._relative_paths:
+            eggs = os.path.normcase(os.path.abspath(
+                self.b_options['eggs-directory']))
+            common = os.path.dirname(os.path.commonprefix([path, eggs]))
+            if (common == self._relative_paths or
+                    common.startswith(os.path.join(self._relative_paths, ''))):
+                return "join(base, %r)" % _relative_path(common, path)
+        return path
+
     def _register_main_startup_script(self, qualified_name):
         """Register main startup script, usually ``start_openerp`` for install.
         """
@@ -245,10 +267,10 @@ conf = openerp.tools.config
                                           name=qualified_name)[1]
 
         arguments = '%r, %r, version=%r, gevent_script_path=%r' % (
-            self._get_server_command(),
-            self.config_path,
+            self._relativitize(self._get_server_command()),
+            self._relativitize(self.config_path),
             self.major_version,
-            self.gevent_script_path)
+            self._relativitize(self.gevent_script_path))
 
         if self.server_wide_modules:
             arguments += ', server_wide_modules=%r' % (
@@ -279,10 +301,11 @@ conf = openerp.tools.config
         desc = self._get_or_create_script('openerp_tester',
                                           name=qualified_name)[1]
         arguments = '%r, %r, version=%r, just_test=True' % (
-            self._get_server_command(),
-            self.config_path,
+            self._relativitize(self._get_server_command()),
+            self._relativitize(self.config_path),
             self.major_version)
-        arguments += ', gevent_script_path=%r' % self.gevent_script_path
+        arguments += ', gevent_script_path=%r' % self._relativitize(
+            self.gevent_script_path)
 
         desc.update(
             entry='openerp_starter',
@@ -309,7 +332,8 @@ conf = openerp.tools.config
             entry='openerp_upgrader',
             arguments='%r, %r, %r, %r' % (
                 script_source_path, script[1],
-                self.config_path, self.buildout_dir),
+                self._relativitize(self.config_path),
+                self.jailroot_buildout_dir or self.buildout_dir),
         )
 
         if not os.path.exists(script_source_path):
@@ -341,7 +365,8 @@ conf = openerp.tools.config
         # to resort on hacking sys.argv
         desc['initialization'] = (
             "from sys import argv; argv[1:] = ['%s', '-c', '%s.conf.py']" % (
-                gunicorn_entry_point, join(self.etc, qualified_name)))
+                gunicorn_entry_point,
+                self._relativitize(join(self.etc, qualified_name))))
 
     def _register_gevent_script(self, qualified_name):
         """Register the gevent startup script
@@ -395,7 +420,9 @@ conf = openerp.tools.config
         desc = self._get_or_create_script('openerp_cron_worker',
                                           name=qualified_name)[1]
         desc.update(entry='openerp_cron_worker',
-                    arguments='%r, %r' % (script_src, self.config_path),
+                    arguments='%r, %r' % (
+                        script_src,
+                        self._relativitize(self.config_path)),
                     initialization='',
                     )
 
@@ -410,8 +437,9 @@ conf = openerp.tools.config
         initialization = os.linesep.join((
             "",
             "from anybox.recipe.odoo.runtime.session import Session",
-            "session = Session(%r, %r)" % (self.config_path,
-                                           self.buildout_dir),
+            "session = Session(%r, %r)" % (
+                self._relativitize(self.config_path),
+                self.jailroot_buildout_dir or self.buildout_dir),
             "if len(sys.argv) <= 1:",
             "    print('To start the Odoo working session, just do:')",
             "    print('    session.open(db=DATABASE_NAME)')",
@@ -439,8 +467,7 @@ conf = openerp.tools.config
             initialization=initialization,
             arguments=self.options.get('arguments', ''),
             extra_paths=self.extra_paths,
-            # TODO investigate these options:
-            # relative_paths=self._relative_paths,
+            relative_paths=self._relative_paths,
         )
 
     def _install_openerp_scripts(self):
@@ -457,8 +484,9 @@ conf = openerp.tools.config
         common_init = os.linesep.join((
             "",
             "from anybox.recipe.odoo.runtime.session import Session",
-            "session = Session(%r, %r)" % (self.config_path,
-                                           self.buildout_dir),
+            "session = Session(%r, %r)" % (
+                self._relativitize(self.config_path),
+                self.jailroot_buildout_dir or self.buildout_dir),
         ))
 
         for script_name, desc in self.openerp_scripts.items():
@@ -482,9 +510,8 @@ conf = openerp.tools.config
                 interpreter='',
                 initialization=initialization,
                 arguments=desc.get('arguments', ''),
-                # TODO investigate these options:
                 extra_paths=self.extra_paths,
-                # relative_paths=self._relative_paths,
+                relative_paths=self._relative_paths,
             )
             self.openerp_installed.append(join(self.bin_dir, script_name))
 

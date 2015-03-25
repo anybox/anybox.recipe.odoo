@@ -40,6 +40,21 @@ def rfc822_time(h):
     rfc822.mktime_tz(rfc822.parsedate_tz(h))
 
 
+def _relative_path(common, path):
+    """Copied from easy_install"""
+    r = []
+    while 1:
+        dirname, basename = os.path.split(path)
+        r.append(basename)
+        if dirname == common:
+            break
+        if dirname == path:
+            raise AssertionError("dirname of %s is the same" % dirname)
+        path = dirname
+    r.reverse()
+    return os.path.join(*r)
+
+
 class MainSoftware(object):
     """Placeholder to represent the main software instead of an addon location.
 
@@ -191,6 +206,12 @@ class BaseRecipe(object):
         self.vcs_clear_locks = clear_locks == 'true'
         clear_retry = options.get('vcs-clear-retry', '').lower()
         self.clear_retry = clear_retry == 'true'
+        self.jailroot_buildout_dir = options.get('jailroot-buildout-dir')
+        self.python_scripts_executable = options.get(
+            'python-scripts-executable')
+
+        if self.jailroot_buildout_dir:
+            options['relative-paths'] = 'true'
 
         if self.bool_opt_get(WITH_ODOO_REQUIREMENTS_FILE_OPTION):
             logger.debug("%s option: adding 'pip' to the recipe requirements",
@@ -200,6 +221,15 @@ class BaseRecipe(object):
             self.recipe_requirements.append('pip')
 
         # same as in zc.recipe.eggs
+        relative_paths = options.get(
+            'relative-paths',
+            buildout['buildout'].get('relative-paths', 'false')
+            )
+        if relative_paths == 'true':
+            self._relative_paths = self.buildout_dir
+        else:
+            self._relative_paths = ''
+            assert relative_paths == 'false'
         self.extra_paths = [
             join(self.buildout_dir, p.strip())
             for p in option_splitlines(self.options.get('extra-paths'))
@@ -834,6 +864,18 @@ class BaseRecipe(object):
             self.sources[local_path] = (
                 (source[0], (source[1][0], revision)) + source[2:]
             )
+
+    def rewrite_addons_path(self, addons_path):
+        """
+        Rewrite the addons path if we are preparing a buildout
+        for a jail root
+        """
+        if self.jailroot_buildout_dir:
+            relative_addons_path = _relative_path(
+                self._relative_paths, addons_path)
+            return os.path.join(
+                self.jailroot_buildout_dir, relative_addons_path)
+        return addons_path
 
     def retrieve_addons(self):
         """Peform all lookup and downloads specified in :attr:`sources`.
@@ -1616,6 +1658,11 @@ class BaseRecipe(object):
                 assert os.path.isdir(path), (
                     "Not a directory: %r (aborting)" % path)
 
+        addons_paths = list(self.addons_paths)
+        self.addons_paths = [
+            self.rewrite_addons_path(addons_path)
+            for addons_path in addons_paths
+            ]
         self.options['options.addons_path'] = ','.join(self.addons_paths)
 
     def insert_odoo_git_addons(self, base_addons):
