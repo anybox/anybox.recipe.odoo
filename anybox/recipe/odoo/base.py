@@ -381,7 +381,8 @@ class BaseRecipe(object):
                              req)
                 # GR something more interesting would be to apply the
                 # requirement if it does not contradict an existing one.
-                # For now that'
+                # For now that's too much complicated, but check later if
+                # zc.buildout.easy_install._constrain() fits the bill.
 
                 project_name = req.project_name
                 if project_name in versions:
@@ -448,7 +449,6 @@ class BaseRecipe(object):
             except IncompatibleConstraintError as exc:
                 missing = exc.args[2].project_name
             except UserError, exc:  # happens only for zc.buildout >= 2.0
-                import pdb; pdb.post_mortem(sys.exc_info()[2])
                 missing = exc.message.split(os.linesep)[0].split()[-1]
                 missing = re.split(r'[=<>]', missing)[0]
             else:
