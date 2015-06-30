@@ -3,6 +3,7 @@ import sys
 import re
 import subprocess
 from contextlib import contextmanager
+from ConfigParser import DuplicateSectionError
 import logging
 logger = logging.getLogger(__name__)
 
@@ -255,3 +256,10 @@ def total_seconds(td):
 
     return ((td.microseconds +
              (td.seconds + td.days * 24 * 3600) * 1e6) / 10**6)
+
+
+def conf_ensure_section(conf, section):
+    try:
+        conf.add_section(section)
+    except DuplicateSectionError:
+        pass
