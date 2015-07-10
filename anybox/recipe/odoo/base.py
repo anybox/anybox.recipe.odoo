@@ -433,13 +433,12 @@ class BaseRecipe(object):
                         "if from a public fork of Odoo, report this as a "
                         "request for improvement on the buildout recipe." % (
                             req, self.b_options.get('versions', 'versions')))
-                    continue
 
                 logger.debug("Applying requirement %s from Odoo's file",
                              req)
                 versions[project_name] = spec[1]
 
-        self.merge_requirements(reqs=new_reqs)
+            self.merge_requirements(reqs=new_reqs)
 
     def install_requirements(self):
         """Install egg requirements and scripts.
