@@ -69,7 +69,7 @@ class ServerRecipe(BaseRecipe):
             logger.warn("'gunicorn = proxied' now superseded since "
                         "OpenERP 7 by the 'proxy_mode' Odoo server option ")
 
-    def merge_requirements(self):
+    def merge_requirements(self, reqs=None):
         """Prepare for installation by zc.recipe.egg
 
          - develop the openerp distribution and require it
@@ -93,7 +93,7 @@ class ServerRecipe(BaseRecipe):
         if self.with_devtools:
             self.requirements.extend(devtools.requirements)
 
-        BaseRecipe.merge_requirements(self)
+        BaseRecipe.merge_requirements(self, reqs=reqs)
         return openerp_project_name
 
     def _create_default_config(self):
