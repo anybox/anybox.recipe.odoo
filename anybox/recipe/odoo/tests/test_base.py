@@ -4,6 +4,7 @@ import subprocess
 from zc.buildout import UserError
 from ..server import BaseRecipe
 from ..base import main_software
+from ..base import WITH_ODOO_REQUIREMENTS_FILE_OPTION
 from ..testing import RecipeTestCase
 from ..testing import get_vcs_log
 
@@ -303,3 +304,28 @@ class TestBaseRecipe(RecipeTestCase):
         self.recipe.finalize_addons_paths(check_existence=False)
         self.assertEquals(self.recipe.addons_paths,
                           [base_addons, '/some/separate/addons', odoo_addons])
+
+    def test_apply_requirements_file(self):
+        """Unit test for Odoo requirements.txt passing to internals
+        """
+        opts = {}
+        opts[WITH_ODOO_REQUIREMENTS_FILE_OPTION] = 'true'
+        self.make_recipe(
+            version='git http://github.com/odoo/odoo.git odoo 7.0', **opts)
+
+        self.recipe.version_detected = '8.0-somerev'
+        oerp_dir = self.recipe.openerp_dir
+        os.makedirs(oerp_dir)
+
+        dist_name = 'someproject'
+        with open(os.path.join(oerp_dir, 'requirements.txt'), 'w') as f:
+            f.write("%s==1.2.3\n" % dist_name)
+        import pip as pip_original
+        self.recipe.apply_odoo_requirements_file()
+        sys.modules['pip'] = pip_original
+        from zc.buildout.easy_install import Installer
+        versions = Installer._versions
+        self.assertEqual(versions.get(dist_name), '1.2.3')
+        self.assertTrue(dist_name in self.recipe.requirements,
+                        msg="Egg %r should have been listed" % dist_name)
+

@@ -305,12 +305,23 @@ class BaseRecipe(object):
         # mask what we just installed (especially harmful in case of pip)
         sys.path[0:0] = self.recipe_requirements_paths
 
-    def merge_requirements(self):
-        """Merge eggs option with self.requirements."""
+    def merge_requirements(self, reqs=None):
+        """Merge eggs option with self.requirements.
+
+
+        TODO refactor all this: merge requirements is not idempotent, it
+        appends. Overall, this going back and forth between the serialized
+        form (self.options['eggs']) and the parsed version has growed too
+        much, up to the point where it's not natural at all.
+        """
+        if reqs is None:
+            reqs = self.requirements
+        serial = '\n'.join(reqs)
+
         if 'eggs' not in self.options:
-            self.options['eggs'] = '\n'.join(self.requirements)
+            self.options['eggs'] = serial
         else:
-            self.options['eggs'] += '\n' + '\n'.join(self.requirements)
+            self.options['eggs'] += '\n' + serial
 
     def list_develops(self):
         """At any point in time, list the projects that have been developed.
@@ -369,6 +380,7 @@ class BaseRecipe(object):
             versions = Installer._versions
             develops = self.list_develops()
 
+            new_reqs = set()
             from pip.req import parse_requirements
             # pip internals are protected against the fact of not passing
             # a session with ``is None``. OTOH, the session is not used
@@ -385,6 +397,11 @@ class BaseRecipe(object):
                 # zc.buildout.easy_install._constrain() fits the bill.
 
                 project_name = req.project_name
+                if project_name not in self.requirements:
+                    # TODO maybe convert self.requirements to a set (in
+                    # next unstable branch)
+                    self.requirements.append(project_name)
+
                 if project_name in versions:
                     logger.debug("Requirement from Odoo's file %s superseded "
                                  "by buildout versions configuration as %r",
@@ -421,6 +438,8 @@ class BaseRecipe(object):
                 logger.debug("Applying requirement %s from Odoo's file",
                              req)
                 versions[project_name] = spec[1]
+
+        self.merge_requirements(reqs=new_reqs)
 
     def install_requirements(self):
         """Install egg requirements and scripts.
