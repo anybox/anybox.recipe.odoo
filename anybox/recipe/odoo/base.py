@@ -361,84 +361,85 @@ class BaseRecipe(object):
             logger.warn("%r not found in this version of "
                         "Odoo, although the configuration said to use it. "
                         "Proceeding anyway.", req_fname)
-        else:
-            # pip wouldn't be importable before the call to
-            # install_recipe_requirements()
+            return
 
-            # if an extension has used pip before, it can be left in a
-            # strange state where pip.req is not usable nor reloadable
-            # anymore. (may have something to do with the fact that the
-            # first import is done from a tmp dir
-            # that does not exist any more).
-            # So, better to clean that before hand.
-            for k in sys.modules.keys():
-                if k.split('.', 1)[0] == 'pip':
-                    del sys.modules[k]
+        # pip wouldn't be importable before the call to
+        # install_recipe_requirements()
 
-            # it is useless to mutate the versions section at this point
-            # it's already been used to populate the Installer class variable
-            versions = Installer._versions
-            develops = self.list_develops()
+        # if an extension has used pip before, it can be left in a
+        # strange state where pip.req is not usable nor reloadable
+        # anymore. (may have something to do with the fact that the
+        # first import is done from a tmp dir
+        # that does not exist any more).
+        # So, better to clean that before hand.
+        for k in sys.modules.keys():
+            if k.split('.', 1)[0] == 'pip':
+                del sys.modules[k]
 
-            new_reqs = set()
-            from pip.req import parse_requirements
-            # pip internals are protected against the fact of not passing
-            # a session with ``is None``. OTOH, the session is not used
-            # if the file is local (direct path, not an URL), so we cheat
-            # it.
-            fake_session = object()
-            for inst_req in parse_requirements(req_path, session=fake_session):
-                req = inst_req.req
-                logger.debug("Considering requirement from Odoo's file %s",
-                             req)
-                # GR something more interesting would be to apply the
-                # requirement if it does not contradict an existing one.
-                # For now that's too much complicated, but check later if
-                # zc.buildout.easy_install._constrain() fits the bill.
+        # it is useless to mutate the versions section at this point
+        # it's already been used to populate the Installer class variable
+        versions = Installer._versions
+        develops = self.list_develops()
 
-                project_name = req.project_name
-                if project_name not in self.requirements:
-                    # TODO maybe convert self.requirements to a set (in
-                    # next unstable branch)
-                    self.requirements.append(project_name)
+        new_reqs = set()
+        from pip.req import parse_requirements
+        # pip internals are protected against the fact of not passing
+        # a session with ``is None``. OTOH, the session is not used
+        # if the file is local (direct path, not an URL), so we cheat
+        # it.
+        fake_session = object()
+        for inst_req in parse_requirements(req_path, session=fake_session):
+            req = inst_req.req
+            logger.debug("Considering requirement from Odoo's file %s",
+                         req)
+            # GR something more interesting would be to apply the
+            # requirement if it does not contradict an existing one.
+            # For now that's too much complicated, but check later if
+            # zc.buildout.easy_install._constrain() fits the bill.
 
-                if project_name in versions:
-                    logger.debug("Requirement from Odoo's file %s superseded "
-                                 "by buildout versions configuration as %r",
-                                 req, versions[project_name])
-                    continue
+            project_name = req.project_name
+            if project_name not in self.requirements:
+                # TODO maybe convert self.requirements to a set (in
+                # next unstable branch)
+                self.requirements.append(project_name)
 
-                if project_name in develops:
-                    logger.debug("Requirement from Odoo's file %s superseded "
-                                 "by a direct develop directive", req)
-                    continue
+            if project_name in versions:
+                logger.debug("Requirement from Odoo's file %s superseded "
+                             "by buildout versions configuration as %r",
+                             req, versions[project_name])
+                continue
 
-                if not req.specs:
-                    continue
+            if project_name in develops:
+                logger.debug("Requirement from Odoo's file %s superseded "
+                             "by a direct develop directive", req)
+                continue
 
-                supported = True
+            if not req.specs:
+                continue
 
-                if len(req.specs) > 1:
-                    supported = False
-                spec = req.specs[0]
-                if spec[0] != '==':
-                    supported = False
+            supported = True
 
-                if not supported:
-                    raise UserError(
-                        "Version requirement %s from Odoo's requirement file "
-                        "is too complicated to be taken automatically into "
-                        "account. Please translate it in your [%s] "
-                        "configuration section and, "
-                        "if from a public fork of Odoo, report this as a "
-                        "request for improvement on the buildout recipe." % (
-                            req, self.b_options.get('versions', 'versions')))
+            if len(req.specs) > 1:
+                supported = False
+            spec = req.specs[0]
+            if spec[0] != '==':
+                supported = False
 
-                logger.debug("Applying requirement %s from Odoo's file",
-                             req)
-                versions[project_name] = spec[1]
+            if not supported:
+                raise UserError(
+                    "Version requirement %s from Odoo's requirement file "
+                    "is too complicated to be taken automatically into "
+                    "account. Please translate it in your [%s] "
+                    "configuration section and, "
+                    "if from a public fork of Odoo, report this as a "
+                    "request for improvement on the buildout recipe." % (
+                        req, self.b_options.get('versions', 'versions')))
 
-            self.merge_requirements(reqs=new_reqs)
+            logger.debug("Applying requirement %s from Odoo's file",
+                         req)
+            versions[project_name] = spec[1]
+
+        self.merge_requirements(reqs=new_reqs)
 
     def install_requirements(self):
         """Install egg requirements and scripts.
