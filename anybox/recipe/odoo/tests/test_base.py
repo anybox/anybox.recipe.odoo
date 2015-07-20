@@ -1,9 +1,12 @@
 import os
 import sys
 import subprocess
+from copy import deepcopy
+
 from zc.buildout import UserError
 from ..server import BaseRecipe
 from ..base import main_software
+from ..base import WITH_ODOO_REQUIREMENTS_FILE_OPTION
 from ..testing import RecipeTestCase
 from ..testing import get_vcs_log
 
@@ -142,6 +145,8 @@ class TestBaseRecipe(RecipeTestCase):
 
     def develop_babel(self):
         """Develop fake babel in buildout's directory"""
+        return self.recipe.develop(os.path.join(TEST_DIR, 'fake_babel'))
+
         subprocess.check_call(
             [sys.executable,
              os.path.join(TEST_DIR, 'fake_babel', 'setup.py'),
@@ -303,3 +308,116 @@ class TestBaseRecipe(RecipeTestCase):
         self.recipe.finalize_addons_paths(check_existence=False)
         self.assertEquals(self.recipe.addons_paths,
                           [base_addons, '/some/separate/addons', odoo_addons])
+
+    def make_recipe_appplying_requirements_file(self, reqs_content):
+        """Prepare recipe object and requirements file
+
+        :param reqs_content: if ``None`` the file is not created at all
+        """
+        opts = {}
+        opts[WITH_ODOO_REQUIREMENTS_FILE_OPTION] = 'true'
+        self.make_recipe(
+            version='git http://github.com/odoo/odoo.git odoo 7.0', **opts)
+
+        self.recipe.version_detected = '8.0-somerev'
+        oerp_dir = self.recipe.openerp_dir
+        os.makedirs(oerp_dir)
+        if reqs_content is None:
+            return
+
+        with open(os.path.join(self.recipe.openerp_dir,
+                               'requirements.txt'), 'w') as f:
+            f.write(reqs_content + '\n')
+
+    def apply_requirements_file(self, pre_versions=None):
+        """Call the recipe method, instrospects and return versions as a dict.
+
+        :param dict pre_versions: if supplied, will be set before calling the
+                                  recipe's code
+        """
+        import pip as pip_original
+        from zc.buildout.easy_install import Installer
+        versions_original = deepcopy(Installer._versions)
+
+        versions = Installer._versions
+        if pre_versions is not None:
+            versions.update(pre_versions)
+        try:
+            self.recipe.apply_odoo_requirements_file()
+        finally:
+            sys.modules['pip'] = pip_original
+            Installer._versions = versions_original
+
+        return versions
+
+    def test_apply_requirements_file(self):
+        """Unit test for Odoo requirements.txt passing to internals
+        """
+        dist_name = 'someproject'
+        self.make_recipe_appplying_requirements_file("%s==1.2.3" % dist_name)
+        versions = self.apply_requirements_file()
+
+        self.assertEqual(versions.get(dist_name), '1.2.3')
+        self.assertTrue(dist_name in self.recipe.requirements,
+                        msg="Egg %r should have been listed" % dist_name)
+
+    def test_apply_requirements_file_no_reqfile(self):
+        """Unit test for Odoo requirements.txt: if the file is missing
+        """
+        dist_name = 'someproject'
+        self.make_recipe_appplying_requirements_file(None)
+        versions = self.apply_requirements_file()
+
+        self.assertFalse(dist_name in versions)
+        self.assertFalse(dist_name in self.recipe.requirements)
+
+    def test_apply_requirements_file_no_version(self):
+        """Unit test for Odoo requirements.txt: corner case with no version
+        """
+        dist_name = 'someprojectzz'
+        self.make_recipe_appplying_requirements_file(dist_name)
+        versions = self.apply_requirements_file()
+
+        self.assertFalse(dist_name in versions)
+        self.assertTrue(dist_name in self.recipe.requirements,
+                        msg="Egg %r should have been listed" % dist_name)
+
+    def test_apply_requirements_file_precedence1(self):
+        """Unit test for Odoo requirements.txt: [versions] should win
+
+        The setting of version in the test is actually lower level, close to
+        the tested code logic, so that we are close to tautology. Anyway, this
+        gets at least the tested code executed.
+        """
+        dist_name = 'someproject'
+        self.make_recipe_appplying_requirements_file("%s==1.2.3" % dist_name)
+        versions = self.apply_requirements_file(
+            pre_versions={dist_name: '17.2'})
+        self.assertEqual(versions.get(dist_name), '17.2')
+
+    def test_list_develops(self):
+        self.make_recipe(
+            version='git http://github.com/odoo/odoo.git odoo 7.0')
+        self.assertEqual(self.recipe.list_develops(), [])
+        self.develop_babel()
+        self.assertEqual(self.recipe.list_develops(), ['Babel'])
+
+    def test_apply_requirements_file_precedence2(self):
+        """Unit test for Odoo requirements.txt: develops should win
+        """
+        self.make_recipe_appplying_requirements_file("Babel==6.2.3")
+        self.develop_babel()
+        versions = self.apply_requirements_file()
+        self.assertFalse('Babel' in versions)
+
+    def test_apply_requirements_file_unsupported(self):
+        """Unit test for Odoo requirements.txt: error paths #1
+        """
+        self.make_recipe_appplying_requirements_file("foo>=1.2.3")
+        self.assertRaises(UserError, self.apply_requirements_file)
+
+    def test_apply_requirements_file_unsupported2(self):
+        """Unit test for Odoo requirements.txt: error paths #2
+        """
+        self.make_recipe_appplying_requirements_file("spam==1.2.3, >2.0")
+        self.assertRaises(UserError, self.apply_requirements_file)
