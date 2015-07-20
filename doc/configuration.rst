@@ -380,6 +380,56 @@ eggs needed by addons, or just useful ones::
            python-ldap
            openobject-library
 
+.. _apply_requirements_file:
+
+apply-requirements-file
+-----------------------
+
+Default value: ``False``
+
+If set to ``True``, this boolean option makes the recipe read Odoo's
+``requirements.txt`` file if available, and apply its prescriptions.
+
+Precedence among requirements
+`````````````````````````````
+In short, Odoo's requirement file has the lowest precedence of all
+systems that can manage versions of Python libraries within the recipe context:
+
+* ``zc.buildout`` comes with its own native way of expressing wished
+  Python versions, with a dedicated configuration section, which is by default
+  ``[versions]``. This native system has precedence over the contents of
+  Odoo's requirement file.
+* all kinds of ``develop`` directives have precedence over Odoo's
+  requirement file. This includes the ``vcs-extend-develop`` of the
+  ``gp.vcsdevelop`` extension.
+
+Requirements file limitations
+`````````````````````````````
+
+In case the requirements file you use is not properly supported, we
+suggest as a workaround to you convert it temporarily to
+``[versions]`` statements, and get in touch with the recipe's
+developers.
+
+.. note:: At the time of this writing, the ``requirements.txt`` file shipping
+          within Odoo's main 8.0 branch is fully supported, but :
+
+          * you are free to use any alternative branch, including your
+            own baked
+          * the mainline requirements file may change in the future.
+
+Only a small subset of the `pip's requirement specifiers
+<https://pip.pypa.io/en/latest/reference/pip_install.html#requirement-specifiers>`_
+is actually supported, notably:
+
+* version inequalities, such as ``>=2.0`` and boolean expressions are
+  not currently implemented. They will be if needed, and you should
+  get an understandable message about the condition being "too complicated"
+* no specifier involving network operations is supported. In
+  particular, the VCS URLs are not (to workaround that, use
+  ``gp.vcsdevelop``), and the ``-r`` (``--requirements``) specifiers
+  work for local files only (path relative to the Odoo part directory).
+
 .. _revisions:
 
 revisions
