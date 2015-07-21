@@ -172,6 +172,8 @@ class BaseRecipe(object):
         self.clear_retry = clear_retry == 'true'
 
         if self.bool_opt_get(WITH_ODOO_REQUIREMENTS_FILE_OPTION):
+            logger.debug("%s option: adding 'pip' to the recipe requirements",
+                         WITH_ODOO_REQUIREMENTS_FILE_OPTION)
             self.with_odoo_requirements_file = True
             self.recipe_requirements = list(self.recipe_requirements)
             self.recipe_requirements.append('pip')

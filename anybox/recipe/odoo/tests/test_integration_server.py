@@ -9,11 +9,12 @@ import os
 import sys
 import unittest
 import shutil
+from pkg_resources import working_set, Requirement
 from copy import deepcopy
 from tempfile import mkdtemp
 
 from zc.buildout import buildout
-from zc.buildout.easy_install import Installer
+from zc.buildout.easy_install import Installer, buildout_and_setuptools_path
 
 TEST_DIR = os.path.dirname(__file__)
 
@@ -25,13 +26,17 @@ class IntegrationTestCase(unittest.TestCase):
         self.versions_original = deepcopy(Installer._versions)
         self.cwd_original = os.getcwd()
         self.pip_original = pip_original
-
         try:
             sandbox = mkdtemp('test_int_oerp_base_recipe')
             self.buildout_dir = os.path.join(sandbox, 'buildout_dir')
             shutil.copytree(os.path.join(TEST_DIR, 'integration_buildouts'),
                             self.buildout_dir)
             os.chdir(self.buildout_dir)
+
+            autopath = buildout_and_setuptools_path
+            self.autopath_original = autopath[:]
+            pip_loc = working_set.find(Requirement.parse('pip')).location
+            autopath.append(pip_loc)
         except:
             self.tearDown()
             raise
@@ -44,6 +49,7 @@ class IntegrationTestCase(unittest.TestCase):
 
         sys.modules['pip'] = self.pip_original
         Installer._versions = self.versions_original
+        buildout_and_setuptools_path[:] = self.autopath_original
         os.chdir(self.cwd_original)
 
     def test_requirements_file_integration_with_versions(self):
