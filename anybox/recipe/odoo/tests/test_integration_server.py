@@ -26,16 +26,17 @@ class IntegrationTestCase(unittest.TestCase):
         self.versions_original = deepcopy(Installer._versions)
         self.cwd_original = os.getcwd()
         self.pip_original = pip_original
-
         try:
             sandbox = mkdtemp('test_int_oerp_base_recipe')
             self.buildout_dir = os.path.join(sandbox, 'buildout_dir')
             shutil.copytree(os.path.join(TEST_DIR, 'integration_buildouts'),
                             self.buildout_dir)
             os.chdir(self.buildout_dir)
+
             autopath = buildout_and_setuptools_path
             self.autopath_original = autopath[:]
-            autopath.append(working_set.find(Requirement.parse('pip')).location)
+            pip_loc = working_set.find(Requirement.parse('pip')).location
+            autopath.append(pip_loc)
         except:
             self.tearDown()
             raise
