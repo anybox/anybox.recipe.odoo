@@ -22,7 +22,6 @@ class IntegrationTestCase(unittest.TestCase):
 
     def setUp(self):
         import pip as pip_original
-        from zc.buildout.easy_install import Installer
         self.versions_original = deepcopy(Installer._versions)
         self.cwd_original = os.getcwd()
         self.pip_original = pip_original
