@@ -1147,11 +1147,22 @@ class BaseRecipe(object):
                          "you ever run that buildout ?")
             raise
 
+        if 'parse_editable' in dir(pip.req):  # pip < 6.0
+            def parse_egg_dir(req_str):
+                return pip.req.parse_editable(req_str)[0]
+        else:
+            def parse_egg_dir(req_str):
+                ireq = pip.req.InstallRequirement.from_editable(req_str)
+                # GR I'm worried because now this is also used as project
+                # name in requirement, whereas it used to just be the target
+                # directory
+                return ireq.editable_options['egg']
+
         ret = []
         for raw in option_splitlines(lines):
-            parsed = pip.req.parse_editable(raw)
-            abs_path = os.path.join(base_path, parsed[0])
-            ret.append((raw, parsed, sub_dir, abs_path))
+            target = parse_egg_dir(raw)
+            abs_path = os.path.join(base_path, target)
+            ret.append((raw, target, sub_dir, abs_path))
         return tuple(ret)
 
     def _prepare_frozen_buildout(self, conf):
@@ -1430,8 +1441,8 @@ class BaseRecipe(object):
         develops = set(option_splitlines(self.b_options.get('develop')))
 
         extracted = set()
-        for raw, parsed, sub_dir, abs_path in self._get_gp_vcs_develops():
-            target_sub_dir = os.path.join(sub_dir, parsed[0])
+        for raw, target, sub_dir, abs_path in self._get_gp_vcs_develops():
+            target_sub_dir = os.path.join(sub_dir, target)
             vcs_type = raw.split('+', 1)[0]
             self._extract_vcs_source(vcs_type, abs_path,
                                      target_dir, target_sub_dir, extracted)
