@@ -32,14 +32,41 @@ class IntegrationTestCase(unittest.TestCase):
             shutil.copytree(os.path.join(TEST_DIR, 'integration_buildouts'),
                             self.buildout_dir)
             os.chdir(self.buildout_dir)
-
-            autopath = buildout_and_setuptools_path
-            self.autopath_original = autopath[:]
-            pip_loc = working_set.find(Requirement.parse('pip')).location
-            autopath.append(pip_loc)
+            self.provide_dependencies()
         except:
             self.tearDown()
             raise
+
+    def provide_dependencies(self):
+        """Add paths for resolution from inner buildout's Environment.
+
+        These paths tend to vary according to the way anybox.recipe.odoo has
+        been installed, notably there's a big difference between issueing in a
+        virtualenv ``python setup.py develop`` and
+        ``python setup.py develop --upgrade```, the latter putting the
+        dependencies into separate egg directories below the virtualenv's
+        ``site-packages`` while the former installs straight into
+        ``site-packages``.
+
+        For now we monkey-patch the path lists that ``zc.buildout`` uses
+        to provide setuptools in all cases, based on a list of all needed
+        dependencies, meaning that this list will have to be maintained.
+
+        Alternatives to consider :
+
+        * inject the whole current ``sys.path``
+        * play with the sub-buildout's ``find-links`` options
+
+        The monkey-patching in itself is tolerable in that the main purpose of
+        these integration tests is to report about the impact of internal
+        changes to to zc.buildout anyway.
+        """
+
+        autopath = buildout_and_setuptools_path
+        self.autopath_original = autopath[:]
+        autopath.extend(working_set.find(Requirement.parse(project)).location
+                        for project in ('pip', 'zc.buildout', 'zc.recipe.egg',
+                                        'anybox.recipe.odoo'))
 
     def tearDown(self):
         try:
