@@ -1,0 +1,26 @@
+before_install:
+  # For tests running hg command
+  #set up username
+  - echo '[ui]' > ~/.hgrc
+  - echo 'username = anybox-test' >> ~/.hgrc
+
+language: python
+
+python:
+  - "2.7"
+
+virtualenv:
+  system_site_packages: true
+
+install:
+  - pip install .
+  - pip install coveralls
+  - pip install flake8
+  - pip install bzr
+
+script:
+  - flake8 anybox 
+  - nosetests anybox -v --with-coverage --cover-tests --with-doctest --cover-package=anybox
+
+after_success:
+  - coveralls
