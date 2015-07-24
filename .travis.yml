@@ -1,6 +1,6 @@
 before_install:
   # For tests running hg command
-  #set up username
+  # set up username
   - echo '[ui]' > ~/.hgrc
   - echo 'username = anybox-test' >> ~/.hgrc
 
