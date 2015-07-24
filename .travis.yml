@@ -1,3 +1,4 @@
+sudo: false
 before_install:
   # For tests running hg command
   # set up username
