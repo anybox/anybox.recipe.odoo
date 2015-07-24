@@ -7,9 +7,8 @@ Odoo buildout recipe
     :target: https://travis-ci.org/anybox/anybox.recipe.odoo
 .. image:: https://coveralls.io/repos/anybox/anybox.recipe.odoo/badge.png?branch=master 
     :target: https://coveralls.io/r/anybox/anybox.recipe.odoo?branch=master
-.. image:: https://pypip.in/license/anybox.recipe.odoo/badge.svg
-    :target: https://pypi.python.org/pypi/anybox.recipe.odoo/
-    :alt: License
+.. image:: https://img.shields.io/badge/licence-AGPL--3-blue.svg
+    :alt: License: AGPL-3
 
 .. note:: dear Git user, if you're looking for ``anybox.recipe.openerp``,
           please checkout the ``a.r.openerp-1.9`` branch.
