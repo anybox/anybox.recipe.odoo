@@ -962,7 +962,7 @@ See also :ref:`openerp_scripts`.
 interpreter
 -----------
 With the ``gtkclient`` and ``webclient`` recipes,
-this behauves like the `interpreter` option of `zc.recipe.egg`: it
+this behaves like the `interpreter` option of `zc.recipe.egg`: it
 gives you a Python interpreter in the ``bin`` subdirectory of the buildout::
 
     interpreter = erp_python
