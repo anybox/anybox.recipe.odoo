@@ -17,6 +17,8 @@ if sys.version_info < (2, 7):
     requires.append('ordereddict')
     requires.append('argparse')
 
+tests_require=['nose','bzr']
+
 setup(
     name="anybox.recipe.odoo",
     version=version,
@@ -33,7 +35,7 @@ setup(
     zip_safe=False,
     include_package_data=True,
     install_requires=requires,
-    tests_require=requires + ['nose', 'bzr'],
+    tests_require=requires + tests_require,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Framework :: Buildout :: Recipe',
@@ -47,5 +49,9 @@ setup(
     entry_points={'zc.buildout': [
         'server = anybox.recipe.odoo.server:ServerRecipe',
     ]},
-    extras_require={'bzr': ['bzr']},
+    extras_require={
+      'bzr': ['bzr'],
+      'test': tests_require,
+      'dev': tests_require + ['coverage', 'flake8'],
+    },
 )
