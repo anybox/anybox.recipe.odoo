@@ -54,10 +54,8 @@ We recommend "developing" the source code in a virtualenv, together
 with ``bzr``. For instance::
 
   virtualenv recipe-env
-  recipe-env/bin/pip install bzr
   git clone https://github.com/anybox/anybox.recipe.odoo
-  cd anybox.recipe.odoo
-  python setup.py develop
+  recipe-env/bin/pip install -e .[dev]
 
 Coding style
 ~~~~~~~~~~~~
@@ -77,17 +75,6 @@ as many other projects:
 
 Launching static analysis and unit tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Install ``nose``, ``flake8`` and, optionally, ``coverage``::
-
-   recipe-env/bin/pip install nose coverage flake8==2.0 \
-                      pep8==1.4.6 mccabe==0.2.1 pyflakes==0.7.3
-
-
-.. note:: we've had problems lately with discrepancies in ``pep8``
-          versions, that's why versions of ``flake8`` and its
-          dependencies are fixed above. In case of doubt, check what
-          the buildbot is actually running.
 
 Run ``flake8`` and the tests (in this example, after virtualenv activation)::
 

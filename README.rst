@@ -1,6 +1,15 @@
 Odoo buildout recipe
 ====================
 
+.. image:: https://badge.fury.io/py/anybox.recipe.odoo.svg?
+    :target: http://badge.fury.io/py/anybox.recipe.odoo
+.. image:: https://travis-ci.org/anybox/anybox.recipe.odoo.svg?branch=master
+    :target: https://travis-ci.org/anybox/anybox.recipe.odoo
+.. image:: https://coveralls.io/repos/anybox/anybox.recipe.odoo/badge.png?branch=master 
+    :target: https://coveralls.io/r/anybox/anybox.recipe.odoo?branch=master
+.. image:: https://img.shields.io/badge/licence-AGPL--3-blue.svg
+    :alt: License: AGPL-3
+
 .. note:: dear Git user, if you're looking for ``anybox.recipe.openerp``,
           please checkout the ``a.r.openerp-1.9`` branch.
 
