@@ -23,7 +23,7 @@ script:
 
 after_script:
   # Dump version of all installed packages
-  - echo 'Versions of all installed packages';  echo '=================================='; pip freeze -l anybox.recipe.odoo
+  - echo 'Versions of all installed packages' &&  echo '==================================' && pip freeze -l anybox.recipe.odoo
 
 after_success:
   - coveralls
