@@ -951,9 +951,14 @@ If you want *not* to have the interpreter, juste do
 
     interpreter_name =
 
-If you want to wrap a python script with such session objects, read
-:doc:`/scripts` and especially :ref:`arguments_session`.
-See also :ref:`openerp_scripts`.
+If you want to wrap a python script with such session objects you need to use
+the :ref:`openerp_scripts` option. See :doc:`/scripts` and especially
+:ref:`arguments_session`.
+
+If you want a more comfortable Python console like
+`IPython <http://ipython.org>`_ or
+`bPython <http://bpython-interpreter.org>`_, take a
+look at :ref:`interactive_consoles`.
 
 .. note:: this facility is new in version 1.6.0, and tested with
           OpenERP ≥ 6.1 only for now.
@@ -962,7 +967,7 @@ See also :ref:`openerp_scripts`.
 interpreter
 -----------
 With the ``gtkclient`` and ``webclient`` recipes,
-this behauves like the `interpreter` option of `zc.recipe.egg`: it
+this behaves like the `interpreter` option of `zc.recipe.egg`: it
 gives you a Python interpreter in the ``bin`` subdirectory of the buildout::
 
     interpreter = erp_python
