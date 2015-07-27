@@ -11,7 +11,7 @@ python:
   - "2.7"
 
 virtualenv:
-  system_site_packages: true
+  system_site_packages: false
 
 install:
   - pip install -e .[dev]
@@ -20,6 +20,10 @@ install:
 script:
   - flake8 anybox 
   - nosetests anybox -v --with-coverage --cover-tests --with-doctest --cover-package=anybox
+
+after_script:
+  # Dump version of all installed packages
+  - echo 'Versions of all installed packages';  echo '=================================='; pip freeze -l anybox.recipe.odoo
 
 after_success:
   - coveralls
