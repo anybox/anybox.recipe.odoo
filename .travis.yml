@@ -26,4 +26,4 @@ after_script:
   - echo 'Versions of all installed packages';  echo '=================================='; pip freeze -l anybox.recipe.odoo
 
 after_success:
-  - coveralls
+  - coveralls debug
