@@ -17,7 +17,7 @@ if sys.version_info < (2, 7):
     requires.append('ordereddict')
     requires.append('argparse')
 
-tests_require=['nose','bzr']
+tests_require = ['nose', 'bzr']
 
 setup(
     name="anybox.recipe.odoo",
@@ -50,8 +50,8 @@ setup(
         'server = anybox.recipe.odoo.server:ServerRecipe',
     ]},
     extras_require={
-      'bzr': ['bzr'],
-      'test': tests_require,
-      'dev': tests_require + ['coverage', 'flake8'],
+        'bzr': ['bzr'],
+        'test': tests_require,
+        'dev': tests_require + ['coverage', 'flake8', 'Sphinx'],
     },
 )
