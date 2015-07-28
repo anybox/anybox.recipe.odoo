@@ -16,7 +16,6 @@ virtualenv:
 install:
   - pip install -e .[dev]
   - pip install coveralls
-  - pip install coverage
 
 script:
   - python setup.py flake8
