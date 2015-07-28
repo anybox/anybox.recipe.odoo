@@ -16,11 +16,10 @@ virtualenv:
 install:
   - pip install -e .[dev]
   - pip install coveralls
-  - pip install coverage
 
 script:
-  - flake8 anybox 
-  - nosetests anybox --with-coverage --cover-tests --with-doctest --cover-package anybox 
+  - python setup.py flake8
+  - python setup.py nosetests
 
 after_script:
   # Dump version of all installed packages
