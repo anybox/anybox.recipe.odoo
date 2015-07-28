@@ -21,6 +21,7 @@ install:
 script:
   - flake8 anybox 
   - nosetests anybox --with-coverage --cover-tests --with-doctest --cover-package anybox 
+  - sphinx-build doc/ doc/sphinx_build
 
 after_script:
   # Dump version of all installed packages

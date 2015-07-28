@@ -52,6 +52,6 @@ setup(
     extras_require={
       'bzr': ['bzr'],
       'test': tests_require,
-      'dev': tests_require + ['coverage', 'flake8'],
+      'dev': tests_require + ['coverage', 'flake8', 'Sphinx'],
     },
 )
