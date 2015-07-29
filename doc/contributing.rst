@@ -55,7 +55,8 @@ with ``bzr``. For instance::
 
   virtualenv recipe-env
   git clone https://github.com/anybox/anybox.recipe.odoo
-  recipe-env/bin/pip install -e .[dev]
+  cd anybox.recipe.odoo
+  ../bin/pip install -e.[test]
 
 Coding style
 ~~~~~~~~~~~~
@@ -76,10 +77,14 @@ as many other projects:
 Launching static analysis and unit tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Install ``flake8`` and, optionally, ``coverage``::
+
+   recipe-env/bin/pip install coverage, flake8
+
 Run ``flake8`` and the tests (in this example, after virtualenv activation)::
 
     cd anybox.recipe.odoo
-    flake8 anybox && nosetests anybox --with-doctest
+    ../bin/pip/python setup.py flake8 && ../bin/pip/python setup.py nosetests
 
 There is also this convenience to run the tests and output a coverage report::
 
