@@ -422,7 +422,10 @@ conf = openerp.tools.config
             ""
             "    print('Then you can issue commands such as')",
             "    print(\"    "
-            "    session.registry('res.users').browse(session.cr, 1, 1)\")"
+            "    session.registry('res.users').browse(session.cr, 1, 1)\")",
+            "    print('Or using new api with odoo >= v8')",
+            "    print(\"    "
+            "    session.env['res.users'].browse(1)\")"
             ""))
 
         reqs, ws = self.eggs_reqs, self.eggs_ws
