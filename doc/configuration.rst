@@ -938,10 +938,10 @@ away. You can use that for interactive sessions or to launch a script::
     or, to use the database from the buildout part config:
         session.open()
     All other options from buildout part config do apply.
-    Then you can issue commands such as
-            session.registry('res.users').browse(session.cr, 1, 1)
-    Or using new api with odoo >= v8
-            session.env['res.users'].browse(1)
+    Then you can issue commands such as:
+        session.registry('res.users').browse(session.cr, 1, 1)
+    Or using new api:
+        session.env['res.users'].browse(1)
     >>>
 
 The interpreter name is  ``python_<part_name>`` by default; but it can
