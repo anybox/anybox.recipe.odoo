@@ -425,7 +425,7 @@ conf = openerp.tools.config
             "    session.registry('res.users').browse(session.cr, 1, 1)\")",
             "    from openerp import release",
             "    from anybox.recipe.odoo.utils import major_version",
-            "    if major_version(release.version)[0]:",
+            "    if major_version(release.version)[0] >= 8:",
             "        print('Or using new api:')",
             "        print(\"    session.env['res.users'].browse(1)\")"
             ""))
