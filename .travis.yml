@@ -23,7 +23,7 @@ script:
   - python setup.py flake8
   - python setup.py nosetests
   # install sphinx only after running tests to avoid failing tests
-  - pip install sphinx; python setup.py build_sphinx
+  - pip install sphinx sphinx_bootstrap_theme; python setup.py build_sphinx
 
 after_script:
   # Dump version of all installed packages
