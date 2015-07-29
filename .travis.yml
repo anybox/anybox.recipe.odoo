@@ -1,11 +1,5 @@
-sudo: false
-before_install:
-  # For tests running hg command
-  # set up username
-  - echo '[ui]' > ~/.hgrc
-  - echo 'username = anybox-test' >> ~/.hgrc
-
 language: python
+sudo: false
 
 python:
   - "2.7"
@@ -13,10 +7,17 @@ python:
 virtualenv:
   system_site_packages: false
 
+before_install:
+  # For tests running hg command
+  # set up username
+  - echo '[ui]' > ~/.hgrc
+  - echo 'username = anybox-test' >> ~/.hgrc
+
+
 install:
-  - pip install -e .[test]
   - pip install coveralls
   - pip install flake8
+  - pip install -e .[test]
 
 script:
   - python setup.py flake8
