@@ -1,11 +1,5 @@
-sudo: false
-before_install:
-  # For tests running hg command
-  # set up username
-  - echo '[ui]' > ~/.hgrc
-  - echo 'username = anybox-test' >> ~/.hgrc
-
 language: python
+sudo: false
 
 python:
   - "2.7"
@@ -13,14 +7,23 @@ python:
 virtualenv:
   system_site_packages: false
 
+before_install:
+  # For tests running hg command
+  # set up username
+  - echo '[ui]' > ~/.hgrc
+  - echo 'username = anybox-test' >> ~/.hgrc
+
+
 install:
-  - pip install -e .[dev]
   - pip install coveralls
-  - pip install coverage
+  - pip install flake8
+  - pip install -e .[test]
 
 script:
-  - flake8 anybox 
-  - nosetests anybox --with-coverage --cover-tests --with-doctest --cover-package anybox 
+  - python setup.py flake8
+  - python setup.py nosetests
+  # install sphinx only after running tests to avoid failing tests
+  - pip install sphinx; python setup.py build_sphinx
 
 after_script:
   # Dump version of all installed packages
