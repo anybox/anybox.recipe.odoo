@@ -420,9 +420,14 @@ conf = openerp.tools.config
             "    print('All other options from buildout part config "
             "do apply.')",
             ""
-            "    print('Then you can issue commands such as')",
-            "    print(\"    "
-            "    session.registry('res.users').browse(session.cr, 1, 1)\")"
+            "    print('Then you can issue commands such as:')",
+            "    print(\""
+            "    session.registry('res.users').browse(session.cr, 1, 1)\")",
+            "    from openerp import release",
+            "    from anybox.recipe.odoo.utils import major_version",
+            "    if major_version(release.version)[0] >= 8:",
+            "        print('Or using new api:')",
+            "        print(\"    session.env['res.users'].browse(1)\")"
             ""))
 
         reqs, ws = self.eggs_reqs, self.eggs_ws
