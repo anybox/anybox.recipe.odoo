@@ -15,8 +15,8 @@ import distutils.core
 import pkg_resources
 try:
     from collections import OrderedDict
-except ImportError:  # Python < 2.7
-    from ordereddict import OrderedDict  # noqa
+except ImportError:  # Python < 2.7 pragma: no cover
+    from ordereddict import OrderedDict  # noqa pragma: no cover
 from zc.buildout.easy_install import MissingDistribution
 from zc.buildout import UserError
 from zc.buildout.easy_install import VersionConflict
@@ -504,7 +504,7 @@ class BaseRecipe(object):
 
         To be refined by subclasses.
         """
-        pass
+        pass  # pragma: no cover
 
     @property
     def major_version(self):
