@@ -64,9 +64,12 @@ class IntegrationTestCase(unittest.TestCase):
 
         autopath = buildout_and_setuptools_path
         self.autopath_original = autopath[:]
+        forward_projects = ['pip', 'zc.buildout', 'zc.recipe.egg',
+                            'anybox.recipe.odoo']
+        if sys.version_info < (2, 7):
+            forward_projects.extend(('argparse', 'ordereddict'))
         autopath.extend(working_set.find(Requirement.parse(project)).location
-                        for project in ('pip', 'zc.buildout', 'zc.recipe.egg',
-                                        'anybox.recipe.odoo', 'argparse'))
+                        for project in forward_projects)
 
     def tearDown(self):
         try:
