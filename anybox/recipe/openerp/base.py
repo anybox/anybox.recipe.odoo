@@ -108,9 +108,9 @@ class BaseRecipe(object):
 
     """
 
-    release_dl_url = {'6.0': 'http://nightly.odoo.com/old/openerp-6/',
+    release_dl_url = {'6.0': 'http://nightly.odoo.com/old/openerp-6.0/',
                       '6.1': 'http://nightly.odoo.com/old/openerp-6.1/',
-                      '5.0': 'http://nightly.odoo.com/old/openerp-5/',
+                      '5.0': 'http://nightly.odoo.com/old/openerp-5.0/',
                       }
 
     nightly_dl_url = {'6.0': 'http://nightly.odoo.com/6.0/6.0/',
