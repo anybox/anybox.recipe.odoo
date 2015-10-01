@@ -17,6 +17,7 @@ from zc.buildout import buildout
 from zc.buildout.easy_install import Installer, buildout_and_setuptools_path
 
 TEST_DIR = os.path.dirname(__file__)
+EGG_SUFFIX = '-py%d.%d.egg' % sys.version_info[:2]
 
 
 class IntegrationTestCase(unittest.TestCase):
@@ -89,7 +90,7 @@ class IntegrationTestCase(unittest.TestCase):
 
         with open(os.path.join('bin', 'start_odoo')) as f:
             start_odoo = f.read()
-        self.assertTrue('foobar-0.0.4-py2.7.egg' in start_odoo)
+        self.assertTrue('foobar-0.0.4' + EGG_SUFFIX in start_odoo)
         self.assertFalse('foobar-0.0.3'in start_odoo)
 
     def test_requirements_file_integration(self):
@@ -99,5 +100,5 @@ class IntegrationTestCase(unittest.TestCase):
 
         with open(os.path.join('bin', 'start_odoo')) as f:
             start_odoo = f.read()
-        self.assertTrue('foobar-0.0.3-py2.7.egg' in start_odoo)
+        self.assertTrue('foobar-0.0.3' + EGG_SUFFIX in start_odoo)
         self.assertFalse('foobar-0.0.4'in start_odoo)
