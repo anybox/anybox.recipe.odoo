@@ -21,7 +21,9 @@ class TestingRecipe(BaseRecipe):
 
     release_filenames = {'6.1': 'blob-%s.tgz',
                          '6.0': 'bl0b-%s.tgz'}
-    nightly_filenames = {'6.1': '6-1-nightly-%s.tbz'}
+    nightly_filenames = {'6.1': '6-1-nightly-%s.tbz',
+                         '7.0-before': 'oe-7.0-%s.tar.gz',
+                         '7.0-after': 'oe_7.0.%s.tar.gz'}
 
     def __init__(self, buildout, name, options):
         # we need to make buildout a regular object, because some subsystems

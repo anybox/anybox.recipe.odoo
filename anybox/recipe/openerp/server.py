@@ -28,7 +28,11 @@ class ServerRecipe(BaseRecipe):
     nightly_filenames = {
         # the switch from release to nightlies occured during 6.1
         '6.1': 'openerp-6.1-%s.tar.gz',
-        '7.0': 'openerp-7.0-%s.tar.gz',
+        # new tooling? artefacts names change 2014-12-11
+        # just the date of build (will use that for detection)
+        # and (underscore-dot) instead of (dash-dash)
+        '7.0-before': 'openerp-7.0-%s.tar.gz',
+        '7.0-after': 'openerp_7.0.%s.tar.gz',
         '8.0': 'odoo_8.0-%s.tar.gz',
         'trunk': 'odoo_9.0alpha1-%s.tar.gz'
     }

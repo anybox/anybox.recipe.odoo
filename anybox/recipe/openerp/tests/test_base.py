@@ -38,6 +38,24 @@ class TestBaseRecipe(RecipeTestCase):
             'http://nightly.odoo.com/6.1/nightly/src/'
             '6-1-nightly-1234-5.tbz')
 
+    def test_version_nightly_7_0_before(self):
+        self.make_recipe(version='nightly 7.0 20140801-231150')
+        self.assertDownloadUrl(
+            'http://nightly.odoo.com/7.0/nightly/src/'
+            'oe-7.0-20140801-231150.tar.gz')
+
+    def test_version_nightly_7_0_after(self):
+        self.make_recipe(version='nightly 7.0 20150102')
+        self.assertDownloadUrl(
+            'http://nightly.odoo.com/7.0/nightly/src/'
+            'oe_7.0.20150102.tar.gz')
+
+    def test_version_nightly_7_0_latest(self):
+        self.make_recipe(version='nightly 7.0 latest')
+        self.assertDownloadUrl(
+            'http://nightly.odoo.com/7.0/nightly/src/'
+            'oe_7.0.latest.tar.gz')
+
     def test_version_bzr_6_1(self):
         self.make_recipe(
             version='bzr lp:openobject-server/6.1 openerp-6.1 last:1')

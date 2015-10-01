@@ -246,9 +246,19 @@ class BaseRecipe(object):
             if self.version_wanted == 'latest':
                 self.main_http_caching = 'http-head'
             series = self.nightly_series
+
+            if series != '7.0':
+                nightly_key = series
+            elif '-' in self.version_wanted:
+                # naming of builds before 2014-12-11 (date and hour of build)
+                nightly_key = '7.0-before'
+            else:
+                # naming of new tooling (just the date)
+                nightly_key = '7.0-after'
             self.archive_filename = (
-                self.nightly_filenames[series] % self.version_wanted)
+                self.nightly_filenames[nightly_key] % self.version_wanted)
             self.archive_path = join(self.downloads_dir, self.archive_filename)
+
             base_url = self.options.get('base_url',
                                         self.nightly_dl_url[series])
             self.sources[main_software] = (
