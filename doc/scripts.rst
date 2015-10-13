@@ -248,6 +248,14 @@ object is available for interacting with your odoo application and database.
 Keep in mind that ``bpython`` requires more system dependencies installed than
 plain ``odoo``.
 
+Note that Odoo forbids using the ``postgres`` user to connect to the database.
+But in some containerized environments (Docker), using ``postgres`` can be
+both safe and handy. In such case you would need to patch the Odoo server as
+of today. But for the interactives sessions of this buildout recipe, you can
+set the environment variable ENABLE_POSTGRES_USER=1 before opening the console
+to disable the default ``check_postgres_user()`` guard and enable the postgres
+user.
+
 Writing Odoo Scripts
 ~~~~~~~~~~~~~~~~~~~~
 
