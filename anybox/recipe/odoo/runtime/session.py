@@ -162,7 +162,8 @@ class Session(object):
         cr.close()
 
         startup.check_root_user()
-        startup.check_postgres_user()
+        if not os.environ.get('ENABLE_POSTGRES_USER'):
+            startup.check_postgres_user()
         openerp.netsvc.init_logger()
 
         saved_without_demo = config['without_demo']
