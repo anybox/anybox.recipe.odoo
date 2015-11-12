@@ -1501,8 +1501,8 @@ class BaseRecipe(object):
 
         base_addons = join(self.openerp_dir, 'openerp', 'addons')
         if os.path.exists(base_addons):
-            # Sometimes we don't want the base addons to be charged as 
-            # the first ones (if we have addons with the same names: like 
+            # Sometimes we don't want the base addons to be charged as
+            # the first ones (if we have addons with the same names: like
             # enterprise vs standard addons)
             if self.options.get('keep-addons-order', False) == 'True':
                 self.addons_paths.append(base_addons)
