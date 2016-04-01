@@ -71,7 +71,7 @@ class GitBaseTestCase(VcsTestCase):
 
         with working_directory_keeper:
             os.chdir(repo.target_dir)
-            commits = subprocess.check_output(['git', 'rev-list', 'HEAD'])
+            commits = check_output(['git', 'rev-list', 'HEAD'])
             self.assertEqual(len(commits.splitlines()), depth)
 
 
