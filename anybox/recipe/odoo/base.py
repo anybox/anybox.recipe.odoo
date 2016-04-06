@@ -475,9 +475,9 @@ class BaseRecipe(object):
             else:
                 break
 
-            logger.error("Could not find or install %r. "
-                         + self.missing_deps_instructions.get(missing, '')
-                         + " Original exception %s.%s says: %s",
+            logger.error("Could not find or install %r. " +
+                         self.missing_deps_instructions.get(missing, '') +
+                         " Original exception %s.%s says: %s",
                          missing,
                          exc.__class__.__module__, exc.__class__.__name__, exc)
             if missing not in self.soft_requirements:
@@ -555,8 +555,8 @@ class BaseRecipe(object):
                         self.read_release()
                     except Exception as exc:
                         raise EnvironmentError(
-                            'Problem while reading Odoo release.py: '
-                            + exc.message)
+                            'Problem while reading Odoo release.py: ' +
+                            exc.message)
             except ImportError, exception:
                 if 'babel' in exception.message:
                     raise EnvironmentError(
@@ -737,8 +737,9 @@ class BaseRecipe(object):
                                 "for non-vcs source" % line)
 
             logger.info("%s will be on revision %r", local_path, revision)
-            self.sources[local_path] = ((source[0], (source[1][0], revision))
-                                        + source[2:])
+            self.sources[local_path] = (
+                (source[0], (source[1][0], revision)) + source[2:]
+            )
 
     def retrieve_addons(self):
         """Peform all lookup and downloads specified in :attr:`sources`.
@@ -928,9 +929,10 @@ class BaseRecipe(object):
                 utils.clean_object_files(self.openerp_dir)
         elif type_spec == 'downloadable':
             # download if needed
-            if ((self.archive_path and not os.path.exists(self.archive_path))
-                or (self.main_http_caching == 'http-head'
-                    and self.is_stale_http_head())):
+            if ((self.archive_path and
+                 not os.path.exists(self.archive_path)) or
+                (self.main_http_caching == 'http-head' and
+                 self.is_stale_http_head())):
                 self.main_download()
 
             logger.info(u'Inspecting %s ...' % self.archive_path)
@@ -982,8 +984,8 @@ class BaseRecipe(object):
         freeze_to = self.options.get('freeze-to')
         extract_downloads_to = self.options.get('extract-downloads-to')
 
-        if ((freeze_to is not None or extract_downloads_to is not None)
-                and not self.offline):
+        if ((freeze_to is not None or extract_downloads_to is not None) and
+                not self.offline):
             raise UserError("To freeze a part, you must run offline "
                             "so that there's no modification from what "
                             "you just tested. Please rerun with -o.")
@@ -1000,8 +1002,8 @@ class BaseRecipe(object):
         os.chdir(self.openerp_dir)  # GR probably not needed any more
         self.read_openerp_setup()
 
-        if (self.sources[main_software][0] == 'downloadable'
-                and self.version_wanted == 'latest'):
+        if (self.sources[main_software][0] == 'downloadable' and
+                self.version_wanted == 'latest'):
             self.nightly_version = self.version_detected.split('-', 1)[1]
             logger.warn("Detected 'nightly latest version', you may want to "
                         "fix it in your config file for replayability: \n    "
@@ -1219,8 +1221,8 @@ class BaseRecipe(object):
                         for name in conf.options(section))
         versions.update((name, egg.version)
                         for name, egg in self.ws.by_key.items()
-                        if name not in exclude
-                        and egg.precedence != pkg_resources.DEVELOP_DIST
+                        if name not in exclude and
+                        egg.precedence != pkg_resources.DEVELOP_DIST
                         )
         for name, version in versions.items():
             conf.set(section, name, version)
