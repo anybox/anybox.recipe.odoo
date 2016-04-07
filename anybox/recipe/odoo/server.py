@@ -375,8 +375,9 @@ conf = openerp.tools.config
         script_src = join(self.openerp_dir, 'openerp-cron-worker')
         if not os.path.isfile(script_src):
             version = self.version_detected
-            if ((version.startswith('6.1-2012') and version[4:12] < '20120530')
-                    or self.version_wanted == '6.1-1'):
+            if self.version_wanted == '6.1-1' or (
+                    version.startswith('6.1-2012') and
+                    version[4:12] < '20120530'):
                 logger.warn(
                     "Can't use openerp-cron-worker with version %s "
                     "You have to run a separate regular Odoo process "

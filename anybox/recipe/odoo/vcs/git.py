@@ -178,8 +178,8 @@ class GitRepo(BaseRepo):
             os.chdir(self.target_dir)
             for line in self.log_call(['git', 'remote', '-v'],
                                       callwith=check_output).splitlines():
-                if (line.endswith('(fetch)')
-                        and line.startswith(BUILDOUT_ORIGIN)):
+                if (line.endswith('(fetch)') and
+                        line.startswith(BUILDOUT_ORIGIN)):
                     return line[len(BUILDOUT_ORIGIN):-7].strip()
 
     def offline_update(self, revision):

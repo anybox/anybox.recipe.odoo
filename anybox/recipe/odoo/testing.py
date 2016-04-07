@@ -6,7 +6,9 @@ import shutil
 import subprocess
 from tempfile import mkdtemp
 from UserDict import UserDict
+
 from zc.buildout.easy_install import Installer
+from pip.vcs import vcs as pip_vcs
 
 from . import vcs
 from .base import BaseRecipe
@@ -75,7 +77,7 @@ class FakeRepo(vcs.base.BaseRepo):
 
 
 vcs.SUPPORTED['fakevcs'] = FakeRepo
-from pip.vcs import vcs as pip_vcs
+
 pip_vcs.register(FakeRepo)  # for tests around gp.vcsdevelop
 
 
