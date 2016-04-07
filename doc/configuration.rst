@@ -345,6 +345,10 @@ To do so, the recipe must perform first a broader fetch, then hope the
 wished commit has become available locally. The ``branch`` option
 narrows said fetch for better efficiency and reliability.
 
+Because of the potential problems mentioned above, the recipe emits a
+warning when coming across a SHA pin. You can disable this warning by
+setting ``git-warn-sha-pins = False``.
+
 .. note:: the ``branch`` option is new in vertion 1.9.1
 
 .. warning:: non tagged commits can become unreachable, especially
