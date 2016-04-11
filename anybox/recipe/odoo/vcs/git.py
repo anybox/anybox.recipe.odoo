@@ -178,8 +178,8 @@ class GitRepo(BaseRepo):
             os.chdir(self.target_dir)
             for line in self.log_call(['git', 'remote', '-v'],
                                       callwith=check_output).splitlines():
-                if (line.endswith('(fetch)')
-                        and line.startswith(BUILDOUT_ORIGIN)):
+                if (line.endswith('(fetch)') and
+                        line.startswith(BUILDOUT_ORIGIN)):
                     return line[len(BUILDOUT_ORIGIN):-7].strip()
 
     def offline_update(self, revision):
@@ -230,11 +230,16 @@ class GitRepo(BaseRepo):
         warnings emitted in code for explanations). Still, many users
         people depend on it, for not having enough privileges to add tags.
         """
-        logger.warn("%s: pointing to a remote commit directly by its SHA "
-                    "is unsafe because it can become unreachable "
-                    "due to history rewrites (squash, rebase) in the remote "
-                    "branch. "
-                    "Please consider using tags if you can.", self.target_dir)
+        if self.options.get('git-warn-sha-pins') not in ['False', 'false']:
+            logger.warn("%s: pointing to a remote commit directly by its SHA "
+                        "is unsafe because it can become unreachable "
+                        "due to history rewrites (squash, rebase) in the "
+                        "remote branch. \n"
+                        "Please consider using tags if you can.\n"
+                        "To get rid of this message, add \n"
+                        "git-warn-sha-pins = False\n"
+                        "to your buildout configuration",
+                        self.target_dir)
         branch = self.options.get('branch')
         if not self.has_commit(sha):
             fetch_cmd = ['git', 'fetch', BUILDOUT_ORIGIN]
