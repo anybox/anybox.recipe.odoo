@@ -1358,7 +1358,8 @@ class BaseRecipe(object):
             elif source_type != 'local':  # vcs
                 self._extract_vcs_source(source_type, abspath, target_dir,
                                          local_path, extracted)
-
+        # remove duplicates preserving order
+        addons_option = list(OrderedDict.fromkeys(addons_option))
         out_conf.set(self.name, 'addons', os.linesep.join(addons_option))
         if self.options.get('revisions'):
             out_conf.set(self.name, 'revisions', '')
