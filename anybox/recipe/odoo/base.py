@@ -1311,7 +1311,8 @@ class BaseRecipe(object):
         conf_ensure_section(out_conf, self.name)
 
         # remove bzr extra if needed
-        pkg_extras, recipe_cls = self.options['recipe'].split(':')
+        recipe = self.options['recipe']
+        pkg_extras, recipe_cls = recipe.split(':')
         extra_match = re.match(r'(.*?)\[(.*?)\]', pkg_extras)
         if extra_match is not None:
             recipe_pkg = extra_match.group(1)
@@ -1322,6 +1323,8 @@ class BaseRecipe(object):
                 extracted_recipe += '[%s]' % ','.join(extras)
             extracted_recipe += ':' + recipe_cls
             out_conf.set(self.name, 'recipe', extracted_recipe)
+        else:
+            out_conf.set(self.name, 'recipe', recipe)
 
         addons_option = []
         for local_path, source in self.sources.items():
