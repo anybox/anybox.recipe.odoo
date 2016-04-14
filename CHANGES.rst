@@ -13,12 +13,10 @@ upstream of anybox.recipe.odoo, and will change in the future.
 
 anybox.recipe.odoo 1.9.2 (unreleased)
 -------------------------------------
+- allow merging via sha1 hash
 - github #18: Support develop-dir option from gp.vcsdevelop
 - Odoo renaming in the doc
-- adapted nightly archive URL
-
-anybox.recipe.openerp 1.9.2 (unreleased)
-----------------------------------------
+- adapted nightly archive UR
 - github #30: fixed regression with option ``gunicorn.preload_databases``
   that appeared in 1.9.0
 - github #23: cursor auto-closing in upgrades, and more robustness of

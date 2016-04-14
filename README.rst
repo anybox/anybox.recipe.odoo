@@ -93,3 +93,4 @@ Contributors:
  * Sebastian Kennedy
  * Laetitia Gangloff
  * Sandy Carter
+ * Holger Brunn
