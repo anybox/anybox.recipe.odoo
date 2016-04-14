@@ -223,7 +223,7 @@ class GitRepo(BaseRepo):
 
         return objtype == 'commit'
 
-    def fetch_remote_sha(self, sha):
+    def fetch_remote_sha(self, sha, checkout=True):
         """Fetch a precise SHA from remote if necessary.
 
         SHA pinning is suboptimal, can't be guaranteed to work (see the
@@ -254,7 +254,8 @@ class GitRepo(BaseRepo):
                 fetch_cmd.append(branch)
             self.log_call(fetch_cmd, callwith=update_check_call)
 
-        self.log_call(['git', 'checkout', sha])
+        if checkout:
+            self.log_call(['git', 'checkout', sha])
 
     def query_remote_ref(self, remote, ref):
         """Query remote repo about given ref.
@@ -393,6 +394,9 @@ class GitRepo(BaseRepo):
                                    "or non git local directory %s" %
                                    self.target_dir)
             os.chdir(self.target_dir)
+            rtype, sha = self.query_remote_ref(BUILDOUT_ORIGIN, revision)
+            if rtype is None and ishex(revision):
+                self.fetch_remote_sha(revision, checkout=False)
             cmd = ['git', 'pull', self.url, revision]
             if self.git_version >= (1, 7, 10):
                 # --edit and --no-edit appear with Git 1.7.10

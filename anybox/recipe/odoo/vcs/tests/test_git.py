@@ -500,8 +500,9 @@ class GitMergeTestCase(GitBaseTestCase):
 
         self.make_branch(self.src_repo, 'branch1')
         self.checkout_branch(self.src_repo, 'branch1')
-        git_write_commit(self.src_repo, 'file_on_branch1',
-                         "file on branch 1", msg="on branch 1")
+        self.branch1_commit_sha1 = git_write_commit(
+            self.src_repo, 'file_on_branch1', "file on branch 1",
+            msg="on branch 1")
         self.checkout_branch(self.src_repo, 'master')
 
         self.make_branch(self.src_repo, 'branch2')
@@ -585,6 +586,18 @@ class GitMergeTestCase(GitBaseTestCase):
         self.assertFalse(os.path.exists(os.path.join(target_dir,
                                                      'file_on_branch1')),
                          'file_on_branch1 should not exist')
+
+    def test_04_merge_with_sha_pin(self):
+        target_dir = os.path.join(self.dst_dir, "to_repo")
+        repo = GitRepo(target_dir, self.src_repo)
+        repo('master')
+        print 'merging with sha'
+        git_set_user_info(repo.target_dir)
+        repo.merge(self.branch1_commit_sha1)
+        self.assertTrue(os.path.exists(os.path.join(target_dir,
+                                                    'file_on_branch1')),
+                        'file_on_branch1 should exist')
+        repo.revert('master')
 
 
 class GitTagTestCase(GitBaseTestCase):
