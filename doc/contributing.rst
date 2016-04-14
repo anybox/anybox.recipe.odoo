@@ -50,10 +50,10 @@ extension simple and useful. Here's an example for
 Development setup
 ~~~~~~~~~~~~~~~~~
 
-We recommend "developing" the source code in a virtualenv, together
-with ``bzr``. For instance::
+We recommend "developing" the source code in a virtualenv, for instance::
 
   virtualenv recipe-env
+  cd recipe-env
   git clone https://github.com/anybox/anybox.recipe.odoo
   cd anybox.recipe.odoo
   ../bin/pip install -e.[test]
@@ -79,12 +79,11 @@ Launching static analysis and unit tests
 
 Install ``flake8`` and, optionally, ``coverage``::
 
-   recipe-env/bin/pip install coverage, flake8
+   ../bin/pip install coverage flake8
 
 Run ``flake8`` and the tests (in this example, after virtualenv activation)::
 
-    cd anybox.recipe.odoo
-    ../bin/pip/python setup.py flake8 && ../bin/pip/python setup.py nosetests
+    ../bin/python setup.py flake8 && ../bin/python setup.py nosetests
 
 There is also this convenience to run the tests and output a coverage report::
 
