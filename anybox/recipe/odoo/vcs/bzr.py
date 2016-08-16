@@ -149,7 +149,7 @@ class BzrBranch(BaseRepo):
             if line.startswith(prefix):
                 return 'revid:' + line[len(prefix):].strip()
 
-    def parents(self, as_revno=False, pip_compatible=False):
+    def parents(self, as_revno=False, pip_compatible=False, revspec=False):
         """Return current revision.
 
         :param as_revno: if ``True``, the revno will be returned. By default,

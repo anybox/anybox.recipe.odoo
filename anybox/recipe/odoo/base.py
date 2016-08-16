@@ -1257,7 +1257,7 @@ class BaseRecipe(object):
 
         if revspec is not None and repo.is_local_fixed_revision(revspec):
             return revspec
-        parents = repo.parents(pip_compatible=pip_compatible)
+        parents = repo.parents(pip_compatible=pip_compatible, revspec=revspec)
         if len(parents) > 1:
             self.local_modifications.append(abspath)
 

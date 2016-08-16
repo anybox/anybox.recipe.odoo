@@ -64,7 +64,7 @@ class HgRepo(BaseRepo):
         return bool(check_output(['hg', '--cwd', self.target_dir, 'status'],
                                  env=SUBPROCESS_ENV))
 
-    def parents(self, pip_compatible=False):
+    def parents(self, pip_compatible=False, revspec=False):
         """Return full hash of parent nodes.
 
         :param pip_compatible: ignored, all Hg revspecs are pip compatible

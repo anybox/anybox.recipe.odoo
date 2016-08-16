@@ -153,14 +153,19 @@ class GitRepo(BaseRepo):
             os.chdir(self.target_dir)
             subprocess.check_call(['git', 'clean', '-fdqx'])
 
-    def parents(self, pip_compatible=False):
+    def parents(self, pip_compatible=False, revspec=False):
         """Return full hash of parent nodes.
 
         :param pip_compatible: ignored, all Git revspecs are pip compatible
         """
         with working_directory_keeper:
             os.chdir(self.target_dir)
-            p = subprocess.Popen(['git', 'rev-parse', '--verify', 'HEAD'],
+            cmd = ['git', 'rev-parse', '--verify', 'HEAD']
+            if revspec:
+                cmd = ['git', 'merge-base',
+                       '%s/%s' % (BUILDOUT_ORIGIN, revspec),
+                       revspec]
+            p = subprocess.Popen(cmd,
                                  stdout=subprocess.PIPE, env=SUBPROCESS_ENV)
             return p.communicate()[0].split()
 

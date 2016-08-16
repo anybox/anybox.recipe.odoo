@@ -178,7 +178,7 @@ class BaseRepo(object):
         """
         raise NotImplementedError
 
-    def parents(self, pip_compatible=False):
+    def parents(self, pip_compatible=False, revspec=False):
         """Return universal identifier for parent nodes, aka current revisions.
 
         There might be more than one with some VCSes (ex: pending merge in hg).
@@ -188,6 +188,10 @@ class BaseRepo(object):
                                reference/pip_install.html#vcs-support>`_
                                revision specifications are returned, depending
                                on the VCS type.
+        :param revspec: If set, the revision is used to find the base revision
+                        after merges. Merges lead to new commits which are
+                        unique to the local system and are not reproducible on
+                        other systems.
         """
         raise NotImplementedError
 
