@@ -456,7 +456,65 @@ class BaseRecipe(object):
             versions[project_name] = spec[1]
 
     def read_requirements_pip_after_v8(self, req_path, versions, develops):
-        raise NotImplementedError
+        from pip.req import parse_requirements
+        # pip internals are protected against the fact of not passing
+        # a session with ``is None``. OTOH, the session is not used
+        # if the file is local (direct path, not an URL), so we cheat
+        # it.
+        fake_session = object()
+        for inst_req in parse_requirements(req_path, session=fake_session):
+            req = inst_req.req
+            logger.debug("Considering requirement from Odoo's file %s",
+                         req)
+            # GR something more interesting would be to apply the
+            # requirement if it does not contradict an existing one.
+            # For now that's too much complicated, but check later if
+            # zc.buildout.easy_install._constrain() fits the bill.
+
+            # zc.buildout does its version comparison in lower case
+            # watch out for develops if that's the same !
+            project_name = req.name.lower()
+            if project_name not in self.requirements:
+                # TODO maybe convert self.requirements to a set (in
+                # next unstable branch)
+                self.requirements.append(project_name)
+
+            if project_name in versions:
+                logger.debug("Requirement from Odoo's file %s superseded "
+                             "by buildout versions configuration as %r",
+                             req, versions[project_name])
+                continue
+
+            if project_name in develops:
+                logger.debug("Requirement from Odoo's file %s superseded "
+                             "by a direct develop directive", req)
+                continue
+
+            specs = req.specifier
+            if not specs:
+                continue
+
+            supported = True
+
+            if len(specs) > 1:
+                supported = False
+            spec = specs.__iter__().next()
+            if spec.operator != '==':
+                supported = False
+
+            if not supported:
+                raise UserError(
+                    "Version requirement %s from Odoo's requirement file "
+                    "is too complicated to be taken automatically into "
+                    "account. Please translate it in your [%s] "
+                    "configuration section and, "
+                    "if from a public fork of Odoo, report this as a "
+                    "request for improvement on the buildout recipe." % (
+                        req, self.b_options.get('versions', 'versions')))
+
+            logger.debug("Applying requirement %s from Odoo's file",
+                         req)
+            versions[project_name] = spec.version
 
     def install_requirements(self):
         """Install egg requirements and scripts.
@@ -1173,7 +1231,10 @@ class BaseRecipe(object):
                 # GR I'm worried because now this is also used as project
                 # name in requirement, whereas it used to just be the target
                 # directory
-                return ireq.editable_options['egg']
+                editable_options = getattr(ireq, 'editable_options', None)
+                if editable_options is not None:  # pip < 8
+                    return editable_options['egg']
+                return ireq.req.name  # pip 8
 
         ret = []
         for raw in option_splitlines(lines):
