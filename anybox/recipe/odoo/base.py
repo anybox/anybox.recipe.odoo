@@ -389,7 +389,7 @@ class BaseRecipe(object):
         develops = self.list_develops()
 
         new_reqs = set()
-        if pip_version()[0] < 8:
+        if pip_version() < (8, 1, 2):
             self.read_requirements_pip_before_v8(req_path, versions, develops)
         else:
             self.read_requirements_pip_after_v8(req_path, versions, develops)
@@ -1232,9 +1232,12 @@ class BaseRecipe(object):
                 # name in requirement, whereas it used to just be the target
                 # directory
                 editable_options = getattr(ireq, 'editable_options', None)
-                if editable_options is not None:  # pip < 8
+                if editable_options is not None:  # pip < 8.1.0
                     return editable_options['egg']
-                return ireq.req.name  # pip 8
+                try:
+                    return ireq.req.name  # pip >= 8.1.2
+                except AttributeError:
+                    return ireq.req.project_name  # pip >=8.1.0, < 8.1.2
 
         ret = []
         for raw in option_splitlines(lines):
