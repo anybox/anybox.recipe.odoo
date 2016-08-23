@@ -62,6 +62,11 @@ GP_DEVELOP_DIR = 'develop-dir'
 WITH_ODOO_REQUIREMENTS_FILE_OPTION = 'apply-requirements-file'
 
 
+def pip_version():
+    import pip
+    return tuple(int(x) for x in pip.__version__.split('.'))
+
+
 class BaseRecipe(object):
     """Base class for other recipes.
 
@@ -384,11 +389,20 @@ class BaseRecipe(object):
         develops = self.list_develops()
 
         new_reqs = set()
+        if pip_version()[0] < 8:
+            self.read_requirements_pip_before_v8(req_path, versions, develops)
+        else:
+            self.read_requirements_pip_after_v8(req_path, versions, develops)
+        self.merge_requirements(reqs=new_reqs)
+
+    def read_requirements_pip_before_v8(self, req_path, versions, develops):
         from pip.req import parse_requirements
         # pip internals are protected against the fact of not passing
         # a session with ``is None``. OTOH, the session is not used
         # if the file is local (direct path, not an URL), so we cheat
         # it.
+        # Although this hack still works with pip 8, it's considered to be
+        # the kind of thing that can depend on pip version
         fake_session = object()
         for inst_req in parse_requirements(req_path, session=fake_session):
             req = inst_req.req
@@ -441,7 +455,8 @@ class BaseRecipe(object):
                          req)
             versions[project_name] = spec[1]
 
-        self.merge_requirements(reqs=new_reqs)
+    def read_requirements_pip_after_v8(self, req_path, versions, develops):
+        raise NotImplementedError
 
     def install_requirements(self):
         """Install egg requirements and scripts.
