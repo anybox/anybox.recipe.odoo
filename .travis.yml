@@ -9,6 +9,7 @@ virtualenv:
 
 env:
   matrix:
+    - TEST_FOR_PIP='==1.4.1'  # the minimum version we require for now
     - TEST_FOR_PIP='<8.1'
     - TEST_FOR_PIP='==8.1.1'
     - TEST_FOR_PIP=">=8.1.2"

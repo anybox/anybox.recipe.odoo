@@ -397,14 +397,19 @@ class BaseRecipe(object):
 
     def read_requirements_pip_before_v8(self, req_path, versions, develops):
         from pip.req import parse_requirements
-        # pip internals are protected against the fact of not passing
-        # a session with ``is None``. OTOH, the session is not used
-        # if the file is local (direct path, not an URL), so we cheat
-        # it.
-        # Although this hack still works with pip 8, it's considered to be
-        # the kind of thing that can depend on pip version
-        fake_session = object()
-        for inst_req in parse_requirements(req_path, session=fake_session):
+        if pip_version() < (1, 5):
+            parsed = parse_requirements(req_path)
+        else:
+            # pip internals are protected against the fact of not passing
+            # a session with ``is None``. OTOH, the session is not used
+            # if the file is local (direct path, not an URL), so we cheat
+            # it.
+            # Although this hack still works with pip 8, it's considered to be
+            # the kind of thing that can depend on pip version
+            fake_session = object()
+            parsed = parse_requirements(req_path, session=fake_session)
+
+        for inst_req in parsed:
             req = inst_req.req
             logger.debug("Considering requirement from Odoo's file %s",
                          req)
