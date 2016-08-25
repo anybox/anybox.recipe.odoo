@@ -18,6 +18,8 @@ before_install:
   # set up username
   - echo '[ui]' > ~/.hgrc
   - echo 'username = anybox-test' >> ~/.hgrc
+  # print setuptools version
+  - easy_install --version
 
 
 install:
