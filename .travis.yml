@@ -20,6 +20,9 @@ before_install:
   - echo 'username = anybox-test' >> ~/.hgrc
   # print setuptools version
   - easy_install --version
+  # if the wheel package is present, then pip will build an unusable wheel
+  # for zc.recipe.egg (see commit msg for analysis of that)
+  - pip uninstall -y wheel
 
 
 install:
