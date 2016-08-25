@@ -178,11 +178,9 @@ class Session(object):
         config['without_demo'] = saved_without_demo
         self.init_cursor()
         self.uid = SUPERUSER_ID
-        self.init_environments()
         self.context = self.registry('res.users').context_get(
             self.cr, self.uid)
-        if hasattr(openerp, 'api'):
-            self.env = openerp.api.Environment(self.cr, self.uid, self.context)
+        self.init_environments()
 
     def init_environments(self):
         """Enter the environments context manager, but don't leave it
@@ -208,6 +206,8 @@ class Session(object):
 
         self._environments_gen_context = gen_factory().gen
         self._environments_gen_context.next()
+        if hasattr(openerp, 'api'):
+            self.env = openerp.api.Environment(self.cr, self.uid, self.context)
 
     def clean_environments(self, reinit=True):
         """Cleans the thread-local environment.
