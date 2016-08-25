@@ -15,7 +15,7 @@ class SessionTestCase(TestCase):
     def test_env_after_install_module(self):
         self.open_session()
         self.assertAdminPresentWithV8API()
-        self.session.install_modules(['decimal_precision'])
+        self.session.install_modules(['report'])
         self.assertAdminPresentWithV8API()
 
     def assertAdminPresentWithV8API(self):
