@@ -15,11 +15,19 @@ class SessionTestCase(TestCase):
     def test_env_after_install_module(self):
         self.open_session()
         self.assertAdminPresentWithV8API()
-        self.session.install_modules(['decimal_precision'])
+        self.session.install_modules(['report'])
         self.assertAdminPresentWithV8API()
+        self.session.close()
 
     def assertAdminPresentWithV8API(self):
         self.assertEqual(
             u"Administrator",
             self.session.env['res.users'].search([('login', '=', 'admin')]).name
         )
+
+    def test_env_context(self):
+        self.open_session()
+        self.assertTrue(self.session.env.context.get('tz'))
+        self.session.install_modules(['web_tests'])
+        self.assertTrue(self.session.env.context.get('tz'))
+        self.session.close()
