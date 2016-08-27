@@ -171,7 +171,7 @@ class TestExtraction(RecipeTestCase):
         os.mkdir(os.path.join(self.recipe.openerp_dir))
         self.recipe.retrieve_main_software()
         self.recipe.retrieve_addons()
-        self.fill_working_set()
+        self.fill_working_set(fictive=True)
 
         self.recipe.extract_downloads_to(self.extract_target_dir)
         ext_conf = ConfigParser()
@@ -184,7 +184,5 @@ class TestExtraction(RecipeTestCase):
 
         self.assertEqual(ext_conf.get('openerp', 'version').strip(),
                          'local parts/odooo')
-        # precise version depends on the setuptools version
-        # from about setuptools 8.2 or 8.3, normalization to 0.123.dev0
-        # according to PEP440 occurs
-        self.assertTrue(ext_conf.get('versions', 'babel').startswith('0.123'))
+        self.assertEqual(ext_conf.get('versions', self.fictive_name),
+                         self.fictive_version)

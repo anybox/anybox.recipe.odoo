@@ -1,6 +1,5 @@
 import os
 import sys
-import subprocess
 from copy import deepcopy
 
 from zc.buildout import UserError
@@ -22,6 +21,10 @@ class TestingRecipe(BaseRecipe):
 
 
 class TestBaseRecipe(RecipeTestCase):
+
+    def setUp(self):
+        super(TestBaseRecipe, self).setUp()
+        self.test_dir = TEST_DIR
 
     def get_source_type(self):
         return self.recipe.sources[main_software][0]
@@ -142,17 +145,6 @@ class TestBaseRecipe(RecipeTestCase):
                 ):
             self.assertRaises(UserError,
                               recipe.parse_addons, dict(addons=illformed))
-
-    def develop_babel(self):
-        """Develop fake babel in buildout's directory"""
-        return self.recipe.develop(os.path.join(TEST_DIR, 'fake_babel'))
-
-        subprocess.check_call(
-            [sys.executable,
-             os.path.join(TEST_DIR, 'fake_babel', 'setup.py'),
-             'develop',
-             '-d', self.recipe.b_options['develop-eggs-directory'],
-             '-b', os.path.join(self.buildout_dir, 'build')])
 
     def test_clean(self):
         """Test clean for local server & addons and base class vcs addons.
@@ -399,16 +391,18 @@ class TestBaseRecipe(RecipeTestCase):
         self.make_recipe(
             version='git http://github.com/odoo/odoo.git odoo 7.0')
         self.assertEqual(self.recipe.list_develops(), [])
-        self.develop_babel()
-        self.assertEqual(self.recipe.list_develops(), ['Babel'])
+        self.develop_fictive()
+        self.assertEqual(self.recipe.list_develops(),
+                         [self.fictive_dist_name])
 
     def test_apply_requirements_file_precedence2(self):
         """Unit test for Odoo requirements.txt: develops should win
         """
-        self.make_recipe_appplying_requirements_file("Babel==6.2.3")
-        self.develop_babel()
+        self.make_recipe_appplying_requirements_file(
+            self.fictive_dist_name + "==6.2.3")
+        self.develop_fictive()
         versions = self.apply_requirements_file()
-        self.assertFalse('Babel' in versions)
+        self.assertFalse(self.fictive_dist_name in versions)
 
     def test_apply_requirements_file_unsupported(self):
         """Unit test for Odoo requirements.txt: error paths #1

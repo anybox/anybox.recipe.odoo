@@ -18,13 +18,14 @@ class TestFreeze(RecipeTestCase):
         conf = ConfigParser()
         conf.add_section('freeze')
         self.make_recipe(version='8.0')
-        self.fill_working_set()
+        self.fill_working_set(fictive=True)
         self.recipe._freeze_egg_versions(conf, 'freeze')
         try:
-            version = conf.get('freeze', 'Babel')
+            version = conf.get('freeze', self.fictive_dist_name)
         except NoOptionError:
-            self.fail("Expected version of Babel egg not dumped !")
-        self.assertTrue(version.startswith('0.123'))
+            self.fail("Expected version of %s "
+                      "egg not dumped !" % self.fictive_dist_name)
+        self.assertEqual(version, self.fictive_version)
 
     def test_freeze_egg_versions_merge(self):
         """Test that freezing of egg versions keeps eggs already dumped.
@@ -35,9 +36,7 @@ class TestFreeze(RecipeTestCase):
         conf.add_section('freeze')
         conf.set('freeze', 'some.distribution', '1.0alpha')
         self.make_recipe(version='8.0')
-        self.build_babel_egg()
-        self.recipe.options['eggs'] = 'Babel'
-        self.recipe.install_requirements()  # to get 'ws' attribute
+        self.fill_working_set(fictive=True)
         self.recipe._freeze_egg_versions(conf, 'freeze')
         try:
             version = conf.get('freeze', 'some.distribution')
@@ -51,11 +50,10 @@ class TestFreeze(RecipeTestCase):
         conf = ConfigParser()
         conf.add_section('freeze')
         self.make_recipe(version='8.0')
-        self.recipe.develop(os.path.join(self.test_dir, 'fake_babel'))
-        self.recipe.options['eggs'] = 'Babel'
-        self.recipe.install_requirements()  # to get 'ws' attribute
+        self.develop_fictive(require_install=True)
         self.recipe._freeze_egg_versions(conf, 'freeze')
-        self.assertRaises(NoOptionError, conf.get, 'freeze', 'Babel')
+        self.assertRaises(NoOptionError, conf.get, 'freeze',
+                          self.fictive_dist_name)
 
     def test_freeze_vcs_source(self):
         self.make_recipe(version='8.0')
@@ -180,7 +178,7 @@ class TestFreeze(RecipeTestCase):
         os.mkdir(os.path.join(self.recipe.openerp_dir))
         self.recipe.retrieve_main_software()
         self.recipe.retrieve_addons()
-        self.fill_working_set()
+        self.fill_working_set(babel=True)
 
         tmpdir = tempfile.mkdtemp('test_recipe_freeze')
         frozen_path = os.path.join(tmpdir, 'frozen.cfg')

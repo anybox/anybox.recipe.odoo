@@ -4,6 +4,7 @@ import unittest
 import sys
 import shutil
 import subprocess
+import logging
 from tempfile import mkdtemp
 from UserDict import UserDict
 
@@ -12,6 +13,8 @@ from pip.vcs import vcs as pip_vcs
 
 from . import vcs
 from .base import BaseRecipe
+
+logger = logging.getLogger(__name__)
 
 COMMIT_USER_NAME = 'Test'
 COMMIT_USER_EMAIL = 'test@example.org'
@@ -119,6 +122,10 @@ vcs.SUPPORTED['pr_fakevcs'] = PersistentRevFakeRepo
 class RecipeTestCase(unittest.TestCase):
     """A base setup for tests of recipe classes"""
 
+    fictive_dist_name = 'FictiveDist'
+    fictive_name = 'fictivedist'
+    fictive_version = None
+
     def setUp(self):
         b_dir = self.buildout_dir = mkdtemp('test_oerp_base_recipe')
         eggs_dir = os.path.join(b_dir, 'eggs')
@@ -170,9 +177,10 @@ class RecipeTestCase(unittest.TestCase):
         # leftover egg-info at root of the source dir (frequent cwd)
         # impairs use of this very same source dir for real-life testing
         # with a 'develop' option.
-        egg_info = 'Babel.egg-info'
-        if os.path.isdir(egg_info):
-            shutil.rmtree(egg_info)
+        for egg_info in (self.fictive_dist_name + '.egg-info',
+                         'Babel.egg-info'):
+            if os.path.isdir(egg_info):
+                shutil.rmtree(egg_info)
 
     def build_babel_egg(self):
         """build an egg for fake babel in buildout's eggs directory.
@@ -186,9 +194,69 @@ class RecipeTestCase(unittest.TestCase):
              '-d', self.recipe.b_options['eggs-directory'],
              '-b', os.path.join(self.buildout_dir, 'build')],
             cwd=os.path.join(self.test_dir, 'fake_babel'),
-            stdout=subprocess.PIPE)
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
 
-    def fill_working_set(self):
-        self.build_babel_egg()
-        self.recipe.options['eggs'] = 'Babel'
+    def build_fictive_egg(self):
+        """build an egg of a fictive distribution for testing purposes.
+
+        Require the test case to already have a ``test_dir`` attribute
+        (typically set on class with the dirname of the test)
+        """
+        subprocess.check_call(
+            [sys.executable, 'setup.py',
+             'bdist_egg',
+             '-d', self.recipe.b_options['eggs-directory'],
+             '-b', os.path.join(self.buildout_dir, 'build')],
+            cwd=os.path.join(self.test_dir, 'fictive_dist'),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+
+    def fill_working_set(self, fictive=False, babel=False):
+        self.assertTrue(fictive or babel)
+        if babel:
+            self.build_babel_egg()
+            self.recipe.options['eggs'] = 'Babel'
+        if fictive:
+            self.build_fictive_egg()
+            self.recipe.options['eggs'] = self.fictive_dist_name
         self.recipe.install_requirements()  # to get 'ws' attribute
+        if fictive:
+            egg = self.recipe.ws.by_key.get(self.fictive_name)
+            if egg is None:
+                self.fail("Our crafted testing egg has not been installed")
+            # precise version depends on the setuptools version
+            # from setuptools 8.0, normalization to 0.123.dev0
+            # according to PEP440 occurs
+            self.assertTrue(egg.version.startswith('0.123'),
+                            msg="Our crafted testing egg "
+                            "is being superseded by %r" % egg)
+            self.fictive_version = egg.version
+
+    def silence_buildout_develop(self):
+        """Silence easy_install develop operations performed by zc.buildout.
+        """
+        try:
+            # grabbing it with getLogger, even after the import is not
+            # effective: the level gets overwritten afterwards
+            from zc.buildout.easy_install import logger as zc_logger
+        except:
+            logger.warn("Could not grab zc.buildout.easy_install logger")
+        else:
+            zc_logger.setLevel(logging.ERROR)
+
+    def develop_fictive(self, require_install=False):
+        """Develop fictive distribution in buildout's directory.
+
+        Require the test case to already have a ``test_dir`` attribute
+        (typically set on class with the dirname of the test)
+
+        :param bool require_install: if ``True``, will be required from
+                                     ``eggs`` option, and installed.
+        """
+        self.silence_buildout_develop()
+        res = self.recipe.develop(os.path.join(self.test_dir, 'fictive_dist'))
+        if require_install:
+            self.recipe.options['eggs'] = self.fictive_dist_name
+            self.recipe.install_requirements()
+        return res
