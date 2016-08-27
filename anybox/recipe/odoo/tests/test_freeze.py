@@ -21,10 +21,11 @@ class TestFreeze(RecipeTestCase):
         self.fill_working_set()
         self.recipe._freeze_egg_versions(conf, 'freeze')
         try:
-            version = conf.get('freeze', 'Babel')
+            version = conf.get('freeze', self.fake_babel_dist_name)
         except NoOptionError:
-            self.fail("Expected version of Babel egg not dumped !")
-        self.assertTrue(version.startswith('0.123'))
+            self.fail("Expected version of %s "
+                      "egg not dumped !" % self.fake_babel_dist_name)
+        self.assertEqual(version, self.fake_babel_version)
 
     def test_freeze_egg_versions_merge(self):
         """Test that freezing of egg versions keeps eggs already dumped.
@@ -36,7 +37,7 @@ class TestFreeze(RecipeTestCase):
         conf.set('freeze', 'some.distribution', '1.0alpha')
         self.make_recipe(version='8.0')
         self.build_babel_egg()
-        self.recipe.options['eggs'] = 'Babel'
+        self.recipe.options['eggs'] = self.fake_babel_dist_name
         self.recipe.install_requirements()  # to get 'ws' attribute
         self.recipe._freeze_egg_versions(conf, 'freeze')
         try:
@@ -51,11 +52,13 @@ class TestFreeze(RecipeTestCase):
         conf = ConfigParser()
         conf.add_section('freeze')
         self.make_recipe(version='8.0')
+        self.silence_buildout_develop()
         self.recipe.develop(os.path.join(self.test_dir, 'fake_babel'))
-        self.recipe.options['eggs'] = 'Babel'
+        self.recipe.options['eggs'] = self.fake_babel_dist_name
         self.recipe.install_requirements()  # to get 'ws' attribute
         self.recipe._freeze_egg_versions(conf, 'freeze')
-        self.assertRaises(NoOptionError, conf.get, 'freeze', 'Babel')
+        self.assertRaises(NoOptionError, conf.get, 'freeze',
+                          self.fake_babel_dist_name)
 
     def test_freeze_vcs_source(self):
         self.make_recipe(version='8.0')

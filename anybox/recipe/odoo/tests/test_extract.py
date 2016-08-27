@@ -184,7 +184,5 @@ class TestExtraction(RecipeTestCase):
 
         self.assertEqual(ext_conf.get('openerp', 'version').strip(),
                          'local parts/odooo')
-        # precise version depends on the setuptools version
-        # from about setuptools 8.2 or 8.3, normalization to 0.123.dev0
-        # according to PEP440 occurs
-        self.assertTrue(ext_conf.get('versions', 'babel').startswith('0.123'))
+        self.assertEqual(ext_conf.get('versions', self.fake_babel_name),
+                         self.fake_babel_version)

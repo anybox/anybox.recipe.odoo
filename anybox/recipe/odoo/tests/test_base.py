@@ -145,14 +145,8 @@ class TestBaseRecipe(RecipeTestCase):
 
     def develop_babel(self):
         """Develop fake babel in buildout's directory"""
+        self.silence_buildout_develop()
         return self.recipe.develop(os.path.join(TEST_DIR, 'fake_babel'))
-
-        subprocess.check_call(
-            [sys.executable,
-             os.path.join(TEST_DIR, 'fake_babel', 'setup.py'),
-             'develop',
-             '-d', self.recipe.b_options['develop-eggs-directory'],
-             '-b', os.path.join(self.buildout_dir, 'build')])
 
     def test_clean(self):
         """Test clean for local server & addons and base class vcs addons.
@@ -400,15 +394,17 @@ class TestBaseRecipe(RecipeTestCase):
             version='git http://github.com/odoo/odoo.git odoo 7.0')
         self.assertEqual(self.recipe.list_develops(), [])
         self.develop_babel()
-        self.assertEqual(self.recipe.list_develops(), ['Babel'])
+        self.assertEqual(self.recipe.list_develops(),
+                         [self.fake_babel_dist_name])
 
     def test_apply_requirements_file_precedence2(self):
         """Unit test for Odoo requirements.txt: develops should win
         """
-        self.make_recipe_appplying_requirements_file("Babel==6.2.3")
+        self.make_recipe_appplying_requirements_file(
+            self.fake_babel_dist_name + "==6.2.3")
         self.develop_babel()
         versions = self.apply_requirements_file()
-        self.assertFalse('Babel' in versions)
+        self.assertFalse(self.fake_babel_dist_name in versions)
 
     def test_apply_requirements_file_unsupported(self):
         """Unit test for Odoo requirements.txt: error paths #1
