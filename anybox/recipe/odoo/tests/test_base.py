@@ -1,6 +1,5 @@
 import os
 import sys
-import subprocess
 from copy import deepcopy
 
 from zc.buildout import UserError
