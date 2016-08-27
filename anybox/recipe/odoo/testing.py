@@ -245,11 +245,18 @@ class RecipeTestCase(unittest.TestCase):
         else:
             zc_logger.setLevel(logging.ERROR)
 
-    def develop_fictive(self):
+    def develop_fictive(self, require_install=False):
         """Develop fictive distribution in buildout's directory.
 
         Require the test case to already have a ``test_dir`` attribute
         (typically set on class with the dirname of the test)
+
+        :param bool require_install: if ``True``, will be required from ``eggs``
+                                     option, and installed.
         """
         self.silence_buildout_develop()
-        return self.recipe.develop(os.path.join(self.test_dir, 'fictive_dist'))
+        res = self.recipe.develop(os.path.join(self.test_dir, 'fictive_dist'))
+        if require_install:
+            self.recipe.options['eggs'] = self.fictive_dist_name
+            self.recipe.install_requirements()
+        return res

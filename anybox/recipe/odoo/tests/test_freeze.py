@@ -50,9 +50,7 @@ class TestFreeze(RecipeTestCase):
         conf = ConfigParser()
         conf.add_section('freeze')
         self.make_recipe(version='8.0')
-        self.develop_fictive()
-        self.recipe.options['eggs'] = self.fictive_dist_name
-        self.recipe.install_requirements()  # to get 'ws' attribute
+        self.develop_fictive(require_install=True)
         self.recipe._freeze_egg_versions(conf, 'freeze')
         self.assertRaises(NoOptionError, conf.get, 'freeze',
                           self.fictive_dist_name)
