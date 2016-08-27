@@ -251,8 +251,8 @@ class RecipeTestCase(unittest.TestCase):
         Require the test case to already have a ``test_dir`` attribute
         (typically set on class with the dirname of the test)
 
-        :param bool require_install: if ``True``, will be required from ``eggs``
-                                     option, and installed.
+        :param bool require_install: if ``True``, will be required from
+                                     ``eggs`` option, and installed.
         """
         self.silence_buildout_develop()
         res = self.recipe.develop(os.path.join(self.test_dir, 'fictive_dist'))
