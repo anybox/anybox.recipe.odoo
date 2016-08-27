@@ -22,6 +22,10 @@ class TestingRecipe(BaseRecipe):
 
 class TestBaseRecipe(RecipeTestCase):
 
+    def setUp(self):
+        super(TestBaseRecipe, self).setUp()
+        self.test_dir = TEST_DIR
+
     def get_source_type(self):
         return self.recipe.sources[main_software][0]
 
@@ -141,11 +145,6 @@ class TestBaseRecipe(RecipeTestCase):
                 ):
             self.assertRaises(UserError,
                               recipe.parse_addons, dict(addons=illformed))
-
-    def develop_babel(self):
-        """Develop fake babel in buildout's directory"""
-        self.silence_buildout_develop()
-        return self.recipe.develop(os.path.join(TEST_DIR, 'fake_babel'))
 
     def test_clean(self):
         """Test clean for local server & addons and base class vcs addons.
@@ -392,18 +391,18 @@ class TestBaseRecipe(RecipeTestCase):
         self.make_recipe(
             version='git http://github.com/odoo/odoo.git odoo 7.0')
         self.assertEqual(self.recipe.list_develops(), [])
-        self.develop_babel()
+        self.develop_fictive()
         self.assertEqual(self.recipe.list_develops(),
-                         [self.fake_babel_dist_name])
+                         [self.fictive_dist_name])
 
     def test_apply_requirements_file_precedence2(self):
         """Unit test for Odoo requirements.txt: develops should win
         """
         self.make_recipe_appplying_requirements_file(
-            self.fake_babel_dist_name + "==6.2.3")
-        self.develop_babel()
+            self.fictive_dist_name + "==6.2.3")
+        self.develop_fictive()
         versions = self.apply_requirements_file()
-        self.assertFalse(self.fake_babel_dist_name in versions)
+        self.assertFalse(self.fictive_dist_name in versions)
 
     def test_apply_requirements_file_unsupported(self):
         """Unit test for Odoo requirements.txt: error paths #1

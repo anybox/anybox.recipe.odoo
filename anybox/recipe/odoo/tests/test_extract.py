@@ -171,7 +171,7 @@ class TestExtraction(RecipeTestCase):
         os.mkdir(os.path.join(self.recipe.openerp_dir))
         self.recipe.retrieve_main_software()
         self.recipe.retrieve_addons()
-        self.fill_working_set()
+        self.fill_working_set(fictive=True)
 
         self.recipe.extract_downloads_to(self.extract_target_dir)
         ext_conf = ConfigParser()
@@ -184,5 +184,5 @@ class TestExtraction(RecipeTestCase):
 
         self.assertEqual(ext_conf.get('openerp', 'version').strip(),
                          'local parts/odooo')
-        self.assertEqual(ext_conf.get('versions', self.fake_babel_name),
-                         self.fake_babel_version)
+        self.assertEqual(ext_conf.get('versions', self.fictive_name),
+                         self.fictive_version)
