@@ -122,8 +122,8 @@ vcs.SUPPORTED['pr_fakevcs'] = PersistentRevFakeRepo
 class RecipeTestCase(unittest.TestCase):
     """A base setup for tests of recipe classes"""
 
-    fake_babel_dist_name = 'Babel'
-    fake_babel_name = 'babel'
+    fake_babel_dist_name = 'BabelFake'
+    fake_babel_name = 'babelfake'
     fake_babel_version = None
 
     def setUp(self):
