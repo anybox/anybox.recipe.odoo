@@ -388,6 +388,7 @@ eggs needed by addons, or just useful ones::
 
 apply-requirements-file
 -----------------------
+.. note:: new in version 1.9.2
 
 Default value: ``False``
 
