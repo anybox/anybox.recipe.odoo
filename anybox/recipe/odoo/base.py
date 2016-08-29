@@ -64,7 +64,22 @@ WITH_ODOO_REQUIREMENTS_FILE_OPTION = 'apply-requirements-file'
 
 def pip_version():
     import pip
-    return tuple(int(x) for x in pip.__version__.split('.'))
+    # we don't use pip or setuptools APIs for that to avoid going
+    # in a swath of instability.
+    # TODO we could try and use the version class from runtime.session
+    # (has the advantage over pkf_resources' of direct transparent
+    # comparison to tuples), but that'd introduced logical deps problems
+    # that I don't want to solve right now.
+
+    pip_version = pip.__version__
+    # Naturally, pip has strictly conformed to PEP440, and does not use
+    # version epochs, since at least v1.2. the oldest I could easily check
+    # (we claim to support >= 1.4.1).
+    # This equates all pre versions with the final one, and that's good
+    # enough for current purposes:
+    for suffix in ('a', 'b', 'rc', '.dev', '.post'):
+        pip_version = pip_version.split(suffix)[0]
+    return tuple(int(x) for x in pip_version.split('.'))
 
 
 class BaseRecipe(object):
