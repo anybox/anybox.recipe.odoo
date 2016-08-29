@@ -37,7 +37,7 @@ setup(
     install_requires=requires,
     tests_require=requires + tests_require,
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Framework :: Buildout :: Recipe',
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',

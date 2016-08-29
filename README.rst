@@ -10,13 +10,17 @@ Odoo buildout recipe
 .. image:: https://img.shields.io/badge/licence-AGPL--3-blue.svg
     :alt: License: AGPL-3
 
-.. note:: dear Git user, if you're looking for ``anybox.recipe.openerp``,
-          please checkout the ``a.r.openerp-1.9`` branch.
-
 This recipe for `Buildout <https://github.com/buildout/buildout>`_ is
 a fully featured tool allowing you to define and deploy quickly
-Odoo installations of any kinds, ranging from development setups to
+Odoo installations of any kinds, starting from the 8.0 series, and
+ranging from development setups to
 fully automated production deployments or continuous integration.
+
+.. note:: For older Odoo versions (which was known as "OpenERP" at the
+          time), please use ``anybox.recipe.openerp``, that you'll
+          find also on `PyPI
+          <https://pypi.python.org/pypi/anybox.recipe.openerp/1.9.1>`_
+          and `GitHub <https://github.com/anybox/anybox.recipe.openerp>`.
 
 Some of its main features include:
 
@@ -94,3 +98,4 @@ Contributors:
  * Laetitia Gangloff
  * Sandy Carter
  * Holger Brunn
+ * Leonardo Rochael Almeida

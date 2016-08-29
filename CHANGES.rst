@@ -1,32 +1,75 @@
 Changes
 ~~~~~~~
 
-The 1.9 series of anybox.recipe.openerp are stable versions, while
-their counterparts in anybox.recipe.odoo are currently considered
-unstable.
+The 1.9 series of ``anybox.recipe.openerp`` and ``anybox.recipe.odoo``
+are stable versions.
 
-Changes displayed as "unreleased" in the stable series are released
-with any higher released unstable versions.
+This changelog displays timelines for the two recipes
+``anybox.recipe.openerp`` was considered upstream of
+``anybox.recipe.odoo`` until release of version 1.9.2b1 of the latter.
 
-This is because for now anybox.recipe.openerp is considered to be
-upstream of anybox.recipe.odoo, and will change in the future.
-
-anybox.recipe.odoo 1.9.2 (unreleased)
--------------------------------------
-- allow merging via sha1 hash
-- github #43: new option apply-requirements-file (and pip version
+anybox.recipe.odoo 1.9.2b1 (2016-08-29)
+---------------------------------------
+- github #43: new option ``apply-requirements-file`` (and pip version
   compatibilities handled in #76)
 - github #18: Support develop-dir option from gp.vcsdevelop
-- Odoo renaming in the doc
 - adapted nightly archive UR
+- github #63: option via environment variable to skip PostgreSQL user
+  checks (useful in Docker cases)
 - github #30: fixed regression with option ``gunicorn.preload_databases``
   that appeared in 1.9.0
+
+Git subsystem
++++++++++++++
+
+- github #78: skip querying remote for commit specified by its SHA and
+  already locally available
+- github #69: (git) allow merging via sha1 hash
+- github #29: merge broken with Git 1.7.9
+- github #71: (git) option to disable the warning about relying on
+  SHAs
+
+Runtime / scripts / upgrade
++++++++++++++++++++++++++++
+
+- github #37: made Odoo's new API ``Environment`` instance available
+  to ``Session`` instance, and subsequent fixes:
+
+  + github #77: environment (part of Odoo's new API) used to be broken by
+    installation of modules
+
 - github #23: cursor auto-closing in upgrades, and more robustness of
   ``Session.close()``
+- github #37: fetch and apply superuser's context to session.
+
+Freeze/extract
+++++++++++++++
+
 - github #33: during freeze, if the origin buildout configuration uses
   an already frozen revision specification, do not replace it by the
-  result of introspection of local clone. Especially import with Git,
-  because this used to replace nice tags with SHAs that are less reliable.
+  result of introspection of local clone. Especially meaningful with Git,
+  because this used to replace nice tags with SHAs that are less
+  reliable.
+- github #20: value of ``recipe`` option now gets copied to extracted
+  buildout even if it has no extras such as ``[bzr]``
+
+Documentation
++++++++++++++
+
+- github #73: consistency of working dirs in shell code examples
+- github #60: new responsive theme using `Sphinx
+  Bootstrap Theme <https://pypi.python.org/pypi/sphinx-bootstrap-theme>`_
+- renamed many occurrences of OpenERP to Odoo
+
+Development
++++++++++++
+
+- Github pull requests get tested by Travis with Coveralls.
+  `Anybox's buildbot <https://buildbot.anybox.fr>`_ is still around
+  for integration tests actually requiring to install Odoo and to run
+  unit test against slightly different software bases
+- cleanup and unification of ``setup.py`` subcommands
+- less setuptools clutter in unit tests runs
 
 anybox.recipe.odoo 1.9.1 (2014-12-17)
 -------------------------------------
