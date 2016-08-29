@@ -181,7 +181,8 @@ class Session(object):
         self.init_environments()
         self.context = self.registry('res.users').context_get(
             self.cr, self.uid)
-        self.env.context = self.context
+        if hasattr(openerp, 'api'):
+            self.env.context = self.context
 
     def init_environments(self):
         """Enter the environments context manager, but don't leave it
