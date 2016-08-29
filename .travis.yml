@@ -7,14 +7,27 @@ python:
 virtualenv:
   system_site_packages: false
 
+env:
+  matrix:
+    - TEST_FOR_PIP='==1.4.1'  # the minimum version we require for now
+    - TEST_FOR_PIP='<8.1'
+    - TEST_FOR_PIP='==8.1.1'
+    - TEST_FOR_PIP=">=8.1.2"
+
 before_install:
   # For tests running hg command
   # set up username
   - echo '[ui]' > ~/.hgrc
   - echo 'username = anybox-test' >> ~/.hgrc
+  # print setuptools version
+  - easy_install --version
+  # if the wheel package is present, then pip will build an unusable wheel
+  # for zc.recipe.egg (see commit msg for analysis of that)
+  - pip uninstall -y wheel
 
 
 install:
+  - pip install --upgrade pip${TEST_FOR_PIP}
   - pip install coveralls
   - pip install flake8
   - pip install -e .[test]

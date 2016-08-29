@@ -62,6 +62,26 @@ GP_DEVELOP_DIR = 'develop-dir'
 WITH_ODOO_REQUIREMENTS_FILE_OPTION = 'apply-requirements-file'
 
 
+def pip_version():
+    import pip
+    # we don't use pip or setuptools APIs for that to avoid going
+    # in a swath of instability.
+    # TODO we could try and use the version class from runtime.session
+    # (has the advantage over pkf_resources' of direct transparent
+    # comparison to tuples), but that'd introduced logical deps problems
+    # that I don't want to solve right now.
+
+    pip_version = pip.__version__
+    # Naturally, pip has strictly conformed to PEP440, and does not use
+    # version epochs, since at least v1.2. the oldest I could easily check
+    # (we claim to support >= 1.4.1).
+    # This equates all pre versions with the final one, and that's good
+    # enough for current purposes:
+    for suffix in ('a', 'b', 'rc', '.dev', '.post'):
+        pip_version = pip_version.split(suffix)[0]
+    return tuple(int(x) for x in pip_version.split('.'))
+
+
 class BaseRecipe(object):
     """Base class for other recipes.
 
@@ -384,13 +404,27 @@ class BaseRecipe(object):
         develops = self.list_develops()
 
         new_reqs = set()
+        if pip_version() < (8, 1, 2):
+            self.read_requirements_pip_before_v8(req_path, versions, develops)
+        else:
+            self.read_requirements_pip_after_v8(req_path, versions, develops)
+        self.merge_requirements(reqs=new_reqs)
+
+    def read_requirements_pip_before_v8(self, req_path, versions, develops):
         from pip.req import parse_requirements
-        # pip internals are protected against the fact of not passing
-        # a session with ``is None``. OTOH, the session is not used
-        # if the file is local (direct path, not an URL), so we cheat
-        # it.
-        fake_session = object()
-        for inst_req in parse_requirements(req_path, session=fake_session):
+        if pip_version() < (1, 5):
+            parsed = parse_requirements(req_path)
+        else:
+            # pip internals are protected against the fact of not passing
+            # a session with ``is None``. OTOH, the session is not used
+            # if the file is local (direct path, not an URL), so we cheat
+            # it.
+            # Although this hack still works with pip 8, it's considered to be
+            # the kind of thing that can depend on pip version
+            fake_session = object()
+            parsed = parse_requirements(req_path, session=fake_session)
+
+        for inst_req in parsed:
             req = inst_req.req
             logger.debug("Considering requirement from Odoo's file %s",
                          req)
@@ -441,7 +475,66 @@ class BaseRecipe(object):
                          req)
             versions[project_name] = spec[1]
 
-        self.merge_requirements(reqs=new_reqs)
+    def read_requirements_pip_after_v8(self, req_path, versions, develops):
+        from pip.req import parse_requirements
+        # pip internals are protected against the fact of not passing
+        # a session with ``is None``. OTOH, the session is not used
+        # if the file is local (direct path, not an URL), so we cheat
+        # it.
+        fake_session = object()
+        for inst_req in parse_requirements(req_path, session=fake_session):
+            req = inst_req.req
+            logger.debug("Considering requirement from Odoo's file %s",
+                         req)
+            # GR something more interesting would be to apply the
+            # requirement if it does not contradict an existing one.
+            # For now that's too much complicated, but check later if
+            # zc.buildout.easy_install._constrain() fits the bill.
+
+            # zc.buildout does its version comparison in lower case
+            # watch out for develops if that's the same !
+            project_name = req.name.lower()
+            if project_name not in self.requirements:
+                # TODO maybe convert self.requirements to a set (in
+                # next unstable branch)
+                self.requirements.append(project_name)
+
+            if project_name in versions:
+                logger.debug("Requirement from Odoo's file %s superseded "
+                             "by buildout versions configuration as %r",
+                             req, versions[project_name])
+                continue
+
+            if project_name in develops:
+                logger.debug("Requirement from Odoo's file %s superseded "
+                             "by a direct develop directive", req)
+                continue
+
+            specs = req.specifier
+            if not specs:
+                continue
+
+            supported = True
+
+            if len(specs) > 1:
+                supported = False
+            spec = specs.__iter__().next()
+            if spec.operator != '==':
+                supported = False
+
+            if not supported:
+                raise UserError(
+                    "Version requirement %s from Odoo's requirement file "
+                    "is too complicated to be taken automatically into "
+                    "account. Please translate it in your [%s] "
+                    "configuration section and, "
+                    "if from a public fork of Odoo, report this as a "
+                    "request for improvement on the buildout recipe." % (
+                        req, self.b_options.get('versions', 'versions')))
+
+            logger.debug("Applying requirement %s from Odoo's file",
+                         req)
+            versions[project_name] = spec.version
 
     def install_requirements(self):
         """Install egg requirements and scripts.
@@ -1158,7 +1251,13 @@ class BaseRecipe(object):
                 # GR I'm worried because now this is also used as project
                 # name in requirement, whereas it used to just be the target
                 # directory
-                return ireq.editable_options['egg']
+                editable_options = getattr(ireq, 'editable_options', None)
+                if editable_options is not None:  # pip < 8.1.0
+                    return editable_options['egg']
+                try:
+                    return ireq.req.name  # pip >= 8.1.2
+                except AttributeError:
+                    return ireq.req.project_name  # pip >=8.1.0, < 8.1.2
 
         ret = []
         for raw in option_splitlines(lines):

@@ -14,6 +14,8 @@ upstream of anybox.recipe.odoo, and will change in the future.
 anybox.recipe.odoo 1.9.2 (unreleased)
 -------------------------------------
 - allow merging via sha1 hash
+- github #43: new option apply-requirements-file (and pip version
+  compatibilities handled in #76)
 - github #18: Support develop-dir option from gp.vcsdevelop
 - Odoo renaming in the doc
 - adapted nightly archive UR
