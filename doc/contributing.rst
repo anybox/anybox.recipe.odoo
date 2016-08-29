@@ -58,6 +58,27 @@ We recommend "developing" the source code in a virtualenv, for instance::
   cd anybox.recipe.odoo
   ../bin/pip install -e.[test]
 
+Building documentation
+~~~~~~~~~~~~~~~~~~~~~~
+
+We are using `sphinx_bootstrap_theme
+<https://pypi.python.org/pypi/sphinx-bootstrap-theme/>`_ to easly get responsive
+design documentation.
+
+You will find ``sphinx_static/united.anybox.bootswatch.bootstrap.min.css`` file
+which use `bootswatch <https://bootswatch.com>`_ **united** theme using
+``sphinx_static/united.anybox.bootswatch.variables.less`` variables file. To
+generate ``.css`` file, please follow `bootswatch instructions
+<https://bootswatch.com/help/>`_.
+
+*HowTo* build documentation::
+
+  virtualenv doc-recipe-env
+  git clone https://github.com/anybox/anybox.recipe.odoo
+  doc-recipe-env/bin/pip install sphinx sphinx_bootstrap_theme
+  cd anybox.recipe.odoo/doc
+  doc-recipe-env/bin/sphinx-build . sphinx_build/
+
 Coding style
 ~~~~~~~~~~~~
 

@@ -25,7 +25,7 @@ script:
   # install sphinx only after running tests to avoid failing tests
   # gracinet: after merging of the PR this commit concludes,
   # installing sphinx should have no impact on the tests
-  - pip install sphinx; python setup.py build_sphinx
+  - pip install sphinx sphinx_bootstrap_theme; python setup.py build_sphinx
 
 after_script:
   # Dump version of all installed packages
