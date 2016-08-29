@@ -19,8 +19,8 @@ fully automated production deployments or continuous integration.
 .. note:: For older Odoo versions (which was known as "OpenERP" at the
           time), please use ``anybox.recipe.openerp``, that you'll
           find also on `PyPI
-          <https://pypi.python.org/pypi/anybox.recipe.openerp/1.9.1>`_
-          and `GitHub <https://github.com/anybox/anybox.recipe.openerp>`.
+          <https://pypi.python.org/pypi/anybox.recipe.openerp>`_
+          and `GitHub <https://github.com/anybox/anybox.recipe.openerp>`_.
 
 Some of its main features include:
 
