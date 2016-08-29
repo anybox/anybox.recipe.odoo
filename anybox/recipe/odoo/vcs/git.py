@@ -257,6 +257,21 @@ class GitRepo(BaseRepo):
         if checkout:
             self.log_call(['git', 'checkout', sha])
 
+    def get_local_hash_for_ref(self, ref):
+        """Query the local git database for sha of a given ref.
+
+        :return: ``sha`` the hash of a given ref if known to the local git repo
+                ``None`` if the ref is unkown
+        """
+        if self.has_commit(ref):
+            ref_hash = check_output(
+                ['git', 'show', '--pretty=format:%H', '-s', ref],
+                cwd=self.target_dir,
+                stderr=subprocess.PIPE
+            ).strip()
+            return ref_hash
+        return None
+
     def query_remote_ref(self, remote, ref):
         """Query remote repo about given ref.
 
@@ -265,6 +280,10 @@ class GitRepo(BaseRepo):
                  ``(None, ref)`` if ref does not exist in remote. This happens
                  notably if ref if a commit sha (they can't be queried)
         """
+        if self.get_local_hash_for_ref(ref) == ref:
+            # shortcut for commit hashes: if ref is a commit hash and git
+            # already knows it as a commit, we can skip the remote querying
+            return (None, ref)
         out = self.log_call(['git', 'ls-remote', remote, ref],
                             cwd=self.target_dir,
                             callwith=check_output).strip()
