@@ -12,7 +12,7 @@ def do_patch(gevent_script_path):
     isolated from the actual process management logic in the original.
     """
 
-    from openerp.service.server import PreforkServer, stripped_sys_argv
+    from odoo.service.server import PreforkServer, stripped_sys_argv
 
     def long_polling_spawn(server):
         nargs = stripped_sys_argv()

@@ -99,3 +99,4 @@ Contributors:
  * Sandy Carter
  * Holger Brunn
  * Leonardo Rochael Almeida
+ * Alessio Gerace
