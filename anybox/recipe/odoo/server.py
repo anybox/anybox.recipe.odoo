@@ -102,7 +102,7 @@ class ServerRecipe(BaseRecipe):
         self.options.setdefault('options.admin_passwd', '')
         sys.path.append(self.openerp_dir)
         sys.path.extend([egg.location for egg in self.ws])
-        from openerp.tools.config import configmanager
+        from odoo.tools.config import configmanager
         configmanager(self.config_path).save()
 
     def _create_gunicorn_conf(self, qualified_name):
