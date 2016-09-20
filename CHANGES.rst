@@ -8,8 +8,9 @@ This changelog displays timelines for the two recipes
 ``anybox.recipe.openerp`` was considered upstream of
 ``anybox.recipe.odoo`` until release of version 1.9.2b1 of the latter.
 
-anybox.recipe.odoo 1.9.2 (unreleased)
+anybox.recipe.odoo 1.9.2 (2016-09-20)
 -------------------------------------
+- identical to 1.9.2b1
 
 anybox.recipe.odoo 1.9.2b1 (2016-08-29)
 ---------------------------------------
