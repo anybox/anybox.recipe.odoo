@@ -1672,7 +1672,7 @@ class BaseRecipe(object):
         # Nothing guarantees that this method is called after develop().
         # It is in practice now, but one day, the extraction as a separate
         # script of freeze/extract will become a reality.
-        for proj_name in ('openerp', 'odoo'):
+        for proj_name in ('odoo', 'odoo'):
             egg_info_dir = join(self.odoo_dir, proj_name + '.egg-info')
             if os.path.exists(egg_info_dir):
                 shutil.rmtree(egg_info_dir)
