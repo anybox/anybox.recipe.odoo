@@ -207,11 +207,11 @@ class BaseRecipe(object):
         self.options['extra-paths'] = os.linesep.join(self.extra_paths)
 
         self.downloads_dir = self.make_absolute(
-            self.b_options.get('odoo-downloads-directory', 'downloads'))
+            self.b_options.get('openerp-downloads-directory', 'downloads'))
         self.version_wanted = None  # from the buildout
         self.version_detected = None  # string from the openerp setup.py
         self.parts = self.buildout['buildout']['parts-directory']
-        self.odoo_dir = None
+        self.openerp_dir = None
         self.archive_filename = None
         self.archive_path = None  # downloaded tar.gz
 
@@ -275,7 +275,7 @@ class BaseRecipe(object):
         # in all other cases, the first token is the type of version
         type_spec = version_split[0]
         if type_spec in ('local', 'path'):
-            self.odoo_dir = join(self.buildout_dir, version_split[1])
+            self.openerp_dir = join(self.buildout_dir, version_split[1])
             self.sources[main_software] = ('local', None)
         elif type_spec == 'url':
             url = version_split[1]
@@ -305,7 +305,7 @@ class BaseRecipe(object):
             # VCS types
             type_spec, url, repo_dir, self.version_wanted = version_split[0:4]
             options = dict(opt.split('=') for opt in version_split[4:])
-            self.odoo_dir = join(self.parts, repo_dir)
+            self.openerp_dir = join(self.parts, repo_dir)
             self.sources[main_software] = (type_spec,
                                            (url, self.version_wanted), options)
 
@@ -379,7 +379,7 @@ class BaseRecipe(object):
         more complicated.
         """
         req_fname = 'requirements.txt'
-        req_path = join(self.odoo_dir, req_fname)
+        req_path = join(self.openerp_dir, req_fname)
         if not os.path.exists(req_path):
             logger.warn("%r not found in this version of "
                         "Odoo, although the configuration said to use it. "
@@ -614,7 +614,7 @@ class BaseRecipe(object):
         in an old OpenERP version. Could become the norm, but setup is also
         used to list dependencies.
         """
-        with open(join(self.odoo_dir, 'bin', 'release.py'), 'rb') as f:
+        with open(join(self.openerp_dir, 'bin', 'release.py'), 'rb') as f:
             mod = imp.load_module('release', f, 'release.py',
                                   ('.py', 'r', imp.PY_SOURCE))
         self.version_detected = mod.version
@@ -633,7 +633,7 @@ class BaseRecipe(object):
         setuptools.setup = new_setup
         distutils.core.setup = new_setup
         sys.path.insert(0, '.')
-        with open(join(self.odoo_dir, 'setup.py'), 'rb') as f:
+        with open(join(self.openerp_dir, 'setup.py'), 'rb') as f:
             saved_argv = sys.argv
             sys.argv = ['setup.py', 'develop']
             try:
@@ -912,7 +912,7 @@ class BaseRecipe(object):
                 continue
 
             vcs_type, vcs_spec, options = desc
-            local_dir = self.odoo_dir if target is main_software else target
+            local_dir = self.openerp_dir if target is main_software else target
             local_dir = self.make_absolute(local_dir)
             repo = vcs.repo(vcs_type, local_dir, vcs_spec[0], **options)
             try:
@@ -1020,7 +1020,7 @@ class BaseRecipe(object):
         if type_spec == 'local':
             logger.info('Local directory chosen, nothing to do')
             if self.clean:
-                utils.clean_object_files(self.odoo_dir)
+                utils.clean_object_files(self.openerp_dir)
         elif type_spec == 'downloadable':
             # download if needed
             if ((self.archive_path and
@@ -1037,14 +1037,14 @@ class BaseRecipe(object):
             # as openerp-6.1-1
             assert(first.isdir())
             extracted_name = first.name.split('/')[0]
-            self.odoo_dir = join(self.parts, extracted_name)
+            self.openerp_dir = join(self.parts, extracted_name)
             # protection against malicious tarballs
             assert(not os.path.isabs(extracted_name))
-            assert(self.odoo_dir.startswith(self.parts))
+            assert(self.openerp_dir.startswith(self.parts))
 
-            logger.info("Cleaning existing %s", self.odoo_dir)
-            if os.path.exists(self.odoo_dir):
-                shutil.rmtree(self.odoo_dir)
+            logger.info("Cleaning existing %s", self.openerp_dir)
+            if os.path.exists(self.openerp_dir):
+                shutil.rmtree(self.openerp_dir)
             logger.info(u'Extracting %s ...' % self.archive_path)
             self.sandboxed_tar_extract(extracted_name, tar, first=first)
             tar.close()
@@ -1058,7 +1058,7 @@ class BaseRecipe(object):
             options.update(source[2])
             if self.clean:
                 options['clean'] = True
-            vcs.get_update(type_spec, self.odoo_dir, url, rev,
+            vcs.get_update(type_spec, self.openerp_dir, url, rev,
                            offline=self.offline,
                            clear_retry=self.clear_retry, **options)
 
@@ -1093,7 +1093,7 @@ class BaseRecipe(object):
         self.retrieve_merges()
 
         self.install_recipe_requirements()
-        os.chdir(self.odoo_dir)  # GR probably not needed any more
+        os.chdir(self.openerp_dir)  # GR probably not needed any more
         self.read_openerp_setup()
 
         if (self.sources[main_software][0] == 'downloadable' and
@@ -1177,8 +1177,8 @@ class BaseRecipe(object):
                 if source_type == 'downloadable':
                     self._freeze_downloadable_main_software(out_conf)
                 else:  # vcs
-                    abspath = self.odoo_dir
-                    self.cleanup_odoo_dir()
+                    abspath = self.openerp_dir
+                    self.cleanup_openerp_dir()
             else:
                 abspath = self.make_absolute(local_path)
 
@@ -1507,20 +1507,20 @@ class BaseRecipe(object):
         The extracted set avoids extracting twice to same target (refused
         by some VCSes anyway)
         """
-        if not self.odoo_dir.startswith(self.buildout_dir):
+        if not self.openerp_dir.startswith(self.buildout_dir):
             raise RuntimeError(
                 "Main openerp directory %r outside of buildout "
-                "directory, don't know how to handle that" % self.odoo_dir)
+                "directory, don't know how to handle that" % self.openerp_dir)
 
-        local_path = self.odoo_dir[len(self.buildout_dir + os.sep):]
+        local_path = self.openerp_dir[len(self.buildout_dir + os.sep):]
         target_path = join(target_dir, local_path)
         if target_path in extracted:
             return local_path
 
         if source_type == 'downloadable':
-            shutil.copytree(self.odoo_dir, target_path)
+            shutil.copytree(self.openerp_dir, target_path)
         elif source_type != 'local':  # see docstring for 'local'
-            self._extract_vcs_source(source_type, self.odoo_dir, target_dir,
+            self._extract_vcs_source(source_type, self.openerp_dir, target_dir,
                                      local_path, extracted)
         return local_path
 
@@ -1605,7 +1605,7 @@ class BaseRecipe(object):
                             "please use addons lines with type 'local' "
                             "instead." % (self.name, opt_key))
 
-        base_addons = join(self.odoo_dir, 'odoo', 'addons')
+        base_addons = join(self.openerp_dir, 'openerp', 'addons')
         if os.path.exists(base_addons):
             self.addons_paths.insert(0, base_addons)
 
@@ -1647,7 +1647,7 @@ class BaseRecipe(object):
         :param base_addons: the path to previously detected ``base`` addons,
                             to properly insert right after them
         """
-        odoo_git_addons = join(self.odoo_dir, 'addons')
+        odoo_git_addons = join(self.openerp_dir, 'addons')
         if not os.path.isdir(odoo_git_addons):
             return
 
@@ -1663,7 +1663,7 @@ class BaseRecipe(object):
         except ValueError:
             addons_paths.insert(insert_at, odoo_git_addons)
 
-    def cleanup_odoo_dir(self):
+    def cleanup_openerp_dir(self):
         """Revert local modifications that have been made during installation.
 
         These can be, e.g., forbidden by the freeze process."""
@@ -1673,7 +1673,7 @@ class BaseRecipe(object):
         # It is in practice now, but one day, the extraction as a separate
         # script of freeze/extract will become a reality.
         for proj_name in ('openerp', 'odoo'):
-            egg_info_dir = join(self.odoo_dir, proj_name + '.egg-info')
+            egg_info_dir = join(self.openerp_dir, proj_name + '.egg-info')
             if os.path.exists(egg_info_dir):
                 shutil.rmtree(egg_info_dir)
 
