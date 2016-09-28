@@ -1605,7 +1605,7 @@ class BaseRecipe(object):
                             "please use addons lines with type 'local' "
                             "instead." % (self.name, opt_key))
 
-        base_addons = join(self.openerp_dir, 'openerp', 'addons')
+        base_addons = join(self.openerp_dir, 'odoo', 'addons')
         if os.path.exists(base_addons):
             self.addons_paths.insert(0, base_addons)
 
@@ -1672,7 +1672,7 @@ class BaseRecipe(object):
         # Nothing guarantees that this method is called after develop().
         # It is in practice now, but one day, the extraction as a separate
         # script of freeze/extract will become a reality.
-        for proj_name in ('openerp', 'odoo'):
+        for proj_name in ('odoo', 'odoo'):
             egg_info_dir = join(self.openerp_dir, proj_name + '.egg-info')
             if os.path.exists(egg_info_dir):
                 shutil.rmtree(egg_info_dir)
