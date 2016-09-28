@@ -183,7 +183,7 @@ conf = openerp.tools.config
 
     def _get_server_command(self):
         """Return a full path to the main Odoo server command."""
-        return join(self.openerp_dir, 'openerp-server')
+        return join(self.openerp_dir, 'odoo-bin')
 
     def _parse_openerp_scripts(self):
         """Parse required scripts from conf."""
