@@ -461,10 +461,9 @@ class TestServer(RecipeTestCase):
                 'myentry=script_name',
                 'nosetests command-line-options=-d',
                 'withargs=withargs arguments=session',
-                'myentry=script_name_opt odoo-log-level=error '
+                'myentry=script_name_opt odoo-log-level=ERROR '
                 'command-line-options=-d,-f')),
         )
-
         self.recipe._parse_odoo_scripts()
         self.assertEqual(
             self.recipe.odoo_scripts,
@@ -473,8 +472,7 @@ class TestServer(RecipeTestCase):
                     entry='myentry', command_line_options=[]
                 ),
                 withargs=dict(
-                     entry="withargs",
-                     rguments="session",
+                     entry="withargs", arguments="session",
                      command_line_options=[]
                 ),
                 script_name_opt=dict(
