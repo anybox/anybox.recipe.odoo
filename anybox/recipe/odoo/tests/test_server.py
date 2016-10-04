@@ -135,10 +135,12 @@ class TestServer(RecipeTestCase):
         self.assertEquals(paths, [web_addons_dir])
 
     def test_retrieve_addons_standalone_grouped(self):
-        self.make_recipe(version='10.0',
-                         addons='fakevcs lp:my-addons1 addons1 '
-                         'last:1 group=grouped\nfakevcs lp:my-addons2 addons2 '
-                         'last:1 group=grouped')
+        self.make_recipe(
+            version='10.0',
+            addons='fakevcs lp:my-addons1 addons1 '
+                    'last:1 group=grouped\nfakevcs lp:my-addons2 addons2 '
+                    'last:1 group=grouped'
+        )
         # manual creation because fakevcs does nothing but retrieve_addons
         # has assertions on existence of target directories
         group_dir = os.path.join(self.buildout_dir, 'grouped')
@@ -466,19 +468,30 @@ class TestServer(RecipeTestCase):
         self.recipe._parse_odoo_scripts()
         self.assertEqual(
             self.recipe.odoo_scripts,
-            dict(script_name=dict(entry='myentry',
-                                  command_line_options=[]),
-                 withargs=dict(entry="withargs", arguments="session",
-                               command_line_options=[]),
-                 script_name_opt=dict(entry='myentry',
-                                      odoo_log_level='ERROR',
-                                      command_line_options=['-d', '-f']),
-                 nosetests_odoo=dict(entry='nosetests',
-                 command_line_options=['-d'])))
+            dict(
+                script_name=dict(
+                    entry='myentry', command_line_options=[]
+                ),
+                withargs=dict(
+                     entry="withargs",
+                     rguments="session",
+                     command_line_options=[]
+                ),
+                script_name_opt=dict(
+                     entry='myentry', odoo_log_level='ERROR',
+                     command_line_options=['-d', '-f']
+                ),
+                nosetests_odoo=dict(
+                     entry='nosetests', command_line_options=['-d'])
+            )
+        )
 
     def test_parse_odoo_scripts_improper_log_level(self):
         self.make_recipe(
             version='local %s' % os.path.join(TEST_DIR, 'odoo10'),
-            odoo_scripts=('myentry=script_name_opt odoo-log-level=cool '
-                          'command-line-options=-d,-f'))
+            odoo_scripts=(
+                'myentry=script_name_opt odoo-log-level=cool '
+                'command-line-options=-d,-f'
+            )
+        )
         self.assertRaises(UserError, self.recipe._parse_odoo_scripts)

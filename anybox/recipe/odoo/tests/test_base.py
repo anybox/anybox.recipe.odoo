@@ -51,7 +51,6 @@ class TestBaseRecipe(RecipeTestCase):
         self.assertDownloadUrl(
             'http://nightly.odoo.com/10.0/nightly/src/10-0-nightly-latest.tbz')
 
-
     def test_version_local(self):
         local_path = 'path/to/local/version'
         self.make_recipe(version='local ' + local_path)
