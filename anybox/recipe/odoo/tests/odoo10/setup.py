@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # flake8: noqa
 
-# setup.py with a wildly renamed project name
+# setup.py from odoo 10.0 alpha, included as is, except for the dependencies
 
 ##############################################################################
 #
@@ -153,6 +153,7 @@ setuptools.setup(
       scripts          = ['odoo-bin', 'odoo-gevent', 'odoo.py'],
       data_files       = data(),
       packages         = setuptools.find_packages(),
+      dependency_links = ['http://download.gna.org/pychart/'],
       #include_package_data = True,
       # GR voided the list, because we're interested in the test in what
       # the recipe will add

@@ -29,7 +29,7 @@ DEFAULT_VERSION_PARAMETER = 'buildout.db_version'
 DEFAULT_VERSION_FILE = 'VERSION.txt'
 
 
-class OpenERPVersion(Version):
+class OdooVersion(Version):
     """Odoo idea of version, wrapped in a class.
 
     This is based on :meth:`odoo.tools.parse_version`, and
@@ -38,7 +38,7 @@ class OpenERPVersion(Version):
     """
 
     def parse(self, incoming):
-        if isinstance(incoming, OpenERPVersion):
+        if isinstance(incoming, OdooVersion):
             self.vstring = incoming.vstring
             self.components = incoming.components
         else:
@@ -49,7 +49,7 @@ class OpenERPVersion(Version):
         return self.vstring
 
     def __repr__(self):
-        return 'OpenERPVersion(%r)' % str(self)
+        return 'OdooVersion(%r)' % str(self)
 
     def __cmp__(self, other):
         if isinstance(other, tuple):
@@ -190,7 +190,7 @@ class Session(object):
         See :class:``openerp.api.Environment`` for explanations about
         environments.
 
-        For OpenERP/Odoo versions prior to the new style API merge, this
+        For Odoo/Odoo versions prior to the new style API merge, this
         is a no-op.
 
         This thread-local ``environments`` is initialized and cleaned with
@@ -269,7 +269,7 @@ class Session(object):
         for applications whose life started before this set of utilities has
         been used : this helps building an usable default.
         """
-        return OpenERPVersion(vstring)
+        return OdooVersion(vstring)
 
     @property
     def db_version(self):
@@ -291,7 +291,7 @@ class Session(object):
             # restoring sanity ASAP
             db_version = None
         else:
-            db_version = OpenERPVersion(db_version)
+            db_version = OdooVersion(db_version)
         self._db_version = db_version
         return db_version
 
@@ -299,7 +299,7 @@ class Session(object):
     def db_version(self, version):
         self.env['ir.config_parameter'].set_param(
             self._version_parameter_name, str(version))
-        self._db_version = OpenERPVersion(version)
+        self._db_version = OdooVersion(version)
 
     @property
     def package_version(self):
@@ -318,7 +318,7 @@ class Session(object):
                     line = line.split('#', 1)[0].strip()
                     if not line:
                         continue
-                    self._pkg_version = OpenERPVersion(line)
+                    self._pkg_version = OdooVersion(line)
                     return self._pkg_version
         except IOError:
             logger.info("No version file could be read, "
@@ -336,7 +336,7 @@ class Session(object):
         if db is None:  # current trunk (future v8)
             self.cr = self._registry.cursor()
         else:
-            # In OpenERP < 8, Registry.cursor() object is
+            # In Odoo < 8, Registry.cursor() object is
             # a context manager providing auto closing,
             # but we don't want to control the whole lifespan
             # of the cursor.
@@ -356,7 +356,7 @@ class Session(object):
     def is_cursor_closed(self):
         """Compatibility wrapper.
 
-        On OpenERP 7, the attribute is ``__closed`` but can't even be accessed
+        On Odoo 7, the attribute is ``__closed`` but can't even be accessed
         if the cursor is closed (``OperationalError`` is raised systematically
         in ``sql_db``)
 
@@ -378,7 +378,7 @@ class Session(object):
             self.cr.close()
         self.clean_environments()
         # GR: I did check that implementation is designed not to fail
-        # on Odoo 8 and OpenERP 7
+        # on Odoo 8 and Odoo 7
         odoo.modules.registry.RegistryManager.delete(dbname)
 
     def update_modules(self, modules, db=None):

@@ -1,7 +1,7 @@
 """Full zc.buildout oriented integration tests.
 
 These are "whole loop" tests with respect to zc.buildout, but not at all with
-respect to Odoo. For the latter, check the ``tests_with_openerp`` top directory
+respect to Odoo. For the latter, check the ``tests_with_odoo`` top directory
 of this repository.
 """
 

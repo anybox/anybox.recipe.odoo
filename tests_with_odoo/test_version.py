@@ -1,5 +1,5 @@
 import os
-from openerp.tests.common import TransactionCase
+from odoo.tests.common import TransactionCase
 from anybox.recipe.odoo.runtime.session import Session
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')

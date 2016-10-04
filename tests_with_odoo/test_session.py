@@ -1,6 +1,6 @@
 from unittest import TestCase
 from anybox.recipe.odoo.runtime.session import Session
-from openerp.tests.common import get_db_name
+from odoo.tests.common import get_db_name
 
 
 class SessionTestCase(TestCase):

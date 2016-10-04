@@ -31,7 +31,7 @@ RELEASE_LEVELS_DISPLAY = {ALPHA: ALPHA,
 # properly comparable using normal operarors, for example:
 #  (6,1,0,'beta',0) < (6,1,0,'candidate',1) < (6,1,0,'candidate',2)
 #  (6,1,0,'candidate',2) < (6,1,0,'final',0) < (6,1,2,'final',0)
-version_info = (8, 0, 0, ALPHA, 1)
+version_info = (10, 0, 0, ALPHA, 1)
 version = '.'.join(map(str, version_info[:2])) + RELEASE_LEVELS_DISPLAY[version_info[3]] + str(version_info[4] or '')
 series = serie = major_version = '.'.join(map(str, version_info[:2]))
 
@@ -51,6 +51,6 @@ author = 'OpenERP S.A.'
 author_email = 'info@openerp.com'
 license = 'AGPL-3'
 
-nt_service_name = "openerp-server-" + series
+nt_service_name = "odoo-bin-" + series
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

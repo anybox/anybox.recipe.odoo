@@ -29,7 +29,7 @@ from os.path import join
 # List all data files
 def data():
     r = {}
-    for root, dirnames, filenames in os.walk('openerp'):
+    for root, dirnames, filenames in os.walk('odoo'):
         for filename in filenames:
             if not re.match(r'.*(\.pyc|\.pyo|\~)$', filename):
                 r.setdefault(root, []).append(os.path.join(root, filename))
@@ -73,8 +73,8 @@ def py2exe_options():
     if os.name == 'nt':
         import py2exe
         return {
-            "console" : [ { "script": "openerp-server", "icon_resources": [(1, join("install","openerp-icon.ico"))], },
-                          { "script": "openerp-gevent" },
+            "console" : [ { "script": "odoo-bin", "icon_resources": [(1, join("install","odoo-icon.ico"))], },
+                          { "script": "odoo-gevent" },
                           { "script": "odoo.py" },
             ],
             'options' : {
@@ -98,7 +98,7 @@ def py2exe_options():
                         "mako",
                         "markupsafe",   # dependence of jinja2 and mako
                         "mock",
-                        "openerp",
+                        "odoo",
                         "poplib",
                         "psutil",
                         "pychart",
@@ -125,7 +125,7 @@ def py2exe_options():
     else:
         return {}
 
-execfile(join(os.path.dirname(__file__), 'openerp', 'release.py'))
+execfile(join(os.path.dirname(__file__), 'odoo', 'release.py'))
 
 # Notes for OpenERP developer on windows:
 #
@@ -141,7 +141,7 @@ execfile(join(os.path.dirname(__file__), 'openerp', 'release.py'))
 # Both python2.7 32bits and 64bits are known to work.
 
 setuptools.setup(
-      name             = 'openerp',
+      name             = 'odoo',
       version          = version,
       description      = description,
       long_description = long_desc,
@@ -150,7 +150,7 @@ setuptools.setup(
       author_email     = author_email,
       classifiers      = filter(None, classifiers.split("\n")),
       license          = license,
-      scripts          = ['openerp-server', 'openerp-gevent', 'odoo.py'],
+      scripts          = ['odoo-bin', 'odoo-gevent', 'odoo.py'],
       data_files       = data(),
       packages         = setuptools.find_packages(),
       #include_package_data = True,
