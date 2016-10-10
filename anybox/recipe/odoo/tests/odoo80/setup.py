@@ -153,7 +153,6 @@ setuptools.setup(
       scripts          = ['openerp-server', 'openerp-gevent', 'odoo.py'],
       data_files       = data(),
       packages         = setuptools.find_packages(),
-      dependency_links = ['http://download.gna.org/pychart/'],
       #include_package_data = True,
       # GR voided the list, because we're interested in the test in what
       # the recipe will add
