@@ -247,8 +247,8 @@ anybox.recipe.openerp 1.9.0 (2014-12-02)
 ------------------
 - launchpad #1189160: easy integration of general purpose unit test launchers
 - launchpad #1201715: allow easily working in a virtualenv with extra-requires
-  on bzr (allows easily to work with zc.buildout 2.2 on systems providing 
-  setuptools < 0.7 / distribute) 
+  on bzr (allows easily to work with zc.buildout 2.2 on systems providing
+  setuptools < 0.7 / distribute)
 - launchpad #1202150: [git] proper support for remote branches
 - launchpad #1200449: new flexible ``openerp_scripts``; general refactor of
   script generation code.
@@ -268,7 +268,7 @@ anybox.recipe.openerp 1.9.0 (2014-12-02)
 
 1.6.3 (2013-06-23)
 ------------------
-- launchpad #1192973: 'clean' option now based on bzr clean-tree (more 
+- launchpad #1192973: 'clean' option now based on bzr clean-tree (more
   powerful, and avoids in particular removing empty dirs, which is a local
   modification that prevents later on freezing)
 
@@ -450,7 +450,7 @@ anybox.recipe.openerp 1.9.0 (2014-12-02)
   of diverged Bzr branches. Raising UpdateError in right place would trigger
   the same for other VCSes.
 - Basic tests for Git and Svn
-- Refactor with classes of VCS package 
+- Refactor with classes of VCS package
 
 0.13.1 (14-05-2012)
 -------------------

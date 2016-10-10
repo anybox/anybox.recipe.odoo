@@ -532,7 +532,7 @@ replace ``bin/start_openerp`` with ``bin/oerp``, just do::
 List of internal entry points
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Here's the list of currently available internal entry points. 
+Here's the list of currently available internal entry points.
 
 :openerp_starter: main Odoo startup script (dynamically added
                   behing the scenes by the recipe)
