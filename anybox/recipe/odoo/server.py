@@ -8,7 +8,7 @@ import zc.buildout
 from zc.buildout import UserError
 from base import BaseRecipe
 from . import devtools
-from .utils import option_splitlines, option_strip
+from .utils import option_splitlines, option_strip,major_version
 
 logger = logging.getLogger(__name__)
 
@@ -183,7 +183,11 @@ conf = odoo.tools.config
 
     def _get_server_command(self):
         """Return a full path to the main Odoo server command."""
-        return join(self.odoo_dir, 'odoo-bin')
+        if major_version(self.version_detected)[0] >= 10:
+            base_name = 'odoo-bin'
+        else:
+            base_name = 'openerp-server'
+        return join(self.odoo_dir, base_name)
 
     def _parse_odoo_scripts(self):
         """Parse required scripts from conf."""
