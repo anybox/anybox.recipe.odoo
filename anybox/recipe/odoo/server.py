@@ -8,7 +8,7 @@ import zc.buildout
 from zc.buildout import UserError
 from base import BaseRecipe
 from . import devtools
-from .utils import option_splitlines, option_strip,major_version
+from .utils import option_splitlines, option_strip, major_version
 
 logger = logging.getLogger(__name__)
 
