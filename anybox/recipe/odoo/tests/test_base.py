@@ -34,9 +34,8 @@ class TestBaseRecipe(RecipeTestCase):
 
     def assertDownloadUrl(self, url):
         """Assert that main software is 'downloadable' with given url."""
-        source = self.recipe.sources[main_software]
-        self.assertEquals(source[0], 'downloadable')
-        self.assertEquals(source[1], url)
+        self.assertEquals(self.get_source_type(), 'downloadable')
+        self.assertEquals(self.get_source_url(), url)
 
     def test_version_release_10_0(self):
         self.make_recipe(version='10.0')

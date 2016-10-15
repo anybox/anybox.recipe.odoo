@@ -20,6 +20,12 @@ def do_patch(gevent_script_path):
     def long_polling_spawn(server):
         nargs = stripped_sys_argv()
         nargs[0] = gevent_script_path
+        try:  # Add required gevent argument for Odoo 10.0
+            from odoo.release import version_info
+            if version_info[0] >= 10:
+                nargs.insert(1, 'gevent')
+        except ImportError:
+            pass
         popen = subprocess.Popen(nargs)
         server.long_polling_pid = popen.pid
 
