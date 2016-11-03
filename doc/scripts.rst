@@ -228,7 +228,6 @@ or `bPython <http://bpython-interpreter.org>`_::
 
   [buildout]
   parts = odoo
-  find-links = http://download.gna.org/pychart/
 
   [odoo]
   version = git http://github.com/odoo/odoo.git odoo 8.0 depth=1
@@ -532,7 +531,7 @@ replace ``bin/start_openerp`` with ``bin/oerp``, just do::
 List of internal entry points
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Here's the list of currently available internal entry points. 
+Here's the list of currently available internal entry points.
 
 :openerp_starter: main Odoo startup script (dynamically added
                   behing the scenes by the recipe)

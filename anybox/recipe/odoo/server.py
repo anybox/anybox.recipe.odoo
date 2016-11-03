@@ -30,7 +30,7 @@ class ServerRecipe(BaseRecipe):
     """
 
     recipe_requirements = ('babel',)
-    requirements = ('pychart', 'anybox.recipe.odoo')
+    requirements = ('anybox.recipe.odoo',)
     soft_requirements = ('openerp-command',)
     with_gunicorn = False
     with_upgrade = True

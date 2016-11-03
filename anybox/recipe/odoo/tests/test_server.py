@@ -186,7 +186,7 @@ class TestServer(RecipeTestCase):
         self.recipe.version_detected = '8.0-1'
         self.recipe.merge_requirements()
         self.assertEquals(set(self.recipe.requirements),
-                          set(['pychart', 'anybox.recipe.odoo',
+                          set(['anybox.recipe.odoo',
                                'openerp']))
 
     def test_merge_requirements_new_project_name(self):
@@ -196,7 +196,7 @@ class TestServer(RecipeTestCase):
         self.recipe.version_detected = '8.0'
         self.recipe.merge_requirements()
         self.assertEquals(set(self.recipe.requirements),
-                          set(['pychart', 'anybox.recipe.odoo',
+                          set(['anybox.recipe.odoo',
                                'oodooo']))
 
     def test_merge_requirements_gunicorn(self):
