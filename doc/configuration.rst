@@ -2,7 +2,7 @@ Configuration reference
 =======================
 
 This is a `Buildout <https://github.com/buildout/buildout>`_ recipe that can
-download, install and configure one or several OpenERP servers, web clients,
+download, install and configure one or several Odoo servers, web clients,
 gtk clients and addons modules, from official or custom sources, or any bzr,
 hg, git or svn repositories.  It currently supports versions 6.0, 6.1 and 7.0,
 with gunicorn deployment and an additional cron worker. It works under Linux
@@ -109,8 +109,8 @@ policies at the organization or physical site level, such as local
 index servers, mirrors, etc.).
 
 
-OpenERP recipes
-~~~~~~~~~~~~~~~
+Odoo recipes
+~~~~~~~~~~~~
 
 There are three different recipes bundled with
 ``anybox.recipe.openerp``. The option line to put in your part (see
@@ -150,9 +150,9 @@ Options for assembly and source management
 version
 -------
 
-Specifies the OpenERP version to use. It can be:
+Specifies the Odoo version to use. It can be:
 
-* The **version number** of an official OpenERP (server, web client or gtk client)::
+* The **version number** of an official Odoo (server, web client or gtk client)::
 
     version = 6.0.3
 
@@ -190,7 +190,7 @@ Specifies the OpenERP version to use. It can be:
 addons
 ------
 
-Specifies additional OpenERP addons, either a local path or a remote
+Specifies additional Odoo addons, either a local path or a remote
 repository.
 
 Example::
@@ -208,7 +208,7 @@ Remote repositories can either contain addons subdirectories, or
 be a single addon. In that latter case, called a *standalone
 addon*, the :ref:`group option <option_group>` must be used to place
 the addon in an intermediate subdirectory, to match the structure expected by
-OpenERP.
+Odoo.
 
 Standalone addons are not supported in the local case (the
 directory is considered under full responsibility of the user).
@@ -252,7 +252,7 @@ The ``group`` addons option
 .. note:: new in version 1.9.0
 
 The purpose of this option is to accomodate *standalone
-addons*. Indeed, OpenERP expects its configuration to refer to
+addons*. Indeed, Odoo expects its configuration to refer to
 directory that contain addons, but some people might prefer to version
 their addons in separate VCS repositories.
 
@@ -262,7 +262,7 @@ which the standalone addon should actually be set::
    git http://example.com/some_addons some/target_dir group=some_group
 
 The addon will end up in ``some/some_group/target_dir`` and
-``some/some_group`` will be the directory registered to OpenERP
+``some/some_group`` will be the directory registered to Odoo
 
 Even if you have only standalone addon to register, you must do it
 with the ``group`` option.
@@ -301,8 +301,8 @@ Possible values:
 
 .. _git_depth:
 
-The ``depth`` Git addons option
-```````````````````````````````
+The ``depth`` Git option
+````````````````````````
 .. note:: new in vertion 1.9.0
 
 
@@ -329,6 +329,31 @@ reduce the disk footprint immediately.
              deployment systems on which the history does not usually
              matter.
 
+.. _git_sha_branch:
+
+Git SHA pinning and the ``branch`` option
+`````````````````````````````````````````
+
+The ``branch`` option is used to specify a branch *indication* to help
+retrieving remote commits that can't be fetched directly.
+
+In Git, a commit can never be fetched by its SHA, but the recipe
+supports is nevertheless, so that version pinning can be achieved
+without enough authority to add tags in remote.
+
+To do so, the recipe must perform first a broader fetch, then hope the
+wished commit has become available locally. The ``branch`` option
+narrows said fetch for better efficiency and reliability.
+
+Because of the potential problems mentioned above, the recipe emits a
+warning when coming across a SHA pin. You can disable this warning by
+setting ``git-warn-sha-pins = False``.
+
+.. note:: the ``branch`` option is new in vertion 1.9.1
+
+.. warning:: non tagged commits can become unreachable, especially
+             if the remote repository gets lots of rebasing. If
+             possible, pinning on tags is always to be preferred.
 
 .. _merges:
 
@@ -352,12 +377,63 @@ This option behaves like the identically named one of the most common
 
 Starting from version 0.16 of the recipe, you don't need to put anything in
 this option by default: the recipe is supposed to add all needed
-dependencies for OpenERP by itself, but you have to specify additional
+dependencies for Odoo by itself, but you have to specify additional
 eggs needed by addons, or just useful ones::
 
     eggs = ipython
            python-ldap
            openobject-library
+
+.. _apply_requirements_file:
+
+apply-requirements-file
+-----------------------
+.. note:: new in version 1.9.2
+
+Default value: ``False``
+
+If set to ``True``, this boolean option makes the recipe read Odoo's
+``requirements.txt`` file if available, and apply its prescriptions.
+
+Precedence among requirements
+`````````````````````````````
+In short, Odoo's requirement file has the lowest precedence of all
+systems that can manage versions of Python libraries within the recipe context:
+
+* ``zc.buildout`` comes with its own native way of expressing wished
+  Python versions, with a dedicated configuration section, which is by default
+  ``[versions]``. This native system has precedence over the contents of
+  Odoo's requirement file.
+* all kinds of ``develop`` directives have precedence over Odoo's
+  requirement file. This includes the ``vcs-extend-develop`` of the
+  ``gp.vcsdevelop`` extension.
+
+Requirements file limitations
+`````````````````````````````
+
+In case the requirements file you use is not properly supported, we
+suggest as a workaround to you convert it temporarily to
+``[versions]`` statements, and get in touch with the recipe's
+developers.
+
+.. note:: At the time of this writing, the ``requirements.txt`` file shipping
+          within Odoo's main 8.0 branch is fully supported, but :
+
+          * you are free to use any alternative branch, including your
+            own baked
+          * the mainline requirements file may change in the future.
+
+Only a small subset of the `pip's requirement specifiers
+<https://pip.pypa.io/en/latest/reference/pip_install.html#requirement-specifiers>`_
+is actually supported, notably:
+
+* version inequalities, such as ``>=2.0`` and boolean expressions are
+  not currently implemented. They will be if needed, and you should
+  get an understandable message about the condition being "too complicated"
+* no specifier involving network operations is supported. In
+  particular, the VCS URLs are not (to workaround that, use
+  ``gp.vcsdevelop``), and the ``-r`` (``--requirements``) specifiers
+  work for local files only (path relative to the Odoo part directory).
 
 .. _revisions:
 
@@ -420,9 +496,22 @@ pull/update, right before the merge.
 This is especially useful in unattended executions, to clean up any
 previous failed merges.
 
-Currently only bzr repositories get reverted
+Currently only bzr and git repositories get reverted.
 
 .. note:: new in version 1.9.0
+
+vcs-clear-retry
+---------------
+
+If ``True`` failed updates are cleared and retried once.
+This is intended for brittle VCSes from CI robots.
+
+vcs-clear-locks
+---------------
+
+Some VCS systems can leave locks after some failures and provide a separate
+way to break them. If ``True``,the repo will break any locks prior to
+operations (mostly useful for automated agents, such as CI robots)
 
 git-depth
 ---------
@@ -442,20 +531,20 @@ they can easily add it from the command-line to any buildout.
 
 .. _openerp_options:
 
-OpenERP options
-~~~~~~~~~~~~~~~
+Odoo options
+~~~~~~~~~~~~
 
-With the OpenERP buildout recipes, OpenERP options are managed
+With the Odoo buildout recipes, Odoo options are managed
 directly from the buildout file (usually
 ``buildout.cfg``) from the part.
 
-The OpenERP configuration files are generated by OpenERP itself in the directory
+The Odoo configuration files are generated by Odoo itself in the directory
 specified by ``etc-directory``, which defaults to the `etc` directory under your
 buildout directory.
 
-The settings of the OpenERP configuration files are specified using a
+The settings of the Odoo configuration files are specified using a
 dotted notation in which the fist segment is the name of the
-corresponding section of the OpenERP config file and the second is the
+corresponding section of the Odoo config file and the second is the
 option name.
 
 The specified options will just overwrite the existing
@@ -511,9 +600,9 @@ script_name
 .. warning:: as of version 1.7.0, this option is deprecated because of its
              redundancy with :ref:`openerp_scripts`.
 
-OpenERP startup scripts are created in the `bin` directory. By default
+Odoo startup scripts are created in the `bin` directory. By default
 the name is ``start_<part_name>``, so you can have several startup
-scripts for each part if you configure several OpenERP servers or clients.
+scripts for each part if you configure several Odoo servers or clients.
 
 You can pass additional typical
 arguments to the server via the startup script, such as -i or -u options.
@@ -526,7 +615,7 @@ option ::
 gevent_script_name
 ------------------
 
-..note :: for Odoo (formerly OpenERP) version 8 and onwards
+..note :: for Odoo version 8 and onwards
 
 Lets you control the name of the asynchronous longpolling listener
 leveraging ``gevent`` (known as ``openerp-gevent`` in the basic
@@ -542,7 +631,7 @@ The default is ``gevent_<PART>``.
 openerp_scripts
 ---------------
 This option lets you install console scripts provided by any of the loaded eggs,
-so that they can access to OpenERP internals and load databases.
+so that they can access to Odoo internals and load databases.
 
 .. note:: new in version 1.7.0
 
@@ -559,7 +648,7 @@ Each modifier takes the ``MODIFIER_NAME=MODIFIER_VALUE`` form.
 No whitespace is allowed in modifiers, entry point, nor produced script names.
 
 Here's the list of currently available modifiers, with links inside :doc:`the
-dedicated chapter about OpenERP scripts </scripts>`).
+dedicated chapter about Odoo scripts </scripts>`).
 
 :command-line-options: :ref:`command_line_options`
 :arguments: :ref:`arguments_session`
@@ -570,7 +659,7 @@ Full example::
   openerp_scripts = my_script arguments=session
                     my_other_script=actual-script-name arguments=3,session
                     nosetests=nosetests command-line-options=-d
-                    sphinx-build=sphinx-build openerp-log-level=ERROR command_line_options=-d
+                    sphinx-build=sphinx-build openerp-log-level=ERROR command-line-options=-d
 
 
 .. _upgrade_script_name:
@@ -619,9 +708,9 @@ about upgrade scripts.
 gunicorn
 --------
 
-Gunicorn integration is only supported on OpenERP ≥ 6.1.
+Gunicorn integration is only supported on Odoo ≥ 6.1.
 Any value of this option makes the recipe generate a script to start
-OpenERP with Gunicorn and (*new in version 1.1*) a dedicated script to
+Odoo with Gunicorn and (*new in version 1.1*) a dedicated script to
 handle cron jobs.
 
 For OpenERP 6.1, the only accepted values are ``direct`` and
@@ -652,7 +741,7 @@ prefix and will end up in the the Gunicorn python configuration file
   gunicorn.workers = 8
 
 If you don't specify ``gunicorn.bind``, then a value is constructed
-from the relevant options for the OpenERP script (currently
+from the relevant options for the Odoo script (currently
 ``options.xmlrpc_port`` and ``options.xmlrpc_interface``).
 
 Other simple supported options and their default values are (See also
@@ -663,7 +752,7 @@ the `Gunicorn configuration documentation
   gunicorn.timeout = 240
   gunicorn.max_requests = 2000
 
-The recipe sets the proper WSGI entry point according to OpenERP
+The recipe sets the proper WSGI entry point according to Odoo
 version, you may manually override that with an option::
 
   gunicorn.entry_point = mypackage:wsgi.app
@@ -691,13 +780,13 @@ server_wide_modules
 This multi-line option lets you specify addons to be loaded directly
 at startup, independently of what is installed in the database.
 
-It plays the same role as the ``--load`` command-line option of the main OpenERP
+It plays the same role as the ``--load`` command-line option of the main Odoo
 startup script, with lower precedence if the latter is also specified.
 Examples::
 
   server_wide_modules = custom_homepage
 
-Since there is no entry in the OpenERP configuration file corresponding
+Since there is no entry in the Odoo configuration file corresponding
 to ``--load``, this recipe option helps bringing uniformity accross
 running instances of the project by enclosing this notion in
 the shippable configuration.
@@ -714,7 +803,7 @@ openerp_command_name
 .. warning:: as of version 1.7.0, this option is deprecated because of
              its redundancy with :ref:`openerp_scripts`.
 
-OpenERP Command Line Tools (openerp-command for short) is an
+Odoo Command Line Tools (openerp-command for short) is an
 alternative set of command-line tools that may someday subsede the
 current monolithic startup script. Currently experimental, but
 already very useful in development mode.
@@ -723,8 +812,8 @@ It is currently enabled if the :ref:`with_devtools` option is on.
 
 This works by requiring the ``openerp-command`` python
 distribution, which is not on PyPI as of this writting, but comes
-bundled with the current OpenERP trunk (believed to be the future
-OpenERP 8).
+bundled with the current Odoo trunk (believed to be the future
+Odoo 8).
 
 As for other scripts, you can control its name of the produced script, e.g::
 
@@ -755,7 +844,7 @@ this buildout recipe.
 scripts
 -------
 .. note:: This option is useful for general purpose scripts
-          only. For scripts related to OpenERP, see
+          only. For scripts related to Odoo, see
           :doc:`/scripts`, and the :ref:`openerp_scripts` option.
 
 This option controls the generation of console scripts declared by the
@@ -778,7 +867,7 @@ details.
 startup_delay
 -------------
 
-Specifies a delay in seconds to wait before actually launching OpenERP. This
+Specifies a delay in seconds to wait before actually launching Odoo. This
 option was a preliminary hack to support both gunicorn instance and a legacy
 instance.  The Gunicorn startup script (see below) itself is not affected by
 this setting ::
@@ -798,7 +887,7 @@ tools, notably the following scripts:
 * ``test_openerp``: a uniform test launcher for all supported
   versions. See test_script_name option below for details.
 * ``openerp_command``: see openerp_command_name option below for
-  details. Not installed for OpenERP major versions less than or equal to 6.1.
+  details. Not installed for Odoo major versions less than or equal to 6.1.
 
 This option is False by default, hence it's activated this way::
 
@@ -831,7 +920,7 @@ script::
   bin/test_openerp -d test_db -i purchase,sale
 
 At the time of this writing, all this script does compared to the
-regular startup script is to bring uniformity across OpenERP versions
+regular startup script is to bring uniformity across Odoo versions
 by tweaking options internally.
 
 *As of version 1.8.2*, the ``--install-all`` additional option will be
@@ -845,17 +934,19 @@ interpreter_name
 ----------------
 
 The recipe will automatically create a python interpreter with a
-``session`` object that can bootstrap OpenERP with a database right
+``session`` object that can bootstrap Odoo with a database right
 away. You can use that for interactive sessions or to launch a script::
 
-    $ bin/python_openerp
-    To start the OpenERP working session, just do:
-       session.open()
-    or
-       session.open(db=DATABASE_NAME)
-    Then you can issue commands such as
-       session.registry('res.users').browse(session.cr, 1, 1)
-
+    $ bin/python_odoo
+    To start the Odoo working session, just do:
+        session.open(db=DATABASE_NAME)
+    or, to use the database from the buildout part config:
+        session.open()
+    All other options from buildout part config do apply.
+    Then you can issue commands such as:
+        session.registry('res.users').browse(session.cr, 1, 1)
+    Or using new api:
+        session.env['res.users'].browse(1)
     >>>
 
 The interpreter name is  ``python_<part_name>`` by default; but it can
@@ -867,9 +958,14 @@ If you want *not* to have the interpreter, juste do
 
     interpreter_name =
 
-If you want to wrap a python script with such session objects, read
-:doc:`/scripts` and especially :ref:`arguments_session`.
-See also :ref:`openerp_scripts`.
+If you want to wrap a python script with such session objects you need to use
+the :ref:`openerp_scripts` option. See :doc:`/scripts` and especially
+:ref:`arguments_session`.
+
+If you want a more comfortable Python console like
+`IPython <http://ipython.org>`_ or
+`bPython <http://bpython-interpreter.org>`_, take a
+look at :ref:`interactive_consoles`.
 
 .. note:: this facility is new in version 1.6.0, and tested with
           OpenERP ≥ 6.1 only for now.
@@ -878,7 +974,7 @@ See also :ref:`openerp_scripts`.
 interpreter
 -----------
 With the ``gtkclient`` and ``webclient`` recipes,
-this behauves like the `interpreter` option of `zc.recipe.egg`: it
+this behaves like the `interpreter` option of `zc.recipe.egg`: it
 gives you a Python interpreter in the ``bin`` subdirectory of the buildout::
 
     interpreter = erp_python
@@ -896,7 +992,7 @@ Options for download and caching strategies
 
 Let us start by listing a few global buildout options (to be put in
 the ``[buildout]`` section), whose scope is much larger than the
-OpenERP recipe.
+Odoo recipe.
 
 :eggs-directory: control where eggs are stored after download and/or
                  build and reciprocally acts as a cache.
@@ -908,7 +1004,7 @@ OpenERP recipe.
               that setuptools may want to crawl and which tend to
               break each time a new version gets referenced on PyPI.
 
-The OpenERP recipes define a few more.
+The Odoo recipes define a few more.
 
 
 .. _base_url:
@@ -919,7 +1015,7 @@ This option is local to the *part*.
 
 URL from which to download official and nightly versions
 (assuming the archive filenames are constistent with those in
-OpenERP download server). This is a basic mirroring capability::
+Odoo download server). This is a basic mirroring capability::
 
     base_url = http://download.example.com/openerp/
 
@@ -930,9 +1026,9 @@ openerp-downloads-directory
 ---------------------------
 This is an option for the ``[buildout]`` section
 
-Allows to share OpenERP downloads among several buildouts. You should put this
+Allows to share Odoo downloads among several buildouts. You should put this
 option in your ``~/.buildout/default.cfg`` file.  It specifies the destination
-download directory for OpenERP archives. The path may be absolute or relative
+download directory for Odoo archives. The path may be absolute or relative
 to the buildout directory.
 
 Example::
