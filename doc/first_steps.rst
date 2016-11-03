@@ -28,7 +28,7 @@ Installing build dependencies
 -----------------------------
 
 You basically need typical development tools needed to build all the Python
-dependency eggs of OpenERP. You can do this by yourself with your system or
+dependency eggs of Odoo. You can do this by yourself with your system or
 Linux distribution.
 
 Or if you're using a Debian based distribution, we provide a single
@@ -104,7 +104,7 @@ Finally, perform the bootstrap with the virtualenv's Python::
              can bootstrap with a really minimal one and tweak it
              later.
 
-From now on, all buildout related operations, including OpenERP
+From now on, all buildout related operations, including Odoo
 startup script, custom scripts will be protected by the virtualenv.
 
 .. note:: nothing, not even ``zc.buildout`` actually gets installed by
@@ -126,8 +126,8 @@ This is the day-to-day operation. Just run ::
 
 And rerun to apply any changes you could later make to ``buildout.cfg``.
 
-Starting OpenERP
-----------------
+Starting Odoo
+-------------
 
 Just run ::
 
@@ -179,7 +179,7 @@ and the current recipe versions can be pinned::
   vobject = 0.8.1c
   xlwt = 0.7.3
 
-Of course, installing the latest nightly release provided by OpenERP
+Of course, installing the latest nightly release provided by Odoo
 is not really interesting. The flexibility is.
 
 Here's an example with the latest versions of the 7.0 Bazaar branches

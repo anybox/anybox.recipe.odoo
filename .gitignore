@@ -7,7 +7,8 @@ COVERAGE
 .noseids
 *.pyc
 *.orig
-
+*~
+*#
 buildbot/.installed.cfg
 buildbot/bin/
 buildbot/develop-eggs/
