@@ -101,7 +101,7 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
     log_file_handler = logging.FileHandler(log_path, 'a')
     log_file_handler.setLevel(getattr(logging, log_level))
     log_file_handler.setFormatter(logging.Formatter(
-                 "%(asctime)s %(levelname)s  %(message)s"))
+        "%(asctime)s %(levelname)s  %(message)s"))
 
     logger.addHandler(log_file_handler)
 
