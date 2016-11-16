@@ -69,7 +69,7 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
 
     arguments = parser.parse_args()  # 'args' would shadow the one of pdb
     log_path = os.path.abspath(os.path.expanduser(arguments.log_file))
-    log_level = arguments.log_level
+    log_level = arguments.log_level.upper()
     console_level = arguments.console_log_level.upper()
     quiet = arguments.quiet
 
@@ -89,14 +89,21 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
     if not quiet:
         print("Starting upgrade, logging details to %s at level %s, "
               "and major steps to console at level %s" % (
-                  log_path, log_level.upper(), console_level.upper()))
+                  log_path, log_level, console_level))
         print('')
 
     logger = logging.getLogger('openerp.upgrade')
-    console_handler = logging.StreamHandler()
+    console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(getattr(logging, console_level))
     console_handler.setFormatter(logging.Formatter(
         "%(asctime)s %(levelname)s  %(message)s"))
+
+    log_file_handler = logging.FileHandler(log_path, 'a')
+    log_file_handler.setLevel(getattr(logging, log_level))
+    log_file_handler.setFormatter(logging.Formatter(
+                 "%(asctime)s %(levelname)s  %(message)s"))
+
+    logger.addHandler(log_file_handler)
 
     if not arguments.quiet:
         logger.addHandler(console_handler)
