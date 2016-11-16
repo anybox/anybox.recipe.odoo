@@ -54,6 +54,7 @@ class MainSoftware(object):
     def __str__(self):
         return 'Main Software'
 
+
 main_software = MainSoftware()
 
 GP_VCS_EXTEND_DEVELOP = 'vcs-extend-develop'

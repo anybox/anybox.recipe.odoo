@@ -30,6 +30,7 @@ class WorkingDirectoryKeeper(object):
         os.chdir(self.wd)
         self.active = False
 
+
 working_directory_keeper = WorkingDirectoryKeeper()
 
 
@@ -159,6 +160,7 @@ def check_output(*popenargs, **kwargs):
         exc.output = output
         raise exc
     return output
+
 
 INLINE_COMMENT_REGEXP = re.compile(r'\s;|^;')
 

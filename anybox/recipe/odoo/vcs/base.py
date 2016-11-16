@@ -36,6 +36,7 @@ def wrap_check_call(exc_cls, call_fn):
 
     return wrapped_check_call
 
+
 update_check_call = wrap_check_call(UpdateError, subprocess.check_call)
 clone_check_call = wrap_check_call(CloneError, subprocess.check_call)
 update_check_output = wrap_check_call(UpdateError, utils.check_output)
