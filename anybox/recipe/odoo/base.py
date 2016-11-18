@@ -257,7 +257,10 @@ class BaseRecipe(object):
 
         if len(version_split) == 1:
             # version can be a simple version name, such as 6.1-1
-            major_wanted = self.version_wanted[:4]
+            if len(self.version_wanted.split('.')[0]) == 2:
+                major_wanted = self.version_wanted[:4]
+            elif len(self.version_wanted.split('.')[0]) == 1:
+                major_wanted = self.version_wanted[:3]
             pattern = self.release_filenames[major_wanted]
             if pattern is None:
                 raise UserError('Odoo version %r'
@@ -891,7 +894,7 @@ class BaseRecipe(object):
             if subdir:
                 addons_dir = join(addons_dir, subdir)
 
-            manifest = os.path.join(addons_dir, '__odoo__.py')
+            manifest = os.path.join(addons_dir, '__manifest__.py')
             manifest_pre_v6 = os.path.join(addons_dir, '__terp__.py')
             if os.path.isfile(manifest) or os.path.isfile(manifest_pre_v6):
                 raise UserError("Standalone addons such as %r "
@@ -1621,7 +1624,7 @@ class BaseRecipe(object):
         """Insert the standard, non-base addons bundled within Odoo git repo.
 
         See `lp:1327756
-        <https://bugs.launchpad.net/anybox.recipe.odoo/+bug/1327756>`_
+        <https://bugs.launchpad.net/anybox.recipe.openerp/+bug/1327756>`_
 
         These addons are also part of the Github branch for prior versions,
         therefore we cannot rely on version knowledge; we check for existence
@@ -1693,7 +1696,7 @@ class BaseRecipe(object):
             except ValueError:
                 continue
             else:
-                return argv[i+1]
+                return argv[i + 1]
 
         # --config=FILE syntax
         prefix = "--config="
