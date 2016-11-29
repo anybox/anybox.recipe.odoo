@@ -201,7 +201,7 @@ class Session(object):
         See :class:``openerp.api.Environment`` for explanations about
         environments.
 
-        For Odoo/Odoo versions prior to the new style API merge, this
+        For OpenERP/Odoo versions prior to the new style API merge, this
         is a no-op.
 
         This thread-local ``environments`` is initialized and cleaned with
@@ -499,7 +499,7 @@ class Session(object):
                 "browse_ref requires a fully qualified parameter: "
                 "'module.identifier'"
             )
-        return self.env.ref(external_id).browse()
+        return self.env.ref(external_id)
 
     def handle_command_line_options(self, to_handle):
         """Handle prescribed command line options and eat them.
