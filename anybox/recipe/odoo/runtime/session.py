@@ -7,18 +7,29 @@ from distutils.version import Version
 
 
 try:
-    import odoo
+    import openerp as odoo
 except ImportError:
-    warnings.warn("This must be imported with a buildout odoo recipe "
-                  "driven sys.path", RuntimeWarning)
+    try:
+        import odoo
+    except ImportError:
+        warnings.warn("This must be imported with a buildout odoo recipe "
+                      "driven sys.path", RuntimeWarning)
+    else:
+        try:
+            from odoo.cli import server as startup
+        except ImportError:
+            from .backports.cli import server as startup
+        from odoo.tools import config
+        from odoo import SUPERUSER_ID
+        from odoo.tools.parse_version import parse_version
 else:
     try:
-        from odoo.cli import server as startup
+        from openerp.cli import server as startup
     except ImportError:
         from .backports.cli import server as startup
-    from odoo.tools import config
-    from odoo import SUPERUSER_ID
-    from odoo.tools.parse_version import parse_version
+    from openerp.tools import config
+    from openerp import SUPERUSER_ID
+    from openerp.tools.parse_version import parse_version
 
 from optparse import OptionParser  # we support python >= 2.6
 
