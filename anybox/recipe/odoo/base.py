@@ -895,8 +895,8 @@ class BaseRecipe(object):
                 addons_dir = join(addons_dir, subdir)
 
             manifest = os.path.join(addons_dir, '__manifest__.py')
-            manifest_pre_v6 = os.path.join(addons_dir, '__terp__.py')
-            if os.path.isfile(manifest) or os.path.isfile(manifest_pre_v6):
+            manifest_pre_v10 = os.path.join(addons_dir, '__openerp__.py')
+            if os.path.isfile(manifest) or os.path.isfile(manifest_pre_v10):
                 raise UserError("Standalone addons such as %r "
                                 "are now supported by means "
                                 "of the explicit 'group' option. Please "

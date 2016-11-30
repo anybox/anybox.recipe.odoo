@@ -7,18 +7,29 @@ from distutils.version import Version
 
 
 try:
-    import odoo
+    import openerp as odoo
 except ImportError:
-    warnings.warn("This must be imported with a buildout odoo recipe "
-                  "driven sys.path", RuntimeWarning)
+    try:
+        import odoo
+    except ImportError:
+        warnings.warn("This must be imported with a buildout odoo recipe "
+                      "driven sys.path", RuntimeWarning)
+    else:
+        try:
+            from odoo.cli import server as startup
+        except ImportError:
+            from .backports.cli import server as startup
+        from odoo.tools import config
+        from odoo import SUPERUSER_ID
+        from odoo.tools.parse_version import parse_version
 else:
     try:
-        from odoo.cli import server as startup
+        from openerp.cli import server as startup
     except ImportError:
         from .backports.cli import server as startup
-    from odoo.tools import config
-    from odoo import SUPERUSER_ID
-    from odoo.tools.parse_version import parse_version
+    from openerp.tools import config
+    from openerp import SUPERUSER_ID
+    from openerp.tools.parse_version import parse_version
 
 from optparse import OptionParser  # we support python >= 2.6
 
@@ -190,7 +201,7 @@ class Session(object):
         See :class:``openerp.api.Environment`` for explanations about
         environments.
 
-        For Odoo/Odoo versions prior to the new style API merge, this
+        For OpenERP/Odoo versions prior to the new style API merge, this
         is a no-op.
 
         This thread-local ``environments`` is initialized and cleaned with
@@ -488,7 +499,7 @@ class Session(object):
                 "browse_ref requires a fully qualified parameter: "
                 "'module.identifier'"
             )
-        return self.env.ref(external_id).browse()
+        return self.env.ref(external_id)
 
     def handle_command_line_options(self, to_handle):
         """Handle prescribed command line options and eat them.
