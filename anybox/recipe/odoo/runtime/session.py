@@ -190,9 +190,12 @@ class Session(object):
         self.init_cursor()
         self.uid = SUPERUSER_ID
         self.init_environments()
-        self.context = self.env['res.users'].context_get()
         if hasattr(odoo, 'api'):
-            self.env.context = self.context
+            self.context = self.env['res.users'].context_get()
+            self.env = self.env.with_context(self.context)
+        else:
+            self.context = self.registry('res.users').context_get(
+                self.cr, self.uid)
 
     def init_environments(self):
         """Enter the environments context manager, but don't leave it
@@ -294,9 +297,12 @@ class Session(object):
         db_version = getattr(self, '_db_version', None)
         if db_version is not None:
             return db_version
-
-        db_version = self.env['ir.config_parameter'].get_param(
-            self._version_parameter_name)
+        if hasattr(odoo, 'api'):
+            db_version = self.env['ir.config_parameter'].get_param(
+                self._version_parameter_name)
+        else:
+            db_version = self.registry('ir.config_parameter').get_param(
+                self.cr, self.uid, self._version_parameter_name)
         if not db_version:
             # as usual Odoo thinks its simpler to use False as None
             # restoring sanity ASAP
@@ -308,8 +314,12 @@ class Session(object):
 
     @db_version.setter
     def db_version(self, version):
-        self.env['ir.config_parameter'].set_param(
-            self._version_parameter_name, str(version))
+        if hasattr(odoo, 'api'):
+            self.env['ir.config_parameter'].set_param(
+                self._version_parameter_name, str(version))
+        else:
+            self.env['ir.config_parameter'].set_param(
+                self._version_parameter_name, str(version))
         self._db_version = OdooVersion(version)
 
     @property
@@ -340,7 +350,10 @@ class Session(object):
 
         This is necessary prior to install of any new module.
         """
-        self.env['ir.module.module'].update_list()
+        if hasattr(odoo, 'api'):
+            self.env['ir.module.module'].update_list()
+        else:
+            self.registry('ir.module.module').update_list(self.cr, self.uid)
 
     def init_cursor(self):
         db = getattr(self._registry, 'db', None)
@@ -355,7 +368,7 @@ class Session(object):
 
     def registry(self, model):
         """Lookup model by name and return a ready-to-work instance."""
-        if self.env:
+        if hasattr(odoo, 'api'):
             return self.env[model]
         else:
             return self._registry.get(model)
@@ -485,7 +498,14 @@ class Session(object):
             raise ValueError(
                 "ref requires a fully qualified parameter: 'module.identifier'"
             )
-        return self.env.ref(external_id).id
+
+        if hasattr(odoo, 'api'):
+            return self.env.ref(external_id).id
+        ir_model_data = self.registry('ir.model.data')
+        module, name = external_id.split('.', 1)
+        _model, ref_id = ir_model_data.get_object_reference(
+            self.cr, self.uid, module, name)
+        return ref_id
 
     def browse_ref(self, external_id):
         """Return ir.model.data browse object from its external identifier.
@@ -499,7 +519,11 @@ class Session(object):
                 "browse_ref requires a fully qualified parameter: "
                 "'module.identifier'"
             )
-        return self.env.ref(external_id)
+        if hasattr(odoo, 'api'):
+            return self.env.ref(external_id)
+        ir_model_data = self.registry('ir.model.data')
+        module, name = external_id.split('.', 1)
+        return ir_model_data.get_object(self.cr, self.uid, module, name)
 
     def handle_command_line_options(self, to_handle):
         """Handle prescribed command line options and eat them.
