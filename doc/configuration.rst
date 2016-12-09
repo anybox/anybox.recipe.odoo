@@ -531,8 +531,8 @@ they can easily add it from the command-line to any buildout.
 
 .. _relocation_options:
 
-Options for buildout relocation and jail root
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Options for buildout relocation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. _relative-paths:
 
@@ -542,15 +542,6 @@ relative-paths
 If set to true, this option will set up a movable buildout. Paths in scripts
 will be made relative to the buildout directory so that it can be relocated
 on the file system.
-
-.. _jailroot-buildout-dir:
-
-jailroot-buildout-dir
----------------------
-
-If you will be moving this buildout to a jail root, specify the location of
-the buildout in the jail root. The addons-paths in the OpenERP configuration
-file will be adapted to this path. This option implies :ref:`relative-paths`.
 
 .. _python-scripts-executable:
 

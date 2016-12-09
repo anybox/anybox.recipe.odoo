@@ -121,6 +121,9 @@ class Session(object):
 
         self._registry = self.cr = None
         if parse_config:
+            # Change to the parts/odoo directory to cover the case of relative
+            # addons paths
+            os.chdir(os.path.split(os.path.split(openerp.__file__)[0])[0])
             config.parse_config(['-c', conffile])
 
     def ready(self):
