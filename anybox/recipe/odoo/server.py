@@ -6,7 +6,7 @@ import shutil
 import logging
 import zc.buildout
 from zc.buildout import UserError
-from base import BaseRecipe,  _relative_path
+from base import BaseRecipe
 from . import devtools
 from .utils import option_splitlines, option_strip, major_version
 
@@ -262,15 +262,10 @@ conf = odoo.tools.config
             return name, desc
 
     def _relativitize(self, path):
-        """Inspired from easy_install"""
         if self._relative_paths:
-            eggs = os.path.normcase(os.path.abspath(
-                self.b_options['eggs-directory']))
-            common = os.path.dirname(os.path.commonprefix([path, eggs]))
-            if (common == self._relative_paths or
-                    common.startswith(os.path.join(self._relative_paths, ''))):
-                return "join(base, %r)" % _relative_path(common, path)
-        return path
+            return "join(base, %r)" % os.path.relpath(
+                path, self._relative_paths)
+        return "%r" % path
 
     def _register_main_startup_script(self, qualified_name):
         """Register main startup script, usually ``start_odoo`` for install.
@@ -278,7 +273,7 @@ conf = odoo.tools.config
         desc = self._get_or_create_script('odoo_starter',
                                           name=qualified_name)[1]
 
-        arguments = '%r, %r, version=%r, gevent_script_path=%r' % (
+        arguments = '%s, %s, version=%r, gevent_script_path=%s' % (
             self._relativitize(self._get_server_command()),
             self._relativitize(self.config_path),
             self.major_version,
@@ -312,7 +307,7 @@ conf = odoo.tools.config
         """
         desc = self._get_or_create_script('odoo_tester',
                                           name=qualified_name)[1]
-        arguments = '%r, %r, version=%r, just_test=True' % (
+        arguments = '%s, %s, version=%r, just_test=True' % (
             self._relativitize(self._get_server_command()),
             self._relativitize(self.config_path),
             self.major_version)
@@ -341,11 +336,10 @@ conf = odoo.tools.config
                  "SOURCE_FILE CALLABLE (got '%r')" % script))
         script_source_path = self.make_absolute(script[0])
         desc.update(
-            entry='odoo_upgrader',
-            arguments='%r, %r, %r, %r' % (
-                script_source_path, script[1],
-                self._relativitize(self.config_path),
-                self.jailroot_buildout_dir or self.buildout_dir),
+            entry='openerp_upgrader',
+            arguments='%s, %r, %s' % (
+                self._relativitize(script_source_path), script[1],
+                self._relativitize(self.config_path))
         )
 
         if not os.path.exists(script_source_path):
@@ -432,8 +426,8 @@ conf = odoo.tools.config
         desc = self._get_or_create_script('odoo_cron_worker',
                                           name=qualified_name)[1]
         desc.update(entry='openerp_cron_worker',
-                    arguments='%r, %r' % (
-                        script_src,
+                    arguments='%s, %s' % (
+                        self._relativitize(script_src),
                         self._relativitize(self.config_path)),
                     initialization='',
                     )
@@ -449,9 +443,8 @@ conf = odoo.tools.config
         initialization = os.linesep.join((
             "",
             "from anybox.recipe.odoo.runtime.session import Session",
-            "session = Session(%r, %r)" % (
-                self._relativitize(self.config_path),
-                self.jailroot_buildout_dir or self.buildout_dir),
+            "session = Session(%s, base)" % self._relativitize(
+                self.config_path),
             "if len(sys.argv) <= 1:",
             "    print('To start the Odoo working session, just do:')",
             "    print('    session.open(db=DATABASE_NAME)')",
@@ -499,10 +492,8 @@ conf = odoo.tools.config
         common_init = os.linesep.join((
             "",
             "from anybox.recipe.odoo.runtime.session import Session",
-            "session = Session(%r, %r)" % (
-                self._relativitize(self.config_path),
-                self.jailroot_buildout_dir or self.buildout_dir),
-        ))
+            "session = Session(%s, base)" % self._relativitize(
+                self.config_path)))
 
         for script_name, desc in self.odoo_scripts.items():
             initialization = desc.get('initialization', common_init)
