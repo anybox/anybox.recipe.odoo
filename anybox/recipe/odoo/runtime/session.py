@@ -192,7 +192,7 @@ class Session(object):
         self.init_environments()
         if hasattr(odoo, 'api'):
             self.context = self.env['res.users'].context_get()
-            self.env = self.env.with_context(self.context)
+            self.env = odoo.api.Environment(self.cr, self.uid, self.context)
         else:
             self.context = self.registry('res.users').context_get(
                 self.cr, self.uid)
