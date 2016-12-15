@@ -81,7 +81,11 @@ def upgrade(upgrade_script, upgrade_callable, conf, buildout_dir):
 
     session = Session(conf, buildout_dir)
 
-    from odoo.tools import config
+    try:
+        from odoo.tools import config
+    except ImportError:
+        from openerp.tools import config
+
     config['logfile'] = log_path
     config['log-level'] = log_level
 
