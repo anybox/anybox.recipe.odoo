@@ -368,7 +368,7 @@ class Session(object):
 
     def registry(self, model):
         """Lookup model by name and return a ready-to-work instance."""
-        if hasattr(odoo, 'api'):
+        if hasattr(odoo, 'env'):
             return self.env[model]
         else:
             return self._registry.get(model)
