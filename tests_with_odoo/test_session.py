@@ -56,6 +56,14 @@ class SessionTestCase(TestCase):
         # If version 8, 9 registry should be working
         self.assertAdminPresentWithV8API()
         if version_info[0] >= 10:
-            self.assertAdminPresentWithV7API()
+            # Type error because we a registry exists and return
+            # an odoo.api.res.users class which does not know about
+            # old api signature methods, we are getting an error likes::
+            #
+            #    TypeError: unbound method search() must be called with
+            #    res.users instance as first argument (got Cursor instance
+            #    instead)
+            with self.assertRaises(TypeError):
+                self.assertAdminPresentWithV7API()
         else:
             self.assertAdminPresentWithV7API()
