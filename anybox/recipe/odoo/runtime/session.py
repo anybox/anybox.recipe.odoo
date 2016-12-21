@@ -465,7 +465,7 @@ class Session(object):
         config['without_demo'] = not getattr(self, 'with_demo', open_with_demo)
         for module in modules:
             config['init'][module] = 1
-        self._registry = odoo.modules.registry.RegistryManager.get(
+        self._registry = odoo.modules.registry.RegistryManager.new(
             db, update_module=True, force_demo=self.with_demo)
         config['init'].clear()
         config['without_demo'] = saved_without_demo
