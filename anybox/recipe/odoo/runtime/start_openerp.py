@@ -57,12 +57,16 @@ def main(starter, conf, version=None, just_test=False,
 
     if '--install-all' in sys.argv:
         sys.argv.remove('--install-all')
-        from openerp.tools import config
+        try:
+            from openerp.tools import config
+            from openerp.modules import get_modules
+        except ImportError:
+            from odoo.tools import config
+            from odoo.modules import get_modules
         # Maybe we should preparse config in all cases and therefore avoid
         # adding the '-c' on the fly ?
         # Still, cautious about pre-6.1 versions
         config.parse_config(['-c', conf])
-        from openerp.modules import get_modules
         arguments.extend(('-i', ','.join(get_modules())))
 
     insert_args(arguments)
