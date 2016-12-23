@@ -78,9 +78,9 @@ def upgrade(upgrade_script, upgrade_callable, conf):
         sys.stderr.write("Cannot open %r for write" % log_path + os.linesep)
         sys.exit(-1)
 
-    buildout_dir = os.path.join(
-        os.path.dirname(os.path.abspath(os.path.realpath(__file__))),
-        '..')
+    import openerp
+    buildout_dir = os.path.dirname(os.path.abspath(os.path.join(
+        os.path.realpath(openerp.__file__), '..', '..', '..',)))
     session = Session(conf, buildout_dir)
 
     from openerp.tools import config
