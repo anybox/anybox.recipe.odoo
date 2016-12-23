@@ -516,14 +516,19 @@ conf = odoo.tools.config
             ('odoo_cron_worker',
              'anybox.recipe.odoo.runtime.start_openerp',
              'main'),
-            ('odoo-gevent',
-             'odoo.cli',
-             'main'),
             ('odoo_upgrader',
              'anybox.recipe.odoo.runtime.upgrade',
              'upgrade'),
         ))
 
+        if major_version(self.version_detected)[0] >= 10:
+            self.eggs_reqs.append(
+                ('odoo-gevent', 'odoo.cli', 'main'),
+            )
+        else:
+            self.eggs_reqs.append(
+                ('odoo-gevent', 'openerp.cli', 'main'),
+            )
         self._install_interpreter()
 
         main_script = self.options.get('script_name', 'start_' + self.name)
