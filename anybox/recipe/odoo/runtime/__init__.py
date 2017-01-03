@@ -7,7 +7,7 @@ itself:
 
 * the ``session`` module features the supporting objects for "Odoo scripts"
   and the dedicated python interpreter.
-* the ``start_openerp`` and ``test_openerp`` modules are the entry points for
+* the ``start_odoo`` and ``test_odoo`` modules are the entry points for
   the main startup scripts.
 
 This architecture is meant in particular to provide stability and uniformity

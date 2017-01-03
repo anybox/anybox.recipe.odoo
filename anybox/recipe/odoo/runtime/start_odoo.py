@@ -1,8 +1,8 @@
 """This module bridges the classical ``openerp-server`` as a console script.
 
 The :func:`main` function gets registered on the fly by the server recipe as
-a console script entry point and used in particular for ``start_openerp`` and
-``test_openerp``.
+a console script entry point and used in particular for ``start_odoo`` and
+``test_odoo``.
 
 Some version independence logic for the startup process also get bootstrapped
 from here.
@@ -57,12 +57,16 @@ def main(starter, conf, version=None, just_test=False,
 
     if '--install-all' in sys.argv:
         sys.argv.remove('--install-all')
-        from openerp.tools import config
+        try:
+            from openerp.tools import config
+            from openerp.modules import get_modules
+        except ImportError:
+            from odoo.tools import config
+            from odoo.modules import get_modules
         # Maybe we should preparse config in all cases and therefore avoid
         # adding the '-c' on the fly ?
         # Still, cautious about pre-6.1 versions
         config.parse_config(['-c', conf])
-        from openerp.modules import get_modules
         arguments.extend(('-i', ','.join(get_modules())))
 
     insert_args(arguments)

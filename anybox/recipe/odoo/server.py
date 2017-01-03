@@ -251,7 +251,7 @@ conf = odoo.tools.config
             return name, desc
 
     def _register_main_startup_script(self, qualified_name):
-        """Register main startup script, usually ``start_openerp`` for install.
+        """Register main startup script, usually ``start_odoo`` for install.
         """
         desc = self._get_or_create_script('odoo_starter',
                                           name=qualified_name)[1]
@@ -511,10 +511,10 @@ conf = odoo.tools.config
         # provide additional needed entry points for main start/test scripts
         self.eggs_reqs.extend((
             ('odoo_starter',
-             'anybox.recipe.odoo.runtime.start_openerp',
+             'anybox.recipe.odoo.runtime.start_odoo',
              'main'),
             ('odoo_cron_worker',
-             'anybox.recipe.odoo.runtime.start_openerp',
+             'anybox.recipe.odoo.runtime.start_odooo',
              'main'),
             ('odoo_upgrader',
              'anybox.recipe.odoo.runtime.upgrade',
