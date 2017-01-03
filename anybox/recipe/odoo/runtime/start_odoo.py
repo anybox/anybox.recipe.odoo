@@ -1,8 +1,8 @@
 """This module bridges the classical ``openerp-server`` as a console script.
 
 The :func:`main` function gets registered on the fly by the server recipe as
-a console script entry point and used in particular for ``start_openerp`` and
-``test_openerp``.
+a console script entry point and used in particular for ``start_odoo`` and
+``test_odoo``.
 
 Some version independence logic for the startup process also get bootstrapped
 from here.
