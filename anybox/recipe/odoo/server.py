@@ -64,6 +64,9 @@ class ServerRecipe(BaseRecipe):
             zc.buildout.easy_install.py_script_template = (
                 zc.buildout.easy_install.py_script_template.replace(
                     zc.buildout.easy_install.script_header, new_header))
+            zc.buildout.easy_install.distutils_script_template = (
+                zc.buildout.easy_install.py_script_template.replace(
+                    zc.buildout.easy_install.script_header, new_header))
 
     def apply_version_dependent_decisions(self):
         """Store some booleans depending on detected version.
