@@ -219,7 +219,9 @@ class BaseRecipe(object):
         clear_retry = options.get('vcs-clear-retry', '').lower()
         self.clear_retry = clear_retry == 'true'
         self.python_scripts_executable = options.get(
-            'python-scripts-executable')
+            'python-scripts-executable',
+            buildout['buildout'].get('python-scripts-executable')
+        )
 
         if self.bool_opt_get(WITH_ODOO_REQUIREMENTS_FILE_OPTION):
             logger.debug("%s option: adding 'pip' to the recipe requirements",
@@ -232,7 +234,7 @@ class BaseRecipe(object):
         relative_paths = options.get(
             'relative-paths',
             buildout['buildout'].get('relative-paths', 'false')
-            )
+        )
         if relative_paths == 'true':
             self._relative_paths = self.buildout_dir
         else:
