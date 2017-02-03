@@ -191,6 +191,10 @@ class BaseRecipe(object):
         self.vcs_clear_locks = clear_locks == 'true'
         clear_retry = options.get('vcs-clear-retry', '').lower()
         self.clear_retry = clear_retry == 'true'
+        self.python_scripts_executable = options.get(
+            'python-scripts-executable',
+            buildout['buildout'].get('python-scripts-executable')
+        )
 
         if self.bool_opt_get(WITH_ODOO_REQUIREMENTS_FILE_OPTION):
             logger.debug("%s option: adding 'pip' to the recipe requirements",
@@ -200,6 +204,15 @@ class BaseRecipe(object):
             self.recipe_requirements.append('pip')
 
         # same as in zc.recipe.eggs
+        relative_paths = options.get(
+            'relative-paths',
+            buildout['buildout'].get('relative-paths', 'false')
+        )
+        if relative_paths == 'true':
+            self._relative_paths = self.buildout_dir
+        else:
+            self._relative_paths = ''
+            assert relative_paths == 'false'
         self.extra_paths = [
             join(self.buildout_dir, p.strip())
             for p in option_splitlines(self.options.get('extra-paths'))
@@ -1616,6 +1629,13 @@ class BaseRecipe(object):
                 assert os.path.isdir(path), (
                     "Not a directory: %r (aborting)" % path)
 
+        self.addons_paths = [
+            os.path.relpath(
+                addons_path, self.openerp_dir)
+            if self._relative_paths
+            else addons_path
+            for addons_path in list(self.addons_paths)
+        ]
         self.options['options.addons_path'] = ','.join(self.addons_paths)
 
     def insert_odoo_git_addons(self, base_addons):

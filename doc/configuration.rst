@@ -529,6 +529,30 @@ they can easily add it from the command-line to any buildout.
 
 .. note:: new in version 1.9.0
 
+.. _relocation_options:
+
+Options for buildout relocation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. _relative-paths:
+
+relative-paths
+--------------
+
+If set to true, this option will set up a movable buildout. Paths in scripts
+will be made relative to the buildout directory so that it can be relocated
+on the file system.
+
+.. _python-scripts-executable:
+
+python-scripts-executable
+-------------------------
+
+Specify an alternative Python executable to be used in the she-bang of
+generated scripts. For use in a jail root, ``/usr/bin/env python`` should
+be a sane value, or you could hardcode the path to the Python executable
+in your jail root.
+
 .. _openerp_options:
 
 Odoo options
