@@ -185,12 +185,10 @@ class BaseRecipe(object):
         # GR: would prefer lower() but doing as in 'zc.recipe.egg'
         # (later) the standard way for all booleans is to use
         # options.query_bool() or get_bool(), but it doesn't lower() at all
-        self.offline = self.b_options['offline'] == 'true'
-        self.clean = options.get('clean') == 'true'
-        clear_locks = options.get('vcs-clear-locks', '').lower()
-        self.vcs_clear_locks = clear_locks == 'true'
-        clear_retry = options.get('vcs-clear-retry', '').lower()
-        self.clear_retry = clear_retry == 'true'
+        self.offline = self.bool_opt_get('offline', is_global=True)
+        self.clean = self.bool_opt_get('clean')
+        self.vcs_clear_locks = self.bool_opt_get('vcs-clear-locks')
+        self.clear_retry = self.bool_opt_get('vcs-clear-retry')
 
         if self.bool_opt_get(WITH_ODOO_REQUIREMENTS_FILE_OPTION):
             logger.debug("%s option: adding 'pip' to the recipe requirements",
