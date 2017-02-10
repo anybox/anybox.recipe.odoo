@@ -1,4 +1,5 @@
 import os
+import os.path
 import shutil
 import subprocess
 import logging
@@ -105,6 +106,12 @@ class BaseRepo(object):
     def __call__(self, revision):
         """Create if needed from remote source, and put it at wanted revision.
         """
+        if (self.options.get('skip_checkout') and
+                os.path.exists(self.target_dir)):
+            logger.info("Directory exists and skip-checkout is active. Skipping: %s",
+                        self.target_dir)
+            return self
+
         if self.options.get('clean'):
             self.clean()
 

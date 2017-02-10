@@ -846,6 +846,7 @@ class BaseRecipe(object):
             loc_type, loc_spec, addons_options = source_spec
             local_dir = self.make_absolute(local_dir)
             options = dict(offline=self.offline,
+                           skip_checkout=self.bool_opt_get('skip-checkout'),
                            clear_locks=self.vcs_clear_locks,
                            clean=self.clean)
             if loc_type == 'git':
