@@ -42,20 +42,26 @@ class CommonTestCase(testing.VcsTestCase):
         non_existing_dir = os.path.join(existing_dir + 'foo')
 
         # Repos should try checkout when not called with skip_checkout
+        revision = "1.0"
         self.assertRaises(
-            NotImplementedError, BaseRepo(existing_dir, 'http://some/url')
+            NotImplementedError,
+            BaseRepo(existing_dir, 'http://some/url'),
+            revision,
         )
         # Specially when the target doesn't exist
         self.assertRaises(
-            NotImplementedError, BaseRepo(non_existing_dir, 'http://some/url')
+            NotImplementedError,
+            BaseRepo(non_existing_dir, 'http://some/url'),
+            revision,
         )
         # But also when called with skip_checkout and the target doesn't exist
         self.assertRaises(
             NotImplementedError,
-            BaseRepo(non_existing_dir, 'http://some/url', skip_checkout=True)
+            BaseRepo(non_existing_dir, 'http://some/url', skip_checkout=True),
+            revision,
         )
         # But not when it exists
-        BaseRepo(existing_dir, 'http://some/url', skip_checkout=True)
+        BaseRepo(existing_dir, 'http://some/url', skip_checkout=True)(revision)
 
     def test_unknown(self):
         self.assertRaises(UserError,

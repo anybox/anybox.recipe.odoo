@@ -108,8 +108,10 @@ class BaseRepo(object):
         """
         if (self.options.get('skip_checkout') and
                 os.path.exists(self.target_dir)):
-            logger.info("Directory exists and skip-checkout is active. Skipping: %s",
-                        self.target_dir)
+            logger.info(
+                "Directory exists and skip-checkout is active. Skipping: %s",
+                self.target_dir,
+            )
             return self
 
         if self.options.get('clean'):
