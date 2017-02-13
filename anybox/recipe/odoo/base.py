@@ -174,7 +174,8 @@ class BaseRecipe(object):
                           taken care of by this recipe instance.
         """
         options = self.b_options if is_global else self.options
-        return options.get(name, '').lower() == 'true'
+        value = options.get(name, False)
+        return value.lower() == 'true' if isinstance(value, str) else value
 
     def __init__(self, buildout, name, options):
         self.requirements = list(self.requirements)
