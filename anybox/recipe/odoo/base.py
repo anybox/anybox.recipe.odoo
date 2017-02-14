@@ -1055,7 +1055,8 @@ class BaseRecipe(object):
             if type_spec == 'git':
                 options['depth'] = options.pop('git-depth', None)
 
-            options.update(source[2])
+            options.update(source[2],
+                           skip_checkout=self.bool_opt_get('skip-checkout'))
             if self.clean:
                 options['clean'] = True
             vcs.get_update(type_spec, self.openerp_dir, url, rev,
