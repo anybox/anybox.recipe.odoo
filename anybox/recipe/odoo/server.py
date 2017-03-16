@@ -102,7 +102,10 @@ class ServerRecipe(BaseRecipe):
         self.options.setdefault('options.admin_passwd', '')
         sys.path.append(self.openerp_dir)
         sys.path.extend([egg.location for egg in self.ws])
-        from openerp.tools.config import configmanager
+        try:
+            from openerp.tools.config import configmanager
+        except ImportError:
+            from odoo.tools.config import configmanager
         configmanager(self.config_path).save()
 
     def _create_gunicorn_conf(self, qualified_name):
@@ -167,7 +170,10 @@ conf = openerp.tools.config
                 "",
                 "def post_fork(server, worker):",
                 "    '''Preload databases specified in buildout conf.'''",
-                "    from openerp.modules.registry import RegistryManager",
+                "    try:",
+                "        from openerp.modules.registry import RegistryManager",
+                "    except ImportError:",
+                "        from odoo.modules.registry import RegistryManager",
                 "    preload_dbs = %r" % (preload_dbs,),
                 "    for db_name in preload_dbs:",
                 "        server.log.info('Worker loading database %r',",
@@ -183,7 +189,12 @@ conf = openerp.tools.config
 
     def _get_server_command(self):
         """Return a full path to the main Odoo server command."""
-        return join(self.openerp_dir, 'openerp-server')
+        for script in ('openerp-server', 'odoo-bin'):
+            filename = join(self.openerp_dir, script)
+            if os.path.isfile(filename):
+                return filename
+        raise LookupError(
+            'Not able to find odoo binary in %r' % self.openerp_dir)
 
     def _parse_openerp_scripts(self):
         """Parse required scripts from conf."""
@@ -424,7 +435,10 @@ conf = openerp.tools.config
             "    print('Then you can issue commands such as:')",
             "    print(\""
             "    session.registry('res.users').browse(session.cr, 1, 1)\")",
-            "    from openerp import release",
+            "    try:",
+            "        from openerp import release",
+            "    except:",
+            "        from odoo import release",
             "    from anybox.recipe.odoo.utils import major_version",
             "    if major_version(release.version)[0] >= 8:",
             "        print('Or using new api:')",
