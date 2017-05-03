@@ -24,9 +24,9 @@ COMMIT_USER_FULL = '%s %s' % (COMMIT_USER_NAME, COMMIT_USER_EMAIL)
 class TestingRecipe(BaseRecipe):
     """A subclass with just enough few defaults for unit testing."""
 
-    release_filenames = {'8.0': 'blob-%s.tgz'}
-    nightly_filenames = {'8.0': '8-0-nightly-%s.tbz'}
-    release_dl_url = {'8.0': 'http://release.odoo.test/src/'}
+    release_filenames = {'10.0': 'blob-%s.tgz'}
+    nightly_filenames = {'10.0rc1c': '10-0-nightly-%s.tbz'}
+    release_dl_url = {'10.0': 'http://release.odoo.test/src/'}
 
     def __init__(self, buildout, name, options):
         # we need to make buildout a regular object, because some subsystems
@@ -166,7 +166,7 @@ class RecipeTestCase(unittest.TestCase):
             return inst._orig_obtain(requirement, source=source)
         Installer._obtain = _obtain
 
-    def make_recipe(self, name='openerp', **options):
+    def make_recipe(self, name='odoo', **options):
         self.recipe = TestingRecipe(self.buildout, name, options)
 
     def tearDown(self):

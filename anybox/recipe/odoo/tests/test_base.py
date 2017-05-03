@@ -15,9 +15,9 @@ TEST_DIR = os.path.dirname(__file__)
 class TestingRecipe(BaseRecipe):
     """A subclass with just enough few defaults for unit testing."""
 
-    release_filenames = {'8.0': 'blob-%s.tgz'}
-    nightly_filenames = {'8.0': '8-0-nightly-%s.tbz'}
-    release_dl_url = {'8.0': 'http://release.odoo.test/src/'}
+    release_filenames = {'10.0': 'blob-%s.tgz'}
+    nightly_filenames = {'10.0rc1c': '10.0%s.tar.gz'}
+    release_dl_url = {'10.0': 'http://release.odoo.test/src/'}
 
 
 class TestBaseRecipe(RecipeTestCase):
@@ -34,72 +34,57 @@ class TestBaseRecipe(RecipeTestCase):
 
     def assertDownloadUrl(self, url):
         """Assert that main software is 'downloadable' with given url."""
-        source = self.recipe.sources[main_software]
-        self.assertEquals(source[0], 'downloadable')
-        self.assertEquals(source[1], url)
+        self.assertEquals(self.get_source_type(), 'downloadable')
+        self.assertEquals(self.get_source_url(), url)
 
-    def test_version_release_8_0(self):
-        self.make_recipe(version='8.0-1')
+    def test_version_release_10_0(self):
+        self.make_recipe(version='10.0')
 
         recipe = self.recipe
-        self.assertEquals(recipe.version_wanted, '8.0-1')
-        self.assertDownloadUrl('http://release.odoo.test/src/blob-8.0-1.tgz')
+        self.assertEquals(recipe.version_wanted, '10.0')
+        self.assertDownloadUrl('http://release.odoo.test/src/blob-10.0.tgz')
 
-    def test_version_nightly_8_0(self):
-        self.make_recipe(version='nightly 8.0 1234-5')
+    def test_version_nightly_10_0(self):
+        self.make_recipe(version='nightly 10.0rc1c latest')
 
         self.assertDownloadUrl(
-            'http://nightly.odoo.com/8.0/nightly/src/'
-            '8-0-nightly-1234-5.tbz')
-
-    def test_version_bzr_8_0(self):
-        # this one is a bit ridiculous now, but let's keep it
-        # and make a Git one beside it
-        self.make_recipe(
-            version='bzr lp:openobject-server/8.0 openerp-8.0 last:1')
-
-        recipe = self.recipe
-        self.assertEquals(self.get_source_type(), 'bzr')
-        self.assertEquals(self.get_source_url(),
-                          ('lp:openobject-server/8.0', 'last:1'))
-        self.assertEquals(recipe.openerp_dir,
-                          os.path.join(recipe.parts, 'openerp-8.0'))
+            'http://nightly.odoo.com/10.0/nightly/src/10-0-nightly-latest.tbz')
 
     def test_version_local(self):
         local_path = 'path/to/local/version'
         self.make_recipe(version='local ' + local_path)
         recipe = self.recipe
         self.assertEquals(self.get_source_type(), 'local')
-        self.assertTrue(recipe.openerp_dir.endswith(local_path))
+        self.assertTrue(recipe.odoo_dir.endswith(local_path))
 
     def test_version_url(self):
-        url = 'http://download.example/future/openerp-12.0.tgz'
+        url = 'http://download.example/future/odoo-12.0.tgz'
         self.make_recipe(version='url ' + url)
         recipe = self.recipe
         self.assertDownloadUrl(url)
-        self.assertEquals(recipe.archive_filename, 'openerp-12.0.tgz')
+        self.assertEquals(recipe.archive_filename, 'odoo-12.0.tgz')
 
     def test_base_url(self):
-        self.make_recipe(version='8.0-1',
-                         base_url='http://example.org/openerp')
-        self.assertDownloadUrl('http://example.org/openerp/blob-8.0-1.tgz')
+        self.make_recipe(version='10.0-1',
+                         base_url='http://example.org/odoo')
+        self.assertDownloadUrl('http://example.org/odoo/blob-10.0-1.tgz')
 
     def test_base_url_nightly(self):
-        self.make_recipe(version='nightly 8.0 1234-5',
-                         base_url='http://example.org/openerp')
+        self.make_recipe(version='nightly 10.0rc1c latest',
+                         base_url='http://example.org/odoo')
         self.assertDownloadUrl(
-            'http://example.org/openerp/8-0-nightly-1234-5.tbz')
+            'http://example.org/odoo/10-0-nightly-latest.tbz')
 
     def test_buildout_cfg_name(self):
-        self.make_recipe(version='8.0-1')
+        self.make_recipe(version='10.0-1')
         bcn = self.recipe.buildout_cfg_name
         self.assertEquals(bcn(), 'buildout.cfg')
-        self.assertEquals(bcn(('-D', 'install', 'openerp')), 'buildout.cfg')
-        self.assertEquals(bcn(('-c', '8.0.cfg')), '8.0.cfg')
-        self.assertEquals(bcn(('--config', '8.0.cfg')), '8.0.cfg')
-        self.assertEquals(bcn(('-o', '--config', '8.0.cfg')), '8.0.cfg')
-        self.assertEquals(bcn(('--config=8.0.cfg',)), '8.0.cfg')
-        self.assertEquals(bcn(('--config=8.0.cfg', '-o')), '8.0.cfg')
+        self.assertEquals(bcn(('-D', 'install', 'odoo')), 'buildout.cfg')
+        self.assertEquals(bcn(('-c', '10.0.cfg')), '10.0.cfg')
+        self.assertEquals(bcn(('--config', '10.0.cfg')), '10.0.cfg')
+        self.assertEquals(bcn(('-o', '--config', '10.0.cfg')), '10.0.cfg')
+        self.assertEquals(bcn(('--config=10.0.cfg',)), '10.0.cfg')
+        self.assertEquals(bcn(('--config=10.0.cfg', '-o')), '10.0.cfg')
 
     def test_parse_addons_revisions(self):
         """Test both parse_addons and parse_revisions."""
@@ -139,9 +124,9 @@ class TestBaseRecipe(RecipeTestCase):
             # bad option
             'hg http://some/repo addons-specific default opt:spam',
             # attempt to comment a line
-            """bzr lp:openerp-web web last:1 subdir=addons
-               bzr lp:openobject-addons openerp-addons last:1
-               # bzr lp:openerp-something/8.0 addons-something last:1""",
+            """bzr lp:odoo-web web last:1 subdir=addons
+               bzr lp:openobject-addons odoo-addons last:1
+               # bzr lp:odoo-something/10.0 addons-something last:1""",
                 ):
             self.assertRaises(UserError,
                               recipe.parse_addons, dict(addons=illformed))
@@ -258,10 +243,10 @@ class TestBaseRecipe(RecipeTestCase):
 
     def test_finalize_addons_paths_git_layout(self):
         self.make_recipe(
-            version='git http://github.com/odoo/odoo.git odoo 7.0')
-        self.recipe.version_detected = '7.0-somerev'
-        oerp_dir = self.recipe.openerp_dir
-        base_addons = os.path.join(oerp_dir, 'openerp', 'addons')
+            version='git http://github.com/odoo/odoo.git odoo 10.0')
+        self.recipe.version_detected = '10.0-somerev'
+        oerp_dir = self.recipe.odoo_dir
+        base_addons = os.path.join(oerp_dir, 'odoo', 'addons')
         odoo_addons = os.path.join(oerp_dir, 'addons')
         os.makedirs(base_addons)
         os.makedirs(odoo_addons)
@@ -272,10 +257,10 @@ class TestBaseRecipe(RecipeTestCase):
 
     def test_finalize_addons_paths_bzr_layout(self):
         self.make_recipe(
-            version='bzr lp:openobject-server openerp last:1')
-        self.recipe.version_detected = '7.0-somerev'
-        oerp_dir = self.recipe.openerp_dir
-        base_addons = os.path.join(oerp_dir, 'openerp', 'addons')
+            version='bzr lp:openobject-server odoo last:1')
+        self.recipe.version_detected = '10.0-somerev'
+        oerp_dir = self.recipe.odoo_dir
+        base_addons = os.path.join(oerp_dir, 'odoo', 'addons')
         os.makedirs(base_addons)
         self.recipe.addons_paths = ['/some/separate/addons']
         self.recipe.finalize_addons_paths(check_existence=False)
@@ -288,10 +273,10 @@ class TestBaseRecipe(RecipeTestCase):
         set as local
         """
         self.make_recipe(
-            version='git http://github.com/odoo/odoo.git odoo 7.0')
-        self.recipe.version_detected = '7.0-somerev'
-        oerp_dir = self.recipe.openerp_dir
-        base_addons = os.path.join(oerp_dir, 'openerp', 'addons')
+            version='git http://github.com/odoo/odoo.git odoo 10.0')
+        self.recipe.version_detected = '10.0-somerev'
+        oerp_dir = self.recipe.odoo_dir
+        base_addons = os.path.join(oerp_dir, 'odoo', 'addons')
         odoo_addons = os.path.join(oerp_dir, 'addons')
         os.makedirs(base_addons)
         os.makedirs(odoo_addons)
@@ -309,15 +294,15 @@ class TestBaseRecipe(RecipeTestCase):
         opts = {}
         opts[WITH_ODOO_REQUIREMENTS_FILE_OPTION] = 'true'
         self.make_recipe(
-            version='git http://github.com/odoo/odoo.git odoo 7.0', **opts)
+            version='git http://github.com/odoo/odoo.git odoo 10.0', **opts)
 
-        self.recipe.version_detected = '8.0-somerev'
-        oerp_dir = self.recipe.openerp_dir
+        self.recipe.version_detected = '10.0-somerev'
+        oerp_dir = self.recipe.odoo_dir
         os.makedirs(oerp_dir)
         if reqs_content is None:
             return
 
-        with open(os.path.join(self.recipe.openerp_dir,
+        with open(os.path.join(self.recipe.odoo_dir,
                                'requirements.txt'), 'w') as f:
             f.write(reqs_content + '\n')
 
@@ -389,7 +374,7 @@ class TestBaseRecipe(RecipeTestCase):
 
     def test_list_develops(self):
         self.make_recipe(
-            version='git http://github.com/odoo/odoo.git odoo 7.0')
+            version='git http://github.com/odoo/odoo.git odoo 10.0')
         self.assertEqual(self.recipe.list_develops(), [])
         self.develop_fictive()
         self.assertEqual(self.recipe.list_develops(),

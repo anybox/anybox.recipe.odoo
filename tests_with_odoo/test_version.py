@@ -1,6 +1,9 @@
 import os
-from openerp.tests.common import TransactionCase
 from anybox.recipe.odoo.runtime.session import Session
+try:
+    from odoo.tests.common import TransactionCase, get_db_name
+except:
+    from openerp.tests.common import TransactionCase, get_db_name
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -9,13 +12,11 @@ class VersionTestCase(TransactionCase):
 
     def setUp(self):
         super(VersionTestCase, self).setUp()
-        self.initSession()
+        self.session = self.initSession()
 
     def initSession(self):
-        session = self.session = Session(None, None, parse_config=False)
-        session.registry = self.registry
-        session.cr = self.cr
-        session.uid = self.uid
+        session = Session(None, None, parse_config=False)
+        session.open(db=get_db_name())
         session.buildout_dir = TEST_DATA_DIR
         return session
 
@@ -34,8 +35,6 @@ class VersionTestCase(TransactionCase):
         session = self.session
         session.db_version = '1.2.3a3'
         self.assertEqual(str(session.db_version), '1.2.3a3')
-
-        session = self.initSession()
         self.assertEqual(str(session.db_version), '1.2.3a3')
         self.assertTrue(session.db_version < '1.2.3')
         self.assertTrue(session.db_version < (1, 2, 3))

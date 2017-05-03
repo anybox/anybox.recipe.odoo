@@ -2,8 +2,8 @@
 # flake8: noqa
 ##############################################################################
 #
-#    OpenERP, Open Source Management Solution
-#    Copyright (C) 2004-TODAY OpenERP S.A. <http://www.openerp.com>
+#    Odoo, Open Source Management Solution
+#    Copyright (C) 2004-TODAY Odoo S.A. <http://www.openerp.com>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -31,12 +31,12 @@ RELEASE_LEVELS_DISPLAY = {ALPHA: ALPHA,
 # properly comparable using normal operarors, for example:
 #  (6,1,0,'beta',0) < (6,1,0,'candidate',1) < (6,1,0,'candidate',2)
 #  (6,1,0,'candidate',2) < (6,1,0,'final',0) < (6,1,2,'final',0)
-version_info = (8, 0, 0, ALPHA, 1)
+version_info = (10, 0, 0, ALPHA, 1)
 version = '.'.join(map(str, version_info[:2])) + RELEASE_LEVELS_DISPLAY[version_info[3]] + str(version_info[4] or '')
 series = serie = major_version = '.'.join(map(str, version_info[:2]))
 
-description = 'OpenERP Server'
-long_desc = '''OpenERP is a complete ERP and CRM. The main features are accounting (analytic
+description = 'Odoo Server'
+long_desc = '''Odoo is a complete ERP and CRM. The main features are accounting (analytic
 and financial), stock management, sales and purchases management, tasks
 automation, marketing campaigns, help desk, POS, etc. Technical features include
 a distributed server, flexible workflows, an object database, a dynamic GUI,
@@ -47,10 +47,10 @@ License :: OSI Approved :: GNU Affero General Public License v3
 Programming Language :: Python
 """
 url = 'http://www.openerp.com'
-author = 'OpenERP S.A.'
+author = 'Odoo S.A.'
 author_email = 'info@openerp.com'
 license = 'AGPL-3'
 
-nt_service_name = "openerp-server-" + series
+nt_service_name = "odoo-bin-" + series
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

@@ -7,10 +7,21 @@ from distutils.version import Version
 
 
 try:
-    import openerp
+    import openerp as odoo
 except ImportError:
-    warnings.warn("This must be imported with a buildout openerp recipe "
-                  "driven sys.path", RuntimeWarning)
+    try:
+        import odoo
+    except ImportError:
+        warnings.warn("This must be imported with a buildout odoo recipe "
+                      "driven sys.path", RuntimeWarning)
+    else:
+        try:
+            from odoo.cli import server as startup
+        except ImportError:
+            from .backports.cli import server as startup
+        from odoo.tools import config
+        from odoo import SUPERUSER_ID
+        from odoo.tools.parse_version import parse_version
 else:
     try:
         from openerp.cli import server as startup
@@ -29,16 +40,16 @@ DEFAULT_VERSION_PARAMETER = 'buildout.db_version'
 DEFAULT_VERSION_FILE = 'VERSION.txt'
 
 
-class OpenERPVersion(Version):
+class OdooVersion(Version):
     """Odoo idea of version, wrapped in a class.
 
-    This is based on :meth:`openerp.tools.parse_version`, and
+    This is based on :meth:`odoo.tools.parse_version`, and
     Provides straight-ahead comparison with tuples of integers, or
     distutils Version classes.
     """
 
     def parse(self, incoming):
-        if isinstance(incoming, OpenERPVersion):
+        if isinstance(incoming, OdooVersion):
             self.vstring = incoming.vstring
             self.components = incoming.components
         else:
@@ -49,7 +60,7 @@ class OpenERPVersion(Version):
         return self.vstring
 
     def __repr__(self):
-        return 'OpenERPVersion(%r)' % str(self)
+        return 'OdooVersion(%r)' % str(self)
 
     def __cmp__(self, other):
         if isinstance(other, tuple):
@@ -156,15 +167,15 @@ class Session(object):
         if not db:
             db = ''  # expected value expected by Odoo to start defaulting.
 
-        cnx = openerp.sql_db.db_connect(db)
+        cnx = odoo.sql_db.db_connect(db)
         cr = cnx.cursor()
-        self.is_initialization = not(openerp.modules.db.is_initialized(cr))
+        self.is_initialization = not(odoo.modules.db.is_initialized(cr))
         cr.close()
 
         startup.check_root_user()
         if not os.environ.get('ENABLE_POSTGRES_USER'):
             startup.check_postgres_user()
-        openerp.netsvc.init_logger()
+        odoo.netsvc.init_logger()
 
         saved_without_demo = config['without_demo']
         if with_demo is None:
@@ -173,16 +184,14 @@ class Session(object):
         config['without_demo'] = not with_demo
         self.with_demo = with_demo
 
-        self._registry = openerp.modules.registry.RegistryManager.get(
+        self._registry = odoo.modules.registry.RegistryManager.get(
             db, update_module=False)
         config['without_demo'] = saved_without_demo
         self.init_cursor()
         self.uid = SUPERUSER_ID
         self.init_environments()
-        self.context = self.registry('res.users').context_get(
-            self.cr, self.uid)
-        if hasattr(openerp, 'api'):
-            self.env.context = self.context
+        self.context = self.env['res.users'].context_get()
+        self.env = odoo.api.Environment(self.cr, self.uid, self.context)
 
     def init_environments(self):
         """Enter the environments context manager, but don't leave it
@@ -202,18 +211,17 @@ class Session(object):
         side effects. This can be done by calling :meth:`clean_environments`.
         """
         try:
-            gen_factory = openerp.api.Environment.manage
+            gen_factory = odoo.api.Environment.manage
         except AttributeError:
             return
 
         self._environments_gen_context = gen_factory().gen
         self._environments_gen_context.next()
-        if hasattr(openerp, 'api'):
-            self.env = openerp.api.Environment(
-                self.cr, self.uid, getattr(
-                    self, 'context', {}
-                )
+        self.env = odoo.api.Environment(
+            self.cr, self.uid, getattr(
+                self, 'context', {}
             )
+        )
 
     def clean_environments(self, reinit=True):
         """Cleans the thread-local environment.
@@ -270,7 +278,7 @@ class Session(object):
         for applications whose life started before this set of utilities has
         been used : this helps building an usable default.
         """
-        return OpenERPVersion(vstring)
+        return OdooVersion(vstring)
 
     @property
     def db_version(self):
@@ -284,23 +292,22 @@ class Session(object):
         db_version = getattr(self, '_db_version', None)
         if db_version is not None:
             return db_version
-
-        db_version = self.registry('ir.config_parameter').get_param(
-            self.cr, self.uid, self._version_parameter_name)
+        db_version = self.env['ir.config_parameter'].get_param(
+            self._version_parameter_name)
         if not db_version:
             # as usual Odoo thinks its simpler to use False as None
             # restoring sanity ASAP
             db_version = None
         else:
-            db_version = OpenERPVersion(db_version)
+            db_version = OdooVersion(db_version)
         self._db_version = db_version
         return db_version
 
     @db_version.setter
     def db_version(self, version):
-        self.registry('ir.config_parameter').set_param(
-            self.cr, self.uid, self._version_parameter_name, str(version))
-        self._db_version = OpenERPVersion(version)
+        self.env['ir.config_parameter'].set_param(
+            self._version_parameter_name, str(version))
+        self._db_version = OdooVersion(version)
 
     @property
     def package_version(self):
@@ -319,7 +326,7 @@ class Session(object):
                     line = line.split('#', 1)[0].strip()
                     if not line:
                         continue
-                    self._pkg_version = OpenERPVersion(line)
+                    self._pkg_version = OdooVersion(line)
                     return self._pkg_version
         except IOError:
             logger.info("No version file could be read, "
@@ -330,21 +337,25 @@ class Session(object):
 
         This is necessary prior to install of any new module.
         """
-        self.registry('ir.module.module').update_list(self.cr, self.uid)
+        self.env['ir.module.module'].update_list()
 
     def init_cursor(self):
         db = getattr(self._registry, 'db', None)
         if db is None:  # current trunk (future v8)
             self.cr = self._registry.cursor()
         else:
-            # In OpenERP < 8, Registry.cursor() object is
+            # In Odoo < 8, Registry.cursor() object is
             # a context manager providing auto closing,
             # but we don't want to control the whole lifespan
             # of the cursor.
             self.cr = db.cursor()
 
     def registry(self, model):
-        """Lookup model by name and return a ready-to-work instance."""
+        """Lookup model by name and return a ready-to-work instance to
+        use the old api. However you must use ``session.env['model']`` to
+        get the instance in the new api (from version 8), this expect to raise
+        in version 10
+        """
         return self._registry.get(model)
 
     def rollback(self):
@@ -354,7 +365,7 @@ class Session(object):
     def is_cursor_closed(self):
         """Compatibility wrapper.
 
-        On OpenERP 7, the attribute is ``__closed`` but can't even be accessed
+        On Odoo 7, the attribute is ``__closed`` but can't even be accessed
         if the cursor is closed (``OperationalError`` is raised systematically
         in ``sql_db``)
 
@@ -376,8 +387,8 @@ class Session(object):
             self.cr.close()
         self.clean_environments()
         # GR: I did check that implementation is designed not to fail
-        # on Odoo 8 and OpenERP 7
-        openerp.modules.registry.RegistryManager.delete(dbname)
+        # on Odoo 8 and Odoo 7
+        odoo.modules.registry.RegistryManager.delete(dbname)
 
     def update_modules(self, modules, db=None):
         """Update the prescribed modules in the database.
@@ -403,7 +414,7 @@ class Session(object):
             self.close()
         for module in modules:
             config['update'][module] = 1
-        self._registry = openerp.modules.registry.RegistryManager.get(
+        self._registry = odoo.modules.registry.RegistryManager.get(
             db, update_module=True)
         config['update'].clear()
         self.init_cursor()
@@ -454,7 +465,7 @@ class Session(object):
         config['without_demo'] = not getattr(self, 'with_demo', open_with_demo)
         for module in modules:
             config['init'][module] = 1
-        self._registry = openerp.modules.registry.RegistryManager.get(
+        self._registry = odoo.modules.registry.RegistryManager.new(
             db, update_module=True, force_demo=self.with_demo)
         config['init'].clear()
         config['without_demo'] = saved_without_demo
@@ -472,12 +483,7 @@ class Session(object):
             raise ValueError(
                 "ref requires a fully qualified parameter: 'module.identifier'"
             )
-        ir_model_data = self.registry('ir.model.data')
-        module, name = external_id.split('.', 1)
-        _, ref_id = ir_model_data.get_object_reference(
-            self.cr, self.uid, module, name
-        )
-        return ref_id
+        return self.env.ref(external_id).id
 
     def browse_ref(self, external_id):
         """Return ir.model.data browse object from its external identifier.
@@ -491,9 +497,7 @@ class Session(object):
                 "browse_ref requires a fully qualified parameter: "
                 "'module.identifier'"
             )
-        ir_model_data = self.registry('ir.model.data')
-        module, name = external_id.split('.', 1)
-        return ir_model_data.get_object(self.cr, self.uid, module, name)
+        return self.env.ref(external_id)
 
     def handle_command_line_options(self, to_handle):
         """Handle prescribed command line options and eat them.

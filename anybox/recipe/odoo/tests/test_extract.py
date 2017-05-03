@@ -20,11 +20,11 @@ class TestExtraction(RecipeTestCase):
         super(TestExtraction, self).tearDown()
 
     def make_recipe(self, **kwargs):
-        kwargs.setdefault('recipe', 'anybox.recipe.openerp:testrecipe')
+        kwargs.setdefault('recipe', 'anybox.recipe.odoo:testrecipe')
         super(TestExtraction, self).make_recipe(**kwargs)
 
     def test_prepare_extracted_buildout(self):
-        self.make_recipe(version='8.0')
+        self.make_recipe(version='10.0')
         conf = ConfigParser()
         self.recipe._prepare_extracted_buildout(conf, self.extract_target_dir)
         self.assertTrue('buildout' in conf.sections())
@@ -41,14 +41,14 @@ class TestExtraction(RecipeTestCase):
         conf = ConfigParser()
         extracted = set()
         self.recipe._extract_sources(conf, target_dir, extracted)
-        addons_opt = set(conf.get('openerp', 'addons').split(os.linesep))
+        addons_opt = set(conf.get('odoo', 'addons').split(os.linesep))
         self.assertEquals(addons_opt,
                           set(('local vcs-addons', 'local specific')))
         self.assertEquals(extracted,
                           set([os.path.join(target_dir, 'vcs-addons')]))
 
         # no need to override revisions
-        self.assertRaises(NoOptionError, conf.get, 'openerp', 'revisions')
+        self.assertRaises(NoOptionError, conf.get, 'odoo', 'revisions')
 
         # testing that archival took place for fakevcs, but not for local
 
@@ -77,10 +77,10 @@ class TestExtraction(RecipeTestCase):
         conf = ConfigParser()
         extracted = set()
         self.recipe._extract_sources(conf, target_dir, extracted)
-        self.assertEquals(conf.get('openerp', 'revisions').strip(), '')
+        self.assertEquals(conf.get('odoo', 'revisions').strip(), '')
 
     def test_prepare_extracted_buildout_gp_vcsdevelop(self):
-        self.make_recipe(version='8.0')
+        self.make_recipe(version='10.0')
         self.recipe.b_options[GP_VCS_EXTEND_DEVELOP] = (
             "fakevcs+http://example.com/aeroolib#egg=aeroolib")
         self.recipe.b_options['develop'] = os.path.join(
@@ -103,7 +103,7 @@ class TestExtraction(RecipeTestCase):
             self.assertEquals(f.read(), 'fakerev')
 
     def test_prepare_extracted_buildout_gp_vcsdevelop_develop_dir(self):
-        self.make_recipe(version='8.0')
+        self.make_recipe(version='10.0')
         self.recipe.b_options[GP_VCS_EXTEND_DEVELOP] = (
             "fakevcs+http://example.com/aeroolib#egg=aeroolib")
         self.recipe.b_options[GP_DEVELOP_DIR] = 'src'
@@ -168,7 +168,7 @@ class TestExtraction(RecipeTestCase):
             "pr_fakevcs http://repo2.example stdln2 rev2 group=stdl"
         )
         os.mkdir(self.recipe.parts)
-        os.mkdir(os.path.join(self.recipe.openerp_dir))
+        os.mkdir(os.path.join(self.recipe.odoo_dir))
         self.recipe.retrieve_main_software()
         self.recipe.retrieve_addons()
         self.fill_working_set(fictive=True)
@@ -178,11 +178,11 @@ class TestExtraction(RecipeTestCase):
         ext_conf.read(os.path.join(self.extract_target_dir, 'release.cfg'))
 
         # notice standalone handling :
-        self.assertEqual(ext_conf.get('openerp', 'addons').splitlines(),
+        self.assertEqual(ext_conf.get('odoo', 'addons').splitlines(),
                          ['local target', 'local somwehere',
                           'local stdl'])
 
-        self.assertEqual(ext_conf.get('openerp', 'version').strip(),
+        self.assertEqual(ext_conf.get('odoo', 'version').strip(),
                          'local parts/odooo')
         self.assertEqual(ext_conf.get('versions', self.fictive_name),
                          self.fictive_version)
