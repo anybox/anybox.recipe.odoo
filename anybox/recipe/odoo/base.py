@@ -1170,7 +1170,9 @@ class BaseRecipe(object):
         conf_ensure_section(out_conf, self.name)
         addons_option = []
         self.local_modifications = []
-        for local_path, source in self.sources.items():
+        sources_list = self.sources.items()
+        sources_list.sort(key=lambda a: a[1][0]) # sort by src
+        for local_path, source in sources_list:
             source_type = source[0]
             if source_type == 'local':
                 continue
@@ -1326,7 +1328,9 @@ class BaseRecipe(object):
                         if name not in exclude and
                         egg.precedence != pkg_resources.DEVELOP_DIST
                         )
-        for name, version in versions.items():
+        versions_list = versions.items()
+        versions_list.sort()
+        for name, version in versions_list:
             conf.set(section, name, version)
 
         # forbidding picked versions if this zc.buildout supports it right away
