@@ -311,7 +311,7 @@ conf = odoo.tools.config
             self._relativitize(self._get_server_command()),
             self._relativitize(self.config_path),
             self.major_version)
-        arguments += ', gevent_script_path=%r' % self._relativitize(
+        arguments += ', gevent_script_path=%s' % self._relativitize(
             self.gevent_script_path)
 
         desc.update(
@@ -337,10 +337,10 @@ conf = odoo.tools.config
         script_source_path = self.make_absolute(script[0])
         desc.update(
             entry='odoo_upgrader',
-            arguments='%s, %r, %r, %r' % (
+            arguments='%s, %r, %s, %s' % (
                 self._relativitize(script_source_path), script[1],
                 self._relativitize(self.config_path),
-                self.buildout_dir),
+                self._relativitize(self.buildout_dir)),
         )
 
         if not os.path.exists(script_source_path):
@@ -444,8 +444,10 @@ conf = odoo.tools.config
         initialization = os.linesep.join((
             "",
             "from anybox.recipe.odoo.runtime.session import Session",
-            "session = Session(%s, base)" % self._relativitize(
-                self.config_path),
+            "session = Session(%s, %s)" % (
+                self._relativitize(self.config_path),
+                self._relativitize(self.buildout_dir),
+            ),
             "if len(sys.argv) <= 1:",
             "    print('To start the Odoo working session, just do:')",
             "    print('    session.open(db=DATABASE_NAME)')",
@@ -493,8 +495,10 @@ conf = odoo.tools.config
         common_init = os.linesep.join((
             "",
             "from anybox.recipe.odoo.runtime.session import Session",
-            "session = Session(%s, base)" % self._relativitize(
-                self.config_path)))
+            "session = Session(%s, %s)" % (
+                self._relativitize(self.config_path),
+                self._relativitize(self.buildout_dir)),
+        ))
 
         for script_name, desc in self.odoo_scripts.items():
             initialization = desc.get('initialization', common_init)

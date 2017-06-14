@@ -1624,7 +1624,11 @@ class BaseRecipe(object):
 
         self.addons_paths = [
             os.path.relpath(
-                addons_path, os.path.join(self.openerp_dir, 'openerp'))
+                addons_path,
+                os.path.join(
+                    self.odoo_dir,
+                    'openerp' if 'openerp' in addons_path else 'odoo'
+                ))
             if self._relative_paths
             else addons_path
             for addons_path in list(self.addons_paths)
