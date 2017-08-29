@@ -21,10 +21,10 @@ from .session import Session
 DEFAULT_LOG_FILE = 'upgrade.log'
 
 class DBFormatter(logging.Formatter):
-    def format(self, record):
-        record.pid = os.getpid()
-        record.dbname = getattr(threading.currentThread(), 'dbname', '?')
-        return logging.Formatter.format(self, record)
+    def format(self, record):
+        record.pid = os.getpid()
+        record.dbname = getattr(threading.currentThread(), 'dbname', '?')
+        return logging.Formatter.format(self, record)
 
 def upgrade(upgrade_script, upgrade_callable, conf):
     """Run the upgrade from a source file.
@@ -117,8 +117,8 @@ def upgrade(upgrade_script, upgrade_callable, conf):
         "%(asctime)s %(levelname)s  %(message)s"))
     
     format = '%(asctime)s %(pid)s %(levelname)s %(dbname)s %(name)s: %(message)s'
-    formatter = DBFormatter(format)
-    log_file_handler.setFormatter(formatter)
+    formatter = DBFormatter(format)
+    log_file_handler.setFormatter(formatter)
 
     logging.getLogger().addHandler(log_file_handler)
 
