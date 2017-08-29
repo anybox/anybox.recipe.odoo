@@ -8,6 +8,7 @@ import os
 import sys
 import imp
 import logging
+import threading
 from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
 from argparse import SUPPRESS
@@ -19,6 +20,11 @@ from .session import Session
 
 DEFAULT_LOG_FILE = 'upgrade.log'
 
+class DBFormatter(logging.Formatter):
+    def format(self, record):
+        record.pid = os.getpid()
+        record.dbname = getattr(threading.currentThread(), 'dbname', '?')
+        return logging.Formatter.format(self, record)
 
 def upgrade(upgrade_script, upgrade_callable, conf):
     """Run the upgrade from a source file.
@@ -109,8 +115,12 @@ def upgrade(upgrade_script, upgrade_callable, conf):
     log_file_handler.setLevel(getattr(logging, log_level))
     log_file_handler.setFormatter(logging.Formatter(
         "%(asctime)s %(levelname)s  %(message)s"))
+    
+    format = '%(asctime)s %(pid)s %(levelname)s %(dbname)s %(name)s: %(message)s'
+    formatter = DBFormatter(format)
+    log_file_handler.setFormatter(formatter)
 
-    logger.addHandler(log_file_handler)
+    logging.getLogger().addHandler(log_file_handler)
 
     if not arguments.quiet:
         logger.addHandler(console_handler)
