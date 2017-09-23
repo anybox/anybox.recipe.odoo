@@ -212,6 +212,10 @@ class GitRepo(BaseRepo):
                                        cwd=self.target_dir).splitlines())
         return refspec in tags
 
+    def get_origin_url(self):
+        return self.log_call(['git', 'config', '--get', 'remote.origin.url'],
+                             callwith=check_output)
+
     def has_commit(self, sha):
         """Return true if repo has specified commit"""
         try:
@@ -415,7 +419,14 @@ class GitRepo(BaseRepo):
             os.chdir(self.target_dir)
             rtype, sha = self.query_remote_ref(BUILDOUT_ORIGIN, revision)
             if rtype is None and ishex(revision):
-                self.fetch_remote_sha(revision, checkout=False)
+                try:
+                    # This raises UpdateError for merges where the remote is not 'origin'.
+                    self.fetch_remote_sha(revision, checkout=False)
+                except UpdateError as e:
+                    if self.url == self.get_origin_url():
+                        # Legitimate exception
+                        raise
+                    # Exception was to be expected, subsequent pull will succeed
             cmd = ['git', 'pull', self.url, revision]
             if self.git_version >= (1, 7, 10):
                 # --edit and --no-edit appear with Git 1.7.10
