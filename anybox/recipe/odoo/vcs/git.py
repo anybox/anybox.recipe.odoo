@@ -320,6 +320,9 @@ class GitRepo(BaseRepo):
                         "a recipe bug.",
                         self.target_dir, revision)
 
+        if self.offline and self.options.get('merge'):
+            return self.offline_merge(revision)
+
         if self.options.get('merge'):
             return self.merge(revision)
 
@@ -339,6 +342,10 @@ class GitRepo(BaseRepo):
                            BUILDOUT_ORIGIN, url],
                           log_level=logging.DEBUG)
 
+            # if pinned, try to find on local first
+            if ishex(revision) and self.has_commit(revision):
+                self.log_call(['git', 'checkout', revision])
+                return
             rtype, sha = self.query_remote_ref(BUILDOUT_ORIGIN, revision)
             if rtype is None and ishex(revision):
                 return self.fetch_remote_sha(revision)
@@ -406,6 +413,26 @@ class GitRepo(BaseRepo):
                     self.log_call(['git', 'reset', '--hard', 'FETCH_HEAD'],
                                   callwith=update_check_call)
 
+    def _no_edit(self, cmd):
+        if self.git_version >= (1, 7, 10):
+            # --edit and --no-edit appear with Git 1.7.10
+            # see Documentation/RelNotes/1.7.10.txt of Git
+            # (https://git.kernel.org/cgit/git/git.git/tree)
+            cmd.insert(2, '--no-edit')
+        return cmd
+
+    def offline_merge(self, revision):
+        """Merge revision into current branch"""
+        if ishex(revision):
+            if not self.has_commit(revision):
+                raise UserError("Commit %s not found in git repository "
+                                "%s (offline mode)" % (revision, self))
+        elif not self._is_a_branch(revision):
+            raise UserError("Branch %s not found in git repository "
+                            "%s (offline mode)" % (revision, self))
+        cmd = self._no_edit(['git', 'merge', revision])
+        self.log_call(cmd)
+
     def merge(self, revision):
         """Merge revision into current branch"""
         with working_directory_keeper:
@@ -426,7 +453,7 @@ class GitRepo(BaseRepo):
                 # (https://git.kernel.org/cgit/git/git.git/tree)
                 cmd.insert(2, '--no-edit')
 
-            self.log_call(cmd)
+            self.log_call(self._no_edit(cmd))
 
     def archive(self, target_path):
         # TODO: does this work with merge-ins?
