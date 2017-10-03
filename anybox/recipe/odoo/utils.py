@@ -3,7 +3,10 @@ import sys
 import re
 import subprocess
 from contextlib import contextmanager
-from ConfigParser import DuplicateSectionError
+try:
+    from ConfigParser import DuplicateSectionError  # Python 2
+except ImportError:
+    from configparser import DuplicateSectionError  # Python 3
 import logging
 logger = logging.getLogger(__name__)
 
@@ -143,8 +146,8 @@ def check_output(*popenargs, **kwargs):
     True
     """
 
-    if sys.version >= (2, 7):
-        return subprocess.check_output(*popenargs, **kwargs)
+    if sys.version_info >= (2, 7):
+        return subprocess.check_output(*popenargs, **kwargs).decode('ascii')
     if 'stdout' in kwargs:
         raise ValueError('stdout argument not allowed, it will be overridden.')
 

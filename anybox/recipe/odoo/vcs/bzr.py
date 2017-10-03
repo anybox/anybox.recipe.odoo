@@ -1,9 +1,15 @@
 import os
 import logging
 import subprocess
-import urlparse
+try:
+    import urlparse  # Python 2
+except ImportError:
+    from urllib import parse as urlparse  # Python 3
 import urllib
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 from copy import deepcopy
 
 from zc.buildout import UserError

@@ -47,7 +47,7 @@ class TestServer(RecipeTestCase):
         with open(os.path.join(addons_dir, '__manifest__.py'), 'w') as f:
             f.write("#Empty python package")
         self.make_recipe(version='10.0', addons='local addons-custom')
-        print self.recipe.retrieve_addons
+        print(self.recipe.retrieve_addons)
         self.assertTrue(self.recipe.retrieve_addons)
 
     def test_retrieve_addons_local_options(self):
@@ -170,7 +170,7 @@ class TestServer(RecipeTestCase):
         addon_dir = os.path.join(self.buildout_dir, dirname)
         os.mkdir(addon_dir)
         open(os.path.join(addon_dir, '__manifest__.py'), 'w').close()
-        print self.recipe.retrieve_addons
+        print(self.recipe.retrieve_addons)
         self.assertTrue(self.recipe.retrieve_addons)
 
     def test_retrieve_addons_clear_locks(self):

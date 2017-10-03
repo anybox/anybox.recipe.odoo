@@ -10,7 +10,10 @@ import logging
 import stat
 import imp
 import shutil
-import ConfigParser
+try:
+    from ConfigParser import ConfigParser, RawConfigParser  # Python 2
+except ImportError:
+    from configparser import ConfigParser, RawConfigParser  # Python 3
 import distutils.core
 import pkg_resources
 try:
@@ -25,9 +28,15 @@ from zc.buildout.easy_install import Installer
 from zc.buildout.easy_install import IncompatibleConstraintError
 
 import zc.recipe.egg
-import httplib
-import rfc822
-from urlparse import urlparse
+try:
+    import httplib  # Python 2
+except ImportError:
+    from http import client as httplib  # Python 3
+from email import utils as email_utils
+try:
+    from urlparse import urlparse  # Python 2
+except ImportError:
+    from urllib import parse as urlparse  # Python 3
 from . import vcs
 from . import utils
 from .utils import option_splitlines, option_strip, conf_ensure_section
@@ -37,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 def rfc822_time(h):
     """Parse RFC 2822-formatted http header and return a time int."""
-    rfc822.mktime_tz(rfc822.parsedate_tz(h))
+    email_utils.mktime_tz(email_utils.parsedate_tz(h))
 
 
 class MainSoftware(object):
@@ -566,7 +575,7 @@ class BaseRecipe(object):
                 raise
             except IncompatibleConstraintError as exc:
                 missing = exc.args[2].project_name
-            except UserError, exc:  # happens only for zc.buildout >= 2.0
+            except UserError as exc:  # happens only for zc.buildout >= 2.0
                 missing = exc.message.split(os.linesep)[0].split()[-1]
                 missing = re.split(r'[=<>]', missing)[0]
             else:
@@ -654,7 +663,7 @@ class BaseRecipe(object):
                         raise EnvironmentError(
                             'Problem while reading Odoo release.py: ' +
                             exc.message)
-            except ImportError, exception:
+            except ImportError as exception:
                 if 'babel' in exception.message:
                     raise EnvironmentError(
                         'OpenERP setup.py has an unwanted import Babel.\n'
@@ -664,7 +673,7 @@ class BaseRecipe(object):
                         'or pip install babel)')
                 else:
                     raise exception
-            except Exception, exception:
+            except Exception as exception:
                 raise EnvironmentError('Problem while reading Odoo '
                                        'setup.py: ' + exception.message)
             finally:
@@ -909,7 +918,7 @@ class BaseRecipe(object):
     def revert_sources(self):
         """Revert all sources to the revisions specified in :attr:`sources`.
         """
-        for target, desc in self.sources.iteritems():
+        for target, desc in self.sources.items():
             if desc[0] in ('local', 'downloadable'):
                 continue
 
@@ -1052,7 +1061,7 @@ class BaseRecipe(object):
             tar.close()
         else:
             url, rev = source[1]
-            options = dict((k, v) for k, v in self.options.iteritems()
+            options = dict((k, v) for k, v in self.options.items()
                            if k.startswith(type_spec + '-'))
             if type_spec == 'git':
                 options['depth'] = options.pop('git-depth', None)
@@ -1123,7 +1132,7 @@ class BaseRecipe(object):
         self._create_default_config()
 
         # modify the config file according to recipe options
-        config = ConfigParser.RawConfigParser()
+        config = RawConfigParser()
         config.read(self.config_path)
         for recipe_option in self.options:
             if '.' not in recipe_option:
@@ -1131,7 +1140,7 @@ class BaseRecipe(object):
             section, option = recipe_option.split('.', 1)
             conf_ensure_section(config, section)
             config.set(section, option, self.options[recipe_option])
-        with open(self.config_path, 'wb') as configfile:
+        with open(self.config_path, 'w') as configfile:
             config.write(configfile)
 
         if extract_downloads_to:
@@ -1151,7 +1160,7 @@ class BaseRecipe(object):
 
         logger.info("Freezing part %r to config file %r", self.name,
                     out_config_path)
-        out_conf = ConfigParser.ConfigParser()
+        out_conf = ConfigParser()
 
         frozen = getattr(self.buildout, '_odoo_recipe_frozen', None)
         if frozen is None:
@@ -1377,7 +1386,7 @@ class BaseRecipe(object):
         logger.info("Extracting part %r to directory %r and config file %r "
                     "therein.", self.name, target_dir, outconf_name)
         target_dir = self.make_absolute(target_dir)
-        out_conf = ConfigParser.ConfigParser()
+        out_conf = ConfigParser()
 
         all_extracted = getattr(self.buildout, '_odoo_recipe_extracted',
                                 None)
