@@ -45,6 +45,8 @@ logger = logging.getLogger(__name__)
 
 if sys.version_info >= (2, 7):
     unicode = str
+else:
+    from .utils import next
 
 
 def rfc822_time(h):
@@ -534,7 +536,7 @@ class BaseRecipe(object):
 
             if len(specs) > 1:
                 supported = False
-            spec = specs.__iter__().next()
+            spec = next(specs.__iter__())
             if spec.operator != '==':
                 supported = False
 
@@ -1043,7 +1045,7 @@ class BaseRecipe(object):
 
             logger.info(u'Inspecting %s ...' % self.archive_path)
             tar = tarfile.open(self.archive_path)
-            first = tar.next()
+            first = next(tar)
             # Everything that follows assumes all tarball members
             # are inside a directory with an expected name such
             # as odoo-6.1-1

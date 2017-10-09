@@ -268,3 +268,8 @@ def conf_ensure_section(conf, section):
         conf.add_section(section)
     except DuplicateSectionError:
         pass
+
+
+def next(iterator):
+    """ Python2 compatibility of iterators """
+    return iterator.next()
