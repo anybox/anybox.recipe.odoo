@@ -4,7 +4,7 @@ import sys
 import os
 import logging
 from distutils.version import Version
-
+from optparse import OptionParser  # we support python >= 2.6
 
 try:
     import openerp as odoo
@@ -14,24 +14,20 @@ except ImportError:
     except ImportError:
         warnings.warn("This must be imported with a buildout odoo recipe "
                       "driven sys.path", RuntimeWarning)
-    else:
-        try:
-            from odoo.cli import server as startup
-        except ImportError:
-            from .backports.cli import server as startup
-        from odoo.tools import config
-        from odoo import SUPERUSER_ID
-        from odoo.tools.parse_version import parse_version
-else:
-    try:
-        from openerp.cli import server as startup
-    except ImportError:
-        from .backports.cli import server as startup
-    from openerp.tools import config
-    from openerp import SUPERUSER_ID
-    from openerp.tools.parse_version import parse_version
-
-from optparse import OptionParser  # we support python >= 2.6
+try:
+    startup = odoo.cli.server
+except AttributeError:
+    from .backports.cli import server as startup
+config = odoo.tools.config
+SUPERUSER_ID = odoo.SUPERUSER_ID
+parse_version = odoo.tools.parse_version
+version_info = odoo.release.version_info
+try:
+    # Odoo 10.0: This is deprecated, use :class:`Registry` instead.
+    Registry = odoo.modules.registry.RegistryManager
+except AttributeError:
+    # Odoo 11.0: class has been removed
+    Registry = odoo.modules.registry.Registry
 
 logger = logging.getLogger(__name__)
 
@@ -184,8 +180,12 @@ class Session(object):
         config['without_demo'] = not with_demo
         self.with_demo = with_demo
 
-        self._registry = odoo.modules.registry.RegistryManager.get(
-            db, update_module=False)
+        if version_info[0] <= 10:
+            self._registry = Registry.get(
+                db, update_module=False)
+        else:
+            # Form Odoo 11.0: no get method available
+            self._registry = Registry(db)
         config['without_demo'] = saved_without_demo
         self.init_cursor()
         self.uid = SUPERUSER_ID
@@ -386,9 +386,7 @@ class Session(object):
         if not self.is_cursor_closed():
             self.cr.close()
         self.clean_environments()
-        # GR: I did check that implementation is designed not to fail
-        # on Odoo 8 and Odoo 7
-        odoo.modules.registry.RegistryManager.delete(dbname)
+        Registry.delete(dbname)
 
     def update_modules(self, modules, db=None):
         """Update the prescribed modules in the database.
@@ -414,8 +412,11 @@ class Session(object):
             self.close()
         for module in modules:
             config['update'][module] = 1
-        self._registry = odoo.modules.registry.RegistryManager.get(
-            db, update_module=True)
+        if version_info[0] <= 10:
+            self._registry = Registry.get(db, update_module=True)
+        else:
+            # Form Odoo 11.0: no get method available
+            self._registry = Registry(db)
         config['update'].clear()
         self.init_cursor()
         self.clean_environments()
@@ -465,7 +466,7 @@ class Session(object):
         config['without_demo'] = not getattr(self, 'with_demo', open_with_demo)
         for module in modules:
             config['init'][module] = 1
-        self._registry = odoo.modules.registry.RegistryManager.new(
+        self._registry = Registry.new(
             db, update_module=True, force_demo=self.with_demo)
         config['init'].clear()
         config['without_demo'] = saved_without_demo
