@@ -65,7 +65,8 @@ class OdooVersion(Version):
             other = str(other)  # Works with distutils' Version classes
 
         other = self.__class__(other)
-        return cmp(self.components, other.components)
+        return ((self.components > other.components) -
+                (self.components < other.components))
 
 
 class Session(object):

@@ -43,6 +43,9 @@ from .utils import option_splitlines, option_strip, conf_ensure_section
 
 logger = logging.getLogger(__name__)
 
+if sys.version_info >= (2, 7):
+    unicode = str
+
 
 def rfc822_time(h):
     """Parse RFC 2822-formatted http header and return a time int."""
@@ -576,7 +579,7 @@ class BaseRecipe(object):
             except IncompatibleConstraintError as exc:
                 missing = exc.args[2].project_name
             except UserError as exc:  # happens only for zc.buildout >= 2.0
-                missing = exc.message.split(os.linesep)[0].split()[-1]
+                missing = unicode(exc).split(os.linesep)[0].split()[-1]
                 missing = re.split(r'[=<>]', missing)[0]
             else:
                 break
@@ -652,8 +655,7 @@ class BaseRecipe(object):
                 imp.load_module('setup', f, 'setup.py',
                                 ('.py', 'r', imp.PY_SOURCE))
             except SystemExit as exception:
-                msg = exception.message
-                if not isinstance(msg, int) and 'dsextras' in msg:
+                if 'dsextras' in unicode(exception):
                     raise EnvironmentError(
                         'Please first install PyGObject and PyGTK !')
                 else:
@@ -661,10 +663,9 @@ class BaseRecipe(object):
                         self.read_release()
                     except Exception as exc:
                         raise EnvironmentError(
-                            'Problem while reading Odoo release.py: ' +
-                            exc.message)
+                            'Problem while reading Odoo release.py: %s' % exc)
             except ImportError as exception:
-                if 'babel' in exception.message:
+                if 'babel' in unicode(exception):
                     raise EnvironmentError(
                         'OpenERP setup.py has an unwanted import Babel.\n'
                         '=> First install Babel on your system or '
@@ -675,7 +676,7 @@ class BaseRecipe(object):
                     raise exception
             except Exception as exception:
                 raise EnvironmentError('Problem while reading Odoo '
-                                       'setup.py: ' + exception.message)
+                                       'setup.py: %s' % exception)
             finally:
                 sys.argv = saved_argv
         sys.path.pop(0)
