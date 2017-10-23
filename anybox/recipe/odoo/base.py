@@ -412,7 +412,7 @@ class BaseRecipe(object):
         # first import is done from a tmp dir
         # that does not exist any more).
         # So, better to clean that before hand.
-        for k in sys.modules.keys():
+        for k in list(sys.modules.keys()):
             if k.split('.', 1)[0] == 'pip':
                 del sys.modules[k]
 
