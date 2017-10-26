@@ -36,7 +36,7 @@ from email import utils as email_utils
 try:
     from urlparse import urlparse  # Python 2
 except ImportError:
-    from urllib import parse as urlparse  # Python 3
+    from urllib.parse import urlparse  # Python 3
 from . import vcs
 from . import utils
 from .utils import option_splitlines, option_strip, conf_ensure_section

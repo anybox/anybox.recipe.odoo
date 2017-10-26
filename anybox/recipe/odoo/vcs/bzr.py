@@ -4,7 +4,7 @@ import subprocess
 try:
     import urlparse  # Python 2
 except ImportError:
-    from urllib import parse as urlparse  # Python 3
+    from urllib.parse import urlparse  # Python 3
 import urllib
 try:
     from StringIO import StringIO
