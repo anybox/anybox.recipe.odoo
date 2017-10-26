@@ -57,6 +57,16 @@ def rfc822_time(h):
     email_utils.mktime_tz(email_utils.parsedate_tz(h))
 
 
+def get_content_type(msg):
+    """Return the mimetype of the HTTP message.
+    This is a helper to support Python 2 and 3.
+    """
+    try:
+        return msg.type
+    except AttributeError:
+        return msg.get_content_type()
+
+
 class MainSoftware(object):
     """Placeholder to represent the main software instead of an addon location.
 
@@ -975,7 +985,7 @@ class BaseRecipe(object):
 
         try:
             msg = urlretrieve(url, self.archive_path)
-            if msg[1].type == 'text/html':
+            if get_content_type(msg[1]) == 'text/html':
                 os.unlink(self.archive_path)
                 raise LookupError(
                     'Wanted version %r not found on server (tried %s)' % (
