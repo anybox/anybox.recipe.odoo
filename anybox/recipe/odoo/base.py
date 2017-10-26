@@ -3,7 +3,6 @@ from os.path import join, basename
 import os
 import sys
 import re
-import urllib
 import tarfile
 import setuptools
 import logging
@@ -33,6 +32,10 @@ try:
 except ImportError:
     from http import client as httplib  # Python 3
 from email import utils as email_utils
+try:
+    from urllib import urlretrieve  # Python 2
+except ImportError:
+    from urllib.request import urlretrieve  # Python 3
 try:
     from urlparse import urlparse  # Python 2
 except ImportError:
@@ -971,7 +974,7 @@ class BaseRecipe(object):
         logger.info("Downloading %s ..." % url)
 
         try:
-            msg = urllib.urlretrieve(url, self.archive_path)
+            msg = urlretrieve(url, self.archive_path)
             if msg[1].type == 'text/html':
                 os.unlink(self.archive_path)
                 raise LookupError(
