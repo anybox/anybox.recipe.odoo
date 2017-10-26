@@ -1058,7 +1058,7 @@ class BaseRecipe(object):
 
             logger.info(u'Inspecting %s ...' % self.archive_path)
             tar = tarfile.open(self.archive_path)
-            first = next(tar)
+            first = tar.members[0]
             # Everything that follows assumes all tarball members
             # are inside a directory with an expected name such
             # as odoo-6.1-1
