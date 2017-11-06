@@ -170,6 +170,8 @@ class Session(object):
             db = config['db_name']
         if not db:
             db = ''  # expected value expected by Odoo to start defaulting.
+        else:
+            config['dbfilter'] = '$%s^' % db
 
         cnx = odoo.sql_db.db_connect(db)
         cr = cnx.cursor()
