@@ -14,7 +14,6 @@ from argparse import ArgumentDefaultsHelpFormatter
 from argparse import SUPPRESS
 from datetime import datetime
 from math import ceil
-from StringIO import StringIO
 
 from ..utils import total_seconds
 from .session import Session
@@ -162,18 +161,7 @@ def upgrade(upgrade_script, upgrade_callable, conf):
     upgrade_module = imp.load_source('anybox.recipe.odoo.upgrade_odoo',
                                      upgrade_script)
 
-    # Catch errors in a buffer
-    buf = StringIO()
-    bufferHandler = logging.StreamHandler(buf)
-    bufferHandler.setFormatter(DBFormatter(format))
-    bufferHandler.setLevel(logging.ERROR)
-    logging.getLogger().addHandler(bufferHandler)
-
     statuscode = getattr(upgrade_module, upgrade_callable)(session, logger)
-    buf.seek(0)
-    if buf.read():
-        statuscode = 1
-
     if statuscode is None or statuscode == 0:
         if pkg_version is not None:
             logger.info("setting version %s in database" % pkg_version)
@@ -187,6 +175,5 @@ def upgrade(upgrade_script, upgrade_callable, conf):
         logger.error("Please check logs at %s" % log_path)
 
     session.close()
-    buf.close()
     log_file.close()
     sys.exit(statuscode)
