@@ -6,7 +6,7 @@ import shutil
 import logging
 import zc.buildout
 from zc.buildout import UserError
-from base import BaseRecipe
+from .base import BaseRecipe
 from . import devtools
 from .utils import option_splitlines, option_strip, major_version
 
@@ -242,7 +242,7 @@ conf = odoo.tools.config
         None if not found.
         In all other cases, return return (script_name, desc).
         """
-        for script_name, desc in self.odoo_scripts.iteritems():
+        for script_name, desc in self.odoo_scripts.items():
             if desc['entry'] == entry:
                 return script_name, desc
 

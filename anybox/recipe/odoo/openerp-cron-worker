@@ -58,8 +58,8 @@ def signal_handler(sig, frame):
     openerp.addons.base.ir.ir_cron.quit_signal_received = True
     if quit_signals_received == 1 and openerp.addons.base.ir.ir_cron.job_in_progress:
         _logger.info("Waiting for the current job to complete.")
-        print "Waiting for the current job to complete."
-        print "Hit Ctrl-C again to force shutdown."
+        print("Waiting for the current job to complete.")
+        print("Hit Ctrl-C again to force shutdown.")
     if quit_signals_received > 1:
         # logging.shutdown was already called at this point.
         sys.stderr.write("Forced shutdown.\n")
@@ -101,14 +101,14 @@ if __name__ == '__main__':
     openerp.cron.enable_schedule_wakeup = False
     openerp.multi_process = True # enable multi-process signaling
     import openerp.addons.base
-    print "Odoo cron jobs worker. Hit Ctrl-C to exit."
-    print "Documentation is available at the top of the `opener-cron-worker` file."
+    print("Odoo cron jobs worker. Hit Ctrl-C to exit.")
+    print("Documentation is available at the top of the `opener-cron-worker` file.")
     if config['db_name']:
         db_names = config['db_name'].split(',')
-        print "Monitoring %s databases." % len(db_names)
+        print("Monitoring %s databases." % len(db_names))
     else:
         db_names = list_databases
-        print "Monitored databases are auto-discovered."
+        print("Monitored databases are auto-discovered.")
     openerp.addons.base.ir.ir_cron.ir_cron._run(db_names)
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

@@ -3,14 +3,16 @@ from os.path import join, basename
 import os
 import sys
 import re
-import urllib
 import tarfile
 import setuptools
 import logging
 import stat
 import imp
 import shutil
-import ConfigParser
+try:
+    from ConfigParser import ConfigParser, RawConfigParser  # Python 2
+except ImportError:
+    from configparser import ConfigParser, RawConfigParser  # Python 3
 import distutils.core
 import pkg_resources
 try:
@@ -25,19 +27,44 @@ from zc.buildout.easy_install import Installer
 from zc.buildout.easy_install import IncompatibleConstraintError
 
 import zc.recipe.egg
-import httplib
-import rfc822
-from urlparse import urlparse
+try:
+    import httplib  # Python 2
+except ImportError:
+    from http import client as httplib  # Python 3
+from email import utils as email_utils
+try:
+    from urllib import urlretrieve  # Python 2
+except ImportError:
+    from urllib.request import urlretrieve  # Python 3
+try:
+    from urlparse import urlparse  # Python 2
+except ImportError:
+    from urllib.parse import urlparse  # Python 3
 from . import vcs
 from . import utils
 from .utils import option_splitlines, option_strip, conf_ensure_section
 
 logger = logging.getLogger(__name__)
 
+if sys.version_info >= (2, 7):
+    unicode = str
+else:
+    from .utils import next
+
 
 def rfc822_time(h):
     """Parse RFC 2822-formatted http header and return a time int."""
-    rfc822.mktime_tz(rfc822.parsedate_tz(h))
+    email_utils.mktime_tz(email_utils.parsedate_tz(h))
+
+
+def get_content_type(msg):
+    """Return the mimetype of the HTTP message.
+    This is a helper to support Python 2 and 3.
+    """
+    try:
+        return msg.type
+    except AttributeError:
+        return msg.get_content_type()
 
 
 class MainSoftware(object):
@@ -398,7 +425,7 @@ class BaseRecipe(object):
         # first import is done from a tmp dir
         # that does not exist any more).
         # So, better to clean that before hand.
-        for k in sys.modules.keys():
+        for k in list(sys.modules.keys()):
             if k.split('.', 1)[0] == 'pip':
                 del sys.modules[k]
 
@@ -522,7 +549,7 @@ class BaseRecipe(object):
 
             if len(specs) > 1:
                 supported = False
-            spec = specs.__iter__().next()
+            spec = next(specs.__iter__())
             if spec.operator != '==':
                 supported = False
 
@@ -566,8 +593,8 @@ class BaseRecipe(object):
                 raise
             except IncompatibleConstraintError as exc:
                 missing = exc.args[2].project_name
-            except UserError, exc:  # happens only for zc.buildout >= 2.0
-                missing = exc.message.split(os.linesep)[0].split()[-1]
+            except UserError as exc:  # happens only for zc.buildout >= 2.0
+                missing = unicode(exc).split(os.linesep)[0].split()[-1]
                 missing = re.split(r'[=<>]', missing)[0]
             else:
                 break
@@ -643,8 +670,7 @@ class BaseRecipe(object):
                 imp.load_module('setup', f, 'setup.py',
                                 ('.py', 'r', imp.PY_SOURCE))
             except SystemExit as exception:
-                msg = exception.message
-                if not isinstance(msg, int) and 'dsextras' in msg:
+                if 'dsextras' in unicode(exception):
                     raise EnvironmentError(
                         'Please first install PyGObject and PyGTK !')
                 else:
@@ -652,10 +678,9 @@ class BaseRecipe(object):
                         self.read_release()
                     except Exception as exc:
                         raise EnvironmentError(
-                            'Problem while reading Odoo release.py: ' +
-                            exc.message)
-            except ImportError, exception:
-                if 'babel' in exception.message:
+                            'Problem while reading Odoo release.py: %s' % exc)
+            except ImportError as exception:
+                if 'babel' in unicode(exception):
                     raise EnvironmentError(
                         'OpenERP setup.py has an unwanted import Babel.\n'
                         '=> First install Babel on your system or '
@@ -664,9 +689,9 @@ class BaseRecipe(object):
                         'or pip install babel)')
                 else:
                     raise exception
-            except Exception, exception:
+            except Exception as exception:
                 raise EnvironmentError('Problem while reading Odoo '
-                                       'setup.py: ' + exception.message)
+                                       'setup.py: %s' % exception)
             finally:
                 sys.argv = saved_argv
         sys.path.pop(0)
@@ -909,7 +934,7 @@ class BaseRecipe(object):
     def revert_sources(self):
         """Revert all sources to the revisions specified in :attr:`sources`.
         """
-        for target, desc in self.sources.iteritems():
+        for target, desc in self.sources.items():
             if desc[0] in ('local', 'downloadable'):
                 continue
 
@@ -959,8 +984,8 @@ class BaseRecipe(object):
         logger.info("Downloading %s ..." % url)
 
         try:
-            msg = urllib.urlretrieve(url, self.archive_path)
-            if msg[1].type == 'text/html':
+            msg = urlretrieve(url, self.archive_path)
+            if get_content_type(msg[1]) == 'text/html':
                 os.unlink(self.archive_path)
                 raise LookupError(
                     'Wanted version %r not found on server (tried %s)' % (
@@ -1033,7 +1058,7 @@ class BaseRecipe(object):
 
             logger.info(u'Inspecting %s ...' % self.archive_path)
             tar = tarfile.open(self.archive_path)
-            first = tar.next()
+            first = tar.members[0]
             # Everything that follows assumes all tarball members
             # are inside a directory with an expected name such
             # as odoo-6.1-1
@@ -1052,7 +1077,7 @@ class BaseRecipe(object):
             tar.close()
         else:
             url, rev = source[1]
-            options = dict((k, v) for k, v in self.options.iteritems()
+            options = dict((k, v) for k, v in self.options.items()
                            if k.startswith(type_spec + '-'))
             if type_spec == 'git':
                 options['depth'] = options.pop('git-depth', None)
@@ -1123,7 +1148,7 @@ class BaseRecipe(object):
         self._create_default_config()
 
         # modify the config file according to recipe options
-        config = ConfigParser.RawConfigParser()
+        config = RawConfigParser()
         config.read(self.config_path)
         for recipe_option in self.options:
             if '.' not in recipe_option:
@@ -1131,7 +1156,7 @@ class BaseRecipe(object):
             section, option = recipe_option.split('.', 1)
             conf_ensure_section(config, section)
             config.set(section, option, self.options[recipe_option])
-        with open(self.config_path, 'wb') as configfile:
+        with open(self.config_path, 'w') as configfile:
             config.write(configfile)
 
         if extract_downloads_to:
@@ -1151,7 +1176,7 @@ class BaseRecipe(object):
 
         logger.info("Freezing part %r to config file %r", self.name,
                     out_config_path)
-        out_conf = ConfigParser.ConfigParser()
+        out_conf = ConfigParser()
 
         frozen = getattr(self.buildout, '_odoo_recipe_frozen', None)
         if frozen is None:
@@ -1377,7 +1402,7 @@ class BaseRecipe(object):
         logger.info("Extracting part %r to directory %r and config file %r "
                     "therein.", self.name, target_dir, outconf_name)
         target_dir = self.make_absolute(target_dir)
-        out_conf = ConfigParser.ConfigParser()
+        out_conf = ConfigParser()
 
         all_extracted = getattr(self.buildout, '_odoo_recipe_extracted',
                                 None)

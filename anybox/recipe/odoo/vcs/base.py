@@ -27,7 +27,7 @@ def wrap_check_call(exc_cls, call_fn):
         """Variant on subprocess.check_* that raises %s.""" % exc_cls
         try:
             return call_fn(*args, **kwargs)
-        except subprocess.CalledProcessError, e:
+        except subprocess.CalledProcessError as e:
             up_exc = exc_cls(e.returncode, e.cmd)
             output = getattr(e, 'output', None)
             if output is not None:

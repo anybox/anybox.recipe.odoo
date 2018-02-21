@@ -36,6 +36,10 @@ DEFAULT_VERSION_PARAMETER = 'buildout.db_version'
 DEFAULT_VERSION_FILE = 'VERSION.txt'
 
 
+if sys.version_info < (3,):
+    from ..utils import next
+
+
 class OdooVersion(Version):
     """Odoo idea of version, wrapped in a class.
 
@@ -65,7 +69,8 @@ class OdooVersion(Version):
             other = str(other)  # Works with distutils' Version classes
 
         other = self.__class__(other)
-        return cmp(self.components, other.components)
+        return ((self.components > other.components) -
+                (self.components < other.components))
 
 
 class Session(object):
@@ -216,7 +221,7 @@ class Session(object):
             return
 
         self._environments_gen_context = gen_factory().gen
-        self._environments_gen_context.next()
+        next(self._environments_gen_context)
         self.env = odoo.api.Environment(
             self.cr, self.uid, getattr(
                 self, 'context', {}
@@ -238,7 +243,7 @@ class Session(object):
             return
 
         try:
-            gen_context.next()
+            next(gen_context)
         except StopIteration:
             pass
         else:
@@ -247,7 +252,7 @@ class Session(object):
                         "tampering with it that should be more cautious. "
                         "Proceeding with cleansing.")
             try:
-                gen_context.next()
+                next(gen_context)
             except StopIteration:
                 pass
             else:
