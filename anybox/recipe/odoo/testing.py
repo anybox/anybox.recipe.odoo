@@ -119,6 +119,30 @@ class PersistentRevFakeRepo(FakeRepo):
 vcs.SUPPORTED['pr_fakevcs'] = PersistentRevFakeRepo
 
 
+class AttrDict(object):
+    def __init__(self, init=None):
+        if init is not None:
+            self.__dict__.update(init)
+
+    def __getitem__(self, key):
+        return self.__dict__[key]
+
+    def __setitem__(self, key, value):
+        self.__dict__[key] = value
+
+    def __delitem__(self, key):
+        del self.__dict__[key]
+
+    def __contains__(self, key):
+        return key in self.__dict__
+
+    def __len__(self):
+        return len(self.__dict__)
+
+    def __repr__(self):
+        return repr(self.__dict__)
+
+
 class RecipeTestCase(unittest.TestCase):
     """A base setup for tests of recipe classes"""
 
@@ -132,7 +156,7 @@ class RecipeTestCase(unittest.TestCase):
         os.mkdir(eggs_dir)
         develop_dir = os.path.join(b_dir, 'develop-eggs')
         os.mkdir(develop_dir)
-        self.buildout = {}
+        self.buildout = AttrDict()
         self.buildout['buildout'] = {
             'directory': b_dir,
             'offline': False,
