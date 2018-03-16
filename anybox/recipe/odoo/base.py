@@ -435,7 +435,7 @@ class BaseRecipe(object):
         develops = self.list_develops()
 
         new_reqs = set()
-        if pip_version() < (8, 1, 2):
+        if pip_version() < (8, 1, 1):
             self.read_requirements_pip_before_v8(req_path, versions, develops)
         else:
             self.read_requirements_pip_after_v8(req_path, versions, develops)
