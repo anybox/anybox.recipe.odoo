@@ -27,8 +27,8 @@ setup(
     description="A buildout recipe to install and configure Odoo",
     license="AGPLv3+",
     long_description='\n'.join((
-        open('README.rst').read(),
-        open('CHANGES.rst').read())),
+        open('README.rst', encoding="utf-8").read(),
+        open('CHANGES.rst', encoding="utf-8").read())),
     url="https://github.com/anybox/anybox.recipe.odoo",
     packages=find_packages(),
     namespace_packages=['anybox', 'anybox.recipe'],
