@@ -442,7 +442,10 @@ class BaseRecipe(object):
         self.merge_requirements(reqs=new_reqs)
 
     def read_requirements_pip_before_v8(self, req_path, versions, develops):
-        from pip.req import parse_requirements
+        if pip_version() < (10, 0):
+            from pip.req import parse_requirements
+        else:
+            from pip._internal.req import parse_requirements
         if pip_version() < (1, 5):
             parsed = parse_requirements(req_path)
         else:
@@ -507,7 +510,10 @@ class BaseRecipe(object):
             versions[project_name] = spec[1]
 
     def read_requirements_pip_after_v8(self, req_path, versions, develops):
-        from pip.req import parse_requirements
+        if pip_version() < (10, 0):
+            from pip.req import parse_requirements
+        else:
+            from pip._internal.req import parse_requirements
         # pip internals are protected against the fact of not passing
         # a session with ``is None``. OTOH, the session is not used
         # if the file is local (direct path, not an URL), so we cheat
@@ -788,7 +794,7 @@ class BaseRecipe(object):
                 else:  # vcs
                     repo_url, addons_dir, repo_rev = split[1:4]
                     location_spec = (repo_url, repo_rev)
-            except:
+            except Exception:
                 raise UserError("Could not parse addons line: %r. "
                                 "Please check format " % line)
 
@@ -1262,20 +1268,27 @@ class BaseRecipe(object):
             return ()
 
         try:
-            import pip.req
+            if pip_version() < (10, 0):
+                import pip.req
+            else:
+                import pip._internal.req
         except ImportError:
             logger.error("You have vcs-extends-develop distributions "
                          "but pip is not available. That means that "
                          "gp.vcsdevelop is not properly installed. Did "
                          "you ever run that buildout ?")
             raise
+        if pip_version() < (10, 0):
+            pipReq = pip.req
+        else:
+            pipReq = pip._internal.req
 
-        if 'parse_editable' in dir(pip.req):  # pip < 6.0
+        if 'parse_editable' in dir(pipReq):  # pip < 6.0
             def parse_egg_dir(req_str):
-                return pip.req.parse_editable(req_str)[0]
+                return pipReq.parse_editable(req_str)[0]
         else:
             def parse_egg_dir(req_str):
-                ireq = pip.req.InstallRequirement.from_editable(req_str)
+                ireq = pipReq.InstallRequirement.from_editable(req_str)
                 # GR I'm worried because now this is also used as project
                 # name in requirement, whereas it used to just be the target
                 # directory
