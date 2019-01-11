@@ -96,6 +96,7 @@ def upgrade(upgrade_script, upgrade_callable, conf):
 
     config['logfile'] = log_path
     config['log-level'] = log_level
+    config['stop_after_init'] = True
 
     start_time = datetime.utcnow()
     if not quiet:
