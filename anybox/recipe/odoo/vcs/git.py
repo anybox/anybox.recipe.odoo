@@ -252,6 +252,9 @@ class GitRepo(BaseRepo):
                             "and possibly reliability.", self.target_dir, sha)
             else:
                 fetch_cmd.append(branch)
+            depth = self.options.get('depth')
+            if depth is not None:
+                fetch_cmd.extend(('--depth', str(depth)))
             self.log_call(fetch_cmd, callwith=update_check_call)
 
         if checkout:
