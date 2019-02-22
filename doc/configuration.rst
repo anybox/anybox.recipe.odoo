@@ -355,6 +355,18 @@ setting ``git-warn-sha-pins = False``.
              if the remote repository gets lots of rebasing. If
              possible, pinning on tags is always to be preferred.
 
+.. _preserve_addons:
+
+The ``preserve_options`` option
+-------------------------------
+
+The ``preserve_options`` (option) specifies which Odoo config-options
+shall be preserved during builds. Especially for changed options like
+the (hashed) ``admin_passwd``, manually set by the Odoo web-interface,
+this prevents reversal to defaults. If at least 1 option is specified,
+the ``etc/odoo.cfg`` file shall be copied to ``etc/odoo.cfg.preserve``
+on every build.
+
 .. _merges:
 
 merges

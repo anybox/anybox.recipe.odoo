@@ -259,6 +259,11 @@ class BaseRecipe(object):
         self.etc = self.make_absolute(options.get('etc-directory', 'etc'))
         self.bin_dir = self.buildout['buildout']['bin-directory']
         self.config_path = join(self.etc, self.name + '.cfg')
+
+        self.preserve_options = option_splitlines(options.get('preserve_options'))
+        if self.preserve_options:
+            self.preserve_options_config_path = '{config_path}.preserve'.format(config_path=self.config_path)
+
         for d in self.downloads_dir, self.etc:
             if not os.path.exists(d):
                 logger.info('Created %s/ directory' % basename(d))
@@ -1140,22 +1145,28 @@ class BaseRecipe(object):
 
         self._install_startup_scripts()
 
-        # create the config file
+        # Create the config file.
+        # Copy to preserve(backup) config file, when options need to be preserved.
         if os.path.exists(self.config_path):
-            os.remove(self.config_path)
+            if self.preserve_options:
+                shutil.copyfile(self.config_path, self.preserve_options_config_path)
+            else:
+                os.remove(self.config_path)
         logger.info('Creating config file: %s',
                     os.path.relpath(self.config_path, self.buildout_dir))
         self._create_default_config()
 
-        # modify the config file according to recipe options
+        # Modify the config file according to recipe options.
+        # Don't modify options to preserve.
         config = RawConfigParser()
         config.read(self.config_path)
         for recipe_option in self.options:
             if '.' not in recipe_option:
                 continue
             section, option = recipe_option.split('.', 1)
-            conf_ensure_section(config, section)
-            config.set(section, option, self.options[recipe_option])
+            if option not in self.preserve_options:
+                conf_ensure_section(config, section)
+                config.set(section, option, self.options[recipe_option])
         with open(self.config_path, 'w') as configfile:
             config.write(configfile)
 

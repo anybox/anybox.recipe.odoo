@@ -4,6 +4,8 @@ from os.path import join
 import sys
 import shutil
 import logging
+import fileinput
+import re
 import zc.buildout
 from zc.buildout import UserError
 from .base import BaseRecipe
@@ -99,7 +101,9 @@ class ServerRecipe(BaseRecipe):
     def _create_default_config(self):
         """Have Odoo generate its default config file.
         """
-        self.options.setdefault('options.admin_passwd', '')
+        if 'admin_passwd' not in self.preserve_options:
+            self.options.setdefault('options.admin_passwd', '')
+
         sys.path.append(self.odoo_dir)
         sys.path.extend([egg.location for egg in self.ws])
 
@@ -108,7 +112,37 @@ class ServerRecipe(BaseRecipe):
         except ImportError:
             from openerp.tools.config import configmanager
 
+        if self.preserve_options and os.path.exists(self.config_path):
+            shutil.copyfile(self.config_path, self.preserve_options_config_path)
+
         configmanager(self.config_path).save()
+
+        if self.preserve_options and os.path.exists(self.preserve_options_config_path):
+            preserve_regex = {}
+            preserve = {}
+            for po in self.preserve_options:
+                pattern = "({option}\s*=)(.*)".format(option=po)
+                preserve_regex[po] = re.compile(pattern)
+
+            with open(self.preserve_options_config_path, 'r') as f:
+                fdata = f.read()
+                for opt, pattern in preserve_regex.items():
+                    matches = re.findall(pattern, fdata)
+                    if len(matches) == 1:
+                        preserve[opt] = matches[0][1].strip()
+                    else:
+                        msg = 'Found {count} matches of {option}'.format(count=len(matches), option=opt)
+                        raise UserError(msg)
+
+            if bool(preserve):
+                for line in fileinput.input(self.config_path, inplace=True):
+                    for option, val in preserve.items():
+                        pattern = preserve_regex[option]
+                        if re.match(pattern, line):
+                            replacement = '{option} = {val}'.format(option=option, val=val)
+                            line = re.sub(pattern, replacement, line)
+                            break
+                    sys.stdout.write(line)
 
     def _create_gunicorn_conf(self, qualified_name):
         """Put a gunicorn_PART.conf.py script in /etc.
