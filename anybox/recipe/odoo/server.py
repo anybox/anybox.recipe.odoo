@@ -99,7 +99,7 @@ class ServerRecipe(BaseRecipe):
     def _create_default_config(self):
         """Have Odoo generate its default config file.
         """
-        self.options.setdefault('options.admin_passwd', '')
+        self.options.setdefault('options.admin_passwd', self.default_admin_passwd)
         sys.path.append(self.odoo_dir)
         sys.path.extend([egg.location for egg in self.ws])
 
