@@ -1168,9 +1168,6 @@ class BaseRecipe(object):
             conf_ensure_section(config, section)
 
             # If preserve admin_passwd extract from prev_config and write in build config.
-            logger.info('Option: preserve_admin_passwd = %s', self.preserve_admin_passwd)
-            logger.info('prev_config_path: %s', self.prev_config_path)
-            logger.info('prev_config_path (path) exists: %s', os.path.exists(self.prev_config_path))
             if option == 'admin_passwd' and self.preserve_admin_passwd and \
                self.prev_config_path and os.path.exists(self.prev_config_path):
                 # TODO match not a commented admin_passwd. So without a # on line (negate regex).
