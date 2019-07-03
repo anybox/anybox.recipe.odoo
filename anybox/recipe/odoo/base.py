@@ -1229,7 +1229,7 @@ class BaseRecipe(object):
                 # actually, that comment will be lost if this is not the
                 # last part (dropped upon reread)
             else:
-                addons_option.append(' '.join((local_path, revision)))
+                addons_option.append(' '.join((local_path, unicode(revision))))
 
         if addons_option:
             out_conf.set(self.name, 'revisions',
