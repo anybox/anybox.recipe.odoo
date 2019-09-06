@@ -11,7 +11,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-MAJOR_VERSION_RE = re.compile(r'(\d+)[.](saas~|)(\d*)(\w*)')
+MAJOR_VERSION_RE = re.compile(r'(saas~)?(\d+)[.](saas~|)(\d*)(\w*)')
 
 
 class WorkingDirectoryKeeper(object):
@@ -85,8 +85,8 @@ def major_version(version_string):
     if m is None:
         raise ValueError("Unparseable version string: %r" % version_string)
 
-    major = int(m.group(1))
-    minor = m.group(3)
+    major = int(m.group(2))
+    minor = m.group(4)
 
     try:
         return major, int(minor)
