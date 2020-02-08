@@ -580,9 +580,11 @@ class BaseRecipe(object):
             missing = None
             eggs_recipe = zc.recipe.egg.Scripts(self.buildout, '',
                                                 self.options)
+            raised_exc = None
             try:
                 eggs_recipe.install()
             except MissingDistribution as exc:
+                raised_exc = exc
                 missing = exc.data[0].project_name
             except VersionConflict as exc:
                 # GR not 100% sure, but this should mean a conflict with an
@@ -590,10 +592,13 @@ class BaseRecipe(object):
                 # 'already', have seen it with zc.buildout itself only so far)
                 # In any case, removing the requirement can't make for a sane
                 # recovery
+                raised_exc = exc
                 raise
             except IncompatibleConstraintError as exc:
+                raised_exc = exc
                 missing = exc.args[2].project_name
             except UserError as exc:  # happens only for zc.buildout >= 2.0
+                raised_exc = exc
                 missing = unicode(exc).split(os.linesep)[0].split()[-1]
                 missing = re.split(r'[=<>]', missing)[0]
             else:
@@ -602,10 +607,10 @@ class BaseRecipe(object):
             logger.error("Could not find or install %r. " +
                          self.missing_deps_instructions.get(missing, '') +
                          " Original exception %s.%s says: %s",
-                         missing,
-                         exc.__class__.__module__, exc.__class__.__name__, exc)
+                         missing, raised_exc.__class__.__module__,
+                         raised_exc.__class__.__name__, raised_exc)
             if missing not in self.soft_requirements:
-                raise exc
+                raise raised_exc
 
             eggs = set(self.options['eggs'].split(os.linesep))
             if missing not in eggs:
@@ -613,7 +618,7 @@ class BaseRecipe(object):
                              "dependency (either of OpenERP/Odoo or of "
                              "one listed in config file). Can't retry.",
                              missing)
-                raise exc
+                raise raised_exc
 
             logger.warn("%r is a direct soft requirement, "
                         "retrying without it", missing)
