@@ -12,7 +12,8 @@ env:
     - TEST_FOR_PIP="==1.4.1" TEST_FOR_SETUPTOOLS="<20" # the minimum version we require for now
     - TEST_FOR_PIP="<8.1" TEST_FOR_SETUPTOOLS=">40"
     - TEST_FOR_PIP="==8.1.1" TEST_FOR_SETUPTOOLS=">40"
-    - TEST_FOR_PIP=">=8.1.2" TEST_FOR_SETUPTOOLS=">40"
+    - TEST_FOR_PIP="<10" TEST_FOR_SETUPTOOLS=">40"
+    - TEST_FOR_PIP=">=10" TEST_FOR_SETUPTOOLS=">40"
 
 before_install:
   # For tests running hg command
