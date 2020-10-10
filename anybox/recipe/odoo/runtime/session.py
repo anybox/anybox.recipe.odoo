@@ -195,7 +195,8 @@ class Session(object):
         self.init_cursor()
         self.uid = SUPERUSER_ID
         self.init_environments()
-        self.context = self.env['res.users'].context_get()
+        self.context = self.env['res.users'].with_context(
+            prefetch_fields=False).context_get()
         self.env = odoo.api.Environment(self.cr, self.uid, self.context)
 
     def init_environments(self):
