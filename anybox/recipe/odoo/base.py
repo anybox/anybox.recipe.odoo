@@ -434,12 +434,11 @@ class BaseRecipe(object):
         versions = Installer._versions
         develops = self.list_develops()
 
-        new_reqs = set()
         if pip_version() < (8, 1, 2):
             self.read_requirements_pip_before_v8(req_path, versions, develops)
         else:
             self.read_requirements_pip_after_v8(req_path, versions, develops)
-        self.merge_requirements(reqs=new_reqs)
+        self.merge_requirements()
 
     def read_requirements_pip_before_v8(self, req_path, versions, develops):
         from pip.req import parse_requirements
@@ -470,6 +469,12 @@ class BaseRecipe(object):
                 # next unstable branch)
                 self.requirements.append(project_name)
 
+            if inst_req.markers:
+                logger.warn("Requirement %s has a marker %s but the evaluation"
+                            " of markers is not supported in this old version "
+                            "of pip. Please upgrade to pip 8.2 or higher. ",
+                            project_name, inst_req.markers)
+
             if project_name in versions:
                 logger.debug("Requirement from Odoo's file %s superseded "
                              "by buildout versions configuration as %r",
@@ -489,17 +494,17 @@ class BaseRecipe(object):
             if len(req.specs) > 1:
                 supported = False
             spec = req.specs[0]
-            if spec[0] != '==':
+            if spec[0] != '==' or '*' in spec[1]:
                 supported = False
 
             if not supported:
                 raise UserError(
                     "Version requirement %s from Odoo's requirement file "
                     "is too complicated to be taken automatically into "
-                    "account. Please translate it in your [%s] "
-                    "configuration section and, "
-                    "if from a public fork of Odoo, report this as a "
-                    "request for improvement on the buildout recipe." % (
+                    "account. Please override it in your [%s] "
+                    "configuration section. Future support of this format "
+                    "is pending the release of buildout 3.0.0 which relies on "
+                    "pip rather than setuptools.easy_install." % (
                         req, self.b_options.get('versions', 'versions')))
 
             logger.debug("Applying requirement %s from Odoo's file",
@@ -507,14 +512,29 @@ class BaseRecipe(object):
             versions[project_name] = spec[1]
 
     def read_requirements_pip_after_v8(self, req_path, versions, develops):
-        from pip.req import parse_requirements
         # pip internals are protected against the fact of not passing
         # a session with ``is None``. OTOH, the session is not used
         # if the file is local (direct path, not an URL), so we cheat
         # it.
         fake_session = object()
+        if pip_version() < (10, 0, 0):
+            from pip.req import parse_requirements
+        else:
+            from pip._internal.req import parse_requirements
         for inst_req in parse_requirements(req_path, session=fake_session):
-            req = inst_req.req
+            if pip_version() < (20, 0, 0):
+                req = inst_req.req
+                project_name = req.name.lower()
+                marker = inst_req.markers
+            else:
+                req = pkg_resources.Requirement.parse(inst_req.requirement)
+                project_name = req.project_name.lower()
+                marker = req.marker
+            if marker and not marker.evaluate():
+                logger.debug("Skipping requirement %s with marker %s",
+                             project_name, marker)
+                continue
+            specs = req.specifier
             logger.debug("Considering requirement from Odoo's file %s",
                          req)
             # GR something more interesting would be to apply the
@@ -524,7 +544,6 @@ class BaseRecipe(object):
 
             # zc.buildout does its version comparison in lower case
             # watch out for develops if that's the same !
-            project_name = req.name.lower()
             if project_name not in self.requirements:
                 # TODO maybe convert self.requirements to a set (in
                 # next unstable branch)
@@ -550,17 +569,17 @@ class BaseRecipe(object):
             if len(specs) > 1:
                 supported = False
             spec = next(specs.__iter__())
-            if spec.operator != '==':
+            if spec.operator != '==' or '*' in spec.version:
                 supported = False
 
             if not supported:
                 raise UserError(
                     "Version requirement %s from Odoo's requirement file "
                     "is too complicated to be taken automatically into "
-                    "account. Please translate it in your [%s] "
-                    "configuration section and, "
-                    "if from a public fork of Odoo, report this as a "
-                    "request for improvement on the buildout recipe." % (
+                    "account. Please override it in your [%s] "
+                    "configuration section. Future support of this format "
+                    "is pending the release of buildout 3.0.0 which relies on "
+                    "pip rather than setuptools.easy_install." % (
                         req, self.b_options.get('versions', 'versions')))
 
             logger.debug("Applying requirement %s from Odoo's file",
