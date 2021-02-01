@@ -28,7 +28,7 @@ def already_imported(module_name):
     Thus caller code is expected to import the module right away if the
     return value was False.
     """
-    name = module_name.rsplit('.', 1)[-1]
+    name = module_name.rsplit(".", 1)[-1]
     if name in _imported_addons:
         return True
     _imported_addons.add(name)

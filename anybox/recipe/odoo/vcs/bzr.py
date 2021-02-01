@@ -1,11 +1,13 @@
 import os
 import logging
 import subprocess
+
 try:
     import urlparse  # Python 2
 except ImportError:
     from urllib.parse import urlparse  # Python 3
 import urllib
+
 try:
     from StringIO import StringIO
 except ImportError:
@@ -36,35 +38,38 @@ else:
 class BzrBranch(BaseRepo):
     """Represent a Bazaar branch tied to a reference branch."""
 
-    vcs_control_dir = '.bzr'
+    vcs_control_dir = ".bzr"
 
-    vcs_official_name = 'Bazaar'
+    vcs_official_name = "Bazaar"
 
     def __init__(self, *a, **kw):
         super(BzrBranch, self).__init__(*a, **kw)
-        if self.options.get('bzr-init') == "ligthweight-checkout":
-            logger.warn("The 'ligthweight-checkout' *misspelling* is "
-                        "deprecated as of version 1.7.1 of this buildout "
-                        "recipe. "
-                        "Please fix it as 'lightweight-checkout', as it will "
-                        "probably disappear in version 1.8.")
-            self.options['bzr-init'] = 'lightweight-checkout'
+        if self.options.get("bzr-init") == "ligthweight-checkout":
+            logger.warn(
+                "The 'ligthweight-checkout' *misspelling* is "
+                "deprecated as of version 1.7.1 of this buildout "
+                "recipe. "
+                "Please fix it as 'lightweight-checkout', as it will "
+                "probably disappear in version 1.8."
+            )
+            self.options["bzr-init"] = "lightweight-checkout"
 
-        if self.url.startswith('lp:') and not self.offline:
+        if self.url.startswith("lp:") and not self.offline:
             if LPDIR is None:
                 raise RuntimeError(
                     "To use launchpad locations (lp:), bzrlib must be "
                     "importable. Please also take care that it's the same "
-                    "or working exactly as the one behind the bzr executable")
+                    "or working exactly as the one behind the bzr executable"
+                )
 
             # first arg (name) of look_up is acturally ignored
-            url = LPDIR.look_up('', self.url)
+            url = LPDIR.look_up("", self.url)
             parsed = list(urlparse.urlparse(url))
             parsed[2] = urllib.quote(parsed[2])
             self.url = urlparse.urlunparse(parsed)
 
     def conf_file_path(self):
-        return os.path.join(self.target_dir, '.bzr', 'branch', 'branch.conf')
+        return os.path.join(self.target_dir, ".bzr", "branch", "branch.conf")
 
     def parse_conf(self, from_file=None):
         """Return a dict of paths from standard conf (or the given file-like)
@@ -79,19 +84,21 @@ class BzrBranch(BaseRepo):
         {'parent_location': '/some/path', 'submit_location': '/other/path'}
         """
         with use_or_open(from_file, self.conf_file_path()) as conffile:
-            return dict((name.strip(), url.strip())
-                        for name, url in (
-                            line.split('=', 1) for line in conffile
-                            if not line.startswith('#') and '=' in line))
+            return dict(
+                (name.strip(), url.strip())
+                for name, url in (
+                    line.split("=", 1)
+                    for line in conffile
+                    if not line.startswith("#") and "=" in line
+                )
+            )
         with working_directory_keeper:
             os.chdir(self.target_dir)
 
     def write_conf(self, conf, to_file=None):
-        """Write counterpart to :meth:`read_conf`
-        """
-        lines = ('%s = %s' % (k, v) + os.linesep
-                 for k, v in conf.items())
-        with use_or_open(to_file, self.conf_file_path(), 'w') as conffile:
+        """Write counterpart to :meth:`read_conf`"""
+        lines = ("%s = %s" % (k, v) + os.linesep for k, v in conf.items())
+        with use_or_open(to_file, self.conf_file_path(), "w") as conffile:
             conffile.writelines(lines)
 
     def update_conf(self):
@@ -102,25 +109,28 @@ class BzrBranch(BaseRepo):
         try:
             conf = self.parse_conf()
         except IOError:
-            logger.error("Cannot read branch.conf of Bazaar branch at %s "
-                         "Proceeding anyway, remote URLs shall not be "
-                         "updated if needed. Please check that the branch "
-                         "is in good shape.", self.target_dir)
+            logger.error(
+                "Cannot read branch.conf of Bazaar branch at %s "
+                "Proceeding anyway, remote URLs shall not be "
+                "updated if needed. Please check that the branch "
+                "is in good shape.",
+                self.target_dir,
+            )
             return
 
-        old_parent = conf['parent_location']
-        if old_parent == self.url or self.url.startswith('lp:'):
+        old_parent = conf["parent_location"]
+        if old_parent == self.url or self.url.startswith("lp:"):
             return False
 
         self.previous_conf = deepcopy(conf)
         count = 1
         while True:
-            save = 'buildout_save_parent_location_%d' % count
+            save = "buildout_save_parent_location_%d" % count
             if save not in conf:
                 conf[save] = old_parent
                 break
             count += 1
-        conf['parent_location'] = self.url
+        conf["parent_location"] = self.url
         self.write_conf(conf)
         return True
 
@@ -129,7 +139,7 @@ class BzrBranch(BaseRepo):
 
         Only changes done through the same instance are taken into account.
         """
-        previous_conf = getattr(self, 'previous_conf', None)
+        previous_conf = getattr(self, "previous_conf", None)
         if previous_conf is None:
             return
 
@@ -138,8 +148,9 @@ class BzrBranch(BaseRepo):
 
     def uncommitted_changes(self):
         """True if we have uncommitted changes."""
-        return bool(check_output(['bzr', 'status', self.target_dir],
-                                 env=SUBPROCESS_ENV))
+        return bool(
+            check_output(["bzr", "status", self.target_dir], env=SUBPROCESS_ENV)
+        )
 
     def revision_id(self, revspec):
         """Convert revision number (revno) to globally unique revision id.
@@ -148,12 +159,13 @@ class BzrBranch(BaseRepo):
         :returns str: revision id specification (directly usable as -r
                       argument)
         """
-        testament = check_output(['bzr', 'testament', '--strict',
-                                  '-r', revspec, self.target_dir])
-        prefix = 'revision-id:'
+        testament = check_output(
+            ["bzr", "testament", "--strict", "-r", revspec, self.target_dir]
+        )
+        prefix = "revision-id:"
         for line in testament.splitlines():
             if line.startswith(prefix):
-                return 'revid:' + line[len(prefix):].strip()
+                return "revid:" + line[len(prefix) :].strip()
 
     def parents(self, as_revno=False, pip_compatible=False):
         """Return current revision.
@@ -169,8 +181,9 @@ class BzrBranch(BaseRepo):
         :meth:`uncommitted_changes` will, and that is enough for freeze/extract
         features.
         """
-        revno = check_output(['bzr', 'revno', '--tree', self.target_dir],
-                             env=SUBPROCESS_ENV).strip()
+        revno = check_output(
+            ["bzr", "revno", "--tree", self.target_dir], env=SUBPROCESS_ENV
+        ).strip()
         if pip_compatible:
             as_revno = True
         if as_revno:
@@ -182,27 +195,27 @@ class BzrBranch(BaseRepo):
         if not os.path.exists(self.target_dir):
             # not branched yet, there's nothing to clean
             return
-            subprocess.check_call(['bzr', 'clean-tree',
-                                   '--ignored', '--force'])
+            subprocess.check_call(["bzr", "clean-tree", "--ignored", "--force"])
         with working_directory_keeper:
             os.chdir(self.target_dir)
-            subprocess.check_call(['bzr', 'clean-tree',
-                                   '--ignored', '--force'])
+            subprocess.check_call(["bzr", "clean-tree", "--ignored", "--force"])
 
     def revert(self, revision):
-        logger.info("Reverting bzr repo at %s to revision %r", self.target_dir,
-                    revision)
+        logger.info(
+            "Reverting bzr repo at %s to revision %r", self.target_dir, revision
+        )
         with working_directory_keeper:
             os.chdir(self.target_dir)
-            subprocess.check_call(['bzr', 'revert', '-r', revision])
+            subprocess.check_call(["bzr", "revert", "-r", revision])
 
     def _update(self, revision):
         """Update existing branch at target dir to given revision.
 
         raise UpdateError in case of problems."""
 
-        update_check_call(['bzr', 'up', '-r', revision, self.target_dir],
-                          env=SUBPROCESS_ENV)
+        update_check_call(
+            ["bzr", "up", "-r", revision, self.target_dir], env=SUBPROCESS_ENV
+        )
         logger.info("Updated %r to revision %s", self.target_dir, revision)
 
     def get_revid(self, revision):
@@ -215,18 +228,17 @@ class BzrBranch(BaseRepo):
             os.chdir(self.target_dir)
             try:
                 log = check_output(
-                    ['bzr', 'log', '--show-ids', '-r', revision],
-                    env=SUBPROCESS_ENV)
+                    ["bzr", "log", "--show-ids", "-r", revision], env=SUBPROCESS_ENV
+                )
             except subprocess.CalledProcessError as exc:
                 if exc.returncode != 3:
                     raise
-                raise LookupError(
-                    "could not find revision id for %r" % revision)
+                raise LookupError("could not find revision id for %r" % revision)
 
-            prefix = 'revision-id:'
+            prefix = "revision-id:"
             for line in log.split(os.linesep):
                 if line.startswith(prefix):
-                    return line[len(prefix):].strip()
+                    return line[len(prefix) :].strip()
             raise LookupError("could not find revision id for %r" % revision)
 
     def is_revno(self, revspec, fixed=False):
@@ -238,13 +250,13 @@ class BzrBranch(BaseRepo):
                       are positive.
         """
 
-        revno_prefix = 'revno:'
+        revno_prefix = "revno:"
         if revspec.startswith(revno_prefix):
             # GR I checked on Debian's 2.6.0~bzr6526-1, revno:-1
             # is in practice accepted by bzr, so we have to check
-            return self.is_revno(revspec[len(revno_prefix):])
+            return self.is_revno(revspec[len(revno_prefix) :])
 
-        for part in revspec.strip().split('.'):
+        for part in revspec.strip().split("."):
             try:
                 part = int(part)
             except ValueError:
@@ -259,9 +271,9 @@ class BzrBranch(BaseRepo):
         """True iff the given revision string is for a fixed revision."""
 
         revstr = revstr.strip()  # one never knows
-        if revstr.startswith('revid:') or revstr.startswith('tag:'):
+        if revstr.startswith("revid:") or revstr.startswith("tag:"):
             return True
-        if not revstr or revstr.startswith('last:'):
+        if not revstr or revstr.startswith("last:"):
             return False
         if self.is_revno(revstr, fixed=True):
             return True
@@ -290,16 +302,18 @@ class BzrBranch(BaseRepo):
         offline = self.offline
         clear_locks = self.clear_locks
 
-        if not os.path.exists(target_dir) or \
-                self.options.get("bzr-init") == 'merge':
+        if not os.path.exists(target_dir) or self.options.get("bzr-init") == "merge":
             try:
                 self._branch(revision)
             except CloneError:
                 if not revision:
                     raise
-                logger.warning("First attempt of branching to %s at revision "
-                               "%r failed. Retrying in two steps.", target_dir,
-                               revision)
+                logger.warning(
+                    "First attempt of branching to %s at revision "
+                    "%r failed. Retrying in two steps.",
+                    target_dir,
+                    revision,
+                )
                 # it really happens, see
                 # https://bugs.launchpad.net/anybox.recipe.openerp/+bug/1204573
                 self._branch(None)
@@ -309,29 +323,32 @@ class BzrBranch(BaseRepo):
             # TODO what if bzr source is actually local fs ?
             if clear_locks:
                 yes = StringIO()
-                yes.write('y')
+                yes.write("y")
                 yes.seek(0)
                 logger.info("Break-lock for branch %s ...", target_dir)
                 # GR newer versions of bzr have a --force option, but this call
                 # works also for older ones (fortunately we don't need a pty)
-                p = subprocess.Popen(['bzr', 'break-lock', target_dir],
-                                     subprocess.PIPE)
-                out, err = p.communicate(input='y')
+                p = subprocess.Popen(["bzr", "break-lock", target_dir], subprocess.PIPE)
+                out, err = p.communicate(input="y")
                 if p.returncode != 0:
                     raise subprocess.CalledProcessError(
-                        p.returncode, repr(['bzr', 'break-lock', target_dir]))
+                        p.returncode, repr(["bzr", "break-lock", target_dir])
+                    )
 
             parent_changed = self.update_conf()
             unsafe_revno = parent_changed and self.is_revno(revision)
             fixed_rev = self.is_fixed_revision(revision)
 
-            init_opt = self.options.get('bzr-init')
+            init_opt = self.options.get("bzr-init")
 
             if fixed_rev and not unsafe_revno:
-                if (offline and init_opt == 'lightweight-checkout'):
-                    logger.warning("Offline mode, no update for lightweight "
-                                   "checkout at %s on revision %r",
-                                   self.target_dir, revision)
+                if offline and init_opt == "lightweight-checkout":
+                    logger.warning(
+                        "Offline mode, no update for lightweight "
+                        "checkout at %s on revision %r",
+                        self.target_dir,
+                        revision,
+                    )
                     return
                 try:
                     self._update(revision)
@@ -348,19 +365,18 @@ class BzrBranch(BaseRepo):
                         "specification: %r is forbidden in offline mode. "
                         "If that revno is common to old and new remote "
                         "branch, consider using revision IDs "
-                        "instead." % revision)
+                        "instead." % revision
+                    )
 
                 logger.info("Offline mode, no pull for revision %r", revision)
             else:
                 self._pull()
 
-            if not (offline and init_opt in ('stacked-branch',
-                                             'lightweight-checkout')):
+            if not (offline and init_opt in ("stacked-branch", "lightweight-checkout")):
                 self._update(revision)
 
     def _branch(self, revision):
-        """ Branch or checkout remote repository
-        """
+        """Branch or checkout remote repository"""
         target_dir = self.target_dir
         url = self.url
         offline = self.offline
@@ -368,23 +384,27 @@ class BzrBranch(BaseRepo):
         if offline:
             raise IOError(
                 "bzr branch %s does not exist; cannot branch it from "
-                "%s (offline mode)" % (target_dir, url))
+                "%s (offline mode)" % (target_dir, url)
+            )
 
         options = self.options
         if "bzr-init" in options and "bzr-stacked-branches" in options:
             raise Exception(
                 "Both options 'bzr-init' and "
                 "'bzr-stacked-branches' are mutually exclusive. "
-                "Prefer 'bzr-init'.")
+                "Prefer 'bzr-init'."
+            )
         default = "branch"
 
         if "bzr-stacked-branches" in options:
-            logger.warning("'bzr-stacked-branches' option is deprecated. "
-                           "Replace by bzr-init=stacked-branch")
+            logger.warning(
+                "'bzr-stacked-branches' option is deprecated. "
+                "Replace by bzr-init=stacked-branch"
+            )
             default = "stacked-branch"
 
         bzr_opt = options.get("bzr-init", default)
-        branch_cmd = ['bzr']
+        branch_cmd = ["bzr"]
         if bzr_opt == "branch":
             branch_cmd.append("branch")
             logger.info("Branching %s ...", url)
@@ -401,26 +421,25 @@ class BzrBranch(BaseRepo):
             raise Exception("Unsupported option %r" % bzr_opt)
 
         if revision:
-            branch_cmd.extend(['-r', revision])
+            branch_cmd.extend(["-r", revision])
         if bzr_opt == "merge":
-            branch_cmd.extend([url, '-d', target_dir])
+            branch_cmd.extend([url, "-d", target_dir])
         else:
             branch_cmd.extend([url, target_dir])
 
         clone_check_call(branch_cmd, env=SUBPROCESS_ENV)
 
     def _pull(self):
-        if self.options.get('bzr-init') == 'lightweight-checkout':
-            logger.info("Update lightweight checkout at %s ...",
-                        self.target_dir)
-            update_check_call(['bzr', 'update', self.target_dir],
-                              env=SUBPROCESS_ENV)
+        if self.options.get("bzr-init") == "lightweight-checkout":
+            logger.info("Update lightweight checkout at %s ...", self.target_dir)
+            update_check_call(["bzr", "update", self.target_dir], env=SUBPROCESS_ENV)
         else:
             logger.info("Pull for branch %s ...", self.target_dir)
-            update_check_call(['bzr', 'pull', '-d', self.target_dir],
-                              env=SUBPROCESS_ENV)
+            update_check_call(
+                ["bzr", "pull", "-d", self.target_dir], env=SUBPROCESS_ENV
+            )
 
     def archive(self, target_path):
         with working_directory_keeper:
             os.chdir(self.target_dir)
-            subprocess.check_call(['bzr', 'export', target_path])
+            subprocess.check_call(["bzr", "export", target_path])

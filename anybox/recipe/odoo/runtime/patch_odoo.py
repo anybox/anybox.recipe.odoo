@@ -23,7 +23,7 @@ def do_patch(gevent_script_path):
         nargs = stripped_sys_argv()
         nargs[0] = gevent_script_path
         if version_info[0] >= 10:
-            nargs.insert(1, 'gevent')
+            nargs.insert(1, "gevent")
         popen = subprocess.Popen(nargs)
         server.long_polling_pid = popen.pid
 

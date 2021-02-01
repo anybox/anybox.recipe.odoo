@@ -12,8 +12,10 @@ except ImportError:
     try:
         import odoo
     except ImportError:
-        warnings.warn("This must be imported with a buildout odoo recipe "
-                      "driven sys.path", RuntimeWarning)
+        warnings.warn(
+            "This must be imported with a buildout odoo recipe " "driven sys.path",
+            RuntimeWarning,
+        )
 try:
     startup = odoo.cli.server
 except AttributeError:
@@ -31,9 +33,9 @@ except AttributeError:
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_VERSION_PARAMETER = 'buildout.db_version'
+DEFAULT_VERSION_PARAMETER = "buildout.db_version"
 
-DEFAULT_VERSION_FILE = 'VERSION.txt'
+DEFAULT_VERSION_FILE = "VERSION.txt"
 
 
 if sys.version_info < (3,):
@@ -60,17 +62,18 @@ class OdooVersion(Version):
         return self.vstring
 
     def __repr__(self):
-        return 'OdooVersion(%r)' % str(self)
+        return "OdooVersion(%r)" % str(self)
 
     def __cmp__(self, other):
         if isinstance(other, tuple):
-            other = '.'.join(str(s) for s in other)
+            other = ".".join(str(s) for s in other)
         elif not isinstance(other, self.__class__):
             other = str(other)  # Works with distutils' Version classes
 
         other = self.__class__(other)
-        return ((self.components > other.components) -
-                (self.components < other.components))
+        return (self.components > other.components) - (
+            self.components < other.components
+        )
 
 
 class Session(object):
@@ -133,7 +136,7 @@ class Session(object):
 
         self._registry = self.cr = None
         if parse_config:
-            config.parse_config(['-c', conffile])
+            config.parse_config(["-c", conffile])
 
     def ready(self):
         return self._registry is not None
@@ -164,38 +167,37 @@ class Session(object):
                           conditions in Odoo internals.
         """
         if db is None:
-            db = config['db_name']
+            db = config["db_name"]
         if not db:
-            db = ''  # expected value expected by Odoo to start defaulting.
+            db = ""  # expected value expected by Odoo to start defaulting.
 
         cnx = odoo.sql_db.db_connect(db)
         cr = cnx.cursor()
-        self.is_initialization = not(odoo.modules.db.is_initialized(cr))
+        self.is_initialization = not (odoo.modules.db.is_initialized(cr))
         cr.close()
 
         startup.check_root_user()
-        if not os.environ.get('ENABLE_POSTGRES_USER'):
+        if not os.environ.get("ENABLE_POSTGRES_USER"):
             startup.check_postgres_user()
         odoo.netsvc.init_logger()
 
-        saved_without_demo = config['without_demo']
+        saved_without_demo = config["without_demo"]
         if with_demo is None:
-            with_demo = config['without_demo']
+            with_demo = config["without_demo"]
 
-        config['without_demo'] = not with_demo
+        config["without_demo"] = not with_demo
         self.with_demo = with_demo
 
         if version_info[0] <= 10:
-            self._registry = Registry.get(
-                db, update_module=False)
+            self._registry = Registry.get(db, update_module=False)
         else:
             # Form Odoo 11.0: no get method available
             self._registry = Registry(db)
-        config['without_demo'] = saved_without_demo
+        config["without_demo"] = saved_without_demo
         self.init_cursor()
         self.uid = SUPERUSER_ID
         self.init_environments()
-        self.context = self.env['res.users'].context_get()
+        self.context = self.env["res.users"].context_get()
         self.env = odoo.api.Environment(self.cr, self.uid, self.context)
 
     def init_environments(self):
@@ -222,11 +224,7 @@ class Session(object):
 
         self._environments_gen_context = gen_factory().gen
         next(self._environments_gen_context)
-        self.env = odoo.api.Environment(
-            self.cr, self.uid, getattr(
-                self, 'context', {}
-            )
-        )
+        self.env = odoo.api.Environment(self.cr, self.uid, getattr(self, "context", {}))
 
     def clean_environments(self, reinit=True):
         """Cleans the thread-local environment.
@@ -247,18 +245,22 @@ class Session(object):
         except StopIteration:
             pass
         else:
-            logger.warn("clean_environments: we had the context manager, but "
-                        "it had not been called. This suggest low-leve "
-                        "tampering with it that should be more cautious. "
-                        "Proceeding with cleansing.")
+            logger.warn(
+                "clean_environments: we had the context manager, but "
+                "it had not been called. This suggest low-leve "
+                "tampering with it that should be more cautious. "
+                "Proceeding with cleansing."
+            )
             try:
                 next(gen_context)
             except StopIteration:
                 pass
             else:
-                raise RuntimeError("Called the environments context manager "
-                                   "twice and it's not finished. "
-                                   "This is really unexpected.")
+                raise RuntimeError(
+                    "Called the environments context manager "
+                    "twice and it's not finished. "
+                    "This is really unexpected."
+                )
         del self._environments_gen_context
         if reinit:
             self.init_environments()
@@ -294,11 +296,12 @@ class Session(object):
         A simple caching system to avoid querying the DB multiple times is
         implemented.
         """
-        db_version = getattr(self, '_db_version', None)
+        db_version = getattr(self, "_db_version", None)
         if db_version is not None:
             return db_version
-        db_version = self.env['ir.config_parameter'].get_param(
-            self._version_parameter_name)
+        db_version = self.env["ir.config_parameter"].get_param(
+            self._version_parameter_name
+        )
         if not db_version:
             # as usual Odoo thinks its simpler to use False as None
             # restoring sanity ASAP
@@ -310,8 +313,9 @@ class Session(object):
 
     @db_version.setter
     def db_version(self, version):
-        self.env['ir.config_parameter'].set_param(
-            self._version_parameter_name, str(version))
+        self.env["ir.config_parameter"].set_param(
+            self._version_parameter_name, str(version)
+        )
         self._db_version = OdooVersion(version)
 
     @property
@@ -321,31 +325,33 @@ class Session(object):
         Comments introduced with a hash are accepted.
         Only the first significant line is taken into account.
         """
-        pkg_version = getattr(self, '_pkg_version', None)
+        pkg_version = getattr(self, "_pkg_version", None)
         if pkg_version is not None:
             return pkg_version
 
         try:
             with open(self.version_file_path) as f:
                 for line in f:
-                    line = line.split('#', 1)[0].strip()
+                    line = line.split("#", 1)[0].strip()
                     if not line:
                         continue
                     self._pkg_version = OdooVersion(line)
                     return self._pkg_version
         except IOError:
-            logger.info("No version file could be read, "
-                        "package version considered to be None")
+            logger.info(
+                "No version file could be read, "
+                "package version considered to be None"
+            )
 
     def update_modules_list(self):
         """Update the list of available Odoo modules, like the UI allows to.
 
         This is necessary prior to install of any new module.
         """
-        self.env['ir.module.module'].update_list()
+        self.env["ir.module.module"].update_list()
 
     def init_cursor(self):
-        db = getattr(self._registry, 'db', None)
+        db = getattr(self._registry, "db", None)
         if db is None:  # current trunk (future v8)
             self.cr = self._registry.cursor()
         else:
@@ -376,8 +382,7 @@ class Session(object):
 
         On Odoo 8, the attribute is ``_closed`` and works correctly.
         """
-        return any(self.cr.__dict__.get(c)
-                   for c in ('_Cursor__closed', '_closed'))
+        return any(self.cr.__dict__.get(c) for c in ("_Cursor__closed", "_closed"))
 
     def close(self):
         """Close the cursor and forget about the current database.
@@ -409,25 +414,28 @@ class Session(object):
         """
         if db is None:
             if self.cr is None:
-                raise ValueError("update_modules needs either the session to "
-                                 "be opened or an explicit database name")
+                raise ValueError(
+                    "update_modules needs either the session to "
+                    "be opened or an explicit database name"
+                )
             db = self.cr.dbname
 
         if self.cr is not None:
             self.close()
         for module in modules:
-            config['update'][module] = 1
+            config["update"][module] = 1
         if version_info[0] <= 10:
             self._registry = Registry.get(db, update_module=True)
         else:
             # Form Odoo 11.0: no get method available
             self._registry = Registry(db)
-        config['update'].clear()
+        config["update"].clear()
         self.init_cursor()
         self.clean_environments()
 
-    def install_modules(self, modules, db=None, update_modules_list=True,
-                        open_with_demo=False):
+    def install_modules(
+        self, modules, db=None, update_modules_list=True, open_with_demo=False
+    ):
         """Install the modules in the database.
 
         Has the side effect of closing the current cursor, committing if and
@@ -451,11 +459,12 @@ class Session(object):
         already_open = self.cr is not None
         if db is None:
             if not already_open:
-                raise ValueError("install_modules needs either the session to "
-                                 "be opened or an explicit database name")
+                raise ValueError(
+                    "install_modules needs either the session to "
+                    "be opened or an explicit database name"
+                )
             db = self.cr.dbname
-        elif update_modules_list and not (
-                already_open and self.cr.dbname == db):
+        elif update_modules_list and not (already_open and self.cr.dbname == db):
             self.open(db=db, with_demo=open_with_demo)
 
         if update_modules_list:
@@ -464,17 +473,16 @@ class Session(object):
 
         if self.cr is not None:
             self.close()
-        saved_without_demo = config['without_demo']
+        saved_without_demo = config["without_demo"]
 
         # with update_modules_list=False, an explicitely named DB would not
         # have gone through open() yet.
-        config['without_demo'] = not getattr(self, 'with_demo', open_with_demo)
+        config["without_demo"] = not getattr(self, "with_demo", open_with_demo)
         for module in modules:
-            config['init'][module] = 1
-        self._registry = Registry.new(
-            db, update_module=True, force_demo=self.with_demo)
-        config['init'].clear()
-        config['without_demo'] = saved_without_demo
+            config["init"][module] = 1
+        self._registry = Registry.new(db, update_module=True, force_demo=self.with_demo)
+        config["init"].clear()
+        config["without_demo"] = saved_without_demo
         self.init_cursor()
         self.clean_environments()
 
@@ -485,7 +493,7 @@ class Session(object):
                             e.g. base.user_root
         :raise: ValueError if not found or external_id malformed
         """
-        if '.' not in external_id:
+        if "." not in external_id:
             raise ValueError(
                 "ref requires a fully qualified parameter: 'module.identifier'"
             )
@@ -498,7 +506,7 @@ class Session(object):
                             e.g. base.user_root
         :raise: ValueError if not found or external_id malformed
         """
-        if '.' not in external_id:
+        if "." not in external_id:
             raise ValueError(
                 "browse_ref requires a fully qualified parameter: "
                 "'module.identifier'"
@@ -527,23 +535,28 @@ class Session(object):
         parser = OptionParser(
             usage="%(prog)s [Odoo options] -- other arguments",
             description="This is a script rewrapped by Odoo buildout "
-                        "recipe to add Odoo-related options on the command "
-                        "line prior to other arguments.")
+            "recipe to add Odoo-related options on the command "
+            "line prior to other arguments.",
+        )
 
-        if '-d' in to_handle:
-            parser.add_option('-d', '--db-name',
-                              help="Name of the database to work on. "
-                              "If not specified, the database from "
-                              "configuration files will be used")
+        if "-d" in to_handle:
+            parser.add_option(
+                "-d",
+                "--db-name",
+                help="Name of the database to work on. "
+                "If not specified, the database from "
+                "configuration files will be used",
+            )
 
         try:
-            sep = sys.argv.index('--')
+            sep = sys.argv.index("--")
         except ValueError:
-            if '-h' in sys.argv or '--help' in sys.argv:
+            if "-h" in sys.argv or "--help" in sys.argv:
                 # in case of call myscript -h --, only the wrapper help
                 # will be printed
-                parser.epilog = ("Help message from the wrapped script, "
-                                 "if any, will follow.")
+                parser.epilog = (
+                    "Help message from the wrapped script, " "if any, will follow."
+                )
                 parser.print_help()
                 print
                 return
@@ -555,12 +568,14 @@ class Session(object):
         options, args = parser.parse_args(our_argv)
 
         if sep is not None:
-            del sys.argv[1:sep+1]
+            del sys.argv[1 : sep + 1]
 
-        if '-d' in to_handle:
+        if "-d" in to_handle:
             if options.db_name:
                 logger.info("Opening database %r", options.db_name)
             else:
-                logger.info("No database specified, using the one specified "
-                            "in buildout configuration.")
+                logger.info(
+                    "No database specified, using the one specified "
+                    "in buildout configuration."
+                )
             self.open(db=options.db_name)

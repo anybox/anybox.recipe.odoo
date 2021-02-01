@@ -1,15 +1,15 @@
 import os
 from anybox.recipe.odoo.runtime.session import Session
+
 try:
     from odoo.tests.common import TransactionCase, get_db_name
 except:
     from openerp.tests.common import TransactionCase, get_db_name
 
-TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
+TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
 
 class VersionTestCase(TransactionCase):
-
     def setUp(self):
         super(VersionTestCase, self).setUp()
         self.session = self.initSession()
@@ -24,19 +24,19 @@ class VersionTestCase(TransactionCase):
         """Test the version class itself.
 
         This does not need a database, but still needs to import Openerp"""
-        version = self.session.parse_version_string('1.2.3')
-        self.assertFalse(version < '1.2.2')
+        version = self.session.parse_version_string("1.2.3")
+        self.assertFalse(version < "1.2.2")
         self.assertTrue(version < (1, 2, 5))
-        self.assertTrue(version < '1.2.4-dev')
-        self.assertFalse(version < '1.2.3a1-2')
-        self.assertTrue(version < '1.2.4a1-2')
+        self.assertTrue(version < "1.2.4-dev")
+        self.assertFalse(version < "1.2.3a1-2")
+        self.assertTrue(version < "1.2.4a1-2")
 
     def test_db_version(self):
         session = self.session
-        session.db_version = '1.2.3a3'
-        self.assertEqual(str(session.db_version), '1.2.3a3')
-        self.assertEqual(str(session.db_version), '1.2.3a3')
-        self.assertTrue(session.db_version < '1.2.3')
+        session.db_version = "1.2.3a3"
+        self.assertEqual(str(session.db_version), "1.2.3a3")
+        self.assertEqual(str(session.db_version), "1.2.3a3")
+        self.assertTrue(session.db_version < "1.2.3")
         self.assertTrue(session.db_version < (1, 2, 3))
         self.assertTrue(session.db_version > (1, 2, 2))
 
@@ -45,13 +45,13 @@ class VersionTestCase(TransactionCase):
 
     def test_pkg_version(self):
         pkg_version = self.session.package_version
-        self.assertEqual(pkg_version, '0.1.2-dev')
+        self.assertEqual(pkg_version, "0.1.2-dev")
         self.assertTrue(pkg_version > (0, 1, 1))
         self.assertTrue(pkg_version < (0, 1, 2))
 
         # The assertRaises context manager appears in Python 2.7
         try:
-            self.session.package_version = '1.2.3'
+            self.session.package_version = "1.2.3"
         except AttributeError:
             pass
         else:

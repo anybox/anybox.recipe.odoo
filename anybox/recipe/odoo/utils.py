@@ -3,15 +3,17 @@ import sys
 import re
 import subprocess
 from contextlib import contextmanager
+
 try:
     from ConfigParser import DuplicateSectionError  # Python 2
 except ImportError:
     from configparser import DuplicateSectionError  # Python 3
 import logging
+
 logger = logging.getLogger(__name__)
 
 
-MAJOR_VERSION_RE = re.compile(r'(\d+)[.](saas~|)(\d*)(\w*)')
+MAJOR_VERSION_RE = re.compile(r"(\d+)[.](saas~|)(\d*)(\w*)")
 
 
 class WorkingDirectoryKeeper(object):
@@ -91,13 +93,12 @@ def major_version(version_string):
     try:
         return major, int(minor)
     except TypeError:
-        raise ValueError(
-            "Unrecognized second version segment in %r" % version_string)
+        raise ValueError("Unrecognized second version segment in %r" % version_string)
 
 
 def is_object_file(filename):
     """True if given filename is a python object file."""
-    return filename.endswith('.pyc') or filename.endswith('.pyo')
+    return filename.endswith(".pyc") or filename.endswith(".pyo")
 
 
 def clean_object_files(directory):
@@ -107,22 +108,21 @@ def clean_object_files(directory):
     """
     dirs_to_remove = []
     for dirpath, dirnames, filenames in os.walk(directory, topdown=False):
-        to_delete = [os.path.join(dirpath, f)
-                     for f in filenames if is_object_file(f)]
+        to_delete = [os.path.join(dirpath, f) for f in filenames if is_object_file(f)]
         if not dirnames and len(to_delete) == len(filenames):
             dirs_to_remove.append(dirpath)
         for p in to_delete:
             try:
                 os.unlink(p)
             except:
-                logger.exception("Error attempting to unlink %r. "
-                                 "Proceeding anyway.", p)
+                logger.exception(
+                    "Error attempting to unlink %r. " "Proceeding anyway.", p
+                )
     for d in dirs_to_remove:
         try:
             os.rmdir(d)
         except:
-            logger.exception("Error attempting to rmdir %r",
-                             "Proceeding anyway.", p)
+            logger.exception("Error attempting to rmdir %r", "Proceeding anyway.", p)
 
 
 def check_output(*popenargs, **kwargs):
@@ -147,9 +147,9 @@ def check_output(*popenargs, **kwargs):
     """
 
     if sys.version_info >= (2, 7):
-        return subprocess.check_output(*popenargs, **kwargs).decode('ascii')
-    if 'stdout' in kwargs:
-        raise ValueError('stdout argument not allowed, it will be overridden.')
+        return subprocess.check_output(*popenargs, **kwargs).decode("ascii")
+    if "stdout" in kwargs:
+        raise ValueError("stdout argument not allowed, it will be overridden.")
 
     process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
     output, unused_err = process.communicate()
@@ -165,7 +165,7 @@ def check_output(*popenargs, **kwargs):
     return output
 
 
-INLINE_COMMENT_REGEXP = re.compile(r'\s;|^;')
+INLINE_COMMENT_REGEXP = re.compile(r"\s;|^;")
 
 
 def option_splitlines(opt_val):
@@ -230,8 +230,7 @@ def option_splitlines(opt_val):
         return ()
 
     lines = opt_val.splitlines()
-    return tuple(l for l in (option_strip(line) for line in lines)
-                 if l)
+    return tuple(l for l in (option_strip(line) for line in lines) if l)
 
 
 def option_strip(opt_val):
@@ -259,8 +258,7 @@ def total_seconds(td):
     if sys.version_info >= (2, 7):
         return td.total_seconds()
 
-    return ((td.microseconds +
-             (td.seconds + td.days * 24 * 3600) * 1e6) / 10**6)
+    return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 1e6) / 10 ** 6
 
 
 def conf_ensure_section(conf, section):

@@ -2,6 +2,7 @@ import os
 import logging
 import subprocess
 import warnings
+
 try:  # Python 2
     from configparser import ConfigParser
     from configparser import NoOptionError
@@ -21,27 +22,26 @@ logger = logging.getLogger(__name__)
 
 class HgRepo(BaseRepo):
 
-    vcs_control_dir = '.hg'
+    vcs_control_dir = ".hg"
 
-    vcs_official_name = 'Mercurial'
+    vcs_official_name = "Mercurial"
 
     def update_hgrc_paths(self):
         """Update hgrc paths section if needed.
 
         Old paths are kept in renamed form: buildout_save_%d."""
         parser = ConfigParser()
-        hgrc_path = os.path.join(self.target_dir, '.hg', 'hgrc')
+        hgrc_path = os.path.join(self.target_dir, ".hg", "hgrc")
         parser.read(hgrc_path)  # does not fail if file does not exist
 
         previous = None
         try:
-            previous = parser.get('paths', 'default')
+            previous = parser.get("paths", "default")
         except NoOptionError:
-            logger.info("No 'default' value for [paths] in %s, will set one",
-                        hgrc_path)
+            logger.info("No 'default' value for [paths] in %s, will set one", hgrc_path)
         except NoSectionError:
             logger.info("Creating [paths] section in %s", hgrc_path)
-            parser.add_section('paths')
+            parser.add_section("paths")
 
         if previous == self.url:
             return
@@ -49,39 +49,47 @@ class HgRepo(BaseRepo):
         if previous is not None:
             count = 1
             while True:
-                save = 'buildout_save_%d' % count
+                save = "buildout_save_%d" % count
                 try:
-                    parser.get('paths', save)
+                    parser.get("paths", save)
                 except NoOptionError:
                     break
                 count += 1
-            parser.set('paths', save, previous)
-            logger.info("Change of origin URL, saving previous value as %r in "
-                        "[paths] section of %s", save, hgrc_path)
+            parser.set("paths", save, previous)
+            logger.info(
+                "Change of origin URL, saving previous value as %r in "
+                "[paths] section of %s",
+                save,
+                hgrc_path,
+            )
 
-        parser.set('paths', 'default', self.url)
-        f = open(hgrc_path, 'w')
+        parser.set("paths", "default", self.url)
+        f = open(hgrc_path, "w")
         parser.write(f)
         f.close()
 
     def uncommitted_changes(self):
         """True if we have uncommitted changes."""
-        return bool(check_output(['hg', '--cwd', self.target_dir, 'status'],
-                                 env=SUBPROCESS_ENV))
+        return bool(
+            check_output(["hg", "--cwd", self.target_dir, "status"], env=SUBPROCESS_ENV)
+        )
 
     def parents(self, pip_compatible=False):
         """Return full hash of parent nodes.
 
         :param pip_compatible: ignored, all Hg revspecs are pip compatible
         """
-        return check_output(['hg', '--cwd', self.target_dir, 'parents',
-                             '--template={node}'],
-                            env=SUBPROCESS_ENV).split()
+        return check_output(
+            ["hg", "--cwd", self.target_dir, "parents", "--template={node}"],
+            env=SUBPROCESS_ENV,
+        ).split()
 
     def have_fixed_revision(self, revstr):
-        warnings.warn("have_fixed_revision() is deprecated and has been "
-                      "renamed to is_local_fixed_revision()",
-                      DeprecationWarning)
+        warnings.warn(
+            "have_fixed_revision() is deprecated and has been "
+            "renamed to is_local_fixed_revision()",
+            DeprecationWarning,
+        )
         return self.is_local_fixed_revision(revstr)
 
     def is_local_fixed_revision(self, revstr):
@@ -110,14 +118,22 @@ class HgRepo(BaseRepo):
         practices.
         """
         revstr = revstr.strip()
-        if revstr == 'tip' or not revstr:
+        if revstr == "tip" or not revstr:
             return False
 
         try:
-            out = check_output(['hg', '--cwd', self.target_dir, 'log',
-                                '-r', revstr,
-                                '--template={node}\n{tags}\n{rev}'],
-                               env=SUBPROCESS_ENV)
+            out = check_output(
+                [
+                    "hg",
+                    "--cwd",
+                    self.target_dir,
+                    "log",
+                    "-r",
+                    revstr,
+                    "--template={node}\n{tags}\n{rev}",
+                ],
+                env=SUBPROCESS_ENV,
+            )
         except subprocess.CalledProcessError:
             return False
 
@@ -126,21 +142,26 @@ class HgRepo(BaseRepo):
         if node.startswith(revstr):
             # if too short, can be superseded by an incoming tag
             if len(revstr) >= 12:
-                logger.info("[hg] Found requested revision %r in %s",
-                            revstr, self.target_dir)
+                logger.info(
+                    "[hg] Found requested revision %r in %s", revstr, self.target_dir
+                )
                 return True
 
         if revstr == rev:
-            logger.warn("[hg] In repo %s, you should not pinpoint revision "
-                        "by a local revision number such as %r",
-                        self.target_dir, revstr)
+            logger.warn(
+                "[hg] In repo %s, you should not pinpoint revision "
+                "by a local revision number such as %r",
+                self.target_dir,
+                revstr,
+            )
             # but indeed, nothing can change it (unless one day a node has
             # exactly that hash code, chances are...)
             return True
 
         if revstr in tags.split():
-            logger.info("[hg] In repo %s, found tag %r as %s",
-                        self.target_dir, revstr, node)
+            logger.info(
+                "[hg] In repo %s, found tag %r as %s", self.target_dir, revstr, node
+            )
             return True
 
         return False
@@ -150,13 +171,15 @@ class HgRepo(BaseRepo):
             return
 
         try:
-            subprocess.check_call(['hg', 'purge', '--cwd', self.target_dir])
+            subprocess.check_call(["hg", "purge", "--cwd", self.target_dir])
         except subprocess.CalledProcessError as exc:
             if exc.returncode == 255:
                 # fallback to default implementation
-                logger.warn("The 'purge' Mercurial extension is not "
-                            "activated. Do 'hg help purge' for more details "
-                            "Falling back to default cleaning implementation")
+                logger.warn(
+                    "The 'purge' Mercurial extension is not "
+                    "activated. Do 'hg help purge' for more details "
+                    "Falling back to default cleaning implementation"
+                )
                 super(HgRepo, self).clean()
 
     def get_update(self, revision):
@@ -174,13 +197,13 @@ class HgRepo(BaseRepo):
             if offline:
                 raise UserError(
                     "hg repository %r does not exist; "
-                    "cannot clone it from %r (offline mode)" % (target_dir,
-                                                                url))
+                    "cannot clone it from %r (offline mode)" % (target_dir, url)
+                )
 
             logger.info("Cloning %s ...", url)
-            clone_cmd = ['hg', 'clone']
+            clone_cmd = ["hg", "clone"]
             if revision:
-                clone_cmd.extend(['-r', revision])
+                clone_cmd.extend(["-r", revision])
             clone_cmd.extend([url, target_dir])
             subprocess.check_call(clone_cmd, env=SUBPROCESS_ENV)
         else:
@@ -196,17 +219,17 @@ class HgRepo(BaseRepo):
 
     def _pull(self):
         logger.info("Pull for hg repo %r ...", self.target_dir)
-        subprocess.check_call(['hg', '--cwd', self.target_dir, 'pull'],
-                              env=SUBPROCESS_ENV)
+        subprocess.check_call(
+            ["hg", "--cwd", self.target_dir, "pull"], env=SUBPROCESS_ENV
+        )
 
     def _update(self, revision):
         target_dir = self.target_dir
         logger.info("Updating %s to revision %s", target_dir, revision)
-        up_cmd = ['hg', '--cwd', target_dir, 'up']
+        up_cmd = ["hg", "--cwd", target_dir, "up"]
         if revision:
-            up_cmd.extend(['-r', revision])
+            up_cmd.extend(["-r", revision])
         update_check_call(up_cmd, env=SUBPROCESS_ENV)
 
     def archive(self, target_path):
-        subprocess.check_call(['hg', '--cwd', self.target_dir,
-                               'archive', target_path])
+        subprocess.check_call(["hg", "--cwd", self.target_dir, "archive", target_path])

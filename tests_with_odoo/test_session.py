@@ -1,5 +1,6 @@
 from unittest import TestCase
 from anybox.recipe.odoo.runtime.session import Session
+
 try:
     from odoo.tests.common import get_db_name
     from odoo.release import version_info
@@ -7,11 +8,10 @@ except ImportError:
     from openerp.tests.common import get_db_name
     from openerp.release import version_info
 
-TEST_MODULE = 'report'
+TEST_MODULE = "report"
 
 
 class SessionTestCase(TestCase):
-
     def setUp(self):
         super(SessionTestCase, self).setUp()
         self.open_session()
@@ -19,10 +19,10 @@ class SessionTestCase(TestCase):
         # removing db structure and data, but at that time the state of the
         # module is the only thing we care in this state so we don't needs to
         # reload the session twice
-        report_module = self.session.env['ir.module.module'].search(
-            [('name', '=', TEST_MODULE)]
+        report_module = self.session.env["ir.module.module"].search(
+            [("name", "=", TEST_MODULE)]
         )
-        report_module.state = 'uninstalled'
+        report_module.state = "uninstalled"
 
     def tearDown(self):
         self.session.close()
@@ -38,30 +38,28 @@ class SessionTestCase(TestCase):
         self.assertAdminPresentWithV8API()
 
     def assertAdminPresentWithV7API(self):
-        user_mdl = self.session.registry('res.users')
+        user_mdl = self.session.registry("res.users")
         admin_id = user_mdl.search(
-            self.session.cr, self.session.uid, [('login', '=', 'admin')]
+            self.session.cr, self.session.uid, [("login", "=", "admin")]
         )[0]
 
         self.assertEqual(
             u"Administrator",
-            user_mdl.read(
-                self.session.cr, self.session.uid, admin_id, ['name']
-            )['name']
+            user_mdl.read(self.session.cr, self.session.uid, admin_id, ["name"])[
+                "name"
+            ],
         )
 
     def assertAdminPresentWithV8API(self):
         self.assertEqual(
             u"Administrator",
-            self.session.env['res.users'].search(
-                [('login', '=', 'admin')]
-            ).name
+            self.session.env["res.users"].search([("login", "=", "admin")]).name,
         )
 
     def test_env_context(self):
-        self.assertTrue(self.session.env.context.get('tz'))
+        self.assertTrue(self.session.env.context.get("tz"))
         self.session.install_modules([TEST_MODULE])
-        self.assertTrue(self.session.env.context.get('tz'))
+        self.assertTrue(self.session.env.context.get("tz"))
 
     def test_registry(self):
         # If version 8, 9 registry should be working
@@ -82,12 +80,12 @@ class SessionTestCase(TestCase):
     def assertModuleState(self, module_name, expected_state):
         self.assertEqual(
             expected_state,
-            self.session.env['ir.module.module'].search(
-                [('name', '=', module_name)]
-            ).state
+            self.session.env["ir.module.module"]
+            .search([("name", "=", module_name)])
+            .state,
         )
 
     def test_insall_module(self):
-        self.assertModuleState('report', 'uninstalled')
+        self.assertModuleState("report", "uninstalled")
         self.session.install_modules([TEST_MODULE])
-        self.assertModuleState('report', 'installed')
+        self.assertModuleState("report", "installed")

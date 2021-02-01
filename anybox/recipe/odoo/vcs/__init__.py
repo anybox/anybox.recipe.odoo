@@ -7,10 +7,10 @@ from .git import GitRepo
 
 SUPPORTED = {}
 
-SUPPORTED['hg'] = HgRepo
-SUPPORTED['bzr'] = BzrBranch
-SUPPORTED['git'] = GitRepo
-SUPPORTED['svn'] = SvnCheckout
+SUPPORTED["hg"] = HgRepo
+SUPPORTED["bzr"] = BzrBranch
+SUPPORTED["git"] = GitRepo
+SUPPORTED["svn"] = SvnCheckout
 
 
 def repo(vcs_type, target_dir, url, **options):

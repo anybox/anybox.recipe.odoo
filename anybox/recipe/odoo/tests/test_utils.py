@@ -8,7 +8,6 @@ from ..utils import working_directory_keeper, total_seconds
 
 
 class WorkingDirectoryTestCase(unittest.TestCase):
-
     def setUp(self):
         self.dirpath = tempfile.mkdtemp()
 
@@ -27,7 +26,6 @@ class WorkingDirectoryTestCase(unittest.TestCase):
 
 
 class VariousTestCase(unittest.TestCase):
-
     def test_total_seconds(self):
         self.assertEqual(total_seconds(timedelta(1, 2)), 86402.0)
         self.assertEqual(total_seconds(timedelta(0, -3)), -3.0)

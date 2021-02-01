@@ -1,8 +1,9 @@
 """Provide devtools to openerp."""
 
-requirements = ('anybox.testing.datetime',
-                'unittest2',
-                )
+requirements = (
+    "anybox.testing.datetime",
+    "unittest2",
+)
 
 
 def load(for_tests=False):

@@ -9,12 +9,14 @@ import logging
 import stat
 import imp
 import shutil
+
 try:
     from ConfigParser import ConfigParser, RawConfigParser  # Python 2
 except ImportError:
     from configparser import ConfigParser, RawConfigParser  # Python 3
 import distutils.core
 import pkg_resources
+
 try:
     from collections import OrderedDict
 except ImportError:  # Python < 2.7
@@ -27,11 +29,13 @@ from zc.buildout.easy_install import Installer
 from zc.buildout.easy_install import IncompatibleConstraintError
 
 import zc.recipe.egg
+
 try:
     import httplib  # Python 2
 except ImportError:
     from http import client as httplib  # Python 3
 from email import utils as email_utils
+
 try:
     from urllib import urlretrieve  # Python 2
 except ImportError:
@@ -79,19 +83,20 @@ class MainSoftware(object):
     """
 
     def __str__(self):
-        return 'Main Software'
+        return "Main Software"
 
 
 main_software = MainSoftware()
 
-GP_VCS_EXTEND_DEVELOP = 'vcs-extend-develop'
-GP_DEVELOP_DIR = 'develop-dir'
+GP_VCS_EXTEND_DEVELOP = "vcs-extend-develop"
+GP_DEVELOP_DIR = "develop-dir"
 
-WITH_ODOO_REQUIREMENTS_FILE_OPTION = 'apply-requirements-file'
+WITH_ODOO_REQUIREMENTS_FILE_OPTION = "apply-requirements-file"
 
 
 def pip_version():
     import pip
+
     # we don't use pip or setuptools APIs for that to avoid going
     # in a swath of instability.
     # TODO we could try and use the version class from runtime.session
@@ -105,9 +110,9 @@ def pip_version():
     # (we claim to support >= 1.4.1).
     # This equates all pre versions with the final one, and that's good
     # enough for current purposes:
-    for suffix in ('a', 'b', 'rc', '.dev', '.post'):
+    for suffix in ("a", "b", "rc", ".dev", ".post"):
         pip_version = pip_version.split(suffix)[0]
-    return tuple(int(x) for x in pip_version.split('.'))
+    return tuple(int(x) for x in pip_version.split("."))
 
 
 class BaseRecipe(object):
@@ -153,8 +158,7 @@ class BaseRecipe(object):
 
     """
 
-    release_dl_url = {
-    }
+    release_dl_url = {}
     """Base URLs to look for official, released versions.
 
     There are currently no official releases for Odoo, but the recipe
@@ -164,7 +168,7 @@ class BaseRecipe(object):
     """
 
     nightly_dl_url = {
-        '10.0rc1c': 'http://nightly.odoo.com/10.0/nightly/src/',
+        "10.0rc1c": "http://nightly.odoo.com/10.0/nightly/src/",
     }
     """Base URLs to look for nightly versions.
 
@@ -179,7 +183,7 @@ class BaseRecipe(object):
 
     # Caching logic for the main Odoo part (e.g, without addons)
     # Can be 'filename' or 'http-head'
-    main_http_caching = 'filename'
+    main_http_caching = "filename"
 
     is_git_layout = False
     """True if this is the git layout, as seen from the move to GitHub.
@@ -201,67 +205,72 @@ class BaseRecipe(object):
                           taken care of by this recipe instance.
         """
         options = self.b_options if is_global else self.options
-        return options.get(name, '').lower() == 'true'
+        return options.get(name, "").lower() == "true"
 
     def __init__(self, buildout, name, options):
         self.requirements = list(self.requirements)
         self.recipe_requirements_path = []
         self.buildout, self.name, self.options = buildout, name, options
-        self.b_options = self.buildout['buildout']
-        self.buildout_dir = self.b_options['directory']
+        self.b_options = self.buildout["buildout"]
+        self.buildout_dir = self.b_options["directory"]
         # GR: would prefer lower() but doing as in 'zc.recipe.egg'
         # (later) the standard way for all booleans is to use
         # options.query_bool() or get_bool(), but it doesn't lower() at all
-        self.offline = self.b_options['offline'] == 'true'
-        self.clean = options.get('clean') == 'true'
-        clear_locks = options.get('vcs-clear-locks', '').lower()
-        self.vcs_clear_locks = clear_locks == 'true'
-        clear_retry = options.get('vcs-clear-retry', '').lower()
-        self.clear_retry = clear_retry == 'true'
+        self.offline = self.b_options["offline"] == "true"
+        self.clean = options.get("clean") == "true"
+        clear_locks = options.get("vcs-clear-locks", "").lower()
+        self.vcs_clear_locks = clear_locks == "true"
+        clear_retry = options.get("vcs-clear-retry", "").lower()
+        self.clear_retry = clear_retry == "true"
 
         if self.bool_opt_get(WITH_ODOO_REQUIREMENTS_FILE_OPTION):
-            logger.debug("%s option: adding 'pip' to the recipe requirements",
-                         WITH_ODOO_REQUIREMENTS_FILE_OPTION)
+            logger.debug(
+                "%s option: adding 'pip' to the recipe requirements",
+                WITH_ODOO_REQUIREMENTS_FILE_OPTION,
+            )
             self.with_odoo_requirements_file = True
             self.recipe_requirements = list(self.recipe_requirements)
-            self.recipe_requirements.append('pip')
+            self.recipe_requirements.append("pip")
 
         # same as in zc.recipe.eggs
         self.extra_paths = [
             join(self.buildout_dir, p.strip())
-            for p in option_splitlines(self.options.get('extra-paths'))
+            for p in option_splitlines(self.options.get("extra-paths"))
         ]
-        self.options['extra-paths'] = os.linesep.join(self.extra_paths)
+        self.options["extra-paths"] = os.linesep.join(self.extra_paths)
 
         self.downloads_dir = self.make_absolute(
-            self.b_options.get('odoo-downloads-directory', 'downloads'))
+            self.b_options.get("odoo-downloads-directory", "downloads")
+        )
         self.version_wanted = None  # from the buildout
         self.version_detected = None  # string from the odoo setup.py
-        self.parts = self.buildout['buildout']['parts-directory']
+        self.parts = self.buildout["buildout"]["parts-directory"]
         self.odoo_dir = None
         self.archive_filename = None
         self.archive_path = None  # downloaded tar.gz
 
-        if options.get('scripts') is None:
-            options['scripts'] = ''
+        if options.get("scripts") is None:
+            options["scripts"] = ""
 
         # a dictionnary of messages to display in case a distribution is
         # not installable (kept PIL to have an example, but Odoo is on Pillow)
         self.missing_deps_instructions = {
-            'PIL': ("You don't need to require it for Odoo any more, since "
-                    "the recipe automatically adds a dependency to Pillow. "
-                    "If you really need it for other reasons, installing it "
-                    "system-wide is a good option. "),
+            "PIL": (
+                "You don't need to require it for Odoo any more, since "
+                "the recipe automatically adds a dependency to Pillow. "
+                "If you really need it for other reasons, installing it "
+                "system-wide is a good option. "
+            ),
         }
 
         self.odoo_installed = []
 
-        self.etc = self.make_absolute(options.get('etc-directory', 'etc'))
-        self.bin_dir = self.buildout['buildout']['bin-directory']
-        self.config_path = join(self.etc, self.name + '.cfg')
+        self.etc = self.make_absolute(options.get("etc-directory", "etc"))
+        self.bin_dir = self.buildout["buildout"]["bin-directory"]
+        self.config_path = join(self.etc, self.name + ".cfg")
         for d in self.downloads_dir, self.etc:
             if not os.path.exists(d):
-                logger.info('Created %s/ directory' % basename(d))
+                logger.info("Created %s/ directory" % basename(d))
                 os.mkdir(d)
 
         self.sources = OrderedDict()
@@ -272,11 +281,10 @@ class BaseRecipe(object):
         self.parse_merges(options)
 
     def parse_version(self):
-        """Set the main software in :attr:`sources` and related attributes.
-        """
-        self.version_wanted = option_strip(self.options.get('version'))
+        """Set the main software in :attr:`sources` and related attributes."""
+        self.version_wanted = option_strip(self.options.get("version"))
         if self.version_wanted is None:
-            raise UserError('You must specify the version')
+            raise UserError("You must specify the version")
 
         self.preinstall_version_check()
 
@@ -284,60 +292,65 @@ class BaseRecipe(object):
 
         if len(version_split) == 1:
             # version can be a simple version name, such as 6.1-1
-            if len(self.version_wanted.split('.')[0]) == 2:
+            if len(self.version_wanted.split(".")[0]) == 2:
                 major_wanted = self.version_wanted[:4]
-            elif len(self.version_wanted.split('.')[0]) == 1:
+            elif len(self.version_wanted.split(".")[0]) == 1:
                 major_wanted = self.version_wanted[:3]
             pattern = self.release_filenames[major_wanted]
             if pattern is None:
-                raise UserError('Odoo version %r'
-                                'is not supported' % self.version_wanted)
+                raise UserError(
+                    "Odoo version %r" "is not supported" % self.version_wanted
+                )
 
             self.archive_filename = pattern % self.version_wanted
             self.archive_path = join(self.downloads_dir, self.archive_filename)
-            base_url = self.options.get(
-                'base_url', self.release_dl_url[major_wanted])
+            base_url = self.options.get("base_url", self.release_dl_url[major_wanted])
             self.sources[main_software] = (
-                'downloadable',
-                '/'.join((base_url.strip('/'), self.archive_filename)), None)
+                "downloadable",
+                "/".join((base_url.strip("/"), self.archive_filename)),
+                None,
+            )
             return
 
         # in all other cases, the first token is the type of version
         type_spec = version_split[0]
-        if type_spec in ('local', 'path'):
+        if type_spec in ("local", "path"):
             self.odoo_dir = join(self.buildout_dir, version_split[1])
-            self.sources[main_software] = ('local', None)
-        elif type_spec == 'url':
+            self.sources[main_software] = ("local", None)
+        elif type_spec == "url":
             url = version_split[1]
-            self.archive_filename = urlparse(url).path.split('/')[-1]
+            self.archive_filename = urlparse(url).path.split("/")[-1]
             self.archive_path = join(self.downloads_dir, self.archive_filename)
-            self.sources[main_software] = ('downloadable', url, None)
-        elif type_spec == 'nightly':
+            self.sources[main_software] = ("downloadable", url, None)
+        elif type_spec == "nightly":
             if len(version_split) != 3:
                 raise UserError(
                     "Unrecognized nightly version specification: "
-                    "%r (expecting series, number) % version_split[1:]")
+                    "%r (expecting series, number) % version_split[1:]"
+                )
             self.nightly_series, self.version_wanted = version_split[1:]
-            type_spec = 'downloadable'
-            if self.version_wanted == 'latest':
-                self.main_http_caching = 'http-head'
+            type_spec = "downloadable"
+            if self.version_wanted == "latest":
+                self.main_http_caching = "http-head"
             series = self.nightly_series
-            self.archive_filename = (
-                self.nightly_filenames[series] % self.version_wanted)
+            self.archive_filename = self.nightly_filenames[series] % self.version_wanted
             self.archive_path = join(self.downloads_dir, self.archive_filename)
-            base_url = self.options.get('base_url',
-                                        self.nightly_dl_url[series])
+            base_url = self.options.get("base_url", self.nightly_dl_url[series])
             self.sources[main_software] = (
-                'downloadable',
-                '/'.join((base_url.strip('/'), self.archive_filename)),
-                None)
+                "downloadable",
+                "/".join((base_url.strip("/"), self.archive_filename)),
+                None,
+            )
         else:
             # VCS types
             type_spec, url, repo_dir, self.version_wanted = version_split[0:4]
-            options = dict(opt.split('=') for opt in version_split[4:])
+            options = dict(opt.split("=") for opt in version_split[4:])
             self.odoo_dir = join(self.parts, repo_dir)
-            self.sources[main_software] = (type_spec,
-                                           (url, self.version_wanted), options)
+            self.sources[main_software] = (
+                type_spec,
+                (url, self.version_wanted),
+                options,
+            )
 
     def preinstall_version_check(self):
         """Perform version checks before any attempt to install.
@@ -349,11 +362,12 @@ class BaseRecipe(object):
         """Install requirements for the recipe to run."""
         to_install = self.recipe_requirements
         eggs_option = os.linesep.join(to_install)
-        eggs = zc.recipe.egg.Eggs(self.buildout, '', dict(eggs=eggs_option))
+        eggs = zc.recipe.egg.Eggs(self.buildout, "", dict(eggs=eggs_option))
         ws = eggs.install()
         _, ws = eggs.working_set()
-        self.recipe_requirements_paths = [ws.by_key[dist].location
-                                          for dist in to_install]
+        self.recipe_requirements_paths = [
+            ws.by_key[dist].location for dist in to_install
+        ]
         # Some earlier processing leaves tmp dirs behind, that may
         # mask what we just installed (especially harmful in case of pip)
         sys.path[0:0] = self.recipe_requirements_paths
@@ -369,12 +383,12 @@ class BaseRecipe(object):
         """
         if reqs is None:
             reqs = self.requirements
-        serial = '\n'.join(reqs)
+        serial = "\n".join(reqs)
 
-        if 'eggs' not in self.options:
-            self.options['eggs'] = serial
+        if "eggs" not in self.options:
+            self.options["eggs"] = serial
         else:
-            self.options['eggs'] += '\n' + serial
+            self.options["eggs"] += "\n" + serial
 
     def list_develops(self):
         """At any point in time, list the projects that have been developed.
@@ -391,9 +405,11 @@ class BaseRecipe(object):
         Implementation simply lists the develop eggs directory
         There's probably better to be done.
         """
-        devdir_contents = (f.rsplit('.', 1) for f in os.listdir(
-            self.b_options['develop-eggs-directory']))
-        return [s[0] for s in devdir_contents if s[1] == 'egg-link']
+        devdir_contents = (
+            f.rsplit(".", 1)
+            for f in os.listdir(self.b_options["develop-eggs-directory"])
+        )
+        return [s[0] for s in devdir_contents if s[1] == "egg-link"]
 
     def apply_odoo_requirements_file(self):
         """Try and read Odoo's 'requirements.txt' and apply it.
@@ -408,12 +424,15 @@ class BaseRecipe(object):
         contradict an existing entry in the versions section, but that's far
         more complicated.
         """
-        req_fname = 'requirements.txt'
+        req_fname = "requirements.txt"
         req_path = join(self.odoo_dir, req_fname)
         if not os.path.exists(req_path):
-            logger.warn("%r not found in this version of "
-                        "Odoo, although the configuration said to use it. "
-                        "Proceeding anyway.", req_fname)
+            logger.warn(
+                "%r not found in this version of "
+                "Odoo, although the configuration said to use it. "
+                "Proceeding anyway.",
+                req_fname,
+            )
             return
 
         # pip wouldn't be importable before the call to
@@ -426,7 +445,7 @@ class BaseRecipe(object):
         # that does not exist any more).
         # So, better to clean that before hand.
         for k in list(sys.modules.keys()):
-            if k.split('.', 1)[0] == 'pip':
+            if k.split(".", 1)[0] == "pip":
                 del sys.modules[k]
 
         # it is useless to mutate the versions section at this point
@@ -442,6 +461,7 @@ class BaseRecipe(object):
 
     def read_requirements_pip_before_v8(self, req_path, versions, develops):
         from pip.req import parse_requirements
+
         if pip_version() < (1, 5):
             parsed = parse_requirements(req_path)
         else:
@@ -456,8 +476,7 @@ class BaseRecipe(object):
 
         for inst_req in parsed:
             req = inst_req.req
-            logger.debug("Considering requirement from Odoo's file %s",
-                         req)
+            logger.debug("Considering requirement from Odoo's file %s", req)
             # GR something more interesting would be to apply the
             # requirement if it does not contradict an existing one.
             # For now that's too much complicated, but check later if
@@ -470,20 +489,29 @@ class BaseRecipe(object):
                 self.requirements.append(project_name)
 
             if inst_req.markers:
-                logger.warn("Requirement %s has a marker %s but the evaluation"
-                            " of markers is not supported in this old version "
-                            "of pip. Please upgrade to pip 8.2 or higher. ",
-                            project_name, inst_req.markers)
+                logger.warn(
+                    "Requirement %s has a marker %s but the evaluation"
+                    " of markers is not supported in this old version "
+                    "of pip. Please upgrade to pip 8.2 or higher. ",
+                    project_name,
+                    inst_req.markers,
+                )
 
             if project_name in versions:
-                logger.debug("Requirement from Odoo's file %s superseded "
-                             "by buildout versions configuration as %r",
-                             req, versions[project_name])
+                logger.debug(
+                    "Requirement from Odoo's file %s superseded "
+                    "by buildout versions configuration as %r",
+                    req,
+                    versions[project_name],
+                )
                 continue
 
             if project_name in develops:
-                logger.debug("Requirement from Odoo's file %s superseded "
-                             "by a direct develop directive", req)
+                logger.debug(
+                    "Requirement from Odoo's file %s superseded "
+                    "by a direct develop directive",
+                    req,
+                )
                 continue
 
             if not req.specs:
@@ -494,7 +522,7 @@ class BaseRecipe(object):
             if len(req.specs) > 1:
                 supported = False
             spec = req.specs[0]
-            if spec[0] != '==' or '*' in spec[1]:
+            if spec[0] != "==" or "*" in spec[1]:
                 supported = False
 
             if not supported:
@@ -504,11 +532,11 @@ class BaseRecipe(object):
                     "account. Please override it in your [%s] "
                     "configuration section. Future support of this format "
                     "is pending the release of buildout 3.0.0 which relies on "
-                    "pip rather than setuptools.easy_install." % (
-                        req, self.b_options.get('versions', 'versions')))
+                    "pip rather than setuptools.easy_install."
+                    % (req, self.b_options.get("versions", "versions"))
+                )
 
-            logger.debug("Applying requirement %s from Odoo's file",
-                         req)
+            logger.debug("Applying requirement %s from Odoo's file", req)
             versions[project_name] = spec[1]
 
     def read_requirements_pip_after_v8(self, req_path, versions, develops):
@@ -531,12 +559,12 @@ class BaseRecipe(object):
                 project_name = req.project_name.lower()
                 marker = req.marker
             if marker and not marker.evaluate():
-                logger.debug("Skipping requirement %s with marker %s",
-                             project_name, marker)
+                logger.debug(
+                    "Skipping requirement %s with marker %s", project_name, marker
+                )
                 continue
             specs = req.specifier
-            logger.debug("Considering requirement from Odoo's file %s",
-                         req)
+            logger.debug("Considering requirement from Odoo's file %s", req)
             # GR something more interesting would be to apply the
             # requirement if it does not contradict an existing one.
             # For now that's too much complicated, but check later if
@@ -550,14 +578,20 @@ class BaseRecipe(object):
                 self.requirements.append(project_name)
 
             if project_name in versions:
-                logger.debug("Requirement from Odoo's file %s superseded "
-                             "by buildout versions configuration as %r",
-                             req, versions[project_name])
+                logger.debug(
+                    "Requirement from Odoo's file %s superseded "
+                    "by buildout versions configuration as %r",
+                    req,
+                    versions[project_name],
+                )
                 continue
 
             if project_name in develops:
-                logger.debug("Requirement from Odoo's file %s superseded "
-                             "by a direct develop directive", req)
+                logger.debug(
+                    "Requirement from Odoo's file %s superseded "
+                    "by a direct develop directive",
+                    req,
+                )
                 continue
 
             specs = req.specifier
@@ -569,7 +603,7 @@ class BaseRecipe(object):
             if len(specs) > 1:
                 supported = False
             spec = next(specs.__iter__())
-            if spec.operator != '==' or '*' in spec.version:
+            if spec.operator != "==" or "*" in spec.version:
                 supported = False
 
             if not supported:
@@ -579,11 +613,11 @@ class BaseRecipe(object):
                     "account. Please override it in your [%s] "
                     "configuration section. Future support of this format "
                     "is pending the release of buildout 3.0.0 which relies on "
-                    "pip rather than setuptools.easy_install." % (
-                        req, self.b_options.get('versions', 'versions')))
+                    "pip rather than setuptools.easy_install."
+                    % (req, self.b_options.get("versions", "versions"))
+                )
 
-            logger.debug("Applying requirement %s from Odoo's file",
-                         req)
+            logger.debug("Applying requirement %s from Odoo's file", req)
             versions[project_name] = spec.version
 
     def install_requirements(self):
@@ -597,8 +631,7 @@ class BaseRecipe(object):
 
         while True:
             missing = None
-            eggs_recipe = zc.recipe.egg.Scripts(self.buildout, '',
-                                                self.options)
+            eggs_recipe = zc.recipe.egg.Scripts(self.buildout, "", self.options)
             raised_exc = None
             try:
                 eggs_recipe.install()
@@ -619,30 +652,37 @@ class BaseRecipe(object):
             except UserError as exc:  # happens only for zc.buildout >= 2.0
                 raised_exc = exc
                 missing = unicode(exc).split(os.linesep)[0].split()[-1]
-                missing = re.split(r'[=<>]', missing)[0]
+                missing = re.split(r"[=<>]", missing)[0]
             else:
                 break
 
-            logger.error("Could not find or install %r. " +
-                         self.missing_deps_instructions.get(missing, '') +
-                         " Original exception %s.%s says: %s",
-                         missing, raised_exc.__class__.__module__,
-                         raised_exc.__class__.__name__, raised_exc)
+            logger.error(
+                "Could not find or install %r. "
+                + self.missing_deps_instructions.get(missing, "")
+                + " Original exception %s.%s says: %s",
+                missing,
+                raised_exc.__class__.__module__,
+                raised_exc.__class__.__name__,
+                raised_exc,
+            )
             if missing not in self.soft_requirements:
                 raise raised_exc
 
-            eggs = set(self.options['eggs'].split(os.linesep))
+            eggs = set(self.options["eggs"].split(os.linesep))
             if missing not in eggs:
-                logger.error("Soft requirement %r is also an indirect "
-                             "dependency (either of OpenERP/Odoo or of "
-                             "one listed in config file). Can't retry.",
-                             missing)
+                logger.error(
+                    "Soft requirement %r is also an indirect "
+                    "dependency (either of OpenERP/Odoo or of "
+                    "one listed in config file). Can't retry.",
+                    missing,
+                )
                 raise raised_exc
 
-            logger.warn("%r is a direct soft requirement, "
-                        "retrying without it", missing)
+            logger.warn(
+                "%r is a direct soft requirement, " "retrying without it", missing
+            )
             eggs.discard(missing)
-            self.options['eggs'] = os.linesep.join(eggs)
+            self.options["eggs"] = os.linesep.join(eggs)
 
         self.eggs_reqs, self.eggs_ws = eggs_recipe.working_set()
         self.ws = self.eggs_ws
@@ -668,9 +708,10 @@ class BaseRecipe(object):
         in an old OpenERP version. Could become the norm, but setup is also
         used to list dependencies.
         """
-        with open(join(self.odoo_dir, 'bin', 'release.py'), 'rb') as f:
-            mod = imp.load_module('release', f, 'release.py',
-                                  ('.py', 'r', imp.PY_SOURCE))
+        with open(join(self.odoo_dir, "bin", "release.py"), "rb") as f:
+            mod = imp.load_module(
+                "release", f, "release.py", (".py", "r", imp.PY_SOURCE)
+            )
         self.version_detected = mod.version
 
     def read_odoo_setup(self):
@@ -682,40 +723,42 @@ class BaseRecipe(object):
         old_distutils_setup = distutils.core.setup  # 5.0 directly imports this
 
         def new_setup(*args, **kw):
-            self.requirements.extend(kw.get('install_requires', ()))
-            self.version_detected = kw['version']
+            self.requirements.extend(kw.get("install_requires", ()))
+            self.version_detected = kw["version"]
+
         setuptools.setup = new_setup
         distutils.core.setup = new_setup
-        sys.path.insert(0, '.')
-        with open(join(self.odoo_dir, 'setup.py'), 'rb') as f:
+        sys.path.insert(0, ".")
+        with open(join(self.odoo_dir, "setup.py"), "rb") as f:
             saved_argv = sys.argv
-            sys.argv = ['setup.py', 'develop']
+            sys.argv = ["setup.py", "develop"]
             try:
-                imp.load_module('setup', f, 'setup.py',
-                                ('.py', 'r', imp.PY_SOURCE))
+                imp.load_module("setup", f, "setup.py", (".py", "r", imp.PY_SOURCE))
             except SystemExit as exception:
-                if 'dsextras' in unicode(exception):
-                    raise EnvironmentError(
-                        'Please first install PyGObject and PyGTK !')
+                if "dsextras" in unicode(exception):
+                    raise EnvironmentError("Please first install PyGObject and PyGTK !")
                 else:
                     try:
                         self.read_release()
                     except Exception as exc:
                         raise EnvironmentError(
-                            'Problem while reading Odoo release.py: %s' % exc)
+                            "Problem while reading Odoo release.py: %s" % exc
+                        )
             except ImportError as exception:
-                if 'babel' in unicode(exception):
+                if "babel" in unicode(exception):
                     raise EnvironmentError(
-                        'OpenERP setup.py has an unwanted import Babel.\n'
-                        '=> First install Babel on your system or '
-                        'virtualenv :(\n'
-                        '(sudo aptitude install python-babel, '
-                        'or pip install babel)')
+                        "OpenERP setup.py has an unwanted import Babel.\n"
+                        "=> First install Babel on your system or "
+                        "virtualenv :(\n"
+                        "(sudo aptitude install python-babel, "
+                        "or pip install babel)"
+                    )
                 else:
                     raise exception
             except Exception as exception:
-                raise EnvironmentError('Problem while reading Odoo '
-                                       'setup.py: %s' % exception)
+                raise EnvironmentError(
+                    "Problem while reading Odoo " "setup.py: %s" % exception
+                )
             finally:
                 sys.argv = saved_argv
         sys.path.pop(0)
@@ -748,11 +791,12 @@ class BaseRecipe(object):
             tarfile.extract(first)
 
         for tinfo in tarfile:
-            if tinfo.name.startswith(sandbox + '/'):
+            if tinfo.name.startswith(sandbox + "/"):
                 tarfile.extract(tinfo)
             else:
-                logger.warn('Tarball member %r is outside of %r. Ignored.',
-                            tinfo, sandbox)
+                logger.warn(
+                    "Tarball member %r is outside of %r. Ignored.", tinfo, sandbox
+                )
 
     def develop(self, src_directory):
         """Develop the specified source distribution.
@@ -771,25 +815,26 @@ class BaseRecipe(object):
                   changed within the 8.0 stable branch.
         """
         logger.debug("Developing %r", src_directory)
-        develop_dir = self.b_options['develop-eggs-directory']
-        pythonpath_bak = os.getenv('PYTHONPATH')
-        os.putenv('PYTHONPATH', ':'.join(self.recipe_requirements_paths))
+        develop_dir = self.b_options["develop-eggs-directory"]
+        pythonpath_bak = os.getenv("PYTHONPATH")
+        os.putenv("PYTHONPATH", ":".join(self.recipe_requirements_paths))
 
         egg_link = zc.buildout.easy_install.develop(src_directory, develop_dir)
 
-        suffix = '.egg-link'
+        suffix = ".egg-link"
 
         if pythonpath_bak is None:
-            os.unsetenv('PYTHONPATH')
+            os.unsetenv("PYTHONPATH")
         else:
-            os.putenv('PYTHONPATH', pythonpath_bak)
+            os.putenv("PYTHONPATH", pythonpath_bak)
 
         if not egg_link.endswith(suffix):
             raise RuntimeError(
                 "Development of OpenERP/Odoo distribution "
-                "produced an unexpected egg link: %r" % egg_link)
+                "produced an unexpected egg link: %r" % egg_link
+            )
 
-        return os.path.basename(egg_link)[:-len(suffix)]
+        return os.path.basename(egg_link)[: -len(suffix)]
 
     def parse_addons(self, options):
         """Parse the addons options into :attr:`sources`.
@@ -797,27 +842,28 @@ class BaseRecipe(object):
         See :class:`BaseRecipe` for the structure of :attr:`sources`.
         """
 
-        for line in option_splitlines(options.get('addons')):
+        for line in option_splitlines(options.get("addons")):
             split = line.split()
             if not split:
                 return
             try:
                 loc_type = split[0]
-                spec_len = 2 if loc_type == 'local' else 4
+                spec_len = 2 if loc_type == "local" else 4
 
-                options = dict(opt.split('=') for opt in split[spec_len:])
-                if loc_type == 'local':
+                options = dict(opt.split("=") for opt in split[spec_len:])
+                if loc_type == "local":
                     addons_dir = split[1]
                     location_spec = None
                 else:  # vcs
                     repo_url, addons_dir, repo_rev = split[1:4]
                     location_spec = (repo_url, repo_rev)
             except:
-                raise UserError("Could not parse addons line: %r. "
-                                "Please check format " % line)
+                raise UserError(
+                    "Could not parse addons line: %r. " "Please check format " % line
+                )
 
-            addons_dir = addons_dir.rstrip('/')  # trailing / can be harmful
-            group = options.get('group')
+            addons_dir = addons_dir.rstrip("/")  # trailing / can be harmful
+            group = options.get("group")
             if group:
                 split = os.path.split(addons_dir)
                 addons_dir = os.path.join(split[0], group, split[1])
@@ -829,26 +875,28 @@ class BaseRecipe(object):
         See :class:`BaseRecipe` for the structure of :attr:`merges`.
         """
 
-        for line in option_splitlines(options.get('merges')):
+        for line in option_splitlines(options.get("merges")):
             split = line.split()
             if not split:
                 return
             loc_type = split[0]
-            if loc_type not in ('bzr', 'git'):
-                raise UserError("Only merges of type 'bzr' and 'git' are "
-                                "currently supported.")
-            options = dict(opt.split('=') for opt in split[4:])
-            if loc_type == 'bzr':
-                options['bzr-init'] = 'merge'
+            if loc_type not in ("bzr", "git"):
+                raise UserError(
+                    "Only merges of type 'bzr' and 'git' are " "currently supported."
+                )
+            options = dict(opt.split("=") for opt in split[4:])
+            if loc_type == "bzr":
+                options["bzr-init"] = "merge"
             else:
-                options['merge'] = True
+                options["merge"] = True
 
             repo_url, local_dir, repo_rev = split[1:4]
             location_spec = (repo_url, repo_rev)
 
-            local_dir = local_dir.rstrip('/')  # trailing / can be harmful
+            local_dir = local_dir.rstrip("/")  # trailing / can be harmful
             self.merges.setdefault(local_dir, []).append(
-                (loc_type, location_spec, options))
+                (loc_type, location_spec, options)
+            )
 
     def parse_revisions(self, options):
         """Parse revisions options and update :attr:`sources`.
@@ -859,7 +907,7 @@ class BaseRecipe(object):
 
         See :class:`BaseRecipe` for the structure of :attr:`sources`.
         """
-        for line in option_splitlines(options.get('revisions')):
+        for line in option_splitlines(options.get("revisions")):
             split = line.split()
             if len(split) > 2:
                 raise UserError("Invalid revisions line: %r" % line)
@@ -873,19 +921,23 @@ class BaseRecipe(object):
 
             source = self.sources.get(local_path)
             if source is None:  # considered harmless for now
-                logger.warn("Ignoring attempt to fix revision on unknown "
-                            "source %r. You may have a leftover to clean",
-                            local_path)
+                logger.warn(
+                    "Ignoring attempt to fix revision on unknown "
+                    "source %r. You may have a leftover to clean",
+                    local_path,
+                )
                 continue
 
-            if source[0] in ('downloadable', 'local'):
-                raise UserError("In revision line %r : can't fix a revision "
-                                "for non-vcs source" % line)
+            if source[0] in ("downloadable", "local"):
+                raise UserError(
+                    "In revision line %r : can't fix a revision "
+                    "for non-vcs source" % line
+                )
 
             logger.info("%s will be on revision %r", local_path, revision)
-            self.sources[local_path] = (
-                (source[0], (source[1][0], revision)) + source[2:]
-            )
+            self.sources[local_path] = (source[0], (source[1][0], revision)) + source[
+                2:
+            ]
 
     def retrieve_addons(self):
         """Peform all lookup and downloads specified in :attr:`sources`.
@@ -898,17 +950,17 @@ class BaseRecipe(object):
                 continue
             loc_type, loc_spec, addons_options = source_spec
             local_dir = self.make_absolute(local_dir)
-            options = dict(offline=self.offline,
-                           clear_locks=self.vcs_clear_locks,
-                           clean=self.clean)
-            if loc_type == 'git':
-                options['depth'] = self.options.get('git-depth')
+            options = dict(
+                offline=self.offline, clear_locks=self.vcs_clear_locks, clean=self.clean
+            )
+            if loc_type == "git":
+                options["depth"] = self.options.get("git-depth")
             options.update(addons_options)
 
-            group = addons_options.get('group')
+            group = addons_options.get("group")
             group_dir = None
             if group:
-                if loc_type == 'local':
+                if loc_type == "local":
                     raise UserError(
                         "Automatic grouping of addons is not supported for "
                         "local addons such as %r, because the recipe "
@@ -916,25 +968,30 @@ class BaseRecipe(object):
                         "directory is "
                         "outside of its reponsibilities (in other words, "
                         "it's better if "
-                        "you create yourself the intermediate directory." % (
-                            local_dir, ))
+                        "you create yourself the intermediate directory." % (local_dir,)
+                    )
 
                 group_dir = os.path.dirname(local_dir)
                 if not os.path.exists(group_dir):
                     os.makedirs(group_dir)
-            if loc_type != 'local':
+            if loc_type != "local":
                 for k, v in self.options.items():
-                    if k.startswith(loc_type + '-'):
+                    if k.startswith(loc_type + "-"):
                         options[k] = v
 
                 repo_url, repo_rev = loc_spec
-                vcs.get_update(loc_type, local_dir, repo_url, repo_rev,
-                               clear_retry=self.clear_retry,
-                               **options)
+                vcs.get_update(
+                    loc_type,
+                    local_dir,
+                    repo_url,
+                    repo_rev,
+                    clear_retry=self.clear_retry,
+                    **options
+                )
             elif self.clean:
                 utils.clean_object_files(local_dir)
 
-            subdir = addons_options.get('subdir')
+            subdir = addons_options.get("subdir")
             if group_dir:
                 addons_dir = group_dir
             else:
@@ -943,23 +1000,23 @@ class BaseRecipe(object):
             if subdir:
                 addons_dir = join(addons_dir, subdir)
 
-            manifest = os.path.join(addons_dir, '__manifest__.py')
-            manifest_pre_v10 = os.path.join(addons_dir, '__openerp__.py')
+            manifest = os.path.join(addons_dir, "__manifest__.py")
+            manifest_pre_v10 = os.path.join(addons_dir, "__openerp__.py")
             if os.path.isfile(manifest) or os.path.isfile(manifest_pre_v10):
-                raise UserError("Standalone addons such as %r "
-                                "are now supported by means "
-                                "of the explicit 'group' option. Please "
-                                "update your buildout configuration. " % (
-                                    addons_dir))
+                raise UserError(
+                    "Standalone addons such as %r "
+                    "are now supported by means "
+                    "of the explicit 'group' option. Please "
+                    "update your buildout configuration. " % (addons_dir)
+                )
 
             if addons_dir not in self.addons_paths:
                 self.addons_paths.append(addons_dir)
 
     def revert_sources(self):
-        """Revert all sources to the revisions specified in :attr:`sources`.
-        """
+        """Revert all sources to the revisions specified in :attr:`sources`."""
         for target, desc in self.sources.items():
-            if desc[0] in ('local', 'downloadable'):
+            if desc[0] in ("local", "downloadable"):
                 continue
 
             vcs_type, vcs_spec, options = desc
@@ -969,57 +1026,62 @@ class BaseRecipe(object):
             try:
                 repo.revert(vcs_spec[1])
             except NotImplementedError:
-                logger.warn("vcs-revert: not implemented for %s "
-                            "repository at %s", vcs_type, local_dir)
+                logger.warn(
+                    "vcs-revert: not implemented for %s " "repository at %s",
+                    vcs_type,
+                    local_dir,
+                )
             else:
-                logger.info("Reverted %s repository at %s",
-                            vcs_type, local_dir)
+                logger.info("Reverted %s repository at %s", vcs_type, local_dir)
 
     def retrieve_merges(self):
-        """Peform all VCS merges specified in :attr:`merges`.
-        """
-        if self.options.get('vcs-revert', '').strip().lower() == 'on-merge':
+        """Peform all VCS merges specified in :attr:`merges`."""
+        if self.options.get("vcs-revert", "").strip().lower() == "on-merge":
             logger.info("Reverting all sources before merge")
             self.revert_sources()
         for local_dir, source_specs in self.merges.items():
             for source_spec in source_specs:
                 loc_type, loc_spec, merge_options = source_spec
                 local_dir = self.make_absolute(local_dir)
-                options = dict(offline=self.offline,
-                               clear_locks=self.vcs_clear_locks)
+                options = dict(offline=self.offline, clear_locks=self.vcs_clear_locks)
                 options.update(merge_options)
 
                 for k, v in self.options.items():
-                    if k.startswith(loc_type + '-'):
+                    if k.startswith(loc_type + "-"):
                         options[k] = v
 
                 repo_url, repo_rev = loc_spec
-                vcs.get_update(loc_type, local_dir, repo_url, repo_rev,
-                               clear_retry=self.clear_retry,
-                               **options)
+                vcs.get_update(
+                    loc_type,
+                    local_dir,
+                    repo_url,
+                    repo_rev,
+                    clear_retry=self.clear_retry,
+                    **options
+                )
 
     def main_download(self):
-        """HTTP download for main part of the software to self.archive_path.
-        """
+        """HTTP download for main part of the software to self.archive_path."""
         if self.offline:
-            raise IOError("%s not found, and offline "
-                          "mode requested" % self.archive_path)
+            raise IOError(
+                "%s not found, and offline " "mode requested" % self.archive_path
+            )
         url = self.sources[main_software][1]
         logger.info("Downloading %s ..." % url)
 
         try:
             msg = urlretrieve(url, self.archive_path)
-            if get_content_type(msg[1]) == 'text/html':
+            if get_content_type(msg[1]) == "text/html":
                 os.unlink(self.archive_path)
                 raise LookupError(
-                    'Wanted version %r not found on server (tried %s)' % (
-                        self.version_wanted, url))
+                    "Wanted version %r not found on server (tried %s)"
+                    % (self.version_wanted, url)
+                )
 
         except (tarfile.TarError, IOError):
             # GR: ContentTooShortError subclasses IOError
             os.unlink(self.archive_path)
-            raise IOError('The archive does not seem valid: ' +
-                          repr(self.archive_path))
+            raise IOError("The archive does not seem valid: " + repr(self.archive_path))
 
     def is_stale_http_head(self):
         """Tell if the download is stale by doing a HEAD request.
@@ -1032,16 +1094,15 @@ class BaseRecipe(object):
         length, modified = archivestat.st_size, archivestat.st_mtime
 
         url = self.sources[main_software][1]
-        logger.info("Checking if %s if fresh wrt %s",
-                    self.archive_path, url)
+        logger.info("Checking if %s if fresh wrt %s", self.archive_path, url)
         parsed = urlparse(url)
-        if parsed.scheme == 'https':
+        if parsed.scheme == "https":
             cnx_cls = httplib.HTTPSConnection
         else:
             cnx_cls = httplib.HTTPConnection
         try:
             cnx = cnx_cls(parsed.netloc)
-            cnx.request('HEAD', parsed.path)  # TODO query ? fragment ?
+            cnx.request("HEAD", parsed.path)  # TODO query ? fragment ?
             res = cnx.getresponse()
         except IOError:
             return True
@@ -1049,10 +1110,10 @@ class BaseRecipe(object):
         if res.status != 200:
             return True
 
-        if int(res.getheader('Content-Length')) != length:
+        if int(res.getheader("Content-Length")) != length:
             return True
 
-        head_modified = res.getheader('Last-Modified')
+        head_modified = res.getheader("Last-Modified")
         logger.debug("Last-modified from HEAD request: %s", head_modified)
         if rfc822_time(head_modified) > modified:
             return True
@@ -1067,51 +1128,57 @@ class BaseRecipe(object):
 
         source = self.sources[main_software]
         type_spec = source[0]
-        logger.info('Selected install type: %s', type_spec)
-        if type_spec == 'local':
-            logger.info('Local directory chosen, nothing to do')
+        logger.info("Selected install type: %s", type_spec)
+        if type_spec == "local":
+            logger.info("Local directory chosen, nothing to do")
             if self.clean:
                 utils.clean_object_files(self.odoo_dir)
-        elif type_spec == 'downloadable':
+        elif type_spec == "downloadable":
             # download if needed
-            if ((self.archive_path and
-                 not os.path.exists(self.archive_path)) or
-                (self.main_http_caching == 'http-head' and
-                 self.is_stale_http_head())):
+            if (self.archive_path and not os.path.exists(self.archive_path)) or (
+                self.main_http_caching == "http-head" and self.is_stale_http_head()
+            ):
                 self.main_download()
 
-            logger.info(u'Inspecting %s ...' % self.archive_path)
+            logger.info(u"Inspecting %s ..." % self.archive_path)
             tar = tarfile.open(self.archive_path)
             first = tar.members[0]
             # Everything that follows assumes all tarball members
             # are inside a directory with an expected name such
             # as odoo-6.1-1
-            assert(first.isdir())
-            extracted_name = first.name.split('/')[0]
+            assert first.isdir()
+            extracted_name = first.name.split("/")[0]
             self.odoo_dir = join(self.parts, extracted_name)
             # protection against malicious tarballs
-            assert(not os.path.isabs(extracted_name))
-            assert(self.odoo_dir.startswith(self.parts))
+            assert not os.path.isabs(extracted_name)
+            assert self.odoo_dir.startswith(self.parts)
 
             logger.info("Cleaning existing %s", self.odoo_dir)
             if os.path.exists(self.odoo_dir):
                 shutil.rmtree(self.odoo_dir)
-            logger.info(u'Extracting %s ...' % self.archive_path)
+            logger.info(u"Extracting %s ..." % self.archive_path)
             self.sandboxed_tar_extract(extracted_name, tar, first=first)
             tar.close()
         else:
             url, rev = source[1]
-            options = dict((k, v) for k, v in self.options.items()
-                           if k.startswith(type_spec + '-'))
-            if type_spec == 'git':
-                options['depth'] = options.pop('git-depth', None)
+            options = dict(
+                (k, v) for k, v in self.options.items() if k.startswith(type_spec + "-")
+            )
+            if type_spec == "git":
+                options["depth"] = options.pop("git-depth", None)
 
             options.update(source[2])
             if self.clean:
-                options['clean'] = True
-            vcs.get_update(type_spec, self.odoo_dir, url, rev,
-                           offline=self.offline,
-                           clear_retry=self.clear_retry, **options)
+                options["clean"] = True
+            vcs.get_update(
+                type_spec,
+                self.odoo_dir,
+                url,
+                rev,
+                offline=self.offline,
+                clear_retry=self.clear_retry,
+                **options
+            )
 
     def _register_extra_paths(self):
         """Add odoo paths into the extra-paths (used in scripts' sys.path).
@@ -1121,23 +1188,25 @@ class BaseRecipe(object):
         the effect of putting it on the path automatically.
         """
         extra = self.extra_paths
-        self.options['extra-paths'] = os.linesep.join(extra)
+        self.options["extra-paths"] = os.linesep.join(extra)
 
     def install(self):
         os.chdir(self.parts)
 
-        freeze_to = self.options.get('freeze-to')
-        extract_downloads_to = self.options.get('extract-downloads-to')
+        freeze_to = self.options.get("freeze-to")
+        extract_downloads_to = self.options.get("extract-downloads-to")
 
-        if ((freeze_to is not None or extract_downloads_to is not None) and
-                not self.offline):
-            raise UserError("To freeze a part, you must run offline "
-                            "so that there's no modification from what "
-                            "you just tested. Please rerun with -o.")
+        if (
+            freeze_to is not None or extract_downloads_to is not None
+        ) and not self.offline:
+            raise UserError(
+                "To freeze a part, you must run offline "
+                "so that there's no modification from what "
+                "you just tested. Please rerun with -o."
+            )
 
         if extract_downloads_to is not None and freeze_to is None:
-            freeze_to = os.path.join(extract_downloads_to,
-                                     'extracted_from.cfg')
+            freeze_to = os.path.join(extract_downloads_to, "extracted_from.cfg")
 
         self.retrieve_main_software()
         self.retrieve_addons()
@@ -1147,18 +1216,22 @@ class BaseRecipe(object):
         os.chdir(self.odoo_dir)  # GR probably not needed any more
         self.read_odoo_setup()
 
-        if (self.sources[main_software][0] == 'downloadable' and
-                self.version_wanted == 'latest'):
-            self.nightly_version = self.version_detected.split('-', 1)[1]
-            logger.warn("Detected 'nightly latest version', you may want to "
-                        "fix it in your config file for replayability: \n    "
-                        "version = " + self.dump_nightly_latest_version())
+        if (
+            self.sources[main_software][0] == "downloadable"
+            and self.version_wanted == "latest"
+        ):
+            self.nightly_version = self.version_detected.split("-", 1)[1]
+            logger.warn(
+                "Detected 'nightly latest version', you may want to "
+                "fix it in your config file for replayability: \n    "
+                "version = " + self.dump_nightly_latest_version()
+            )
 
         self.finalize_addons_paths()
         self._register_extra_paths()
 
         if self.version_detected is None:
-            raise EnvironmentError('Version of Odoo could not be detected')
+            raise EnvironmentError("Version of Odoo could not be detected")
         self.merge_requirements()
         self.install_requirements()
 
@@ -1167,20 +1240,22 @@ class BaseRecipe(object):
         # create the config file
         if os.path.exists(self.config_path):
             os.remove(self.config_path)
-        logger.info('Creating config file: %s',
-                    os.path.relpath(self.config_path, self.buildout_dir))
+        logger.info(
+            "Creating config file: %s",
+            os.path.relpath(self.config_path, self.buildout_dir),
+        )
         self._create_default_config()
 
         # modify the config file according to recipe options
         config = RawConfigParser()
         config.read(self.config_path)
         for recipe_option in self.options:
-            if '.' not in recipe_option:
+            if "." not in recipe_option:
                 continue
-            section, option = recipe_option.split('.', 1)
+            section, option = recipe_option.split(".", 1)
             conf_ensure_section(config, section)
             config.set(section, option, self.options[recipe_option])
-        with open(self.config_path, 'w') as configfile:
+        with open(self.config_path, "w") as configfile:
             config.write(configfile)
 
         if extract_downloads_to:
@@ -1190,19 +1265,16 @@ class BaseRecipe(object):
         return self.odoo_installed
 
     def dump_nightly_latest_version(self):
-        """After download/analysis of 'nightly latest', give equivalent spec.
-        """
-        return ' '.join(('nightly', self.nightly_series, self.nightly_version))
+        """After download/analysis of 'nightly latest', give equivalent spec."""
+        return " ".join(("nightly", self.nightly_series, self.nightly_version))
 
     def freeze_to(self, out_config_path):
-        """Create an extension buildout freezing current revisions & versions.
-        """
+        """Create an extension buildout freezing current revisions & versions."""
 
-        logger.info("Freezing part %r to config file %r", self.name,
-                    out_config_path)
+        logger.info("Freezing part %r to config file %r", self.name, out_config_path)
         out_conf = ConfigParser()
 
-        frozen = getattr(self.buildout, '_odoo_recipe_frozen', None)
+        frozen = getattr(self.buildout, "_odoo_recipe_frozen", None)
         if frozen is None:
             frozen = self.buildout._odoo_recipe_frozen = set()
 
@@ -1214,18 +1286,18 @@ class BaseRecipe(object):
 
         # The name the versions section is hardcoded, but that's tolerable
         # because that's actually the one we *produce*
-        self._freeze_egg_versions(out_conf, 'versions')
+        self._freeze_egg_versions(out_conf, "versions")
 
         conf_ensure_section(out_conf, self.name)
         addons_option = []
         self.local_modifications = []
         for local_path, source in self.sources.items():
             source_type = source[0]
-            if source_type == 'local':
+            if source_type == "local":
                 continue
 
             if local_path is main_software:
-                if source_type == 'downloadable':
+                if source_type == "downloadable":
                     self._freeze_downloadable_main_software(out_conf)
                 else:  # vcs
                     abspath = self.odoo_dir
@@ -1233,12 +1305,11 @@ class BaseRecipe(object):
             else:
                 abspath = self.make_absolute(local_path)
 
-            if source_type == 'downloadable':
+            if source_type == "downloadable":
                 continue
 
             required_rev = source[1][1]
-            revision = self._freeze_vcs_source(
-                source_type, abspath, required_rev)
+            revision = self._freeze_vcs_source(source_type, abspath, required_rev)
 
             # here it would be tempting not to repeat the freeze if
             # the resulting revision is equal to revision_rev, BUT
@@ -1249,27 +1320,29 @@ class BaseRecipe(object):
             # the 'revisions' option. In the meanwhile, let's just play safe
 
             if local_path is main_software:
-                addons_option.insert(0, '%s  ; main software part' % revision)
+                addons_option.insert(0, "%s  ; main software part" % revision)
                 # actually, that comment will be lost if this is not the
                 # last part (dropped upon reread)
             else:
-                addons_option.append(' '.join((local_path, revision)))
+                addons_option.append(" ".join((local_path, revision)))
 
         if addons_option:
-            out_conf.set(self.name, 'revisions',
-                         os.linesep.join(addons_option))
+            out_conf.set(self.name, "revisions", os.linesep.join(addons_option))
         if self.local_modifications:
 
             logger.error(
                 "Uncommitted changes and/or untracked files in: %s"
                 "Unsafe to freeze. Please commit or revert and test again !",
                 os.linesep.join(
-                    ['', ''] + ['   - ' + p
-                                for p in self.local_modifications] + ['', '']))
+                    ["", ""]
+                    + ["   - " + p for p in self.local_modifications]
+                    + ["", ""]
+                ),
+            )
 
             sys.exit(17)  # GR I like that number
 
-        with open(self.make_absolute(out_config_path), 'w') as out:
+        with open(self.make_absolute(out_config_path), "w") as out:
             out_conf.write(out)
         frozen.add(out_config_path)
 
@@ -1277,35 +1350,38 @@ class BaseRecipe(object):
         """Return a tuple of (raw, parsed, sub_dir, abs_path)
         vcs-extends-develop specifications.
         """
-        sub_dir = self.b_options.get(
-            GP_DEVELOP_DIR, '')
+        sub_dir = self.b_options.get(GP_DEVELOP_DIR, "")
         base_path = self.make_absolute(sub_dir)
-        lines = self.b_options.get(
-            GP_VCS_EXTEND_DEVELOP)
+        lines = self.b_options.get(GP_VCS_EXTEND_DEVELOP)
         if not lines:
             return ()
 
         try:
             import pip.req
         except ImportError:
-            logger.error("You have vcs-extends-develop distributions "
-                         "but pip is not available. That means that "
-                         "gp.vcsdevelop is not properly installed. Did "
-                         "you ever run that buildout ?")
+            logger.error(
+                "You have vcs-extends-develop distributions "
+                "but pip is not available. That means that "
+                "gp.vcsdevelop is not properly installed. Did "
+                "you ever run that buildout ?"
+            )
             raise
 
-        if 'parse_editable' in dir(pip.req):  # pip < 6.0
+        if "parse_editable" in dir(pip.req):  # pip < 6.0
+
             def parse_egg_dir(req_str):
                 return pip.req.parse_editable(req_str)[0]
+
         else:
+
             def parse_egg_dir(req_str):
                 ireq = pip.req.InstallRequirement.from_editable(req_str)
                 # GR I'm worried because now this is also used as project
                 # name in requirement, whereas it used to just be the target
                 # directory
-                editable_options = getattr(ireq, 'editable_options', None)
+                editable_options = getattr(ireq, "editable_options", None)
                 if editable_options is not None:  # pip < 8.1.0
-                    return editable_options['egg']
+                    return editable_options["egg"]
                 try:
                     return ireq.req.name  # pip >= 8.1.2
                 except AttributeError:
@@ -1320,31 +1396,33 @@ class BaseRecipe(object):
 
     def _prepare_frozen_buildout(self, conf):
         """Create the 'buildout' section in conf."""
-        conf.add_section('buildout')
-        conf.set('buildout', 'extends', self.buildout_cfg_name())
-        conf.add_section('versions')
-        conf.set('buildout', 'versions', 'versions')
+        conf.add_section("buildout")
+        conf.set("buildout", "extends", self.buildout_cfg_name())
+        conf.add_section("versions")
+        conf.set("buildout", "versions", "versions")
 
         # freezing for gp.vcsdevelop
         extends = []
         for raw, _, _, abs_path in self._get_gp_vcs_develops():
-            hash_split = raw.rsplit('#')
+            hash_split = raw.rsplit("#")
             url = hash_split[0]
-            rev_split = url.rsplit('@', 1)
+            rev_split = url.rsplit("@", 1)
             url = rev_split[0]
             revspec = rev_split[1] if len(rev_split) == 2 else None
-            vcs_type = url.split('+', 1)[0]
+            vcs_type = url.split("+", 1)[0]
             # vcs-develop process adds .egg-info file (often forgotten in VCS
             # ignore files) and changes setup.cfg.
             # For now we'll have to allow local modifications.
-            revision = self._freeze_vcs_source(vcs_type,
-                                               abs_path,
-                                               revspec,
-                                               pip_compatible=True,
-                                               allow_local_modification=True)
-            extends.append('%s@%s#%s' % (url, revision, hash_split[1]))
+            revision = self._freeze_vcs_source(
+                vcs_type,
+                abs_path,
+                revspec,
+                pip_compatible=True,
+                allow_local_modification=True,
+            )
+            extends.append("%s@%s#%s" % (url, revision, hash_split[1]))
 
-        conf.set('buildout', GP_VCS_EXTEND_DEVELOP, os.linesep.join(extends))
+        conf.set("buildout", GP_VCS_EXTEND_DEVELOP, os.linesep.join(extends))
 
     def _freeze_downloadable_main_software(self, conf):
         """If needed, sets the main version option in ConfigParser.
@@ -1355,8 +1433,8 @@ class BaseRecipe(object):
         from higher level information.
         """
 
-        if self.version_wanted == 'latest':
-            conf.set(self.name, 'version', self.dump_nightly_latest_version())
+        if self.version_wanted == "latest":
+            conf.set(self.name, "version", self.dump_nightly_latest_version())
 
     def _freeze_egg_versions(self, conf, section, exclude=()):
         """Update a ConfigParser section with current working set egg versions.
@@ -1366,29 +1444,35 @@ class BaseRecipe(object):
         needed and could only be a source of issues.
         """
         conf_ensure_section(conf, self.name)
-        conf.set(self.name, WITH_ODOO_REQUIREMENTS_FILE_OPTION, 'False')
+        conf.set(self.name, WITH_ODOO_REQUIREMENTS_FILE_OPTION, "False")
 
-        versions = dict((name, conf.get(section, name))
-                        for name in conf.options(section))
-        versions.update((name, egg.version)
-                        for name, egg in self.ws.by_key.items()
-                        if name not in exclude and
-                        egg.precedence != pkg_resources.DEVELOP_DIST
-                        )
+        versions = dict(
+            (name, conf.get(section, name)) for name in conf.options(section)
+        )
+        versions.update(
+            (name, egg.version)
+            for name, egg in self.ws.by_key.items()
+            if name not in exclude and egg.precedence != pkg_resources.DEVELOP_DIST
+        )
         for name, version in versions.items():
             conf.set(section, name, version)
 
         # forbidding picked versions if this zc.buildout supports it right away
         # i.e. we are on zc.buildout >= 2.0
-        allow_picked = self.options.get('freeze-allow-picked-versions', '')
-        if allow_picked.strip() == 'false':
-            pick_opt = 'allow-picked-versions'
+        allow_picked = self.options.get("freeze-allow-picked-versions", "")
+        if allow_picked.strip() == "false":
+            pick_opt = "allow-picked-versions"
             if pick_opt in self.b_options:
-                conf.set('buildout', pick_opt, 'false')
+                conf.set("buildout", pick_opt, "false")
 
-    def _freeze_vcs_source(self, vcs_type, abspath, revspec,
-                           pip_compatible=False,
-                           allow_local_modification=False):
+    def _freeze_vcs_source(
+        self,
+        vcs_type,
+        abspath,
+        revspec,
+        pip_compatible=False,
+        allow_local_modification=False,
+    ):
 
         """Return the frozen revision for the state of that VCS source.
 
@@ -1403,7 +1487,7 @@ class BaseRecipe(object):
                   specification.
         """
 
-        repo = vcs.repo(vcs_type, abspath, '')  # no need of remote URL
+        repo = vcs.repo(vcs_type, abspath, "")  # no need of remote URL
 
         if not allow_local_modification and repo.uncommitted_changes():
             self.local_modifications.append(abspath)
@@ -1416,20 +1500,23 @@ class BaseRecipe(object):
 
         return parents[0]
 
-    def extract_downloads_to(self, target_dir, outconf_name='release.cfg'):
+    def extract_downloads_to(self, target_dir, outconf_name="release.cfg"):
         """Extract anything that has been downloaded to target_dir.
 
         This doesn't copy intermediary buildout configurations nor local parts.
         In the purpose of making a self-contained and offline playable archive,
         these are assumed to be already taken care of.
         """
-        logger.info("Extracting part %r to directory %r and config file %r "
-                    "therein.", self.name, target_dir, outconf_name)
+        logger.info(
+            "Extracting part %r to directory %r and config file %r " "therein.",
+            self.name,
+            target_dir,
+            outconf_name,
+        )
         target_dir = self.make_absolute(target_dir)
         out_conf = ConfigParser()
 
-        all_extracted = getattr(self.buildout, '_odoo_recipe_extracted',
-                                None)
+        all_extracted = getattr(self.buildout, "_odoo_recipe_extracted", None)
         if all_extracted is None:
             all_extracted = self.buildout._odoo_recipe_extracted = {}
         out_config_path = join(target_dir, outconf_name)
@@ -1444,9 +1531,9 @@ class BaseRecipe(object):
             self._prepare_extracted_buildout(out_conf, target_dir)
             extracted = all_extracted[target_dir] = set()
 
-        self._freeze_egg_versions(out_conf, 'versions')
+        self._freeze_egg_versions(out_conf, "versions")
         self._extract_sources(out_conf, target_dir, extracted)
-        with open(out_config_path, 'w') as out:
+        with open(out_config_path, "w") as out:
             out_conf.write(out)
 
     def _extract_sources(self, out_conf, target_dir, extracted):
@@ -1462,74 +1549,79 @@ class BaseRecipe(object):
         conf_ensure_section(out_conf, self.name)
 
         # remove bzr extra if needed
-        recipe = self.options['recipe']
-        pkg_extras, recipe_cls = recipe.split(':')
-        extra_match = re.match(r'(.*?)\[(.*?)\]', pkg_extras)
+        recipe = self.options["recipe"]
+        pkg_extras, recipe_cls = recipe.split(":")
+        extra_match = re.match(r"(.*?)\[(.*?)\]", pkg_extras)
         if extra_match is not None:
             recipe_pkg = extra_match.group(1)
-            extras = set(e.strip() for e in extra_match.group(2).split(','))
-            extras.discard('bzr')
+            extras = set(e.strip() for e in extra_match.group(2).split(","))
+            extras.discard("bzr")
             extracted_recipe = recipe_pkg
             if extras:
-                extracted_recipe += '[%s]' % ','.join(extras)
-            extracted_recipe += ':' + recipe_cls
-            out_conf.set(self.name, 'recipe', extracted_recipe)
+                extracted_recipe += "[%s]" % ",".join(extras)
+            extracted_recipe += ":" + recipe_cls
+            out_conf.set(self.name, "recipe", extracted_recipe)
         else:
-            out_conf.set(self.name, 'recipe', recipe)
+            out_conf.set(self.name, "recipe", recipe)
 
         addons_option = []
         for local_path, source in self.sources.items():
             source_type = source[0]
             if local_path is main_software:
-                rel_path = self._extract_main_software(source_type, target_dir,
-                                                       extracted)
-                out_conf.set(self.name, 'version', 'local ' + rel_path)
+                rel_path = self._extract_main_software(
+                    source_type, target_dir, extracted
+                )
+                out_conf.set(self.name, "version", "local " + rel_path)
                 continue
 
             # stripping the group option that won't be usefult
             # and actually harming for extracted buildout conf
             options = source[2]
-            group = options.pop('group', None)
+            group = options.pop("group", None)
             if group:
                 target_local_path = os.path.dirname(local_path)
                 if group != os.path.basename(target_local_path):
                     raise RuntimeError(
                         "Inconsistent configuration that "
                         "should not happen: group=%r, but resulting path %r "
-                        "does not have it as its parent" % (group, local_path))
+                        "does not have it as its parent" % (group, local_path)
+                    )
             else:
                 target_local_path = local_path
 
-            addons_line = ['local', target_local_path]
-            addons_line.extend('%s=%s' % (opt, val)
-                               for opt, val in options.items())
-            addons_option.append(' '.join(addons_line))
+            addons_line = ["local", target_local_path]
+            addons_line.extend("%s=%s" % (opt, val) for opt, val in options.items())
+            addons_option.append(" ".join(addons_line))
 
             abspath = self.make_absolute(local_path)
-            if source_type == 'downloadable':
-                shutil.copytree(abspath,
-                                os.path.join(target_dir, local_path))
-            elif source_type != 'local':  # vcs
-                self._extract_vcs_source(source_type, abspath, target_dir,
-                                         local_path, extracted)
+            if source_type == "downloadable":
+                shutil.copytree(abspath, os.path.join(target_dir, local_path))
+            elif source_type != "local":  # vcs
+                self._extract_vcs_source(
+                    source_type, abspath, target_dir, local_path, extracted
+                )
         # remove duplicates preserving order
         addons_option = list(OrderedDict.fromkeys(addons_option))
-        out_conf.set(self.name, 'addons', os.linesep.join(addons_option))
-        if self.options.get('revisions'):
-            out_conf.set(self.name, 'revisions', '')
+        out_conf.set(self.name, "addons", os.linesep.join(addons_option))
+        if self.options.get("revisions"):
+            out_conf.set(self.name, "revisions", "")
             # GR hacky way to make a comment for a void value. Indeed,
             # "revisions = ; comment" is not recognized as an inline comment
             # because of overall stripping and a need for whitespace before
             # the semicolon (sigh)
-            out_conf.set(self.name, '; about revisions',
-                         "the extended buildout '%s' uses the 'revisions' "
-                         "option. The present override disables it "
-                         "because it makes no sense after extraction and "
-                         "replacement by the "
-                         "'local' scheme" % self.buildout_cfg_name())
+            out_conf.set(
+                self.name,
+                "; about revisions",
+                "the extended buildout '%s' uses the 'revisions' "
+                "option. The present override disables it "
+                "because it makes no sense after extraction and "
+                "replacement by the "
+                "'local' scheme" % self.buildout_cfg_name(),
+            )
 
-    def _extract_vcs_source(self, vcs_type, repo_path, target_dir, local_path,
-                            extracted):
+    def _extract_vcs_source(
+        self, vcs_type, repo_path, target_dir, local_path, extracted
+    ):
         """Extract a VCS source.
 
         The extracted argument is a set of previously extracted targets.
@@ -1544,7 +1636,7 @@ class BaseRecipe(object):
         if target_path in extracted:
             return
 
-        repo = vcs.repo(vcs_type, repo_path, '')  # no need of remote URL
+        repo = vcs.repo(vcs_type, repo_path, "")  # no need of remote URL
         repo.archive(target_path)
         extracted.add(target_path)
 
@@ -1561,18 +1653,20 @@ class BaseRecipe(object):
         if not self.odoo_dir.startswith(self.buildout_dir):
             raise RuntimeError(
                 "Main odoo directory %r outside of buildout "
-                "directory, don't know how to handle that" % self.odoo_dir)
+                "directory, don't know how to handle that" % self.odoo_dir
+            )
 
-        local_path = self.odoo_dir[len(self.buildout_dir + os.sep):]
+        local_path = self.odoo_dir[len(self.buildout_dir + os.sep) :]
         target_path = join(target_dir, local_path)
         if target_path in extracted:
             return local_path
 
-        if source_type == 'downloadable':
+        if source_type == "downloadable":
             shutil.copytree(self.odoo_dir, target_path)
-        elif source_type != 'local':  # see docstring for 'local'
-            self._extract_vcs_source(source_type, self.odoo_dir, target_dir,
-                                     local_path, extracted)
+        elif source_type != "local":  # see docstring for 'local'
+            self._extract_vcs_source(
+                source_type, self.odoo_dir, target_dir, local_path, extracted
+            )
         return local_path
 
     def _prepare_extracted_buildout(self, conf, target_dir):
@@ -1590,32 +1684,37 @@ class BaseRecipe(object):
         the recipe control, that are therefore expected to be deployed before
         hand on target systems.
         """
-        conf.add_section('buildout')
-        conf.set('buildout', 'extends', self.buildout_cfg_name())
-        conf.add_section('versions')
-        conf.set('buildout', 'versions', 'versions')
+        conf.add_section("buildout")
+        conf.set("buildout", "extends", self.buildout_cfg_name())
+        conf.add_section("versions")
+        conf.set("buildout", "versions", "versions")
 
-        develops = set(option_splitlines(self.b_options.get('develop')))
+        develops = set(option_splitlines(self.b_options.get("develop")))
 
         extracted = set()
         for raw, target, sub_dir, abs_path in self._get_gp_vcs_develops():
             target_sub_dir = os.path.join(sub_dir, target)
-            vcs_type = raw.split('+', 1)[0]
-            self._extract_vcs_source(vcs_type, abs_path,
-                                     target_dir, target_sub_dir, extracted)
+            vcs_type = raw.split("+", 1)[0]
+            self._extract_vcs_source(
+                vcs_type, abs_path, target_dir, target_sub_dir, extracted
+            )
             # looks silly, but better for uniformity:
             develops.add(target_sub_dir)
 
-        bdir = os.path.join(self.buildout_dir, '')
-        conf.set('buildout', 'develop',
-                 os.linesep.join(d[len(bdir):] if d.startswith(bdir) else d
-                                 for d in develops))
+        bdir = os.path.join(self.buildout_dir, "")
+        conf.set(
+            "buildout",
+            "develop",
+            os.linesep.join(
+                d[len(bdir) :] if d.startswith(bdir) else d for d in develops
+            ),
+        )
 
         # remove gp.vcsdevelop from extensions
-        exts = self.buildout['buildout'].get('extensions', '').split()
-        if 'gp.vcsdevelop' in exts:
-            exts.remove('gp.vcsdevelop')
-        conf.set('buildout', 'extensions', '\n'.join(exts))
+        exts = self.buildout["buildout"].get("extensions", "").split()
+        if "gp.vcsdevelop" in exts:
+            exts.remove("gp.vcsdevelop")
+        conf.set("buildout", "extensions", "\n".join(exts))
 
     def _install_script(self, name, content):
         """Install and register a scripbont with prescribed name and content.
@@ -1623,7 +1722,7 @@ class BaseRecipe(object):
         Return the script path
         """
         path = join(self.bin_dir, name)
-        f = open(path, 'w')
+        f = open(path, "w")
         f.write(content)
         f.close()
         os.chmod(path, stat.S_IRWXU)
@@ -1650,13 +1749,15 @@ class BaseRecipe(object):
         :param check_existence: if ``True``, all the paths will be checked for
                                 existence (useful for unit tests)
         """
-        opt_key = 'options.addons_path'
+        opt_key = "options.addons_path"
         if opt_key in self.options:
-            raise UserError("In part %r, direct use of %s is prohibited. "
-                            "please use addons lines with type 'local' "
-                            "instead." % (self.name, opt_key))
+            raise UserError(
+                "In part %r, direct use of %s is prohibited. "
+                "please use addons lines with type 'local' "
+                "instead." % (self.name, opt_key)
+            )
 
-        base_addons = join(self.odoo_dir, 'odoo', 'addons')
+        base_addons = join(self.odoo_dir, "odoo", "addons")
         if os.path.exists(base_addons):
             self.addons_paths.insert(0, base_addons)
 
@@ -1664,10 +1765,9 @@ class BaseRecipe(object):
 
         if check_existence:
             for path in self.addons_paths:
-                assert os.path.isdir(path), (
-                    "Not a directory: %r (aborting)" % path)
+                assert os.path.isdir(path), "Not a directory: %r (aborting)" % path
 
-        self.options['options.addons_path'] = ','.join(self.addons_paths)
+        self.options["options.addons_path"] = ",".join(self.addons_paths)
 
     def insert_odoo_git_addons(self, base_addons):
         """Insert the standard, non-base addons bundled within Odoo git repo.
@@ -1698,7 +1798,7 @@ class BaseRecipe(object):
         :param base_addons: the path to previously detected ``base`` addons,
                             to properly insert right after them
         """
-        odoo_git_addons = join(self.odoo_dir, 'addons')
+        odoo_git_addons = join(self.odoo_dir, "addons")
         if not os.path.isdir(odoo_git_addons):
             return
 
@@ -1723,14 +1823,13 @@ class BaseRecipe(object):
         # Nothing guarantees that this method is called after develop().
         # It is in practice now, but one day, the extraction as a separate
         # script of freeze/extract will become a reality.
-        for proj_name in ('openerp', 'odoo'):
-            egg_info_dir = join(self.odoo_dir, proj_name + '.egg-info')
+        for proj_name in ("openerp", "odoo"):
+            egg_info_dir = join(self.odoo_dir, proj_name + ".egg-info")
             if os.path.exists(egg_info_dir):
                 shutil.rmtree(egg_info_dir)
 
     def buildout_cfg_name(self, argv=None):
-        """Return the name of the config file that's been called.
-        """
+        """Return the name of the config file that's been called."""
 
         # not using optparse because it's not obvious how to tell it to
         # consider just one option and ignore the others.
@@ -1739,7 +1838,7 @@ class BaseRecipe(object):
             argv = sys.argv[1:]
 
         # -c FILE or --config FILE syntax
-        for opt in ('-c', '--config'):
+        for opt in ("-c", "--config"):
             try:
                 i = argv.index(opt)
             except ValueError:
@@ -1751,6 +1850,6 @@ class BaseRecipe(object):
         prefix = "--config="
         for a in argv:
             if a.startswith(prefix):
-                return a[len(prefix):]
+                return a[len(prefix) :]
 
-        return 'buildout.cfg'
+        return "buildout.cfg"

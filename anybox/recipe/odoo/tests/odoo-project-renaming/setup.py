@@ -29,63 +29,86 @@ from os.path import join
 # List all data files
 def data():
     r = {}
-    for root, dirnames, filenames in os.walk('odoo'):
+    for root, dirnames, filenames in os.walk("odoo"):
         for filename in filenames:
-            if not re.match(r'.*(\.pyc|\.pyo|\~)$', filename):
+            if not re.match(r".*(\.pyc|\.pyo|\~)$", filename):
                 r.setdefault(root, []).append(os.path.join(root, filename))
 
-    if os.name == 'nt':
-        r["Microsoft.VC90.CRT"] = glob.glob('C:\Microsoft.VC90.CRT\*.*')
+    if os.name == "nt":
+        r["Microsoft.VC90.CRT"] = glob.glob("C:\Microsoft.VC90.CRT\*.*")
 
         import babel
+
         # Add data, but also some .py files py2exe won't include automatically.
         # TODO This should probably go under `packages`, instead of `data`,
         # but this will work fine (especially since we don't use the ZIP file
         # approach).
-        r["babel/localedata"] = glob.glob(os.path.join(os.path.dirname(babel.__file__), "localedata", '*'))
-        others = ['global.dat', 'numbers.py', 'support.py', 'plural.py']
-        r["babel"] = map(lambda f: os.path.join(os.path.dirname(babel.__file__), f), others)
-        others = ['frontend.py', 'mofile.py']
-        r["babel/messages"] = map(lambda f: os.path.join(os.path.dirname(babel.__file__), "messages", f), others)
+        r["babel/localedata"] = glob.glob(
+            os.path.join(os.path.dirname(babel.__file__), "localedata", "*")
+        )
+        others = ["global.dat", "numbers.py", "support.py", "plural.py"]
+        r["babel"] = map(
+            lambda f: os.path.join(os.path.dirname(babel.__file__), f), others
+        )
+        others = ["frontend.py", "mofile.py"]
+        r["babel/messages"] = map(
+            lambda f: os.path.join(os.path.dirname(babel.__file__), "messages", f),
+            others,
+        )
 
         import pytz
+
         tzdir = os.path.dirname(pytz.__file__)
         for root, _, filenames in os.walk(os.path.join(tzdir, "zoneinfo")):
-            base = os.path.join('pytz', root[len(tzdir) + 1:])
+            base = os.path.join("pytz", root[len(tzdir) + 1 :])
             r[base] = [os.path.join(root, f) for f in filenames]
 
         import docutils
+
         dudir = os.path.dirname(docutils.__file__)
         for root, _, filenames in os.walk(dudir):
-            base = os.path.join('docutils', root[len(dudir) + 1:])
-            r[base] = [os.path.join(root, f) for f in filenames if not f.endswith(('.py', '.pyc', '.pyo'))]
+            base = os.path.join("docutils", root[len(dudir) + 1 :])
+            r[base] = [
+                os.path.join(root, f)
+                for f in filenames
+                if not f.endswith((".py", ".pyc", ".pyo"))
+            ]
 
     return r.items()
 
-def gen_manifest():
-    file_list="\n".join(data())
-    open('MANIFEST','w').write(file_list)
 
-if os.name == 'nt':
+def gen_manifest():
+    file_list = "\n".join(data())
+    open("MANIFEST", "w").write(file_list)
+
+
+if os.name == "nt":
     sys.path.append("C:\Microsoft.VC90.CRT")
 
+
 def py2exe_options():
-    if os.name == 'nt':
+    if os.name == "nt":
         import py2exe
+
         return {
-            "console" : [ { "script": "odoo-bin", "icon_resources": [(1, join("install","odoo-icon.ico"))], },
-                          { "script": "odoo-gevent" },
-                          { "script": "odoo.py" },
+            "console": [
+                {
+                    "script": "odoo-bin",
+                    "icon_resources": [(1, join("install", "odoo-icon.ico"))],
+                },
+                {"script": "odoo-gevent"},
+                {"script": "odoo.py"},
             ],
-            'options' : {
+            "options": {
                 "py2exe": {
                     "skip_archive": 1,
-                    "optimize": 0, # keep the assert running, because the integrated tests rely on them.
-                    "dist_dir": 'dist',
+                    "optimize": 0,  # keep the assert running, because the integrated tests rely on them.
+                    "dist_dir": "dist",
                     "packages": [
                         "HTMLParser",
                         "PIL",
-                        "asynchat", "asyncore",
+                        "asynchat",
+                        "asyncore",
                         "commands",
                         "dateutil",
                         "decimal",
@@ -94,9 +117,13 @@ def py2exe_options():
                         "encodings",
                         "imaplib",
                         "jinja2",
-                        "lxml", "lxml._elementpath", "lxml.builder", "lxml.etree", "lxml.objectify",
+                        "lxml",
+                        "lxml._elementpath",
+                        "lxml.builder",
+                        "lxml.etree",
+                        "lxml.objectify",
                         "mako",
-                        "markupsafe",   # dependence of jinja2 and mako
+                        "markupsafe",  # dependence of jinja2 and mako
                         "mock",
                         "odoo",
                         "poplib",
@@ -113,19 +140,22 @@ def py2exe_options():
                         "uuid",
                         "vatnumber",
                         "vobject",
-                        "win32service", "win32serviceutil",
+                        "win32service",
+                        "win32serviceutil",
                         "xlwt",
-                        "xml", "xml.dom",
+                        "xml",
+                        "xml.dom",
                         "yaml",
                     ],
-                    "excludes" : ["Tkconstants","Tkinter","tcl"],
+                    "excludes": ["Tkconstants", "Tkinter", "tcl"],
                 }
-            }
+            },
         }
     else:
         return {}
 
-execfile(join(os.path.dirname(__file__), 'odoo', 'release.py'))
+
+execfile(join(os.path.dirname(__file__), "odoo", "release.py"))
 
 # Notes for OpenERP developer on windows:
 #
@@ -141,25 +171,25 @@ execfile(join(os.path.dirname(__file__), 'odoo', 'release.py'))
 # Both python2.7 32bits and 64bits are known to work.
 
 setuptools.setup(
-      name             = 'odoo',
-      version          = version,
-      description      = description,
-      long_description = long_desc,
-      url              = url,
-      author           = author,
-      author_email     = author_email,
-      classifiers      = filter(None, classifiers.split("\n")),
-      license          = license,
-      scripts          = ['odoo-bin', 'odoo-gevent', 'odoo.py'],
-      data_files       = data(),
-      packages         = setuptools.find_packages(),
-      #include_package_data = True,
-      # GR voided the list, because we're interested in the test in what
-      # the recipe will add
-      install_requires = [],
-      extras_require = {},
-      tests_require = [],
-      **py2exe_options()
+    name="odoo",
+    version=version,
+    description=description,
+    long_description=long_desc,
+    url=url,
+    author=author,
+    author_email=author_email,
+    classifiers=filter(None, classifiers.split("\n")),
+    license=license,
+    scripts=["odoo-bin", "odoo-gevent", "odoo.py"],
+    data_files=data(),
+    packages=setuptools.find_packages(),
+    # include_package_data = True,
+    # GR voided the list, because we're interested in the test in what
+    # the recipe will add
+    install_requires=[],
+    extras_require={},
+    tests_require=[],
+    **py2exe_options()
 )
 
 

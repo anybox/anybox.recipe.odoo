@@ -14,15 +14,19 @@ from . import patch_odoo
 
 
 def insert_args(arguments):
-    """Insert `arguments` in ``sys.argv`` (direct impact on child script).
-    """
+    """Insert `arguments` in ``sys.argv`` (direct impact on child script)."""
     for i, a in enumerate(arguments):
-        sys.argv.insert(i+1, a)
+        sys.argv.insert(i + 1, a)
 
 
-def main(starter, conf, version=None, just_test=False,
-         server_wide_modules=None,
-         gevent_script_path=None):
+def main(
+    starter,
+    conf,
+    version=None,
+    just_test=False,
+    server_wide_modules=None,
+    gevent_script_path=None,
+):
     """Call the `starter` script, dispatching configuration.
 
     All arguments are set in the standalone script produced by buildout through
@@ -38,25 +42,29 @@ def main(starter, conf, version=None, just_test=False,
     :type version: tuple of integers
     :param just_test: if True, only run unit tests
     """
-    arguments = ['-c', conf]
+    arguments = ["-c", conf]
 
     if just_test:
-        arguments.extend(('--log-level',
-                          'test' if version >= (6, 0) else 'info',
-                          '--stop-after-init'))
+        arguments.extend(
+            (
+                "--log-level",
+                "test" if version >= (6, 0) else "info",
+                "--stop-after-init",
+            )
+        )
 
         if version >= (7, 0):
-            arguments.append('--test-enable')
+            arguments.append("--test-enable")
 
     if server_wide_modules:
         for opt in sys.argv[1:]:
-            if opt.startswith('--load'):
+            if opt.startswith("--load"):
                 break
         else:
-            arguments.append('--load=' + ','.join(server_wide_modules))
+            arguments.append("--load=" + ",".join(server_wide_modules))
 
-    if '--install-all' in sys.argv:
-        sys.argv.remove('--install-all')
+    if "--install-all" in sys.argv:
+        sys.argv.remove("--install-all")
         try:
             from openerp.tools import config
             from openerp.modules import get_modules
@@ -66,8 +74,8 @@ def main(starter, conf, version=None, just_test=False,
         # Maybe we should preparse config in all cases and therefore avoid
         # adding the '-c' on the fly ?
         # Still, cautious about pre-6.1 versions
-        config.parse_config(['-c', conf])
-        arguments.extend(('-i', ','.join(get_modules())))
+        config.parse_config(["-c", conf])
+        arguments.extend(("-i", ",".join(get_modules())))
 
     insert_args(arguments)
 
@@ -77,8 +85,8 @@ def main(starter, conf, version=None, just_test=False,
 
     os.chdir(os.path.split(starter)[0])
     glob = globals()
-    glob['__name__'] = '__main__'
-    glob['__file__'] = starter
+    glob["__name__"] = "__main__"
+    glob["__file__"] = starter
     sys.argv[0] = starter
     try:
         if sys.version_info < (3, 0):

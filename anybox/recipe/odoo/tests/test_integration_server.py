@@ -17,21 +17,22 @@ from zc.buildout import buildout
 from zc.buildout.easy_install import Installer, buildout_and_setuptools_path
 
 TEST_DIR = os.path.dirname(__file__)
-EGG_SUFFIX = '-py%d.%d.egg' % sys.version_info[:2]
+EGG_SUFFIX = "-py%d.%d.egg" % sys.version_info[:2]
 
 
 class IntegrationTestCase(unittest.TestCase):
-
     def setUp(self):
         import pip as pip_original
+
         self.versions_original = deepcopy(Installer._versions)
         self.cwd_original = os.getcwd()
         self.pip_original = pip_original
         try:
-            sandbox = mkdtemp('test_int_oerp_base_recipe')
-            self.buildout_dir = os.path.join(sandbox, 'buildout_dir')
-            shutil.copytree(os.path.join(TEST_DIR, 'integration_buildouts'),
-                            self.buildout_dir)
+            sandbox = mkdtemp("test_int_oerp_base_recipe")
+            self.buildout_dir = os.path.join(sandbox, "buildout_dir")
+            shutil.copytree(
+                os.path.join(TEST_DIR, "integration_buildouts"), self.buildout_dir
+            )
             os.chdir(self.buildout_dir)
             self.provide_dependencies()
         except:
@@ -65,12 +66,13 @@ class IntegrationTestCase(unittest.TestCase):
 
         autopath = buildout_and_setuptools_path
         self.autopath_original = autopath[:]
-        forward_projects = ['pip', 'zc.buildout', 'zc.recipe.egg',
-                            'anybox.recipe.odoo']
+        forward_projects = ["pip", "zc.buildout", "zc.recipe.egg", "anybox.recipe.odoo"]
         if sys.version_info < (2, 7):
-            forward_projects.extend(('argparse', 'ordereddict'))
-        autopath.extend(working_set.find(Requirement.parse(project)).location
-                        for project in forward_projects)
+            forward_projects.extend(("argparse", "ordereddict"))
+        autopath.extend(
+            working_set.find(Requirement.parse(project)).location
+            for project in forward_projects
+        )
 
     def tearDown(self):
         try:
@@ -78,27 +80,27 @@ class IntegrationTestCase(unittest.TestCase):
         except:
             pass
 
-        sys.modules['pip'] = self.pip_original
+        sys.modules["pip"] = self.pip_original
         Installer._versions = self.versions_original
         buildout_and_setuptools_path[:] = self.autopath_original
         os.chdir(self.cwd_original)
 
     def test_requirements_file_integration_with_versions(self):
         """Versions have precedence."""
-        buildout.main(['bootstrap'])
-        buildout.main(['-c', 'buildout_with_versions.cfg', 'install', 'odoo'])
+        buildout.main(["bootstrap"])
+        buildout.main(["-c", "buildout_with_versions.cfg", "install", "odoo"])
 
-        with open(os.path.join('bin', 'start_odoo')) as f:
+        with open(os.path.join("bin", "start_odoo")) as f:
             start_odoo = f.read()
-        self.assertTrue('foobar-0.0.4' + EGG_SUFFIX in start_odoo)
-        self.assertFalse('foobar-0.0.3'in start_odoo)
+        self.assertTrue("foobar-0.0.4" + EGG_SUFFIX in start_odoo)
+        self.assertFalse("foobar-0.0.3" in start_odoo)
 
     def test_requirements_file_integration(self):
         """Requirements.txt is applied."""
-        buildout.main(['bootstrap'])
-        buildout.main(['-c', 'buildout.cfg', 'install', 'odoo'])
+        buildout.main(["bootstrap"])
+        buildout.main(["-c", "buildout.cfg", "install", "odoo"])
 
-        with open(os.path.join('bin', 'start_odoo')) as f:
+        with open(os.path.join("bin", "start_odoo")) as f:
             start_odoo = f.read()
-        self.assertTrue('foobar-0.0.3' + EGG_SUFFIX in start_odoo)
-        self.assertFalse('foobar-0.0.4'in start_odoo)
+        self.assertTrue("foobar-0.0.3" + EGG_SUFFIX in start_odoo)
+        self.assertFalse("foobar-0.0.4" in start_odoo)

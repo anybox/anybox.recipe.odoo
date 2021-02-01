@@ -43,45 +43,50 @@ else:
     __version__ = openerp.release.version
 
     if openerp.release.version_info < (6, 1):
-        raise RuntimeError("Interpreter and scripts not compatible "
-                           "with OpenERP < 6.1")
+        raise RuntimeError(
+            "Interpreter and scripts not compatible " "with OpenERP < 6.1"
+        )
 
 # Also use the `openerp` logger for the main script.
-_logger = logging.getLogger('openerp')
+_logger = logging.getLogger("openerp")
 
 
 def check_root_user():
     """ Exit if the process's user is 'root' (on POSIX system)."""
-    if os.name == 'posix':
+    if os.name == "posix":
         import pwd
-        if pwd.getpwuid(os.getuid())[0] == 'root':
-            sys.stderr.write("Running as user 'root' is a security risk, "
-                             "aborting.\n")
+
+        if pwd.getpwuid(os.getuid())[0] == "root":
+            sys.stderr.write(
+                "Running as user 'root' is a security risk, " "aborting.\n"
+            )
             sys.exit(1)
 
 
 def check_postgres_user():
-    """ Exit if the configured database user is 'postgres'.
+    """Exit if the configured database user is 'postgres'.
 
     This function assumes the configuration has been initialized.
     """
     config = openerp.tools.config
-    if config['db_user'] == 'postgres':
-        sys.stderr.write("Using the database user 'postgres' is a "
-                         "security risk, aborting.")
+    if config["db_user"] == "postgres":
+        sys.stderr.write(
+            "Using the database user 'postgres' is a " "security risk, aborting."
+        )
         sys.exit(1)
 
 
 def report_configuration():
-    """ Log the server version and some configuration values.
+    """Log the server version and some configuration values.
 
     This function assumes the configuration has been initialized.
     """
     config = openerp.tools.config
     _logger.info("OpenERP version %s", __version__)
-    for name, value in [('addons paths', config['addons_path']),
-                        ('database hostname',
-                         config['db_host'] or 'localhost'),
-                        ('database port', config['db_port'] or '5432'),
-                        ('database user', config['db_user'])]:
+    for name, value in [
+        ("addons paths", config["addons_path"]),
+        ("database hostname", config["db_host"] or "localhost"),
+        ("database port", config["db_port"] or "5432"),
+        ("database user", config["db_user"]),
+    ]:
         _logger.info("%s: %s", name, value)
