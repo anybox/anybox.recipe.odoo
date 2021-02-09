@@ -431,7 +431,9 @@ class GitRepo(BaseRepo):
             raise UserError("Branch %s not found in git repository "
                             "%s (offline mode)" % (revision, self))
         cmd = self._no_edit(['git', 'merge', revision])
-        self.log_call(cmd)
+        with working_directory_keeper:
+            os.chdir(self.target_dir)
+            self.log_call(cmd)
 
     def merge(self, revision):
         """Merge revision into current branch"""
