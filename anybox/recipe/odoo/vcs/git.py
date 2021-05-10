@@ -256,7 +256,7 @@ class GitRepo(BaseRepo):
             self.log_call(fetch_cmd, callwith=update_check_call)
 
         if checkout:
-            self.log_call(['git', 'checkout', sha])
+            self.log_call(['git', 'checkout', sha], callwith=update_check_call)
 
     def get_local_hash_for_ref(self, ref):
         """Query the local git database for sha of a given ref.
@@ -344,7 +344,8 @@ class GitRepo(BaseRepo):
 
             # if pinned, try to find on local first
             if ishex(revision) and self.has_commit(revision):
-                self.log_call(['git', 'checkout', revision])
+                self.log_call(['git', 'checkout', revision],
+                              callwith=update_check_call)
                 return
             rtype, sha = self.query_remote_ref(BUILDOUT_ORIGIN, revision)
             if rtype is None and ishex(revision):
@@ -363,7 +364,8 @@ class GitRepo(BaseRepo):
             self.log_call(fetch_cmd, callwith=update_check_call)
 
             if rtype == 'tag':
-                self.log_call(['git', 'checkout', revision])
+                self.log_call(['git', 'checkout', revision],
+                              callwith=update_check_call)
             elif rtype in ('branch', 'HEAD'):
                 self.update_fetched_branch(revision)
             else:
@@ -389,10 +391,12 @@ class GitRepo(BaseRepo):
             return
 
         if not self._is_a_branch(branch):
-            self.log_call(['git', 'checkout', '-b', branch, 'FETCH_HEAD'])
+            self.log_call(['git', 'checkout', '-b', branch, 'FETCH_HEAD'],
+                          callwith=update_check_call)
         else:
             # switch, then fast-forward
-            self.log_call(['git', 'checkout', branch])
+            self.log_call(['git', 'checkout', branch],
+                          callwith=update_check_call)
             try:
                 self.log_call(['git', 'merge', '--ff-only', 'FETCH_HEAD'],
                               callwith=update_check_call)
