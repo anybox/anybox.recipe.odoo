@@ -132,19 +132,19 @@ class GitRepo(BaseRepo):
         try:
             version = cls._git_version = tuple(
                 int(x) for x in v_str.split()[2].split('.')[:3])
-        except:
+        except:  # noqa: E722 do not use bare 'except'
             raise ValueError("Could not parse git version output %r. Please "
                              "report this" % v_str)
         return version
 
     def log_call(self, cmd, callwith=subprocess.check_call,
                  log_level=logging.INFO, **kw):
-            """Wrap a subprocess call with logging
+        """Wrap a subprocess call with logging
 
-            :param meth: the calling method to use.
-            """
-            logger.log(log_level, "%s> call %r", self.target_dir, cmd)
-            return callwith(cmd, **kw)
+        :param meth: the calling method to use.
+        """
+        logger.log(log_level, "%s> call %r", self.target_dir, cmd)
+        return callwith(cmd, **kw)
 
     def clean(self):
         if not os.path.isdir(self.target_dir):
@@ -288,7 +288,7 @@ class GitRepo(BaseRepo):
         out = self.log_call(['git', 'ls-remote', remote, ref],
                             cwd=self.target_dir,
                             callwith=check_output).strip()
-        for sha, fullref in (l.split() for l in out.splitlines()):
+        for sha, fullref in (li.split() for li in out.splitlines()):
             if fullref == 'refs/heads/' + ref:
                 return 'branch', sha
             elif fullref == 'refs/tags/' + ref:
