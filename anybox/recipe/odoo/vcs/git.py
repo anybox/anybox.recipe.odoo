@@ -132,19 +132,19 @@ class GitRepo(BaseRepo):
         try:
             version = cls._git_version = tuple(
                 int(x) for x in v_str.split()[2].split('.')[:3])
-        except:
+        except:  # noqa: E722 do not use bare 'except'
             raise ValueError("Could not parse git version output %r. Please "
                              "report this" % v_str)
         return version
 
     def log_call(self, cmd, callwith=subprocess.check_call,
                  log_level=logging.INFO, **kw):
-            """Wrap a subprocess call with logging
+        """Wrap a subprocess call with logging
 
-            :param meth: the calling method to use.
-            """
-            logger.log(log_level, "%s> call %r", self.target_dir, cmd)
-            return callwith(cmd, **kw)
+        :param meth: the calling method to use.
+        """
+        logger.log(log_level, "%s> call %r", self.target_dir, cmd)
+        return callwith(cmd, **kw)
 
     def clean(self):
         if not os.path.isdir(self.target_dir):
@@ -256,7 +256,7 @@ class GitRepo(BaseRepo):
             self.log_call(fetch_cmd, callwith=update_check_call)
 
         if checkout:
-            self.log_call(['git', 'checkout', sha])
+            self.log_call(['git', 'checkout', sha], callwith=update_check_call)
 
     def get_local_hash_for_ref(self, ref):
         """Query the local git database for sha of a given ref.
@@ -288,7 +288,7 @@ class GitRepo(BaseRepo):
         out = self.log_call(['git', 'ls-remote', remote, ref],
                             cwd=self.target_dir,
                             callwith=check_output).strip()
-        for sha, fullref in (l.split() for l in out.splitlines()):
+        for sha, fullref in (li.split() for li in out.splitlines()):
             if fullref == 'refs/heads/' + ref:
                 return 'branch', sha
             elif fullref == 'refs/tags/' + ref:
@@ -344,7 +344,8 @@ class GitRepo(BaseRepo):
 
             # if pinned, try to find on local first
             if ishex(revision) and self.has_commit(revision):
-                self.log_call(['git', 'checkout', revision])
+                self.log_call(['git', 'checkout', revision],
+                              callwith=update_check_call)
                 return
             rtype, sha = self.query_remote_ref(BUILDOUT_ORIGIN, revision)
             if rtype is None and ishex(revision):
@@ -363,7 +364,8 @@ class GitRepo(BaseRepo):
             self.log_call(fetch_cmd, callwith=update_check_call)
 
             if rtype == 'tag':
-                self.log_call(['git', 'checkout', revision])
+                self.log_call(['git', 'checkout', revision],
+                              callwith=update_check_call)
             elif rtype in ('branch', 'HEAD'):
                 self.update_fetched_branch(revision)
             else:
@@ -389,10 +391,12 @@ class GitRepo(BaseRepo):
             return
 
         if not self._is_a_branch(branch):
-            self.log_call(['git', 'checkout', '-b', branch, 'FETCH_HEAD'])
+            self.log_call(['git', 'checkout', '-b', branch, 'FETCH_HEAD'],
+                          callwith=update_check_call)
         else:
             # switch, then fast-forward
-            self.log_call(['git', 'checkout', branch])
+            self.log_call(['git', 'checkout', branch],
+                          callwith=update_check_call)
             try:
                 self.log_call(['git', 'merge', '--ff-only', 'FETCH_HEAD'],
                               callwith=update_check_call)
