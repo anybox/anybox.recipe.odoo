@@ -75,7 +75,8 @@ class TestServer(RecipeTestCase):
         self.assertEquals(
             get_vcs_log(), [
                 (addons_dir, 'http://trunk.example', 'rev',
-                 dict(offline=False, clear_locks=False, clean=False)
+                 dict(offline=False, clear_locks=False, clean=False,
+                      skip_checkout=False,)
                  )])
         self.assertEquals(paths, [addons_dir])
 
@@ -91,12 +92,13 @@ class TestServer(RecipeTestCase):
 
         self.recipe.retrieve_addons()
         paths = self.recipe.addons_paths
+        options = dict(
+            offline=False, clear_locks=False, clean=False, skip_checkout=False,
+        )
         self.assertEquals(
             get_vcs_log(), [
-                (addons_dir, 'http://trunk.example', 'rev',
-                 dict(offline=False, clear_locks=False, clean=False)),
-                (other_dir, 'http://other.example', '76',
-                 dict(offline=False, clear_locks=False, clean=False)),
+                (addons_dir, 'http://trunk.example', 'rev', options),
+                (other_dir, 'http://other.example', '76', options),
             ])
         self.assertEquals(paths, [addons_dir, other_dir])
 
@@ -130,7 +132,8 @@ class TestServer(RecipeTestCase):
         self.assertEquals(get_vcs_log(), [
                           (web_dir, 'lp:odoo-web', 'last:1',
                            dict(offline=False, clear_locks=False, clean=False,
-                                    subdir="addons", bzrinit="branch"))
+                                    subdir="addons", bzrinit="branch",
+                                    skip_checkout=False))
                           ])
         self.assertEquals(paths, [web_addons_dir])
 
@@ -149,13 +152,13 @@ class TestServer(RecipeTestCase):
 
         self.recipe.retrieve_addons()
         paths = self.recipe.addons_paths
+        options = dict(
+            offline=False, clear_locks=False, clean=False,
+            skip_checkout=False, group="grouped",
+        )
         self.assertEquals(get_vcs_log(), [
-                          (addons1_dir, 'lp:my-addons1', 'last:1',
-                           dict(offline=False, clear_locks=False, clean=False,
-                                group="grouped")),
-                          (addons2_dir, 'lp:my-addons2', 'last:1',
-                           dict(offline=False, clear_locks=False, clean=False,
-                                group="grouped"))
+                          (addons1_dir, 'lp:my-addons1', 'last:1', options),
+                          (addons2_dir, 'lp:my-addons2', 'last:1', options),
                           ])
         self.assertEquals(paths, [group_dir])
 
@@ -182,7 +185,8 @@ class TestServer(RecipeTestCase):
         self.recipe.retrieve_addons()
         self.assertEquals(get_vcs_log(), [
                           (addons_dir, 'lp:my-addons', '-1',
-                           dict(offline=False, clear_locks=True, clean=False))
+                           dict(offline=False, clear_locks=True, clean=False,
+                                skip_checkout=False,))
                           ])
 
     def test_merge_requirements(self):

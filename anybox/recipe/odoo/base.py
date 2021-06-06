@@ -201,7 +201,8 @@ class BaseRecipe(object):
                           taken care of by this recipe instance.
         """
         options = self.b_options if is_global else self.options
-        return options.get(name, '').lower() == 'true'
+        value = options.get(name, False)
+        return value.lower() == 'true' if isinstance(value, str) else value
 
     def __init__(self, buildout, name, options):
         self.requirements = list(self.requirements)
@@ -212,12 +213,10 @@ class BaseRecipe(object):
         # GR: would prefer lower() but doing as in 'zc.recipe.egg'
         # (later) the standard way for all booleans is to use
         # options.query_bool() or get_bool(), but it doesn't lower() at all
-        self.offline = self.b_options['offline'] == 'true'
-        self.clean = options.get('clean') == 'true'
-        clear_locks = options.get('vcs-clear-locks', '').lower()
-        self.vcs_clear_locks = clear_locks == 'true'
-        clear_retry = options.get('vcs-clear-retry', '').lower()
-        self.clear_retry = clear_retry == 'true'
+        self.offline = self.bool_opt_get('offline', is_global=True)
+        self.clean = self.bool_opt_get('clean')
+        self.vcs_clear_locks = self.bool_opt_get('vcs-clear-locks')
+        self.clear_retry = self.bool_opt_get('vcs-clear-retry')
 
         if self.bool_opt_get(WITH_ODOO_REQUIREMENTS_FILE_OPTION):
             logger.debug("%s option: adding 'pip' to the recipe requirements",
@@ -911,6 +910,7 @@ class BaseRecipe(object):
             loc_type, loc_spec, addons_options = source_spec
             local_dir = self.make_absolute(local_dir)
             options = dict(offline=self.offline,
+                           skip_checkout=self.bool_opt_get('skip-checkout'),
                            clear_locks=self.vcs_clear_locks,
                            clean=self.clean)
             if loc_type == 'git':
@@ -1118,7 +1118,8 @@ class BaseRecipe(object):
             if type_spec == 'git':
                 options['depth'] = options.pop('git-depth', None)
 
-            options.update(source[2])
+            options.update(source[2],
+                           skip_checkout=self.bool_opt_get('skip-checkout'))
             if self.clean:
                 options['clean'] = True
             vcs.get_update(type_spec, self.odoo_dir, url, rev,

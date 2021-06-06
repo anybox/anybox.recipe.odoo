@@ -4,6 +4,7 @@ These tests depend on system executables, such as 'hg', 'bzr', etc.
 """
 
 import os
+import os.path
 import subprocess
 
 from zc.buildout import UserError
@@ -35,6 +36,32 @@ class CommonTestCase(testing.VcsTestCase):
         repo = BaseRepo('/some/path', 'http://some/url')
         self.assertEqual(str(repo), "BaseRepo at '/some/path' "
                          "(remote='http://some/url')")
+
+    def test_skip_checkout(self):
+        existing_dir = self.dst_dir
+        non_existing_dir = os.path.join(existing_dir + 'foo')
+
+        # Repos should try checkout when not called with skip_checkout
+        revision = "1.0"
+        self.assertRaises(
+            NotImplementedError,
+            BaseRepo(existing_dir, 'http://some/url'),
+            revision,
+        )
+        # Specially when the target doesn't exist
+        self.assertRaises(
+            NotImplementedError,
+            BaseRepo(non_existing_dir, 'http://some/url'),
+            revision,
+        )
+        # But also when called with skip_checkout and the target doesn't exist
+        self.assertRaises(
+            NotImplementedError,
+            BaseRepo(non_existing_dir, 'http://some/url', skip_checkout=True),
+            revision,
+        )
+        # But not when it exists
+        BaseRepo(existing_dir, 'http://some/url', skip_checkout=True)(revision)
 
     def test_unknown(self):
         self.assertRaises(UserError,

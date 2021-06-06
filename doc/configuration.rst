@@ -370,6 +370,29 @@ Currently only merges on bzr and git repositories are supported
 
 .. _eggs:
 
+skip-checkout
+-------------
+This option causes the checkout of each repository specified under
+:ref:`addons` or :ref:`version` to be skipped if it already exists on the
+filesystem.
+
+It's useful during development when you already have a working buildout with
+many addons and would like to skip the part where each addon is checked out
+again.
+
+For examples, if you want to:
+
+* just rebuild ``odoo.cfg`` with newer settings.
+
+* add another python package in ``eggs =``
+
+* temporarily work on an addon in a branch that is different than the one
+  specified in the ``addons`` setting but wanting to re-run buildout for one of the above reasons.
+
+This is mostly to be used from the command line, like::
+
+    bin/buildout odoo:skip-checkout=true
+
 eggs
 ----
 This option behaves like the identically named one of the most common
