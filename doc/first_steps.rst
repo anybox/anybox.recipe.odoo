@@ -81,13 +81,14 @@ setuptools older than 0.7 is present system-wide (happens easily
 enough at the time of this writing).
 
 The universal current way of doing is therefore to start from a
-virtualenv *without setuptools*. For virtualenv >= 1.9, just do::
+virtualenv *without setuptools*. You also need python 2.7 to build this recipe.
+For virtualenv >= 1.9, just do::
 
-  $ virtualenv sandbox --no-setuptools
+  $ virtualenv -p /usr/bin/python2.7 sandbox --no-setuptools
 
 For older versions of virtualenv::
 
-  $ virtualenv sandbox
+  $ virtualenv -p /usr/bin/python2.7 sandbox
   $ sandbox/bin/pip uninstall setuptools pip
 
 .. note:: to install virtualenv.
