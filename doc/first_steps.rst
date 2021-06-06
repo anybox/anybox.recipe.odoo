@@ -44,7 +44,16 @@ have it accept the signing key, e.g. by issuing::
   sudo apt-key adv --keyserver hkp://subkeys.pgp.net --recv-keys 0xE38CEB07
 
 (sometimes, the key server is too busy, you may need to wait a few
-minutes and try again)
+minutes and try again or try one of the following servers::
+
+- pool.sks-keyservers.net
+- subkeys.pgp.net
+- pgp.mit.edu
+- keys.nayr.net
+- keys.gnupg.net
+- wwwkeys.XX.pgp.net where `XX` is your country code (fr, en, de...etc)
+
+)
 
 Install the dependency package::
 
