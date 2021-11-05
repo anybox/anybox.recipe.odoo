@@ -420,13 +420,6 @@ class BaseRecipe(object):
         contradict an existing entry in the versions section, but that's far
         more complicated.
         """
-        req_fname = 'requirements.txt'
-        req_path = join(self.odoo_dir, req_fname)
-        if not os.path.exists(req_path):
-            logger.warn("%r not found in this version of "
-                        "Odoo, although the configuration said to use it. "
-                        "Proceeding anyway.", req_fname)
-            return
 
         # pip wouldn't be importable before the call to
         # install_recipe_requirements()
@@ -446,10 +439,26 @@ class BaseRecipe(object):
         versions = Installer._versions
         develops = self.list_develops()
 
-        if pip_version() < (8, 1, 2):
-            self.read_requirements_pip_before_v8(req_path, versions, develops)
-        else:
-            self.read_requirements_pip_after_v8(req_path, versions, develops)
+        req_fname = 'requirements.txt'
+        parts = [os.path.join(self.parts, o) for o in os.listdir(self.parts)
+                    if os.path.isdir(os.path.join(self.parts,o))]
+        found_req_file = False
+        for part in parts:
+            req_path = join(part, req_fname)
+            if not os.path.exists(req_path):
+                logger.warn(
+                    "%r not found in in %s. Proceeding anyway.", req_fname, part)
+                continue
+            found_req_file = True
+
+            if pip_version() < (8, 1, 2):
+                self.read_requirements_pip_before_v8(req_path, versions, develops)
+            else:
+                self.read_requirements_pip_after_v8(req_path, versions, develops)
+
+        if not found_req_file:
+            logger.warn("Didn't found any requirements file to install")
+            return
         self.merge_requirements()
 
     def read_requirements_pip_before_v8(self, req_path, versions, develops):
