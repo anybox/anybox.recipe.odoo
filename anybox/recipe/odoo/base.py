@@ -479,7 +479,7 @@ class BaseRecipe(object):
             if project_name not in self.requirements:
                 # TODO maybe convert self.requirements to a set (in
                 # next unstable branch)
-                self.requirements.append(project_name)
+                self.requirements.append(str(project_name))
 
             if inst_req.markers:
                 logger.warn("Requirement %s has a marker %s but the evaluation"
@@ -559,7 +559,7 @@ class BaseRecipe(object):
             if project_name not in self.requirements:
                 # TODO maybe convert self.requirements to a set (in
                 # next unstable branch)
-                self.requirements.append(project_name)
+                self.requirements.append(str(project_name))
 
             if project_name in versions:
                 logger.debug("Requirement from Odoo's file %s superseded "
