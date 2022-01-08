@@ -10,7 +10,11 @@ This changelog displays timelines for the two recipes
 
 anybox.recipe.odoo 1.9.3 (UNRELEASED)
 -------------------------------------
--
+- github #90: PyChart special cases no longer needed
+- github #93: Empty log file from upgrade_script
+- github #88: Support from Odoo 8.0 to odoo 10.0
+- github #110: Odoo 11.0 RegistryManager is removed
+- github #108: Python3 compatibility (Odoo 11.0)
 
 anybox.recipe.odoo 1.9.2 (2016-09-20)
 -------------------------------------
