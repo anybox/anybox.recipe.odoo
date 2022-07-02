@@ -88,6 +88,7 @@ GP_VCS_EXTEND_DEVELOP = 'vcs-extend-develop'
 GP_DEVELOP_DIR = 'develop-dir'
 
 WITH_ODOO_REQUIREMENTS_FILE_OPTION = 'apply-requirements-file'
+WITH_ALL_REQUIREMENTS_FILE_OPTION = 'apply-all-requirements-file'
 
 
 def pip_version():
@@ -189,6 +190,7 @@ class BaseRecipe(object):
     """
 
     with_odoo_requirements_file = False
+    with_all_requirements_file = False
     """Whether attempt to use the 'requirements.txt' shipping with Odoo"""
 
     def bool_opt_get(self, name, is_global=False):
@@ -223,6 +225,17 @@ class BaseRecipe(object):
             logger.debug("%s option: adding 'pip' to the recipe requirements",
                          WITH_ODOO_REQUIREMENTS_FILE_OPTION)
             self.with_odoo_requirements_file = True
+            self.recipe_requirements = list(self.recipe_requirements)
+            self.recipe_requirements.append('pip')
+
+        if self.bool_opt_get(WITH_ALL_REQUIREMENTS_FILE_OPTION):
+            logger.debug("%s option: adding 'pip' to the recipe requirements",
+                         WITH_ALL_REQUIREMENTS_FILE_OPTION)
+            self.with_all_requirements_file = True
+
+            # There is no need to install the odoo requirements as well,
+            # those are already covered in the install all
+            self.with_odoo_requirements_file = False
             self.recipe_requirements = list(self.recipe_requirements)
             self.recipe_requirements.append('pip')
 
@@ -452,6 +465,56 @@ class BaseRecipe(object):
             self.read_requirements_pip_after_v8(req_path, versions, develops)
         self.merge_requirements()
 
+    def apply_all_requirements_file(self):
+        """Try and read from all parts the 'requirements.txt' and apply it.
+
+        If a folder in parts misses the requirements.txt file,
+        a warning is issued, that's all.
+
+        Entries from the requirements file are applied if there is not already
+        an entry in the versions section for the same project.
+        """
+
+        # pip wouldn't be importable before the call to
+        # install_recipe_requirements()
+
+        # if an extension has used pip before, it can be left in a
+        # strange state where pip.req is not usable nor reloadable
+        # anymore. (may have something to do with the fact that the
+        # first import is done from a tmp dir
+        # that does not exist any more).
+        # So, better to clean that before hand.
+        for k in list(sys.modules.keys()):
+            if k.split('.', 1)[0] == 'pip':
+                del sys.modules[k]
+
+        # it is useless to mutate the versions section at this point
+        # it's already been used to populate the Installer class variable
+        versions = Installer._versions
+        develops = self.list_develops()
+
+        req_fname = 'requirements.txt'
+        parts = [os.path.join(self.parts, o) for o in os.listdir(self.parts)
+                    if os.path.isdir(os.path.join(self.parts,o))]
+        found_req_file = False
+        for part in parts:
+            req_path = join(part, req_fname)
+            if not os.path.exists(req_path):
+                logger.warn(
+                    "%r not found in in %s. Proceeding anyway.", req_fname, part)
+                continue
+            found_req_file = True
+
+            if pip_version() < (8, 1, 2):
+                self.read_requirements_pip_before_v8(req_path, versions, develops)
+            else:
+                self.read_requirements_pip_after_v8(req_path, versions, develops)
+
+        if not found_req_file:
+            logger.warn("Didn't found any requirements file to install")
+            return
+        self.merge_requirements()
+
     def read_requirements_pip_before_v8(self, req_path, versions, develops):
         from pip.req import parse_requirements
         if pip_version() < (1, 5):
@@ -606,6 +669,9 @@ class BaseRecipe(object):
         """
         if self.with_odoo_requirements_file:
             self.apply_odoo_requirements_file()
+
+        if self.with_all_requirements_file:
+            self.apply_all_requirements_file()
 
         while True:
             missing = None

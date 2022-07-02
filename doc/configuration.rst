@@ -395,6 +395,19 @@ Default value: ``False``
 If set to ``True``, this boolean option makes the recipe read Odoo's
 ``requirements.txt`` file if available, and apply its prescriptions.
 
+.. _apply_all_requirements_file:
+
+apply-all-requirements-file
+-----------------------
+.. note:: new in version 1.9.2
+
+Default value: ``False``
+
+If set to ``True``, this boolean option makes the recipe read the
+``requirements.txt`` of all folders in the parts section,
+if there is a file, it will install all the required pip
+packages.
+
 Precedence among requirements
 `````````````````````````````
 In short, Odoo's requirement file has the lowest precedence of all
