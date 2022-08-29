@@ -355,6 +355,27 @@ setting ``git-warn-sha-pins = False``.
              if the remote repository gets lots of rebasing. If
              possible, pinning on tags is always to be preferred.
 
+.. _default_admin_passwd:
+
+The ``default_admin_passed`` option
+------------------------------------
+
+The ``default_admin_passwd`` (option) specifies a custom
+``admin_passwd`` to be stored during the build.
+
+.. _preserve_admin_passwd:
+
+The ``preserve_admin_passed`` option
+------------------------------------
+
+The ``preserve_admin_passwd = True`` (option) specifies the
+``admin_passwd`` (stored in the Odoo config file) shall be preserved
+during builds. This is especially critical if the ``admin_passwd`` had
+been summitted from the Odoo web-interface and stored encrypted (as
+hash).  So this option prevents reversal to the default
+``admin_passwd``. On every build, the ``etc/odoo.cfg`` file shall be
+copied to ``etc/odoo.cfg.prev``.
+
 .. _merges:
 
 merges

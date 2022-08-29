@@ -271,6 +271,15 @@ class BaseRecipe(object):
         self.etc = self.make_absolute(options.get('etc-directory', 'etc'))
         self.bin_dir = self.buildout['buildout']['bin-directory']
         self.config_path = join(self.etc, self.name + '.cfg')
+
+        self.default_admin_passwd = options.get('default_admin_passwd', '')
+
+        self.preserve_admin_passwd = options.get('preserve_admin_passwd', 'False') == 'True'
+        self.prev_config_path  = False
+
+        if self.preserve_admin_passwd:
+            self.prev_config_path = '{config_path}.prev'.format(config_path=self.config_path)
+
         for d in self.downloads_dir, self.etc:
             if not os.path.exists(d):
                 logger.info('Created %s/ directory' % basename(d))
@@ -1178,6 +1187,8 @@ class BaseRecipe(object):
 
         # create the config file
         if os.path.exists(self.config_path):
+            if self.prev_config_path:
+                shutil.copyfile(self.config_path, self.prev_config_path)
             os.remove(self.config_path)
         logger.info('Creating config file: %s',
                     os.path.relpath(self.config_path, self.buildout_dir))
@@ -1191,7 +1202,30 @@ class BaseRecipe(object):
                 continue
             section, option = recipe_option.split('.', 1)
             conf_ensure_section(config, section)
-            config.set(section, option, self.options[recipe_option])
+
+            # If preserve admin_passwd extract from prev_config and write in build config.
+            if option == 'admin_passwd' and self.preserve_admin_passwd and \
+               self.prev_config_path and os.path.exists(self.prev_config_path):
+                # TODO match not a commented admin_passwd. So without a # on line (negate regex).
+                pattern_admin_passwd = re.compile("(admin_passwd\s*=\s*)(\S+)")
+                preserve_admin_passwd = False
+
+                with open(self.prev_config_path, 'r') as f:
+                    fdata = f.read()
+                    matches = re.findall(pattern_admin_passwd, fdata)
+                    if len(matches) == 1:
+                        logger.info('Found admin_passwd to preserve')
+                        preserve_admin_passwd = matches[0][1].strip()
+                    else:
+                        msg = 'Found {count} matches of admin_passwd'.format(count=len(matches))
+                        raise UserError(msg)
+
+                if preserve_admin_passwd:
+                    config.set(section, option, preserve_admin_passwd)
+                else:
+                    config.set(section, option, self.options[recipe_option])
+            else:
+                config.set(section, option, self.options[recipe_option])
         with open(self.config_path, 'w') as configfile:
             config.write(configfile)
 
